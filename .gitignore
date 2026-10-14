@@ -1,0 +1,22 @@
+# Binarios y build
+/bin/
+*.exe
+*.test
+
+# Cobertura
+coverage.out
+coverage.html
+
+# Entorno local
+.env
+.env.*
+!.env.example
+
+# Editores / SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Claude Code: config personal (la compartida es .claude/skills, .claude/agents y CLAUDE.md)
+.claude/settings.local.json
