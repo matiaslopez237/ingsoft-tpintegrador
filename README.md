@@ -36,10 +36,9 @@ go tool cover -func=coverage.out
 
 | Integrante | Rol |
 |---|---|
-| | Agile Enabler |
-| | Product Builder |
-| | Product Builder |
-| | Product Builder |
-| | Product Builder |
+| Matías López | Agile Enabler |
+| Ezequiel Assenza | Product Builder |
+| Nicolás Andino | Product Builder |
+| Lucas Orellana | Product Builder |
 
 Product Architect: profesores de la cátedra.
