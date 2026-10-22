@@ -7,6 +7,10 @@
 coverage.out
 coverage.html
 
+# Base de datos local (SQLite, ver docs/adr/0002-persistencia.md)
+*.db
+*.db-journal
+
 # Entorno local
 .env
 .env.*
