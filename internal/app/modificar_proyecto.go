@@ -13,8 +13,10 @@ type RepositorioModificacion interface {
 	BuscarPorID(ctx context.Context, id int64) (domain.Proyecto, error)
 	// ExisteNombre indica si ya hay un proyecto cuya domain.ClaveNombre es clave.
 	ExisteNombre(ctx context.Context, clave string) (bool, error)
-	// Actualizar guarda el nombre, las fechas y el estado del proyecto; no toca sus integrantes (RN-02.10).
-	Actualizar(ctx context.Context, p domain.Proyecto) error
+	// Actualizar guarda de p solo los campos que c indica como enviados, para que modificaciones
+	// simultáneas no se pisen, y vuelve a verificar RN-02.5 al guardar (HU-02, sección 5).
+	// No toca los integrantes (RN-02.10).
+	Actualizar(ctx context.Context, p domain.Proyecto, c domain.CambiosProyecto) error
 }
 
 // DatosModificarProyecto son las entradas de HU-02.
@@ -57,7 +59,7 @@ func (uc *ModificarProyecto) Ejecutar(ctx context.Context, d DatosModificarProye
 		}
 	}
 
-	if err := uc.repo.Actualizar(ctx, modificado); err != nil {
+	if err := uc.repo.Actualizar(ctx, modificado, d.Cambios); err != nil {
 		return domain.Proyecto{}, fmt.Errorf("actualizar proyecto: %w", err)
 	}
 	return modificado, nil
