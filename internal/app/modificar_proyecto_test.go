@@ -11,11 +11,12 @@ import (
 
 // repoModificacionFalso guarda proyectos en memoria y permite simular fallas.
 type repoModificacionFalso struct {
-	porID          map[int64]domain.Proyecto
-	errBuscar      error
-	errExiste      error
-	errActualizar  error
-	vecesActualizo int
+	porID            map[int64]domain.Proyecto
+	errBuscar        error
+	errExiste        error
+	errActualizar    error
+	vecesActualizo   int
+	cambiosGuardados domain.CambiosProyecto
 }
 
 func nuevoRepoModificacionFalso(proyectos ...domain.Proyecto) *repoModificacionFalso {
@@ -49,11 +50,12 @@ func (r *repoModificacionFalso) ExisteNombre(_ context.Context, clave string) (b
 	return false, nil
 }
 
-func (r *repoModificacionFalso) Actualizar(_ context.Context, p domain.Proyecto) error {
+func (r *repoModificacionFalso) Actualizar(_ context.Context, p domain.Proyecto, c domain.CambiosProyecto) error {
 	if r.errActualizar != nil {
 		return r.errActualizar
 	}
 	r.vecesActualizo++
+	r.cambiosGuardados = c
 	r.porID[p.ID] = p
 	return nil
 }
@@ -90,6 +92,10 @@ func TestModificarProyecto_Valido_ActualizaYDevuelveElProyecto(t *testing.T) {
 	}
 	if repo.vecesActualizo != 1 || repo.porID[1].Nombre != "Alfa Renovado" {
 		t.Errorf("se actualizó %d veces, guardado = %+v", repo.vecesActualizo, repo.porID[1])
+	}
+	// Sección 5: al repositorio le llegan solo los campos enviados.
+	if c := repo.cambiosGuardados; c.Nombre == nil || c.FechaInicio != nil || c.CambiarFechaFin || c.Estado != nil {
+		t.Errorf("cambios enviados al repositorio = %+v, se esperaba solo el nombre", c)
 	}
 }
 

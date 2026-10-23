@@ -35,7 +35,8 @@ func TestRepositorioProyectos_Actualizar_Persiste(t *testing.T) {
 	p.FechaInicio = time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC)
 	p.FechaFin = nil
 	p.Estado = domain.EstadoFinalizado
-	if err := repo.Actualizar(ctx, p); err != nil {
+	todos := domain.CambiosProyecto{Nombre: &p.Nombre, FechaInicio: &p.FechaInicio, CambiarFechaFin: true, Estado: &p.Estado}
+	if err := repo.Actualizar(ctx, p, todos); err != nil {
 		t.Fatalf("actualizar: %v", err)
 	}
 
@@ -63,7 +64,7 @@ func TestRepositorioProyectos_Actualizar_ConservaLosIntegrantes(t *testing.T) {
 	}
 
 	p.Nombre = "Alfa Renovado"
-	if err := repo.Actualizar(ctx, p); err != nil {
+	if err := repo.Actualizar(ctx, p, domain.CambiosProyecto{Nombre: &p.Nombre}); err != nil {
 		t.Fatalf("actualizar: %v", err)
 	}
 
@@ -79,7 +80,7 @@ func TestRepositorioProyectos_Actualizar_MismoNombreConOtrasMayusculas(t *testin
 	p := guardarDePrueba(t, repo, "Alfa")
 
 	p.Nombre = "ALFA"
-	if err := repo.Actualizar(ctx, p); err != nil {
+	if err := repo.Actualizar(ctx, p, domain.CambiosProyecto{Nombre: &p.Nombre}); err != nil {
 		t.Fatalf("actualizar: %v", err)
 	}
 }
@@ -91,7 +92,7 @@ func TestRepositorioProyectos_Actualizar_NombreDeOtro_RetornaDuplicado(t *testin
 	beta := guardarDePrueba(t, repo, "Beta")
 
 	beta.Nombre = "alfa"
-	err := repo.Actualizar(context.Background(), beta)
+	err := repo.Actualizar(context.Background(), beta, domain.CambiosProyecto{Nombre: &beta.Nombre})
 
 	if !errors.Is(err, domain.ErrNombreDuplicado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrNombreDuplicado)
@@ -104,9 +105,44 @@ func TestRepositorioProyectos_Actualizar_Inexistente_RetornaNoEncontrado(t *test
 	p := proyectoDePrueba(t, "Fantasma", nil)
 	p.ID = 99
 
-	err := repo.Actualizar(context.Background(), p)
+	err := repo.Actualizar(context.Background(), p, domain.CambiosProyecto{Nombre: &p.Nombre})
 
 	if !errors.Is(err, domain.ErrProyectoNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrProyectoNoEncontrado)
+	}
+}
+
+// Traza: HU-02 sección 5 (pedidos simultáneos), RN-02.1: solo se guardan los campos enviados.
+func TestRepositorioProyectos_Actualizar_SoloGuardaLosCamposEnviados(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := guardarDePrueba(t, repo, "Alfa")
+
+	p.Nombre = "Alfa Renovado"
+	p.Estado = domain.EstadoCancelado // no se envía: no tiene que guardarse
+	if err := repo.Actualizar(ctx, p, domain.CambiosProyecto{Nombre: &p.Nombre}); err != nil {
+		t.Fatalf("actualizar: %v", err)
+	}
+
+	got, err := repo.BuscarPorID(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("buscar: %v", err)
+	}
+	if got.Nombre != "Alfa Renovado" || got.Estado != domain.EstadoActivo {
+		t.Errorf("guardado = nombre %q, estado %q; se esperaba Alfa Renovado y Activo", got.Nombre, got.Estado)
+	}
+}
+
+// Traza: HU-02 sección 5, RN-02.5: la base no acepta una fecha de fin anterior a la de inicio guardada.
+func TestRepositorioProyectos_Actualizar_FinAnteriorAlInicioGuardado_RetornaError(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := guardarDePrueba(t, repo, "Alfa") // inicio 2026-03-01
+
+	p.FechaFin = fechaDePrueba("2026-02-01")
+	err := repo.Actualizar(ctx, p, domain.CambiosProyecto{CambiarFechaFin: true, FechaFin: p.FechaFin})
+
+	if !errors.Is(err, domain.ErrFechaFinAnterior) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrFechaFinAnterior)
 	}
 }
