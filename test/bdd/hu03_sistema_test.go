@@ -21,6 +21,7 @@ func erroresHU03() map[string]error {
 		"rol vacío":                domain.ErrRolIntegranteVacio,
 		"integrante duplicado":     domain.ErrIntegranteDuplicado,
 		"integrante no encontrado": domain.ErrIntegranteNoEncontrado,
+		"rol duplicado":            domain.ErrRolDuplicado,
 	}
 }
 
@@ -95,11 +96,9 @@ func (s sistemaIntegrantesReal) Integrantes(proyectoID int64) ([]string, error) 
 	return nombres, nil
 }
 
-// errAgregarRolNoImplementado hace fallar los escenarios de roles mientras AgregarRol no existe (rojo esperado).
-var errAgregarRolNoImplementado = errors.New("pendiente: AgregarRol todavía no está implementado")
-
-func (s sistemaIntegrantesReal) AgregarRol(int64, string, string) error {
-	return errAgregarRolNoImplementado
+func (s sistemaIntegrantesReal) AgregarRol(proyectoID int64, nombre, rol string) error {
+	return app.NuevoAgregarRol(s.repo).Ejecutar(context.Background(),
+		app.DatosRol{ProyectoID: proyectoID, Nombre: nombre, Rol: rol})
 }
 
 // Roles devuelve los roles del integrante en el orden en que se agregaron.
