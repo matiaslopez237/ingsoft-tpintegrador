@@ -13,9 +13,6 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errModificarNoImplementado hace fallar los escenarios mientras ModificarProyecto no existe (rojo esperado).
-var errModificarNoImplementado = errors.New("pendiente: ModificarProyecto todavía no está implementado")
-
 // erroresHU02 traduce la descripción del escenario al error definido en la spec (sección 7).
 func erroresHU02() map[string]error {
 	return map[string]error{
@@ -30,13 +27,14 @@ func erroresHU02() map[string]error {
 	}
 }
 
-// sistemaModificacionReal prepara los escenarios con el código real de HU-01 (crear y buscar)
-// sobre SQLite, en una base nueva por escenario. Modificar todavía no está implementado.
+// sistemaModificacionReal conecta los escenarios a los casos de uso de HU-01 (crear) y HU-02
+// (modificar) con SQLite real, en una base nueva por escenario.
 type sistemaModificacionReal struct {
-	crear *app.CrearProyecto
-	repo  *persistencia.RepositorioProyectos
-	db    *sql.DB
-	dir   string
+	crear     *app.CrearProyecto
+	modificar *app.ModificarProyecto
+	repo      *persistencia.RepositorioProyectos
+	db        *sql.DB
+	dir       string
 }
 
 func nuevoSistemaModificacion() (sistemaModificacion, error) {
@@ -50,7 +48,13 @@ func nuevoSistemaModificacion() (sistemaModificacion, error) {
 		return nil, err
 	}
 	repo := persistencia.NuevoRepositorioProyectos(db)
-	return sistemaModificacionReal{crear: app.NuevoCrearProyecto(repo), repo: repo, db: db, dir: dir}, nil
+	return sistemaModificacionReal{
+		crear:     app.NuevoCrearProyecto(repo),
+		modificar: app.NuevoModificarProyecto(repo),
+		repo:      repo,
+		db:        db,
+		dir:       dir,
+	}, nil
 }
 
 func (s sistemaModificacionReal) Crear(nombre string, inicio, fin *time.Time) (proyectoHU02, error) {
@@ -65,8 +69,24 @@ func (s sistemaModificacionReal) Crear(nombre string, inicio, fin *time.Time) (p
 	return verProyectoHU02(p), nil
 }
 
-func (s sistemaModificacionReal) Modificar(int64, cambiosProyecto) (proyectoHU02, error) {
-	return proyectoHU02{}, errModificarNoImplementado
+func (s sistemaModificacionReal) Modificar(id int64, c cambiosProyecto) (proyectoHU02, error) {
+	cambios := domain.CambiosProyecto{Nombre: c.Nombre, FechaInicio: c.FechaInicio}
+	if c.QuitarInicio {
+		cambios.FechaInicio = &time.Time{} // la fecha cero equivale a quitarla
+	}
+	if c.FechaFin != nil || c.QuitarFin {
+		cambios.CambiarFechaFin = true
+		cambios.FechaFin = c.FechaFin
+	}
+	if c.Estado != nil {
+		e := domain.Estado(*c.Estado)
+		cambios.Estado = &e
+	}
+	p, err := s.modificar.Ejecutar(context.Background(), app.DatosModificarProyecto{ProyectoID: id, Cambios: cambios})
+	if err != nil {
+		return proyectoHU02{}, err
+	}
+	return verProyectoHU02(p), nil
 }
 
 func (s sistemaModificacionReal) BuscarPorID(id int64) (proyectoHU02, error) {
@@ -80,6 +100,29 @@ func (s sistemaModificacionReal) BuscarPorID(id int64) (proyectoHU02, error) {
 func (s sistemaModificacionReal) FijarEstado(id int64, estado string) error {
 	_, err := s.db.Exec(`UPDATE proyectos SET estado = ? WHERE id = ?`, estado, id)
 	return err
+}
+
+func (s sistemaModificacionReal) AgregarIntegrante(id int64, nombre, rol string) error {
+	return app.NuevoAgregarIntegrante(s.repo).Ejecutar(context.Background(),
+		app.DatosIntegrante{ProyectoID: id, Nombre: nombre, Rol: rol})
+}
+
+func (s sistemaModificacionReal) AgregarRol(id int64, nombre, rol string) error {
+	return app.NuevoAgregarRol(s.repo).Ejecutar(context.Background(),
+		app.DatosRol{ProyectoID: id, Nombre: nombre, Rol: rol})
+}
+
+func (s sistemaModificacionReal) Roles(id int64, nombre string) ([]string, error) {
+	p, err := s.repo.BuscarPorID(context.Background(), id)
+	if err != nil {
+		return nil, err
+	}
+	for _, integ := range p.Integrantes {
+		if domain.ClaveNombre(integ.Nombre) == domain.ClaveNombre(nombre) {
+			return integ.Roles, nil
+		}
+	}
+	return nil, domain.ErrIntegranteNoEncontrado
 }
 
 // Cerrar cierra la base del escenario y borra su carpeta temporal.

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -39,6 +40,11 @@ type sistemaModificacion interface {
 	BuscarPorID(id int64) (proyectoHU02, error)
 	// FijarEstado prepara un escenario con un estado dado, sin pasar por la funcionalidad bajo prueba.
 	FijarEstado(id int64, estado string) error
+	// AgregarIntegrante y AgregarRol preparan integrantes con las operaciones de HU-03 (CA-02.12).
+	AgregarIntegrante(id int64, nombre, rol string) error
+	AgregarRol(id int64, nombre, rol string) error
+	// Roles devuelve los roles guardados del integrante, en el orden en que se agregaron.
+	Roles(id int64, nombre string) ([]string, error)
 	Cerrar() error
 }
 
@@ -67,6 +73,8 @@ func registrarStepsHU02(ctx *godog.ScenarioContext) {
 	// Given
 	ctx.Step(`^hay un proyecto "([^"]*)" con inicio "([^"]*)" y fin "([^"]*)"$`, w.hayUnProyecto)
 	ctx.Step(`^el proyecto "([^"]*)" está en estado "([^"]*)"$`, w.estaEnEstado)
+	ctx.Step(`^el proyecto "([^"]*)" tiene a "([^"]*)" con los roles "([^"]*)" y "([^"]*)"$`, w.tieneIntegranteConDosRoles)
+	ctx.Step(`^el proyecto "([^"]*)" tiene a "([^"]*)" con el rol "([^"]*)"$`, w.tieneIntegranteConRol)
 
 	// When
 	ctx.Step(`^modifico el proyecto "([^"]*)" con el nombre "([^"]*)"$`, w.modificoNombre)
@@ -89,6 +97,8 @@ func registrarStepsHU02(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto "([^"]*)" no cambió$`, w.noCambio)
 	ctx.Step(`^el proyecto modificado conserva su identificador$`, w.conservaIdentificador)
 	ctx.Step(`^al recuperarlo por su identificador se llama "([^"]*)"$`, w.alRecuperarloSeLlama)
+	ctx.Step(`^al recuperarlo, "([^"]*)" tiene los roles "([^"]*)" y "([^"]*)"$`, w.alRecuperarloTieneDosRoles)
+	ctx.Step(`^al recuperarlo, "([^"]*)" tiene solo el rol "([^"]*)"$`, w.alRecuperarloTieneSoloElRol)
 }
 
 // --- Given ---
@@ -120,6 +130,27 @@ func (w *modificarProyectoWorld) estaEnEstado(nombre, estado string) error {
 	}
 	p.Estado = estado
 	w.porNombre[nombre] = p
+	return nil
+}
+
+func (w *modificarProyectoWorld) tieneIntegranteConRol(proyecto, nombre, rol string) error {
+	p, err := w.proyecto(proyecto)
+	if err != nil {
+		return err
+	}
+	if err := w.sistema.AgregarIntegrante(p.ID, nombre, rol); err != nil {
+		return fmt.Errorf("no se pudo preparar a %q en %q: %w", nombre, proyecto, err)
+	}
+	return nil
+}
+
+func (w *modificarProyectoWorld) tieneIntegranteConDosRoles(proyecto, nombre, rol1, rol2 string) error {
+	if err := w.tieneIntegranteConRol(proyecto, nombre, rol1); err != nil {
+		return err
+	}
+	if err := w.sistema.AgregarRol(w.porNombre[proyecto].ID, nombre, rol2); err != nil {
+		return fmt.Errorf("no se pudo preparar el rol %q de %q: %w", rol2, nombre, err)
+	}
 	return nil
 }
 
@@ -280,6 +311,25 @@ func (w *modificarProyectoWorld) alRecuperarloSeLlama(nombre string) error {
 	}
 	if p.Nombre != nombre {
 		return fmt.Errorf("al recuperarlo, nombre: se esperaba %q, se obtuvo %q", nombre, p.Nombre)
+	}
+	return nil
+}
+
+func (w *modificarProyectoWorld) alRecuperarloTieneDosRoles(nombre, rol1, rol2 string) error {
+	return w.alRecuperarloTieneRoles(nombre, rol1, rol2)
+}
+
+func (w *modificarProyectoWorld) alRecuperarloTieneSoloElRol(nombre, rol string) error {
+	return w.alRecuperarloTieneRoles(nombre, rol)
+}
+
+func (w *modificarProyectoWorld) alRecuperarloTieneRoles(nombre string, esperados ...string) error {
+	roles, err := w.sistema.Roles(w.objetivoID, nombre)
+	if err != nil {
+		return fmt.Errorf("al recuperarlo, roles de %q: %w", nombre, err)
+	}
+	if !slices.Equal(roles, esperados) {
+		return fmt.Errorf("al recuperarlo, roles de %q: se esperaba %v, se obtuvo %v", nombre, esperados, roles)
 	}
 	return nil
 }

@@ -139,3 +139,12 @@ Feature: Modificar un proyecto
     When modifico el proyecto "Alfa" quitando la fecha de inicio
     Then se rechaza la modificación con el error "fecha de inicio obligatoria"
     And el proyecto "Alfa" no cambió
+
+  @CA-02.12 @normal
+  Scenario: Cambiar el nombre conserva los integrantes y sus roles
+    Given el proyecto "Alfa" tiene a "Ana" con los roles "Desarrolladora" y "Tester"
+    And el proyecto "Alfa" tiene a "Beto" con el rol "Scrum Master"
+    When modifico el proyecto "Alfa" con el nombre "Alfa Renovado"
+    Then la modificación se realiza correctamente
+    And al recuperarlo, "Ana" tiene los roles "Desarrolladora" y "Tester"
+    And al recuperarlo, "Beto" tiene solo el rol "Scrum Master"
