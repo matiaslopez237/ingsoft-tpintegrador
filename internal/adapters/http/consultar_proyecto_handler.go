@@ -26,14 +26,14 @@ type respuestaIntegrante struct {
 	Roles  []string `json:"roles"`
 }
 
-// RegistrarConsultarProyecto agrega GET /proyectos/{id} al mux. Implementa HU-04.
+// RegistrarConsultarProyecto agrega GET /proyectos/{id} al mux. Implementa HU-04 (sección 3).
 func RegistrarConsultarProyecto(mux *http.ServeMux, uc consultorProyectos) {
 	mux.HandleFunc("GET /proyectos/{id}", handlerConsultarProyecto(uc))
 }
 
 // handlerConsultarProyecto atiende GET /proyectos/{id}: 200 con el proyecto, 400 si el id no es
 // válido, 404 si el proyecto no existe y 500 ante una falla interna.
-// Implementa HU-04 (expone ConsultarProyecto por HTTP).
+// Implementa HU-04 (expone ConsultarProyecto por HTTP; secciones 3 y 7).
 func handlerConsultarProyecto(uc consultorProyectos) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id, err := proyectoIDDesdeRuta(r)
@@ -57,7 +57,8 @@ func handlerConsultarProyecto(uc consultorProyectos) http.HandlerFunc {
 }
 
 // aRespuestaConsultaProyecto arma la respuesta con integrantes y roles siempre como array: un
-// slice nil se codifica como null y la spec exige [] (CA-04.3, sección 3).
+// slice nil se codifica como null y la spec exige [].
+// Implementa HU-04 (RN-04.1; CA-04.3; sección 3: roles siempre array).
 func aRespuestaConsultaProyecto(p domain.Proyecto) respuestaConsultaProyecto {
 	integrantes := make([]respuestaIntegrante, 0, len(p.Integrantes))
 	for _, i := range p.Integrantes {

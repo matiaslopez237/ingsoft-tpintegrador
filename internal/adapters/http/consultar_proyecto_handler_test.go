@@ -60,21 +60,22 @@ func mismoJSON(t *testing.T, cuerpo, esperado string) {
 	}
 }
 
-func fecha(s string) time.Time {
+func fecha(t *testing.T, s string) time.Time {
+	t.Helper()
 	f, err := time.Parse(time.DateOnly, s)
 	if err != nil {
-		panic(err)
+		t.Fatalf("fecha inválida en el test %q: %v", s, err)
 	}
 	return f
 }
 
 // Traza: HU-04 CA-04.1, CA-04.2
 func TestGetProyecto_Existente_Devuelve200ConElJSONDeLaSpec(t *testing.T) {
-	fin := fecha("2026-11-30")
+	fin := fecha(t, "2026-11-30")
 	uc := &consultorFalso{proyecto: domain.Proyecto{
 		ID:          7,
 		Nombre:      "TP Integrador",
-		FechaInicio: fecha("2026-03-01"),
+		FechaInicio: fecha(t, "2026-03-01"),
 		FechaFin:    &fin,
 		Estado:      domain.EstadoActivo,
 		Integrantes: []domain.Integrante{
@@ -113,7 +114,7 @@ func TestGetProyecto_SinIntegrantesNiFechaFin_DevuelveArrayVacioYFechaFinNull(t 
 	uc := &consultorFalso{proyecto: domain.Proyecto{
 		ID:          7,
 		Nombre:      "TP Integrador",
-		FechaInicio: fecha("2026-03-01"),
+		FechaInicio: fecha(t, "2026-03-01"),
 		Estado:      domain.EstadoActivo,
 	}}
 
@@ -138,7 +139,7 @@ func TestGetProyecto_IntegranteSinRoles_DevuelveRolesComoArrayVacio(t *testing.T
 	uc := &consultorFalso{proyecto: domain.Proyecto{
 		ID:          7,
 		Nombre:      "TP Integrador",
-		FechaInicio: fecha("2026-03-01"),
+		FechaInicio: fecha(t, "2026-03-01"),
 		Estado:      domain.EstadoActivo,
 		Integrantes: []domain.Integrante{{Nombre: "Ana"}},
 	}}

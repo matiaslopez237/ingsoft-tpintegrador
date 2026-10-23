@@ -40,6 +40,9 @@ func registrarStepsHU04(ctx *godog.ScenarioContext) {
 		return c, nil
 	})
 	ctx.After(func(c context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
+		if w.sistema == nil { // el Before falló: no hay base que cerrar y godog ya informa su error
+			return c, nil
+		}
 		return c, w.sistema.Cerrar()
 	})
 
