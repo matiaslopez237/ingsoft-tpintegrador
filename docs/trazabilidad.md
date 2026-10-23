@@ -70,7 +70,7 @@ RN-01.7 (los 5 estados posibles) no tiene CA propio en esta historia; lo verific
 
 ## HU-03: Registrar integrantes de un proyecto
 
-- **Issue:** #TODO (completar con el número de GitHub Projects) · Sprint 1 · 3 SP
+- **Issue:** #14 · Sprint 1 · 3 SP
 - **Spec:** [docs/specs/HU-03-registrar-integrantes.md](specs/HU-03-registrar-integrantes.md)
 - **Feature:** [features/HU-03-registrar-integrantes.feature](../features/HU-03-registrar-integrantes.feature) (steps en [test/bdd/hu03_steps_test.go](../test/bdd/hu03_steps_test.go))
 
@@ -117,5 +117,4 @@ Proyecto inexistente (sección 7 de la spec, sin CA propio): `TestAgregarIntegra
 ### Huecos
 
 - La spec sigue en estado **Borrador**: pasa a Aprobada cuando se apruebe el PR.
-- El número de issue de GitHub Projects queda como `#TODO`: completar antes de cerrar el issue en el tablero.
 - **Limitación de concurrencia conocida** (hallazgo de la revisión go-reviewer, Tarea 3.8): `AgregarIntegrante`/`QuitarIntegrante` leen el proyecto y reemplazan toda la lista de integrantes en dos pasos sin una transacción que cubra ambos — dos pedidos concurrentes sobre el mismo proyecto pueden pisarse (lost update). Documentado en la spec, sección "Limitaciones conocidas". No bloquea el cierre de la historia en este sprint (sin carga concurrente real); si se vuelve relevante, la solución es hacer `GuardarIntegrantes` atómico por fila.
