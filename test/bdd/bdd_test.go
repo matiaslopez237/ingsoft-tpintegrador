@@ -26,4 +26,5 @@ func TestFeatures(t *testing.T) {
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	registrarStepsHU01(ctx)
 	registrarStepsHU03(ctx)
+	registrarStepsHU04(ctx)
 }
