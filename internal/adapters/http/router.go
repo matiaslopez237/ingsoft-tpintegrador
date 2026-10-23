@@ -6,11 +6,17 @@ import "net/http"
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación.
 // Cada historia de usuario agrega sus propias rutas acá a medida que se implementa.
-func NuevoRouter(crearProyecto creadorProyectos) *http.ServeMux {
+func NuevoRouter(
+	crearProyecto creadorProyectos,
+	agregarIntegrante agregadorIntegrantes,
+	quitarIntegrante quitadorIntegrantes,
+) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /salud", handlerSalud)
-	mux.HandleFunc("POST /proyectos", handlerCrearProyecto(crearProyecto)) // HU-01
+	mux.HandleFunc("POST /proyectos", handlerCrearProyecto(crearProyecto))                                   // HU-01
+	mux.HandleFunc("POST /proyectos/{id}/integrantes", handlerAgregarIntegrante(agregarIntegrante))          // HU-03
+	mux.HandleFunc("DELETE /proyectos/{id}/integrantes/{nombre}", handlerQuitarIntegrante(quitarIntegrante)) // HU-03
 
 	return mux
 }

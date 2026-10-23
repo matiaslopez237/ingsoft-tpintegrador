@@ -10,24 +10,28 @@ import (
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errIntegrantesNoImplementado hace fallar los escenarios de HU-03 mientras
-// AgregarIntegrante/QuitarIntegrante no existen (rojo esperado, Tareas 3.4 a 3.7).
-var errIntegrantesNoImplementado = errors.New("pendiente: gestión de integrantes todavía no está implementada")
-
 // erroresHU03 traduce la descripción del escenario al error definido en la spec.
-// Se completa cuando existan los errores del dominio (Tarea 3.4).
 func erroresHU03() map[string]error {
-	return map[string]error{}
+	return map[string]error{
+		"nombre vacío":             domain.ErrNombreIntegranteVacio,
+		"rol vacío":                domain.ErrRolIntegranteVacio,
+		"integrante duplicado":     domain.ErrIntegranteDuplicado,
+		"integrante no encontrado": domain.ErrIntegranteNoEncontrado,
+	}
 }
 
-// sistemaIntegrantesReal crea el proyecto con el caso de uso real de HU-01 (ya
-// implementado) y deja la gestión de integrantes sin implementar todavía.
+// sistemaIntegrantesReal conecta los escenarios a los casos de uso de HU-03 con SQLite real,
+// en una base nueva por escenario.
 type sistemaIntegrantesReal struct {
-	crear *app.CrearProyecto
-	db    *sql.DB
-	dir   string
+	crear   *app.CrearProyecto
+	agregar *app.AgregarIntegrante
+	quitar  *app.QuitarIntegrante
+	repo    *persistencia.RepositorioProyectos
+	db      *sql.DB
+	dir     string
 }
 
 func nuevoSistemaIntegrantes() (sistemaIntegrantes, error) {
@@ -41,7 +45,14 @@ func nuevoSistemaIntegrantes() (sistemaIntegrantes, error) {
 		return nil, err
 	}
 	repo := persistencia.NuevoRepositorioProyectos(db)
-	return sistemaIntegrantesReal{crear: app.NuevoCrearProyecto(repo), db: db, dir: dir}, nil
+	return sistemaIntegrantesReal{
+		crear:   app.NuevoCrearProyecto(repo),
+		agregar: app.NuevoAgregarIntegrante(repo),
+		quitar:  app.NuevoQuitarIntegrante(repo),
+		repo:    repo,
+		db:      db,
+		dir:     dir,
+	}, nil
 }
 
 func (s sistemaIntegrantesReal) Cerrar() error {
@@ -60,13 +71,25 @@ func (s sistemaIntegrantesReal) CrearProyecto(nombre string) (int64, error) {
 }
 
 func (s sistemaIntegrantesReal) AgregarIntegrante(proyectoID int64, nombre, rol string) error {
-	return errIntegrantesNoImplementado
+	return s.agregar.Ejecutar(context.Background(), app.DatosIntegrante{
+		ProyectoID: proyectoID, Nombre: nombre, Rol: rol,
+	})
 }
 
 func (s sistemaIntegrantesReal) QuitarIntegrante(proyectoID int64, nombre string) error {
-	return errIntegrantesNoImplementado
+	return s.quitar.Ejecutar(context.Background(), app.DatosQuitarIntegrante{
+		ProyectoID: proyectoID, Nombre: nombre,
+	})
 }
 
 func (s sistemaIntegrantesReal) Integrantes(proyectoID int64) ([]string, error) {
-	return nil, errIntegrantesNoImplementado
+	p, err := s.repo.BuscarPorID(context.Background(), proyectoID)
+	if err != nil {
+		return nil, err
+	}
+	nombres := make([]string, len(p.Integrantes))
+	for i, integ := range p.Integrantes {
+		nombres[i] = integ.Nombre
+	}
+	return nombres, nil
 }
