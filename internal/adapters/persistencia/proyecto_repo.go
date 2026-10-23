@@ -117,27 +117,46 @@ func (r *RepositorioProyectos) buscarIntegrantes(ctx context.Context, proyectoID
 }
 
 // AgregarIntegrante inserta un integrante sin tocar a los demás del proyecto, así dos altas
-// simultáneas no se pisan. Implementa HU-03 (app.RepositorioIntegrantes, sección 5).
+// simultáneas no se pisan. Si otro pedido agregó a la misma persona en el medio, la restricción
+// UNIQUE lo rechaza y se devuelve domain.ErrIntegranteDuplicado.
+// Implementa HU-03 (app.RepositorioIntegrantes, RN-03.3, sección 5).
 func (r *RepositorioProyectos) AgregarIntegrante(ctx context.Context, proyectoID int64, i domain.Integrante) error {
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO integrantes (proyecto_id, nombre, nombre_clave, rol) VALUES (?, ?, ?, ?)`,
 		proyectoID, i.Nombre, domain.ClaveNombre(i.Nombre), i.Rol)
+	if esUnique(err) {
+		return domain.ErrIntegranteDuplicado
+	}
 	if err != nil {
 		return fmt.Errorf("insertar integrante %q del proyecto %d: %w", i.Nombre, proyectoID, err)
 	}
 	return nil
 }
 
-// QuitarIntegrante borra un integrante sin tocar a los demás del proyecto.
-// Implementa HU-03 (app.RepositorioIntegrantes, sección 5).
+// QuitarIntegrante borra un integrante sin tocar a los demás del proyecto. Si otro pedido ya lo
+// quitó, no borra ninguna fila y devuelve domain.ErrIntegranteNoEncontrado.
+// Implementa HU-03 (app.RepositorioIntegrantes, CA-03.4, sección 5).
 func (r *RepositorioProyectos) QuitarIntegrante(ctx context.Context, proyectoID int64, nombre string) error {
-	_, err := r.db.ExecContext(ctx,
+	res, err := r.db.ExecContext(ctx,
 		`DELETE FROM integrantes WHERE proyecto_id = ? AND nombre_clave = ?`,
 		proyectoID, domain.ClaveNombre(nombre))
 	if err != nil {
 		return fmt.Errorf("borrar integrante %q del proyecto %d: %w", nombre, proyectoID, err)
 	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("verificar borrado del integrante %q: %w", nombre, err)
+	}
+	if n == 0 {
+		return domain.ErrIntegranteNoEncontrado
+	}
 	return nil
+}
+
+// esUnique indica si err es la violación de una restricción UNIQUE de SQLite.
+func esUnique(err error) bool {
+	var se *sqlite.Error
+	return errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE
 }
 
 // Contar devuelve la cantidad de proyectos guardados.
