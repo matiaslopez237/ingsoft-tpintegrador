@@ -35,6 +35,7 @@ func main() {
 		app.NuevoAgregarIntegrante(repoProyectos),
 		app.NuevoQuitarIntegrante(repoProyectos),
 		app.NuevoAgregarRol(repoProyectos),
+		app.NuevoModificarProyecto(repoProyectos),
 	)
 
 	puerto := os.Getenv("PORT")
