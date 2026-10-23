@@ -13,9 +13,6 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errConsultarNoImplementado hace fallar los escenarios mientras ConsultarProyecto no existe (rojo esperado).
-var errConsultarNoImplementado = errors.New("pendiente: ConsultarProyecto todavía no está implementado")
-
 // erroresHU04 traduce la descripción del escenario al error definido en la spec.
 func erroresHU04() map[string]error {
 	return map[string]error{
@@ -23,12 +20,13 @@ func erroresHU04() map[string]error {
 	}
 }
 
-// sistemaConsultaReal prepara los datos con los casos de uso de HU-01 y HU-03 sobre SQLite real,
-// en una base nueva por escenario.
+// sistemaConsultaReal prepara los datos con los casos de uso de HU-01 y HU-03 y consulta con
+// ConsultarProyecto (HU-04), sobre SQLite real, en una base nueva por escenario.
 type sistemaConsultaReal struct {
 	crear      *app.CrearProyecto
 	agregar    *app.AgregarIntegrante
 	agregarRol *app.AgregarRol
+	consultar  *app.ConsultarProyecto
 	db         *sql.DB
 	dir        string
 }
@@ -48,6 +46,7 @@ func nuevoSistemaConsulta() (sistemaConsulta, error) {
 		crear:      app.NuevoCrearProyecto(repo),
 		agregar:    app.NuevoAgregarIntegrante(repo),
 		agregarRol: app.NuevoAgregarRol(repo),
+		consultar:  app.NuevoConsultarProyecto(repo),
 		db:         db,
 		dir:        dir,
 	}, nil
@@ -80,7 +79,6 @@ func (s sistemaConsultaReal) AgregarRol(proyectoID int64, nombre, rol string) er
 	})
 }
 
-// Consultar se conecta al caso de uso ConsultarProyecto en la Tarea 4.4.
-func (s sistemaConsultaReal) Consultar(int64) (domain.Proyecto, error) {
-	return domain.Proyecto{}, errConsultarNoImplementado
+func (s sistemaConsultaReal) Consultar(proyectoID int64) (domain.Proyecto, error) {
+	return s.consultar.Ejecutar(context.Background(), proyectoID)
 }
