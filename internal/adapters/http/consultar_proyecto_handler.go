@@ -56,12 +56,12 @@ func handlerConsultarProyecto(uc consultorProyectos) http.HandlerFunc {
 	}
 }
 
-// aRespuestaConsultaProyecto arma la respuesta con integrantes siempre como array: un slice nil
-// se codifica como null y la spec exige [] (CA-04.3).
+// aRespuestaConsultaProyecto arma la respuesta con integrantes y roles siempre como array: un
+// slice nil se codifica como null y la spec exige [] (CA-04.3, sección 3).
 func aRespuestaConsultaProyecto(p domain.Proyecto) respuestaConsultaProyecto {
 	integrantes := make([]respuestaIntegrante, 0, len(p.Integrantes))
 	for _, i := range p.Integrantes {
-		integrantes = append(integrantes, respuestaIntegrante{Nombre: i.Nombre, Roles: i.Roles})
+		integrantes = append(integrantes, respuestaIntegrante{Nombre: i.Nombre, Roles: append([]string{}, i.Roles...)})
 	}
 	return respuestaConsultaProyecto{respuestaProyecto: aRespuestaProyecto(p), Integrantes: integrantes}
 }
