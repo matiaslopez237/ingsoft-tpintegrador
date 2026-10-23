@@ -85,7 +85,60 @@ func (r *RepositorioProyectos) BuscarPorID(ctx context.Context, id int64) (domai
 		p.FechaFin = &f
 	}
 	p.Estado = domain.Estado(est)
+
+	p.Integrantes, err = r.buscarIntegrantes(ctx, p.ID)
+	if err != nil {
+		return domain.Proyecto{}, err
+	}
 	return p, nil
+}
+
+// buscarIntegrantes devuelve los integrantes del proyecto, en el orden en que se agregaron.
+func (r *RepositorioProyectos) buscarIntegrantes(ctx context.Context, proyectoID int64) ([]domain.Integrante, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT nombre, rol FROM integrantes WHERE proyecto_id = ? ORDER BY id`, proyectoID)
+	if err != nil {
+		return nil, fmt.Errorf("buscar integrantes del proyecto %d: %w", proyectoID, err)
+	}
+	defer rows.Close()
+
+	var integrantes []domain.Integrante
+	for rows.Next() {
+		var i domain.Integrante
+		if err := rows.Scan(&i.Nombre, &i.Rol); err != nil {
+			return nil, fmt.Errorf("leer integrante del proyecto %d: %w", proyectoID, err)
+		}
+		integrantes = append(integrantes, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer integrantes del proyecto %d: %w", proyectoID, err)
+	}
+	return integrantes, nil
+}
+
+// GuardarIntegrantes reemplaza, dentro de una transacción, la lista completa de integrantes
+// de un proyecto ya existente por la que trae p.Integrantes. Implementa HU-03 (app.RepositorioIntegrantes).
+func (r *RepositorioProyectos) GuardarIntegrantes(ctx context.Context, p *domain.Proyecto) error {
+	tx, err := r.db.BeginTx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("iniciar transacción: %w", err)
+	}
+	defer tx.Rollback()
+
+	if _, err := tx.ExecContext(ctx, `DELETE FROM integrantes WHERE proyecto_id = ?`, p.ID); err != nil {
+		return fmt.Errorf("borrar integrantes previos del proyecto %d: %w", p.ID, err)
+	}
+	for _, i := range p.Integrantes {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO integrantes (proyecto_id, nombre, nombre_clave, rol) VALUES (?, ?, ?, ?)`,
+			p.ID, i.Nombre, domain.ClaveNombre(i.Nombre), i.Rol); err != nil {
+			return fmt.Errorf("insertar integrante %q del proyecto %d: %w", i.Nombre, p.ID, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("confirmar transacción: %w", err)
+	}
+	return nil
 }
 
 // Contar devuelve la cantidad de proyectos guardados.

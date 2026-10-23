@@ -44,6 +44,16 @@ CREATE TABLE IF NOT EXISTS proyectos (
 	fecha_inicio TEXT    NOT NULL,
 	fecha_fin    TEXT,
 	estado       TEXT    NOT NULL
+);
+
+-- HU-03. nombre_clave = domain.ClaveNombre(nombre): garantiza RN-03.3 también en la base.
+CREATE TABLE IF NOT EXISTS integrantes (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
+	nombre       TEXT    NOT NULL,
+	nombre_clave TEXT    NOT NULL,
+	rol          TEXT    NOT NULL,
+	UNIQUE (proyecto_id, nombre_clave)
 );`)
 	return err
 }
