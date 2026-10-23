@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"slices"
 	"testing"
 )
 
@@ -28,11 +29,11 @@ func TestProyecto_AgregarIntegrante_Valido(t *testing.T) {
 	if len(p.Integrantes) != 2 {
 		t.Fatalf("Integrantes = %+v, se esperaban 2", p.Integrantes)
 	}
-	if p.Integrantes[0] != (Integrante{Nombre: "Ana", Rol: "Desarrolladora"}) {
-		t.Errorf("Integrantes[0] = %+v, se esperaba Ana/Desarrolladora", p.Integrantes[0])
+	if got := p.Integrantes[0]; got.Nombre != "Ana" || !slices.Equal(got.Roles, []string{"Desarrolladora"}) {
+		t.Errorf("Integrantes[0] = %+v, se esperaba Ana/Desarrolladora", got)
 	}
-	if p.Integrantes[1] != (Integrante{Nombre: "Beto", Rol: "Tester"}) {
-		t.Errorf("Integrantes[1] = %+v, se esperaba Beto/Tester", p.Integrantes[1])
+	if got := p.Integrantes[1]; got.Nombre != "Beto" || !slices.Equal(got.Roles, []string{"Tester"}) {
+		t.Errorf("Integrantes[1] = %+v, se esperaba Beto/Tester", got)
 	}
 }
 
@@ -114,5 +115,53 @@ func TestProyecto_QuitarIntegrante_Inexistente_RetornaError(t *testing.T) {
 	}
 	if len(p.Integrantes) != 1 {
 		t.Errorf("Integrantes = %+v, no debería haber cambiado", p.Integrantes)
+	}
+}
+
+// Traza: HU-03 CA-03.7, RN-03.5
+func TestProyecto_AgregarRol_SumaElRolSinDuplicarAlIntegrante(t *testing.T) {
+	p := proyectoDePrueba(t)
+	_ = p.AgregarIntegrante("Ana", "Desarrolladora")
+
+	if err := p.AgregarRol("  ana ", "  Tester "); err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+
+	if len(p.Integrantes) != 1 {
+		t.Fatalf("Integrantes = %+v, Ana debería figurar una sola vez", p.Integrantes)
+	}
+	if got, want := p.Integrantes[0].Roles, []string{"Desarrolladora", "Tester"}; !slices.Equal(got, want) {
+		t.Errorf("Roles = %v, se esperaba %v", got, want)
+	}
+}
+
+// Traza: HU-03 CA-03.8, CA-03.9, CA-03.10, RN-03.4, RN-03.6
+func TestProyecto_AgregarRol_Invalido_RetornaErrorYNoCambia(t *testing.T) {
+	tests := []struct {
+		nombreCaso string
+		nombreArg  string
+		rolArg     string
+		wantErr    error
+	}{
+		{"rol duplicado con otras mayúsculas", "Ana", "desarrolladora", ErrRolDuplicado},
+		{"rol duplicado con espacios", "Ana", "  Desarrolladora  ", ErrRolDuplicado},
+		{"integrante inexistente", "Caro", "Tester", ErrIntegranteNoEncontrado},
+		{"rol vacío", "Ana", "", ErrRolIntegranteVacio},
+		{"rol de solo espacios", "Ana", "   ", ErrRolIntegranteVacio},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombreCaso, func(t *testing.T) {
+			p := proyectoDePrueba(t)
+			_ = p.AgregarIntegrante("Ana", "Desarrolladora")
+
+			err := p.AgregarRol(tt.nombreArg, tt.rolArg)
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("error = %v, se esperaba %v", err, tt.wantErr)
+			}
+			if got, want := p.Integrantes[0].Roles, []string{"Desarrolladora"}; !slices.Equal(got, want) {
+				t.Errorf("Roles = %v, no debería haber cambiado (%v)", got, want)
+			}
+		})
 	}
 }
