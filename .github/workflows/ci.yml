@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  build-test:
+    name: Build, vet, fmt y tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configurar Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.24"
+
+      - name: Descargar dependencias
+        run: go mod download
+
+      - name: go build
+        run: go build ./...
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: Verificar formato (gofmt)
+        run: |
+          faltantes=$(gofmt -l .)
+          if [ -n "$faltantes" ]; then
+            echo "Los siguientes archivos no están formateados con gofmt:"
+            echo "$faltantes"
+            exit 1
+          fi
+
+      - name: go test (unitarios + BDD)
+        run: go test ./... -v
+
+      - name: Cobertura
+        run: go test ./... -coverprofile=coverage.out
+
+      - name: Resumen de cobertura
+        run: go tool cover -func=coverage.out
