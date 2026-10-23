@@ -40,6 +40,7 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - La unicidad del nombre (RN-02.3) se resuelve en el caso de uso (`internal/app`) a través del puerto de repositorio, igual que en HU-01, excluyendo al propio proyecto.
 - Persistencia en SQLite (ADR-0002); interfaz web con `net/http` (ADR-0001).
 - No hay autenticación ni roles: cualquier usuario de la app puede modificar un proyecto.
+- **Pedidos simultáneos:** al guardar se actualizan solo los campos enviados, no el proyecto completo. Así, si dos personas modifican campos distintos del mismo proyecto a la vez, se conservan los dos cambios. RN-02.5 se vuelve a verificar en la base en el mismo momento de guardar, contra las fechas que hay en ese instante: si otro pedido cambió una fecha en el medio y el resultado dejaría la fecha de fin antes que la de inicio, no se guarda nada y se devuelve `ErrFechaFinAnterior`. RN-02.3 también se garantiza en la base (restricción `UNIQUE`).
 
 ## 6. Casos límite
 - Enviar solo `nombre`: las fechas y el estado no cambian.
@@ -92,3 +93,4 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - 2026-10-23: agregado CA-02.11 para cubrir RN-02.4 (no se puede quitar la fecha de inicio).
 - 2026-10-23: agregados RN-02.10 y CA-02.12 (modificar no borra los integrantes de HU-03), detectado al revisar el PR #87.
 - 2026-10-23: el nombre duplicado pasa al final de la tabla de errores (sección 7), para coincidir con el orden en que se valida.
+- 2026-10-23: pedidos simultáneos (sección 5): se guardan solo los campos enviados y RN-02.5 se verifica también al guardar, según decisión del equipo.
