@@ -17,11 +17,11 @@ import (
 var errModificarNoImplementado = errors.New("pendiente: ModificarProyecto todavía no está implementado")
 
 // erroresHU02 traduce la descripción del escenario al error definido en la spec (sección 7).
-// "estado inválido" (ErrEstadoInvalido) y "sin cambios" (ErrSinCambios) se agregan
-// cuando existan esos errores en el dominio (Tarea 2.4).
 func erroresHU02() map[string]error {
 	return map[string]error{
 		"proyecto no encontrado":      domain.ErrProyectoNoEncontrado,
+		"sin cambios":                 domain.ErrSinCambios,
+		"estado inválido":             domain.ErrEstadoInvalido,
 		"nombre vacío":                domain.ErrNombreVacio,
 		"nombre demasiado largo":      domain.ErrNombreDemasiadoLargo,
 		"nombre duplicado":            domain.ErrNombreDuplicado,
