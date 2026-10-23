@@ -2,6 +2,7 @@ package persistencia
 
 import (
 	"context"
+	"slices"
 	"testing"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
@@ -22,7 +23,7 @@ func proyectoGuardadoDePrueba(t *testing.T, repo *RepositorioProyectos) domain.P
 
 func agregarIntegranteDePrueba(t *testing.T, repo *RepositorioProyectos, proyectoID int64, nombre, rol string) {
 	t.Helper()
-	if err := repo.AgregarIntegrante(context.Background(), proyectoID, domain.Integrante{Nombre: nombre, Rol: rol}); err != nil {
+	if err := repo.AgregarIntegrante(context.Background(), proyectoID, domain.Integrante{Nombre: nombre, Roles: []string{rol}}); err != nil {
 		t.Fatalf("agregar integrante %q: %v", nombre, err)
 	}
 }
@@ -39,7 +40,7 @@ func TestRepositorioProyectos_AgregarIntegrante_Persiste(t *testing.T) {
 	if err != nil {
 		t.Fatalf("buscar: %v", err)
 	}
-	if len(got.Integrantes) != 1 || got.Integrantes[0] != (domain.Integrante{Nombre: "Ana", Rol: "Desarrolladora"}) {
+	if len(got.Integrantes) != 1 || got.Integrantes[0].Nombre != "Ana" || !slices.Equal(got.Integrantes[0].Roles, []string{"Desarrolladora"}) {
 		t.Errorf("Integrantes = %+v, se esperaba 1 integrante Ana/Desarrolladora", got.Integrantes)
 	}
 }

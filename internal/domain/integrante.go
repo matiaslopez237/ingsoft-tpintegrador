@@ -11,12 +11,14 @@ var (
 	ErrRolIntegranteVacio     = errors.New("el rol del integrante es obligatorio")
 	ErrIntegranteDuplicado    = errors.New("ya hay un integrante con ese nombre en el proyecto")
 	ErrIntegranteNoEncontrado = errors.New("integrante no encontrado en el proyecto")
+	ErrRolDuplicado           = errors.New("el integrante ya tiene ese rol")
 )
 
-// Integrante es una persona que participa de un proyecto. Implementa HU-03.
+// Integrante es una persona que participa de un proyecto, con sus roles en el orden en que se
+// agregaron. Implementa HU-03 (RN-03.5).
 type Integrante struct {
 	Nombre string
-	Rol    string
+	Roles  []string
 }
 
 // AgregarIntegrante valida los datos y agrega un integrante al proyecto.
@@ -39,8 +41,33 @@ func (p *Proyecto) AgregarIntegrante(nombre, rol string) error {
 		}
 	}
 
-	p.Integrantes = append(p.Integrantes, Integrante{Nombre: nombre, Rol: rol})
+	p.Integrantes = append(p.Integrantes, Integrante{Nombre: nombre, Roles: []string{rol}})
 	return nil
+}
+
+// AgregarRol le suma un rol a un integrante que ya está en el proyecto.
+// Los roles se comparan con ClaveNombre, igual que los nombres (RN-03.3).
+// Implementa HU-03 (RN-03.4, RN-03.5, RN-03.6).
+func (p *Proyecto) AgregarRol(nombre, rol string) error {
+	rol = strings.TrimSpace(rol)
+	if rol == "" {
+		return ErrRolIntegranteVacio
+	}
+
+	clave := ClaveNombre(nombre)
+	for i, existente := range p.Integrantes {
+		if ClaveNombre(existente.Nombre) != clave {
+			continue
+		}
+		for _, r := range existente.Roles {
+			if ClaveNombre(r) == ClaveNombre(rol) {
+				return ErrRolDuplicado
+			}
+		}
+		p.Integrantes[i].Roles = append(existente.Roles, rol)
+		return nil
+	}
+	return ErrIntegranteNoEncontrado
 }
 
 // QuitarIntegrante quita del proyecto al integrante con ese nombre.

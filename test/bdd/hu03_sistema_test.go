@@ -103,7 +103,6 @@ func (s sistemaIntegrantesReal) AgregarRol(int64, string, string) error {
 }
 
 // Roles devuelve los roles del integrante en el orden en que se agregaron.
-// Mientras el dominio tenga un solo rol por integrante, devuelve ese.
 func (s sistemaIntegrantesReal) Roles(proyectoID int64, nombre string) ([]string, error) {
 	p, err := s.repo.BuscarPorID(context.Background(), proyectoID)
 	if err != nil {
@@ -111,7 +110,7 @@ func (s sistemaIntegrantesReal) Roles(proyectoID int64, nombre string) ([]string
 	}
 	for _, integ := range p.Integrantes {
 		if domain.ClaveNombre(integ.Nombre) == domain.ClaveNombre(nombre) {
-			return []string{integ.Rol}, nil
+			return integ.Roles, nil
 		}
 	}
 	return nil, fmt.Errorf("%q no es integrante del proyecto", nombre)

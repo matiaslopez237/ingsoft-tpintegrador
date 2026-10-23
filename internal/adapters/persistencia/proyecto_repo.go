@@ -104,11 +104,11 @@ func (r *RepositorioProyectos) buscarIntegrantes(ctx context.Context, proyectoID
 
 	var integrantes []domain.Integrante
 	for rows.Next() {
-		var i domain.Integrante
-		if err := rows.Scan(&i.Nombre, &i.Rol); err != nil {
+		var nombre, rol string
+		if err := rows.Scan(&nombre, &rol); err != nil {
 			return nil, fmt.Errorf("leer integrante del proyecto %d: %w", proyectoID, err)
 		}
-		integrantes = append(integrantes, i)
+		integrantes = append(integrantes, domain.Integrante{Nombre: nombre, Roles: []string{rol}})
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("recorrer integrantes del proyecto %d: %w", proyectoID, err)
@@ -123,7 +123,7 @@ func (r *RepositorioProyectos) buscarIntegrantes(ctx context.Context, proyectoID
 func (r *RepositorioProyectos) AgregarIntegrante(ctx context.Context, proyectoID int64, i domain.Integrante) error {
 	_, err := r.db.ExecContext(ctx,
 		`INSERT INTO integrantes (proyecto_id, nombre, nombre_clave, rol) VALUES (?, ?, ?, ?)`,
-		proyectoID, i.Nombre, domain.ClaveNombre(i.Nombre), i.Rol)
+		proyectoID, i.Nombre, domain.ClaveNombre(i.Nombre), i.Roles[0])
 	if esUnique(err) {
 		return domain.ErrIntegranteDuplicado
 	}

@@ -135,7 +135,7 @@ func TestAgregarIntegrante_FallaDelRepositorio_SePropaga(t *testing.T) {
 
 // Traza: HU-03 CA-03.3
 func TestQuitarIntegrante_Existente_GuardaSinEl(t *testing.T) {
-	repo := nuevoRepoIntegrantesFalso(proyectoFalso(1, domain.Integrante{Nombre: "Ana", Rol: "Desarrolladora"}))
+	repo := nuevoRepoIntegrantesFalso(proyectoFalso(1, domain.Integrante{Nombre: "Ana", Roles: []string{"Desarrolladora"}}))
 	uc := NuevoQuitarIntegrante(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosQuitarIntegrante{ProyectoID: 1, Nombre: "Ana"})
@@ -153,7 +153,7 @@ func TestQuitarIntegrante_Existente_GuardaSinEl(t *testing.T) {
 
 // Traza: HU-03 CA-03.4
 func TestQuitarIntegrante_Inexistente_RetornaErrorYNoGuarda(t *testing.T) {
-	repo := nuevoRepoIntegrantesFalso(proyectoFalso(1, domain.Integrante{Nombre: "Ana", Rol: "Desarrolladora"}))
+	repo := nuevoRepoIntegrantesFalso(proyectoFalso(1, domain.Integrante{Nombre: "Ana", Roles: []string{"Desarrolladora"}}))
 	uc := NuevoQuitarIntegrante(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosQuitarIntegrante{ProyectoID: 1, Nombre: "Caro"})
