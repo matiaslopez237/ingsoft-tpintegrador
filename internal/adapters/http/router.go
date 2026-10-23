@@ -4,24 +4,26 @@ package http
 
 import "net/http"
 
-// NuevoRouter arma el mux con todas las rutas de la aplicación.
-// Cada historia de usuario agrega sus propias rutas acá a medida que se implementa.
-func NuevoRouter(
-	crearProyecto creadorProyectos,
-	agregarIntegrante agregadorIntegrantes,
-	quitarIntegrante quitadorIntegrantes,
-	agregarRol agregadorRoles,
-	modificarProyecto modificadorProyectos,
-) *http.ServeMux {
+// CasosDeUso son los casos de uso que exponen las rutas HTTP. Cada historia de usuario suma
+// los suyos acá y registra sus rutas con su propia función RegistrarX, en el archivo de su handler.
+type CasosDeUso struct {
+	CrearProyecto     creadorProyectos     // HU-01
+	ModificarProyecto modificadorProyectos // HU-02
+	AgregarIntegrante agregadorIntegrantes // HU-03
+	QuitarIntegrante  quitadorIntegrantes  // HU-03
+	AgregarRol        agregadorRoles       // HU-03
+	ConsultarProyecto consultorProyectos   // HU-04
+}
+
+// NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
+// de rutas (router_test.go), así ninguna ruta queda sin registrar.
+func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	mux := http.NewServeMux()
-
 	mux.HandleFunc("GET /salud", handlerSalud)
-	mux.HandleFunc("POST /proyectos", handlerCrearProyecto(crearProyecto))
-	mux.HandleFunc("PATCH /proyectos/{id}", handlerModificarProyecto(modificarProyecto))                     // HU-02                                   // HU-01
-	mux.HandleFunc("POST /proyectos/{id}/integrantes", handlerAgregarIntegrante(agregarIntegrante))          // HU-03
-	mux.HandleFunc("DELETE /proyectos/{id}/integrantes/{nombre}", handlerQuitarIntegrante(quitarIntegrante)) // HU-03
-	mux.HandleFunc("POST /proyectos/{id}/integrantes/{nombre}/roles", handlerAgregarRol(agregarRol))         // HU-03
-
+	RegistrarCrearProyecto(mux, cu.CrearProyecto)
+	RegistrarModificarProyecto(mux, cu.ModificarProyecto)
+	RegistrarIntegrantes(mux, cu.AgregarIntegrante, cu.QuitarIntegrante, cu.AgregarRol)
+	RegistrarConsultarProyecto(mux, cu.ConsultarProyecto)
 	return mux
 }
 

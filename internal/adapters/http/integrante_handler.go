@@ -40,6 +40,13 @@ var erroresDeValidacionIntegrante = []error{
 	domain.ErrIntegranteDuplicado,
 }
 
+// RegistrarIntegrantes agrega al mux las rutas de HU-03: alta y baja de integrantes, y alta de roles.
+func RegistrarIntegrantes(mux *http.ServeMux, agregar agregadorIntegrantes, quitar quitadorIntegrantes, agregarRol agregadorRoles) {
+	mux.HandleFunc("POST /proyectos/{id}/integrantes", handlerAgregarIntegrante(agregar))
+	mux.HandleFunc("DELETE /proyectos/{id}/integrantes/{nombre}", handlerQuitarIntegrante(quitar))
+	mux.HandleFunc("POST /proyectos/{id}/integrantes/{nombre}/roles", handlerAgregarRol(agregarRol))
+}
+
 // handlerAgregarIntegrante atiende POST /proyectos/{id}/integrantes: 204 si se agregó, 400 si
 // los datos no son válidos, 404 si el proyecto no existe y 500 ante una falla interna.
 // Implementa HU-03 (expone AgregarIntegrante por HTTP).
