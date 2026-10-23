@@ -62,5 +62,10 @@ func (uc *ModificarProyecto) Ejecutar(ctx context.Context, d DatosModificarProye
 	if err := uc.repo.Actualizar(ctx, modificado, d.Cambios); err != nil {
 		return domain.Proyecto{}, fmt.Errorf("actualizar proyecto: %w", err)
 	}
-	return modificado, nil
+	// Se relee porque otro pedido pudo cambiar en el medio los campos que este no envió (sección 5).
+	guardado, err := uc.repo.BuscarPorID(ctx, d.ProyectoID)
+	if err != nil {
+		return domain.Proyecto{}, fmt.Errorf("releer proyecto modificado: %w", err)
+	}
+	return guardado, nil
 }
