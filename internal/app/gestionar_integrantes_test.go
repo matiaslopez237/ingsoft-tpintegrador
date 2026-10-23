@@ -60,6 +60,22 @@ func (r *repoIntegrantesFalso) QuitarIntegrante(_ context.Context, proyectoID in
 	return nil
 }
 
+func (r *repoIntegrantesFalso) AgregarRol(_ context.Context, proyectoID int64, nombre, rol string) error {
+	if r.errGuardar != nil {
+		return r.errGuardar
+	}
+	r.vecesGuardo++
+	p := r.porID[proyectoID]
+	p.Integrantes = slices.Clone(p.Integrantes)
+	for i, integ := range p.Integrantes {
+		if domain.ClaveNombre(integ.Nombre) == domain.ClaveNombre(nombre) {
+			p.Integrantes[i].Roles = append(slices.Clone(integ.Roles), rol)
+		}
+	}
+	r.porID[proyectoID] = p
+	return nil
+}
+
 func proyectoFalso(id int64, integrantes ...domain.Integrante) domain.Proyecto {
 	return domain.Proyecto{ID: id, Nombre: "TP Integrador", Estado: domain.EstadoActivo, Integrantes: integrantes}
 }
@@ -175,5 +191,75 @@ func TestQuitarIntegrante_ProyectoInexistente_RetornaError(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrProyectoNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrProyectoNoEncontrado)
+	}
+}
+
+func anaDesarrolladora() domain.Integrante {
+	return domain.Integrante{Nombre: "Ana", Roles: []string{"Desarrolladora"}}
+}
+
+// Traza: HU-03 CA-03.7
+func TestAgregarRol_Valido_GuardaElRolNormalizado(t *testing.T) {
+	repo := nuevoRepoIntegrantesFalso(proyectoFalso(1, anaDesarrolladora()))
+	uc := NuevoAgregarRol(repo)
+
+	err := uc.Ejecutar(context.Background(), DatosRol{ProyectoID: 1, Nombre: "ana", Rol: "  Tester "})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if got, want := repo.porID[1].Integrantes[0].Roles, []string{"Desarrolladora", "Tester"}; !slices.Equal(got, want) {
+		t.Errorf("Roles = %v, se esperaba %v", got, want)
+	}
+	if repo.vecesGuardo != 1 {
+		t.Errorf("se guardó %d veces, se esperaba 1", repo.vecesGuardo)
+	}
+}
+
+// Traza: HU-03 CA-03.8, CA-03.9, CA-03.10 y sección 7: si el dominio rechaza el pedido, no se guarda nada.
+func TestAgregarRol_Invalido_RetornaErrorYNoGuarda(t *testing.T) {
+	tests := []struct {
+		nombreCaso string
+		datos      DatosRol
+		wantErr    error
+	}{
+		{"rol duplicado", DatosRol{ProyectoID: 1, Nombre: "Ana", Rol: "desarrolladora"}, domain.ErrRolDuplicado},
+		{"integrante inexistente", DatosRol{ProyectoID: 1, Nombre: "Caro", Rol: "Tester"}, domain.ErrIntegranteNoEncontrado},
+		{"rol vacío", DatosRol{ProyectoID: 1, Nombre: "Ana", Rol: ""}, domain.ErrRolIntegranteVacio},
+		{"proyecto inexistente", DatosRol{ProyectoID: 99, Nombre: "Ana", Rol: "Tester"}, domain.ErrProyectoNoEncontrado},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombreCaso, func(t *testing.T) {
+			repo := nuevoRepoIntegrantesFalso(proyectoFalso(1, anaDesarrolladora()))
+
+			err := NuevoAgregarRol(repo).Ejecutar(context.Background(), tt.datos)
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("error = %v, se esperaba %v", err, tt.wantErr)
+			}
+			if repo.vecesGuardo != 0 {
+				t.Errorf("no se esperaba ningún guardado, hubo %d", repo.vecesGuardo)
+			}
+		})
+	}
+}
+
+func TestAgregarRol_FallaDelRepositorio_SePropaga(t *testing.T) {
+	errBase := errors.New("base caída")
+	tests := []struct {
+		nombre string
+		repo   *repoIntegrantesFalso
+	}{
+		{"al buscar el proyecto", &repoIntegrantesFalso{errBuscar: errBase}},
+		{"al guardar", &repoIntegrantesFalso{porID: map[int64]domain.Proyecto{1: proyectoFalso(1, anaDesarrolladora())}, errGuardar: errBase}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			err := NuevoAgregarRol(tt.repo).Ejecutar(context.Background(),
+				DatosRol{ProyectoID: 1, Nombre: "Ana", Rol: "Tester"})
+			if !errors.Is(err, errBase) {
+				t.Errorf("error = %v, se esperaba que envuelva %v", err, errBase)
+			}
+		})
 	}
 }

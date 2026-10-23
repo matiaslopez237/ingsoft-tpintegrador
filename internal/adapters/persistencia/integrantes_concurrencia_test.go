@@ -21,6 +21,9 @@ type repoConLecturaVieja struct {
 func (r repoConLecturaVieja) BuscarPorID(context.Context, int64) (domain.Proyecto, error) {
 	p := r.foto
 	p.Integrantes = slices.Clone(r.foto.Integrantes)
+	for i := range p.Integrantes {
+		p.Integrantes[i].Roles = slices.Clone(p.Integrantes[i].Roles)
+	}
 	return p, nil
 }
 
@@ -126,5 +129,50 @@ func TestIntegrantes_MismaBajaSimultanea_SegundaEsNoEncontrado(t *testing.T) {
 
 	if !errors.Is(err, domain.ErrIntegranteNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrIntegranteNoEncontrado)
+	}
+}
+
+// Traza: HU-03 sección 5 y RN-03.5: dos roles sumados a la vez al mismo integrante no se pisan.
+func TestIntegrantes_DosRolesSimultaneos_QuedanAmbos(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+	foto, err := repo.BuscarPorID(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("buscar: %v", err)
+	}
+	vieja := repoConLecturaVieja{RepositorioProyectos: repo, foto: foto}
+
+	for _, rol := range []string{"Tester", "Scrum Master"} {
+		if err := app.NuevoAgregarRol(vieja).Ejecutar(ctx, app.DatosRol{ProyectoID: p.ID, Nombre: "Ana", Rol: rol}); err != nil {
+			t.Fatalf("agregar rol %s: %v", rol, err)
+		}
+	}
+
+	if got, want := rolesDe(t, repo, p.ID, "Ana"), []string{"Desarrolladora", "Tester", "Scrum Master"}; !slices.Equal(got, want) {
+		t.Errorf("roles = %v, se esperaba %v (un rol pisó al otro)", got, want)
+	}
+}
+
+// Traza: HU-03 sección 5 y RN-03.6: si dos pedidos suman el mismo rol a la vez, la base rechaza al segundo.
+func TestIntegrantes_MismoRolSimultaneo_SegundoEsDuplicado(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+	foto, err := repo.BuscarPorID(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("buscar: %v", err)
+	}
+	vieja := repoConLecturaVieja{RepositorioProyectos: repo, foto: foto}
+
+	if err := app.NuevoAgregarRol(vieja).Ejecutar(ctx, app.DatosRol{ProyectoID: p.ID, Nombre: "Ana", Rol: "Tester"}); err != nil {
+		t.Fatalf("primer rol: %v", err)
+	}
+	err = app.NuevoAgregarRol(vieja).Ejecutar(ctx, app.DatosRol{ProyectoID: p.ID, Nombre: "Ana", Rol: "tester"})
+
+	if !errors.Is(err, domain.ErrRolDuplicado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrRolDuplicado)
 	}
 }
