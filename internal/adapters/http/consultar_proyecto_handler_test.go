@@ -132,6 +132,32 @@ func TestGetProyecto_SinIntegrantesNiFechaFin_DevuelveArrayVacioYFechaFinNull(t 
 	}`)
 }
 
+// Traza: HU-04 sección 3 (roles siempre es un array); no tiene un CA propio en la spec.
+func TestGetProyecto_IntegranteSinRoles_DevuelveRolesComoArrayVacio(t *testing.T) {
+	// Roles nil: hoy el dominio no lo produce (RN-03.4), pero el contrato JSON no depende de eso.
+	uc := &consultorFalso{proyecto: domain.Proyecto{
+		ID:          7,
+		Nombre:      "TP Integrador",
+		FechaInicio: fecha("2026-03-01"),
+		Estado:      domain.EstadoActivo,
+		Integrantes: []domain.Integrante{{Nombre: "Ana"}},
+	}}
+
+	rec := getProyecto(t, uc, "7")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %s", rec.Code, rec.Body)
+	}
+	mismoJSON(t, rec.Body.String(), `{
+		"id": 7,
+		"nombre": "TP Integrador",
+		"fecha_inicio": "2026-03-01",
+		"fecha_fin": null,
+		"estado": "Activo",
+		"integrantes": [{"nombre": "Ana", "roles": []}]
+	}`)
+}
+
 // Traza: HU-04 CA-04.5
 func TestGetProyecto_Inexistente_Devuelve404ConElMensajeDelError(t *testing.T) {
 	// Envuelto, como lo devuelve el caso de uso ConsultarProyecto.
