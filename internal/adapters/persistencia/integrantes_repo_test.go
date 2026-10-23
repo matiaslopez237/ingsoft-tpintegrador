@@ -2,6 +2,7 @@ package persistencia
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -99,5 +100,82 @@ func TestRepositorioProyectos_DuplicadoTrasRecargar_RetornaError(t *testing.T) {
 	}
 	if err := recargado.AgregarIntegrante("ana", "Tester"); err != domain.ErrIntegranteDuplicado {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrIntegranteDuplicado)
+	}
+}
+
+func rolesDe(t *testing.T, repo *RepositorioProyectos, proyectoID int64, nombre string) []string {
+	t.Helper()
+	p, err := repo.BuscarPorID(context.Background(), proyectoID)
+	if err != nil {
+		t.Fatalf("buscar: %v", err)
+	}
+	for _, i := range p.Integrantes {
+		if i.Nombre == nombre {
+			return i.Roles
+		}
+	}
+	t.Fatalf("%q no está en el proyecto: %+v", nombre, p.Integrantes)
+	return nil
+}
+
+// Traza: HU-03 CA-03.7, RN-03.5: los roles sumados se persisten en el orden en que se agregaron.
+func TestRepositorioProyectos_AgregarRol_Persiste(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+
+	if err := repo.AgregarRol(ctx, p.ID, "ana", "Tester"); err != nil {
+		t.Fatalf("agregar rol: %v", err)
+	}
+
+	if got, want := rolesDe(t, repo, p.ID, "Ana"), []string{"Desarrolladora", "Tester"}; !slices.Equal(got, want) {
+		t.Errorf("roles = %v, se esperaba %v", got, want)
+	}
+}
+
+// Traza: HU-03 sección 5 y RN-03.6: si otro pedido ya sumó el mismo rol, la base lo rechaza.
+func TestRepositorioProyectos_AgregarRol_Duplicado_RetornaError(t *testing.T) {
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+
+	err := repo.AgregarRol(context.Background(), p.ID, "Ana", "desarrolladora")
+
+	if !errors.Is(err, domain.ErrRolDuplicado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrRolDuplicado)
+	}
+}
+
+// Traza: HU-03 sección 5 y CA-03.9: si otro pedido quitó al integrante en el medio, no hay a quién sumarle el rol.
+func TestRepositorioProyectos_AgregarRol_IntegranteInexistente_RetornaError(t *testing.T) {
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+
+	err := repo.AgregarRol(context.Background(), p.ID, "Caro", "Tester")
+
+	if !errors.Is(err, domain.ErrIntegranteNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrIntegranteNoEncontrado)
+	}
+}
+
+// Traza: HU-03 CA-03.3 (caso límite): quitar a un integrante borra todos sus roles; si vuelve a
+// entrar, empieza solo con el rol nuevo.
+func TestRepositorioProyectos_QuitarIntegrante_BorraSusRoles(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+	if err := repo.AgregarRol(ctx, p.ID, "Ana", "Tester"); err != nil {
+		t.Fatalf("agregar rol: %v", err)
+	}
+
+	if err := repo.QuitarIntegrante(ctx, p.ID, "Ana"); err != nil {
+		t.Fatalf("quitar: %v", err)
+	}
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Scrum Master")
+
+	if got, want := rolesDe(t, repo, p.ID, "Ana"), []string{"Scrum Master"}; !slices.Equal(got, want) {
+		t.Errorf("roles = %v, se esperaba %v", got, want)
 	}
 }
