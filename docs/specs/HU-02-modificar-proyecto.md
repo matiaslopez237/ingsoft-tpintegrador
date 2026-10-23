@@ -61,12 +61,12 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 | No se envió ningún campo | `ErrSinCambios` | "No se indicó ningún dato para modificar." |
 | Nombre vacío o solo espacios | `ErrNombreVacio` | "El nombre del proyecto es obligatorio." |
 | Nombre de más de 100 caracteres | `ErrNombreDemasiadoLargo` | "El nombre no puede superar los 100 caracteres." |
-| Otro proyecto ya tiene ese nombre | `ErrNombreDuplicado` | "Ya existe un proyecto con ese nombre." |
 | Se intenta quitar la fecha de inicio | `ErrFechaInicioObligatoria` | "La fecha de inicio es obligatoria." |
 | Fecha de fin resultante anterior a la de inicio | `ErrFechaFinAnterior` | "La fecha de fin no puede ser anterior a la de inicio." |
 | Estado que no es uno de los cinco válidos | `ErrEstadoInvalido` | "El estado indicado no es válido." |
+| Otro proyecto ya tiene ese nombre | `ErrNombreDuplicado` | "Ya existe un proyecto con ese nombre." |
 
-`ErrProyectoNoEncontrado` y los errores de nombre y fechas ya existen en `internal/domain` (HU-01). Esta historia agrega `ErrSinCambios` y `ErrEstadoInvalido`. En todos los casos no se persiste nada; si hay varios errores a la vez, se informa el primero en el orden de la tabla.
+`ErrProyectoNoEncontrado` y los errores de nombre y fechas ya existen en `internal/domain` (HU-01). Esta historia agrega `ErrSinCambios` y `ErrEstadoInvalido`. En todos los casos no se persiste nada; si hay varios errores a la vez, se informa el primero en el orden de la tabla. El nombre duplicado va último porque se verifica en el caso de uso contra el repositorio, después de que el dominio valida el resto de los datos.
 
 ## 8. Criterios de aceptación
 - **CA-02.1:** Dado un proyecto existente, cuando envío solo un nombre válido, entonces se actualiza el nombre y las fechas y el estado no cambian. (RN-02.1, RN-02.2)
@@ -91,3 +91,4 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - 2026-10-23: alineada al dominio implementado en HU-01: cinco estados de RN-01.7 (en lugar de "Activo/Cerrado"), fecha de fin opcional y anulable, reglas de nombre (máximo 100, único sin distinguir mayúsculas) y nombres de errores existentes.
 - 2026-10-23: agregado CA-02.11 para cubrir RN-02.4 (no se puede quitar la fecha de inicio).
 - 2026-10-23: agregados RN-02.10 y CA-02.12 (modificar no borra los integrantes de HU-03), detectado al revisar el PR #87.
+- 2026-10-23: el nombre duplicado pasa al final de la tabla de errores (sección 7), para coincidir con el orden en que se valida.
