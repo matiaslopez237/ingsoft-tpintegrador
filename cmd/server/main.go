@@ -9,6 +9,7 @@ import (
 
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 )
 
 func main() {
@@ -24,7 +25,8 @@ func main() {
 	defer db.Close()
 	log.Printf("conectado a la base de datos (%s)", rutaDB)
 
-	mux := adapterhttp.NuevoRouter()
+	repoProyectos := persistencia.NuevoRepositorioProyectos(db)
+	mux := adapterhttp.NuevoRouter(app.NuevoCrearProyecto(repoProyectos))
 
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
