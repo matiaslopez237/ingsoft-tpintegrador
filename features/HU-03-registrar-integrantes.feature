@@ -21,20 +21,20 @@ Feature: Registrar integrantes de un proyecto
   @CA-03.2 @error
   Scenario: No se puede agregar un integrante sin nombre
     When se agrega el integrante "" con rol "Desarrolladora"
-    Then se rechaza la operación con el error "ErrNombreIntegranteVacio"
+    Then se rechaza la operación con el error "nombre vacío"
     And el proyecto no tiene integrantes
 
   @CA-03.5 @error
   Scenario: No se puede agregar un integrante con nombre duplicado
     Given el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
     When se agrega el integrante "Ana" con rol "Tester"
-    Then se rechaza la operación con el error "ErrIntegranteDuplicado"
+    Then se rechaza la operación con el error "integrante duplicado"
     And el proyecto tiene como integrantes a "Ana"
 
   @CA-03.6 @error
   Scenario: No se puede agregar un integrante sin rol
     When se agrega el integrante "Ana" con rol ""
-    Then se rechaza la operación con el error "ErrRolIntegranteVacio"
+    Then se rechaza la operación con el error "rol vacío"
     And el proyecto no tiene integrantes
 
   @CA-03.3 @normal
@@ -53,5 +53,5 @@ Feature: Registrar integrantes de un proyecto
   Scenario: No se puede quitar un integrante que no pertenece al proyecto
     Given el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
     When se quita al integrante "Caro"
-    Then se rechaza la operación con el error "ErrIntegranteNoEncontrado"
+    Then se rechaza la operación con el error "integrante no encontrado"
     And el proyecto tiene como integrantes a "Ana"
