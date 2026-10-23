@@ -2,6 +2,7 @@ package persistencia
 
 import (
 	"context"
+	"errors"
 	"slices"
 	"testing"
 
@@ -81,5 +82,49 @@ func TestIntegrantes_BajaYAltaSimultaneas_NoReviveElQuitado(t *testing.T) {
 
 	if got, want := nombresIntegrantes(t, repo, p.ID), []string{"Beto", "Caro"}; !slices.Equal(got, want) {
 		t.Errorf("integrantes = %v, se esperaba %v (el alta revivió a quien se había quitado)", got, want)
+	}
+}
+
+// Traza: HU-03 sección 5 y RN-03.3: si dos pedidos agregan a la misma persona a la vez, los dos
+// pasan la validación del dominio; la base rechaza al segundo y se informa como duplicado.
+func TestIntegrantes_MismaAltaSimultanea_SegundaEsDuplicado(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	vieja := repoConLecturaVieja{RepositorioProyectos: repo, foto: p}
+
+	if err := app.NuevoAgregarIntegrante(vieja).Ejecutar(ctx, app.DatosIntegrante{ProyectoID: p.ID, Nombre: "Ana", Rol: "Desarrolladora"}); err != nil {
+		t.Fatalf("primera alta: %v", err)
+	}
+	err := app.NuevoAgregarIntegrante(vieja).Ejecutar(ctx, app.DatosIntegrante{ProyectoID: p.ID, Nombre: "ana", Rol: "Tester"})
+
+	if !errors.Is(err, domain.ErrIntegranteDuplicado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrIntegranteDuplicado)
+	}
+	if got, want := nombresIntegrantes(t, repo, p.ID), []string{"Ana"}; !slices.Equal(got, want) {
+		t.Errorf("integrantes = %v, se esperaba %v", got, want)
+	}
+}
+
+// Traza: HU-03 sección 5 y CA-03.4: si dos pedidos quitan a la misma persona a la vez,
+// el segundo no encuentra nada que borrar y se informa como no encontrado.
+func TestIntegrantes_MismaBajaSimultanea_SegundaEsNoEncontrado(t *testing.T) {
+	ctx := context.Background()
+	repo := nuevoRepoDePrueba(t)
+	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+	foto, err := repo.BuscarPorID(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("buscar: %v", err)
+	}
+	vieja := repoConLecturaVieja{RepositorioProyectos: repo, foto: foto}
+
+	if err := app.NuevoQuitarIntegrante(vieja).Ejecutar(ctx, app.DatosQuitarIntegrante{ProyectoID: p.ID, Nombre: "Ana"}); err != nil {
+		t.Fatalf("primera baja: %v", err)
+	}
+	err = app.NuevoQuitarIntegrante(vieja).Ejecutar(ctx, app.DatosQuitarIntegrante{ProyectoID: p.ID, Nombre: "Ana"})
+
+	if !errors.Is(err, domain.ErrIntegranteNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrIntegranteNoEncontrado)
 	}
 }
