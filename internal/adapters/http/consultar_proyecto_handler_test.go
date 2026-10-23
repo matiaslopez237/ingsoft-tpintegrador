@@ -32,12 +32,12 @@ func (f *consultorFalso) Ejecutar(_ context.Context, id int64) (domain.Proyecto,
 	return f.proyecto, nil
 }
 
-// getProyecto arma un mux con la ruta de HU-04 para que r.PathValue("id") funcione igual que en
-// la aplicación.
+// getProyecto registra la ruta con RegistrarConsultarProyecto, igual que main.go, así los tests
+// cubren también el patrón de la ruta y r.PathValue("id") funciona como en la aplicación.
 func getProyecto(t *testing.T, uc consultorProyectos, id string) *httptest.ResponseRecorder {
 	t.Helper()
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /proyectos/{id}", handlerConsultarProyecto(uc))
+	RegistrarConsultarProyecto(mux, uc)
 	req := httptest.NewRequest(http.MethodGet, "/proyectos/"+id, nil)
 	rec := httptest.NewRecorder()
 	mux.ServeHTTP(rec, req)
