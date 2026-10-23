@@ -3,11 +3,12 @@ package app
 import (
 	"context"
 	"fmt"
+	"slices"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// RepositorioIntegrantes es el puerto de persistencia que necesitan AgregarIntegrante y QuitarIntegrante.
+// RepositorioIntegrantes es el puerto de persistencia que necesitan AgregarIntegrante, QuitarIntegrante y AgregarRol.
 type RepositorioIntegrantes interface {
 	// BuscarPorID devuelve domain.ErrProyectoNoEncontrado si no existe.
 	BuscarPorID(ctx context.Context, id int64) (domain.Proyecto, error)
@@ -16,6 +17,8 @@ type RepositorioIntegrantes interface {
 	AgregarIntegrante(ctx context.Context, proyectoID int64, i domain.Integrante) error
 	// QuitarIntegrante borra un integrante del proyecto sin tocar a los demás.
 	QuitarIntegrante(ctx context.Context, proyectoID int64, nombre string) error
+	// AgregarRol inserta un rol del integrante sin tocar sus otros roles.
+	AgregarRol(ctx context.Context, proyectoID int64, nombre, rol string) error
 }
 
 // DatosIntegrante son las entradas para agregar un integrante (HU-03).
@@ -80,6 +83,43 @@ func (uc *QuitarIntegrante) Ejecutar(ctx context.Context, d DatosQuitarIntegrant
 	}
 	if err := uc.repo.QuitarIntegrante(ctx, p.ID, d.Nombre); err != nil {
 		return fmt.Errorf("quitar integrante: %w", err)
+	}
+	return nil
+}
+
+// DatosRol son las entradas para sumarle un rol a un integrante (HU-03).
+type DatosRol struct {
+	ProyectoID int64
+	Nombre     string
+	Rol        string
+}
+
+// AgregarRol es el caso de uso de HU-03 para sumarle un rol a un integrante del proyecto.
+type AgregarRol struct {
+	repo RepositorioIntegrantes
+}
+
+func NuevoAgregarRol(repo RepositorioIntegrantes) *AgregarRol {
+	return &AgregarRol{repo: repo}
+}
+
+// Ejecutar busca el proyecto, aplica la regla de dominio y persiste solo el rol nuevo.
+// Si el proyecto no existe o el dominio rechaza el pedido, no se guarda nada.
+// Implementa HU-03 (CA-03.7, CA-03.8, CA-03.9, CA-03.10).
+func (uc *AgregarRol) Ejecutar(ctx context.Context, d DatosRol) error {
+	p, err := uc.repo.BuscarPorID(ctx, d.ProyectoID)
+	if err != nil {
+		return err
+	}
+	if err := p.AgregarRol(d.Nombre, d.Rol); err != nil {
+		return err
+	}
+	integ := p.Integrantes[slices.IndexFunc(p.Integrantes, func(i domain.Integrante) bool {
+		return domain.ClaveNombre(i.Nombre) == domain.ClaveNombre(d.Nombre)
+	})]
+	nuevo := integ.Roles[len(integ.Roles)-1] // el que acaba de validar y normalizar el dominio
+	if err := uc.repo.AgregarRol(ctx, p.ID, integ.Nombre, nuevo); err != nil {
+		return fmt.Errorf("guardar rol: %w", err)
 	}
 	return nil
 }

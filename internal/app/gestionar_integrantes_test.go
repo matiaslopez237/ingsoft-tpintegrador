@@ -33,6 +33,11 @@ func (r *repoIntegrantesFalso) BuscarPorID(_ context.Context, id int64) (domain.
 	if !ok {
 		return domain.Proyecto{}, domain.ErrProyectoNoEncontrado
 	}
+	// Copia profunda, como el repositorio real: lo que el caso de uso cambie no toca lo "guardado".
+	p.Integrantes = slices.Clone(p.Integrantes)
+	for i := range p.Integrantes {
+		p.Integrantes[i].Roles = slices.Clone(p.Integrantes[i].Roles)
+	}
 	return p, nil
 }
 
