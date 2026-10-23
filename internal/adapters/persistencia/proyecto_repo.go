@@ -58,6 +58,35 @@ func (r *RepositorioProyectos) Guardar(ctx context.Context, p *domain.Proyecto) 
 	return nil
 }
 
+// Actualizar guarda el nombre, las fechas y el estado de un proyecto existente. Solo cambia la
+// fila de proyectos, así que no toca sus integrantes (RN-02.10). Si otro proyecto tomó el nombre
+// en el medio, devuelve domain.ErrNombreDuplicado; si el proyecto ya no existe,
+// domain.ErrProyectoNoEncontrado.
+// Implementa HU-02 (app.RepositorioModificacion, RN-02.3, CA-02.10).
+func (r *RepositorioProyectos) Actualizar(ctx context.Context, p domain.Proyecto) error {
+	var fin sql.NullString
+	if p.FechaFin != nil {
+		fin = sql.NullString{String: p.FechaFin.Format(time.DateOnly), Valid: true}
+	}
+	res, err := r.db.ExecContext(ctx,
+		`UPDATE proyectos SET nombre = ?, nombre_clave = ?, fecha_inicio = ?, fecha_fin = ?, estado = ? WHERE id = ?`,
+		p.Nombre, domain.ClaveNombre(p.Nombre), p.FechaInicio.Format(time.DateOnly), fin, string(p.Estado), p.ID)
+	if esUnique(err) {
+		return domain.ErrNombreDuplicado
+	}
+	if err != nil {
+		return fmt.Errorf("actualizar proyecto %d: %w", p.ID, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("verificar actualización del proyecto %d: %w", p.ID, err)
+	}
+	if n == 0 {
+		return domain.ErrProyectoNoEncontrado
+	}
+	return nil
+}
+
 func (r *RepositorioProyectos) BuscarPorID(ctx context.Context, id int64) (domain.Proyecto, error) {
 	var (
 		p           domain.Proyecto
