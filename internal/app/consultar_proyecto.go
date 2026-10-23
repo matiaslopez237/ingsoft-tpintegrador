@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
@@ -23,7 +24,13 @@ func NuevoConsultarProyecto(repo LectorProyectos) *ConsultarProyecto {
 }
 
 // Ejecutar devuelve el proyecto con sus integrantes y roles.
-// Pendiente: se implementa en la etapa GREEN de la Tarea 4.4.
+// Los errores se envuelven con %w: errors.Is sigue distinguiendo domain.ErrProyectoNoEncontrado
+// de una falla interna (HU-04, sección 7).
+// Implementa HU-04 (CA-04.1, CA-04.2, CA-04.5).
 func (uc *ConsultarProyecto) Ejecutar(ctx context.Context, id int64) (domain.Proyecto, error) {
-	return domain.Proyecto{}, nil
+	p, err := uc.repo.BuscarPorID(ctx, id)
+	if err != nil {
+		return domain.Proyecto{}, fmt.Errorf("consultar proyecto %d: %w", id, err)
+	}
+	return p, nil
 }
