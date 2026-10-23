@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -56,6 +57,86 @@ func (r *RepositorioProyectos) Guardar(ctx context.Context, p *domain.Proyecto) 
 	}
 	p.ID = id
 	return nil
+}
+
+// Actualizar guarda de p solo los campos que c indica como enviados, así dos modificaciones
+// simultáneas de campos distintos no se pisan. Solo cambia la fila de proyectos, así que no toca
+// los integrantes (RN-02.10). En el mismo UPDATE verifica RN-02.5 contra las fechas guardadas en
+// ese momento: si otro pedido cambió una fecha en el medio y el resultado dejaría el fin antes
+// que el inicio, no guarda nada y devuelve domain.ErrFechaFinAnterior. Si otro proyecto tomó el
+// nombre, devuelve domain.ErrNombreDuplicado; si el proyecto ya no existe,
+// domain.ErrProyectoNoEncontrado.
+// Implementa HU-02 (app.RepositorioModificacion, RN-02.3, RN-02.5, CA-02.10, sección 5).
+func (r *RepositorioProyectos) Actualizar(ctx context.Context, p domain.Proyecto, c domain.CambiosProyecto) error {
+	var (
+		sets []string
+		args []any
+		// Fechas resultantes para verificar RN-02.5: la enviada (?) o la guardada (la columna).
+		inicio, fin             = "fecha_inicio", "fecha_fin"
+		argInicio, argFin       any
+		cambiaInicio, cambiaFin bool
+	)
+	if c.Nombre != nil {
+		sets = append(sets, "nombre = ?", "nombre_clave = ?")
+		args = append(args, p.Nombre, domain.ClaveNombre(p.Nombre))
+	}
+	if c.FechaInicio != nil {
+		argInicio, inicio, cambiaInicio = p.FechaInicio.Format(time.DateOnly), "?", true
+		sets = append(sets, "fecha_inicio = ?")
+		args = append(args, argInicio)
+	}
+	if c.CambiarFechaFin {
+		var f sql.NullString
+		if p.FechaFin != nil {
+			f = sql.NullString{String: p.FechaFin.Format(time.DateOnly), Valid: true}
+		}
+		argFin, fin, cambiaFin = f, "?", true
+		sets = append(sets, "fecha_fin = ?")
+		args = append(args, argFin)
+	}
+	if c.Estado != nil {
+		sets = append(sets, "estado = ?")
+		args = append(args, string(p.Estado))
+	}
+	if len(sets) == 0 {
+		return nil // el dominio ya rechaza un pedido sin cambios (RN-02.8)
+	}
+
+	// Las fechas se guardan como AAAA-MM-DD, así que compararlas como texto respeta el orden de las fechas.
+	// Los argumentos de la condición van en el orden de los "?" que aparecen en ella.
+	args = append(args, p.ID)
+	guarda := fmt.Sprintf("(%s IS NULL OR %s >= %s)", fin, fin, inicio)
+	if cambiaFin {
+		args = append(args, argFin, argFin)
+	}
+	if cambiaInicio {
+		args = append(args, argInicio)
+	}
+
+	res, err := r.db.ExecContext(ctx,
+		"UPDATE proyectos SET "+strings.Join(sets, ", ")+" WHERE id = ? AND "+guarda, args...)
+	if esUnique(err) {
+		return domain.ErrNombreDuplicado
+	}
+	if err != nil {
+		return fmt.Errorf("actualizar proyecto %d: %w", p.ID, err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("verificar actualización del proyecto %d: %w", p.ID, err)
+	}
+	if n > 0 {
+		return nil
+	}
+	// No se actualizó ninguna fila: o el proyecto no existe, o las fechas no cumplen RN-02.5.
+	var existe bool
+	if err := r.db.QueryRowContext(ctx, `SELECT EXISTS (SELECT 1 FROM proyectos WHERE id = ?)`, p.ID).Scan(&existe); err != nil {
+		return fmt.Errorf("verificar existencia del proyecto %d: %w", p.ID, err)
+	}
+	if !existe {
+		return domain.ErrProyectoNoEncontrado
+	}
+	return domain.ErrFechaFinAnterior
 }
 
 func (r *RepositorioProyectos) BuscarPorID(ctx context.Context, id int64) (domain.Proyecto, error) {

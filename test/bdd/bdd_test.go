@@ -25,5 +25,6 @@ func TestFeatures(t *testing.T) {
 // InitializeScenario registra los steps de cada historia de usuario.
 func InitializeScenario(ctx *godog.ScenarioContext) {
 	registrarStepsHU01(ctx)
+	registrarStepsHU02(ctx)
 	registrarStepsHU03(ctx)
 }
