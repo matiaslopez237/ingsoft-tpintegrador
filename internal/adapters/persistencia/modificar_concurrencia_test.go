@@ -10,6 +10,22 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
+// pedidoConLecturaVieja simula un pedido que leyó el proyecto antes de que otro guardara: su
+// primera lectura devuelve la foto vieja y las siguientes, lo que hay en la base. Va uno por pedido.
+type pedidoConLecturaVieja struct {
+	*RepositorioProyectos
+	foto   domain.Proyecto
+	yaLeyo bool
+}
+
+func (r *pedidoConLecturaVieja) BuscarPorID(ctx context.Context, id int64) (domain.Proyecto, error) {
+	if r.yaLeyo {
+		return r.RepositorioProyectos.BuscarPorID(ctx, id)
+	}
+	r.yaLeyo = true
+	return r.foto, nil
+}
+
 func fechaDePrueba(s string) *time.Time {
 	f, _ := time.Parse(time.DateOnly, s)
 	return &f
@@ -20,18 +36,22 @@ func TestModificar_CamposDistintosSimultaneos_SeConservanAmbos(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)
 	p := guardarDePrueba(t, repo, "Alfa")
-	vieja := repoConLecturaVieja{RepositorioProyectos: repo, foto: p}
 	finalizado := domain.EstadoFinalizado
 
-	if _, err := app.NuevoModificarProyecto(vieja).Ejecutar(ctx, app.DatosModificarProyecto{
+	if _, err := app.NuevoModificarProyecto(&pedidoConLecturaVieja{RepositorioProyectos: repo, foto: p}).Ejecutar(ctx, app.DatosModificarProyecto{
 		ProyectoID: p.ID, Cambios: domain.CambiosProyecto{Estado: &finalizado},
 	}); err != nil {
 		t.Fatalf("cambiar estado: %v", err)
 	}
-	if _, err := app.NuevoModificarProyecto(vieja).Ejecutar(ctx, app.DatosModificarProyecto{
+	devuelto, err := app.NuevoModificarProyecto(&pedidoConLecturaVieja{RepositorioProyectos: repo, foto: p}).Ejecutar(ctx, app.DatosModificarProyecto{
 		ProyectoID: p.ID, Cambios: domain.CambiosProyecto{CambiarFechaFin: true, FechaFin: fechaDePrueba("2026-12-15")},
-	}); err != nil {
+	})
+	if err != nil {
 		t.Fatalf("cambiar fecha de fin: %v", err)
+	}
+	// Sección 3: se devuelve el proyecto como quedó guardado, no la foto vieja con el cambio encima.
+	if devuelto.Estado != domain.EstadoFinalizado {
+		t.Errorf("proyecto devuelto con estado %q, se esperaba el guardado (Finalizado)", devuelto.Estado)
 	}
 
 	got, err := repo.BuscarPorID(ctx, p.ID)
@@ -49,15 +69,14 @@ func TestModificar_FechasCruzadasSimultaneas_SegundoEsRechazado(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)
 	p := guardarDePrueba(t, repo, "Alfa") // inicio 2026-03-01, fin 2026-11-30
-	vieja := repoConLecturaVieja{RepositorioProyectos: repo, foto: p}
 
-	if _, err := app.NuevoModificarProyecto(vieja).Ejecutar(ctx, app.DatosModificarProyecto{
+	if _, err := app.NuevoModificarProyecto(&pedidoConLecturaVieja{RepositorioProyectos: repo, foto: p}).Ejecutar(ctx, app.DatosModificarProyecto{
 		ProyectoID: p.ID, Cambios: domain.CambiosProyecto{FechaInicio: fechaDePrueba("2026-06-01")},
 	}); err != nil {
 		t.Fatalf("cambiar inicio: %v", err)
 	}
 	// Contra la foto vieja (inicio 2026-03-01) este fin es válido, pero contra lo guardado no.
-	_, err := app.NuevoModificarProyecto(vieja).Ejecutar(ctx, app.DatosModificarProyecto{
+	_, err := app.NuevoModificarProyecto(&pedidoConLecturaVieja{RepositorioProyectos: repo, foto: p}).Ejecutar(ctx, app.DatosModificarProyecto{
 		ProyectoID: p.ID, Cambios: domain.CambiosProyecto{CambiarFechaFin: true, FechaFin: fechaDePrueba("2026-05-01")},
 	})
 
