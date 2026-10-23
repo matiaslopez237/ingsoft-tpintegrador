@@ -46,6 +46,8 @@ No hacer squash de los commits RED/GREEN/REFACTOR: son la evidencia de TDD.
 
 **Ramas:** `main` protegida; una rama por historia: `hu-04-planning-poker`. PR con revisión de al menos otro integrante.
 
+**Rutas HTTP:** cada historia registra sus rutas con su propia función `RegistrarX(mux, casoDeUso)` en el archivo de su handler (ej. `RegistrarConsultarProyecto` en `consultar_proyecto_handler.go`), y la suma a `NuevoRouter` y al struct `CasosDeUso` en `internal/adapters/http/router.go`. Los tests del handler registran solo su ruta con `RegistrarX`. `router_test.go` verifica que `NuevoRouter` tenga todas las rutas: al agregar una, sumarla también ahí.
+
 ## Estructura sugerida
 
 ```
