@@ -33,6 +33,7 @@ func NuevoAgregarIntegrante(repo RepositorioIntegrantes) *AgregarIntegrante {
 
 // Ejecutar busca el proyecto, aplica la regla de dominio y persiste el resultado.
 // Si el proyecto no existe o los datos son inválidos, no se guarda nada.
+// Implementa HU-03 (CA-03.1, CA-03.2, CA-03.5, CA-03.6).
 func (uc *AgregarIntegrante) Ejecutar(ctx context.Context, d DatosIntegrante) error {
 	p, err := uc.repo.BuscarPorID(ctx, d.ProyectoID)
 	if err != nil {
@@ -64,6 +65,7 @@ func NuevoQuitarIntegrante(repo RepositorioIntegrantes) *QuitarIntegrante {
 
 // Ejecutar busca el proyecto, aplica la regla de dominio y persiste el resultado.
 // Si el proyecto no existe o el integrante no pertenece a él, no se guarda nada.
+// Implementa HU-03 (CA-03.3, CA-03.4).
 func (uc *QuitarIntegrante) Ejecutar(ctx context.Context, d DatosQuitarIntegrante) error {
 	p, err := uc.repo.BuscarPorID(ctx, d.ProyectoID)
 	if err != nil {

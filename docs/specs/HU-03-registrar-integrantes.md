@@ -54,6 +54,9 @@ Permitir asociar personas (integrantes) a un proyecto existente, con su nombre y
 ## Preguntas abiertas
 - ¿Puede un mismo nombre de integrante tener roles distintos en el mismo proyecto (ej. agregarlo de nuevo con otro rol), o el nombre solo puede estar una vez sin importar el rol? Por ahora se asume que el nombre es único en el proyecto sin importar el rol (RN-03.3), por eso no se permite re-agregarlo con otro rol.
 
+## Limitaciones conocidas
+- **Concurrencia (lost update):** `AgregarIntegrante`/`QuitarIntegrante` leen el proyecto completo, modifican la lista de integrantes en memoria y la reemplazan entera, en dos pasos separados sin una transacción que cubra ambos. Si dos pedidos llegan casi al mismo tiempo para el mismo proyecto, el segundo puede pisar el cambio del primero (se pierde un integrante agregado/quitado). Detectado en la revisión de la Tarea 3.8 (go-reviewer). No se corrige en este sprint porque el TP no tiene carga concurrente real; si se vuelve relevante, la solución es hacer que `GuardarIntegrantes` opere fila por fila (INSERT/DELETE atómico) en vez de reemplazar toda la lista.
+
 ## Historial
 - 2026-10-22: creada (borrador).
 - 2026-10-23: resueltas las dudas de comparación de nombres duplicados (se usa `domain.ClaveNombre`, igual que HU-01) y el tipo del id de proyecto (`int64`), ya que HU-01 se mergeó a `main` y define `domain.Proyecto` y `domain.ErrProyectoNoEncontrado`.

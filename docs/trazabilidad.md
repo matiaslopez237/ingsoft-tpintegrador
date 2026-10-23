@@ -9,6 +9,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | Historia | Spec | CA con BDD | CA con test Go | Código | TDD en git | BDD en verde |
 |---|---|---|---|---|---|---|
 | HU-01 Crear un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 14/14 escenarios |
+| HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×4 | ✓ 8/8 escenarios |
 
 ---
 
@@ -64,3 +65,57 @@ RN-01.7 (los 5 estados posibles) no tiene CA propio en esta historia; lo verific
 
 - La spec sigue en estado **Borrador**: pasa a Aprobada cuando se apruebe el PR.
 - Los adaptadores (1.6 y 1.7) se commitearon junto con sus tests, sin un commit RED aparte. La cátedra exige TDD para reglas de negocio, cálculos y validaciones, y esos están en dominio y caso de uso (1.4 y 1.5), que sí tienen RED → GREEN.
+
+---
+
+## HU-03: Registrar integrantes de un proyecto
+
+- **Issue:** #TODO (completar con el número de GitHub Projects) · Sprint 1 · 3 SP
+- **Spec:** [docs/specs/HU-03-registrar-integrantes.md](specs/HU-03-registrar-integrantes.md)
+- **Feature:** [features/HU-03-registrar-integrantes.feature](../features/HU-03-registrar-integrantes.feature) (steps en [test/bdd/hu03_steps_test.go](../test/bdd/hu03_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-03.1 Agregar integrante válido | RN-03.2 | Agregar un integrante válido `@normal` · Agregar varios integrantes distintos al mismo proyecto `@alternativo` | `TestProyecto_AgregarIntegrante_Valido`, `TestAgregarIntegrante_DatosValidos_GuardaEnElProyecto`, `TestPostIntegrantes_DatosValidos_Devuelve204`, `TestRepositorioProyectos_GuardarIntegrantes_AgregaYPersiste` | `domain.Proyecto.AgregarIntegrante`, `app.AgregarIntegrante`, `http.handlerAgregarIntegrante` |
+| CA-03.2 Agregar sin nombre | RN-03.1 | No se puede agregar un integrante sin nombre `@error` | `TestProyecto_AgregarIntegrante_Invalido_RetornaError` (nombre vacío / solo espacios), `TestAgregarIntegrante_DatosInvalidos_NoGuarda`, `TestPostIntegrantes_DatosInvalidos_Devuelve400` (nombre vacío) | `domain.Proyecto.AgregarIntegrante` |
+| CA-03.3 Quitar integrante existente | — (acción principal) | Quitar un integrante existente quedando otros en el proyecto `@normal` · Quitar al único integrante restante deja la lista vacía `@limite` | `TestProyecto_QuitarIntegrante_Existente`, `TestProyecto_QuitarIntegrante_UnicoRestante_DejaListaVacia`, `TestQuitarIntegrante_Existente_GuardaSinEl`, `TestDeleteIntegrantes_Existente_Devuelve204`, `TestRepositorioProyectos_GuardarIntegrantes_QuitaYPersiste`, `TestRepositorioProyectos_GuardarIntegrantes_UnicoRestante_QuedaVacio` | `domain.Proyecto.QuitarIntegrante`, `app.QuitarIntegrante`, `http.handlerQuitarIntegrante` |
+| CA-03.4 Quitar integrante que no pertenece | — (error de dominio) | No se puede quitar un integrante que no pertenece al proyecto `@error` | `TestProyecto_QuitarIntegrante_Inexistente_RetornaError`, `TestQuitarIntegrante_Inexistente_RetornaErrorYNoGuarda`, `TestDeleteIntegrantes_Inexistente_Devuelve404` | `domain.Proyecto.QuitarIntegrante` |
+| CA-03.5 Agregar nombre duplicado | RN-03.3 | No se puede agregar un integrante con nombre duplicado `@error` | `TestProyecto_AgregarIntegrante_Invalido_RetornaError` (duplicado exacto / con mayúsculas y espacios), `TestRepositorioProyectos_GuardarIntegrantes_DuplicadoTrasRecargar_RetornaError`, `TestPostIntegrantes_DatosInvalidos_Devuelve400` (nombre duplicado) | `domain.Proyecto.AgregarIntegrante`, `domain.ClaveNombre` |
+| CA-03.6 Agregar sin rol | RN-03.4 | No se puede agregar un integrante sin rol `@error` | `TestProyecto_AgregarIntegrante_Invalido_RetornaError` (rol vacío), `TestPostIntegrantes_DatosInvalidos_Devuelve400` (rol vacío) | `domain.Proyecto.AgregarIntegrante` |
+
+Proyecto inexistente (sección 7 de la spec, sin CA propio): `TestAgregarIntegrante_ProyectoInexistente_RetornaError`, `TestQuitarIntegrante_ProyectoInexistente_RetornaError`, `TestPostIntegrantes_ProyectoInexistente_Devuelve404`, `TestDeleteIntegrantes_Inexistente_Devuelve404` (caso proyecto inexistente) — reutiliza `domain.ErrProyectoNoEncontrado` ya definido en HU-01.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/integrante.go](../internal/domain/integrante.go) (+ campo `Integrantes` en [proyecto.go](../internal/domain/proyecto.go)) | [integrante_test.go](../internal/domain/integrante_test.go) |
+| Caso de uso | [internal/app/gestionar_integrantes.go](../internal/app/gestionar_integrantes.go) | [gestionar_integrantes_test.go](../internal/app/gestionar_integrantes_test.go) |
+| Persistencia | [internal/adapters/persistencia/proyecto_repo.go](../internal/adapters/persistencia/proyecto_repo.go) (`GuardarIntegrantes`, `buscarIntegrantes`), [db.go](../internal/adapters/persistencia/db.go) (tabla `integrantes`) | [integrantes_repo_test.go](../internal/adapters/persistencia/integrantes_repo_test.go) |
+| HTTP | [internal/adapters/http/integrante_handler.go](../internal/adapters/http/integrante_handler.go) (`POST`/`DELETE /proyectos/{id}/integrantes`) | [integrante_handler_test.go](../internal/adapters/http/integrante_handler_test.go) |
+| BDD | [test/bdd/hu03_sistema_test.go](../test/bdd/hu03_sistema_test.go), [hu03_steps_test.go](../test/bdd/hu03_steps_test.go) | 8 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 3.1 Spec | `5a35d90` docs(HU-03): [3.1] spec de registrar integrantes | — |
+| 3.2 Escenarios BDD | `d683854` test(HU-03): [3.2] escenarios BDD | — |
+| 3.3 Steps godog | `f834d1c` test(HU-03): [3.3] steps de godog (en rojo) | BDD en rojo |
+| 3.4 Entidad Integrante | `94880f1` test(HU-03): [3.4][RED] | **RED** |
+| | `dd433e7` feat(HU-03): [3.4][GREEN] | **GREEN** |
+| 3.5 Casos de uso | `4181167` test(HU-03): [3.5][RED] | **RED** |
+| | `73ebc0e` feat(HU-03): [3.5][GREEN] | **GREEN** |
+| 3.6 Persistencia | `e0f8f0d` test(HU-03): [3.6][RED] | **RED** |
+| | `e0bc8ed` feat(HU-03): [3.6][GREEN] | **GREEN** |
+| 3.7 HTTP | `de67103` test(HU-03): [3.7][RED] | **RED** |
+| | `b4df091` feat(HU-03): [3.7][GREEN] adaptador HTTP y BDD en verde | **GREEN** |
+| 3.8 Revisión + trazabilidad | este commit | revisión go-reviewer resuelta (ver Huecos) |
+
+### Huecos
+
+- La spec sigue en estado **Borrador**: pasa a Aprobada cuando se apruebe el PR.
+- El número de issue de GitHub Projects queda como `#TODO`: completar antes de cerrar el issue en el tablero.
+- **Limitación de concurrencia conocida** (hallazgo de la revisión go-reviewer, Tarea 3.8): `AgregarIntegrante`/`QuitarIntegrante` leen el proyecto y reemplazan toda la lista de integrantes en dos pasos sin una transacción que cubra ambos — dos pedidos concurrentes sobre el mismo proyecto pueden pisarse (lost update). Documentado en la spec, sección "Limitaciones conocidas". No bloquea el cierre de la historia en este sprint (sin carga concurrente real); si se vuelve relevante, la solución es hacer `GuardarIntegrantes` atómico por fila.
