@@ -7,8 +7,6 @@ import (
 	"fmt"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
-	"modernc.org/sqlite"
-	sqlite3 "modernc.org/sqlite/lib"
 )
 
 // ErrElementoNoEncontrado se devuelve cuando no existe un elemento del backlog con el ID buscado.
@@ -63,7 +61,7 @@ func (r *RepositorioBacklog) GuardarElemento(ctx context.Context, e *domain.Elem
 		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		e.ProyectoID, e.Titulo, domain.ClaveNombre(e.Titulo), e.Descripcion, string(e.Prioridad), string(e.Estado), sp)
 	switch {
-	case esUnique(err):
+	case esUnique(err): // la única restricción UNIQUE de la tabla es (proyecto_id, titulo_clave)
 		return domain.ErrTituloDuplicado
 	case esForeignKey(err):
 		return domain.ErrProyectoNoEncontrado
@@ -89,6 +87,7 @@ func (r *RepositorioBacklog) GuardarElemento(ctx context.Context, e *domain.Elem
 }
 
 // BuscarElementoPorID devuelve el elemento con sus criterios en el orden en que se guardaron.
+// No es parte del puerto de HU-05: lo usan los tests y el BDD, y lo van a usar HU-06 y HU-07.
 func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) (domain.ElementoBacklog, error) {
 	var (
 		e                 domain.ElementoBacklog
@@ -130,13 +129,7 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 	return e, nil
 }
 
-// esForeignKey indica si err es una violación de llave foránea de SQLite.
-func esForeignKey(err error) bool {
-	var se *sqlite.Error
-	return errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY
-}
-
-// ContarElementos devuelve la cantidad de elementos del backlog del proyecto.
+// ContarElementos devuelve la cantidad de elementos del backlog del proyecto (lo usan los tests y el BDD).
 func (r *RepositorioBacklog) ContarElementos(ctx context.Context, proyectoID int64) (int, error) {
 	var n int
 	err := r.db.QueryRowContext(ctx,

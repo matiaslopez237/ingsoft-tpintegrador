@@ -2,7 +2,6 @@ package domain
 
 import (
 	"errors"
-	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -98,5 +97,9 @@ func NuevoElementoBacklog(proyectoID int64, titulo, descripcion string, priorida
 }
 
 func prioridadValida(p Prioridad) bool {
-	return slices.Contains([]Prioridad{PrioridadAlta, PrioridadMedia, PrioridadBaja}, p)
+	switch p {
+	case PrioridadAlta, PrioridadMedia, PrioridadBaja:
+		return true
+	}
+	return false
 }

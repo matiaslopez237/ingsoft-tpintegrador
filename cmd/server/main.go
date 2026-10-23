@@ -38,8 +38,8 @@ func main() {
 		app.NuevoModificarProyecto(repoProyectos),
 	)
 	adapterhttp.RegistrarConsultarProyecto(mux, app.NuevoConsultarProyecto(repoProyectos)) // HU-04
-	adapterhttp.RegistrarCrearElementoBacklog(mux,                                         // HU-05
-		app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)))
+	// HU-05
+	adapterhttp.RegistrarCrearElementoBacklog(mux, app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)))
 
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
