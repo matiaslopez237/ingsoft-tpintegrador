@@ -20,18 +20,20 @@ func proyectoGuardadoDePrueba(t *testing.T, repo *RepositorioProyectos) domain.P
 	return p
 }
 
+func agregarIntegranteDePrueba(t *testing.T, repo *RepositorioProyectos, proyectoID int64, nombre, rol string) {
+	t.Helper()
+	if err := repo.AgregarIntegrante(context.Background(), proyectoID, domain.Integrante{Nombre: nombre, Rol: rol}); err != nil {
+		t.Fatalf("agregar integrante %q: %v", nombre, err)
+	}
+}
+
 // Traza: HU-03 CA-03.1: agregar un integrante persiste y se puede recuperar.
-func TestRepositorioProyectos_GuardarIntegrantes_AgregaYPersiste(t *testing.T) {
+func TestRepositorioProyectos_AgregarIntegrante_Persiste(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)
 	p := proyectoGuardadoDePrueba(t, repo)
 
-	if err := p.AgregarIntegrante("Ana", "Desarrolladora"); err != nil {
-		t.Fatalf("agregar en memoria: %v", err)
-	}
-	if err := repo.GuardarIntegrantes(ctx, &p); err != nil {
-		t.Fatalf("guardar integrantes: %v", err)
-	}
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
 
 	got, err := repo.BuscarPorID(ctx, p.ID)
 	if err != nil {
@@ -43,26 +45,15 @@ func TestRepositorioProyectos_GuardarIntegrantes_AgregaYPersiste(t *testing.T) {
 }
 
 // Traza: HU-03 CA-03.3: quitar un integrante persiste la lista actualizada.
-func TestRepositorioProyectos_GuardarIntegrantes_QuitaYPersiste(t *testing.T) {
+func TestRepositorioProyectos_QuitarIntegrante_Persiste(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)
 	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
+	agregarIntegranteDePrueba(t, repo, p.ID, "Beto", "Tester")
 
-	if err := p.AgregarIntegrante("Ana", "Desarrolladora"); err != nil {
-		t.Fatal(err)
-	}
-	if err := p.AgregarIntegrante("Beto", "Tester"); err != nil {
-		t.Fatal(err)
-	}
-	if err := repo.GuardarIntegrantes(ctx, &p); err != nil {
-		t.Fatalf("guardar con 2 integrantes: %v", err)
-	}
-
-	if err := p.QuitarIntegrante("Ana"); err != nil {
-		t.Fatal(err)
-	}
-	if err := repo.GuardarIntegrantes(ctx, &p); err != nil {
-		t.Fatalf("guardar tras quitar: %v", err)
+	if err := repo.QuitarIntegrante(ctx, p.ID, "Ana"); err != nil {
+		t.Fatalf("quitar: %v", err)
 	}
 
 	got, err := repo.BuscarPorID(ctx, p.ID)
@@ -75,22 +66,14 @@ func TestRepositorioProyectos_GuardarIntegrantes_QuitaYPersiste(t *testing.T) {
 }
 
 // Traza: HU-03 caso límite: quitar al único integrante deja la lista vacía en la base.
-func TestRepositorioProyectos_GuardarIntegrantes_UnicoRestante_QuedaVacio(t *testing.T) {
+func TestRepositorioProyectos_QuitarIntegrante_UnicoRestante_QuedaVacio(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)
 	p := proyectoGuardadoDePrueba(t, repo)
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
 
-	if err := p.AgregarIntegrante("Ana", "Desarrolladora"); err != nil {
-		t.Fatal(err)
-	}
-	if err := repo.GuardarIntegrantes(ctx, &p); err != nil {
-		t.Fatal(err)
-	}
-	if err := p.QuitarIntegrante("Ana"); err != nil {
-		t.Fatal(err)
-	}
-	if err := repo.GuardarIntegrantes(ctx, &p); err != nil {
-		t.Fatal(err)
+	if err := repo.QuitarIntegrante(ctx, p.ID, "Ana"); err != nil {
+		t.Fatalf("quitar: %v", err)
 	}
 
 	got, err := repo.BuscarPorID(ctx, p.ID)
@@ -103,17 +86,11 @@ func TestRepositorioProyectos_GuardarIntegrantes_UnicoRestante_QuedaVacio(t *tes
 }
 
 // Traza: RN-03.3 también se respeta al recargar desde la base (vía domain.Proyecto.AgregarIntegrante).
-func TestRepositorioProyectos_GuardarIntegrantes_DuplicadoTrasRecargar_RetornaError(t *testing.T) {
+func TestRepositorioProyectos_DuplicadoTrasRecargar_RetornaError(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)
 	p := proyectoGuardadoDePrueba(t, repo)
-
-	if err := p.AgregarIntegrante("Ana", "Desarrolladora"); err != nil {
-		t.Fatal(err)
-	}
-	if err := repo.GuardarIntegrantes(ctx, &p); err != nil {
-		t.Fatal(err)
-	}
+	agregarIntegranteDePrueba(t, repo, p.ID, "Ana", "Desarrolladora")
 
 	recargado, err := repo.BuscarPorID(ctx, p.ID)
 	if err != nil {

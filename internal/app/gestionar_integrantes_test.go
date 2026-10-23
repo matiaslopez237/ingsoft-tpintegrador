@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"errors"
+	"slices"
 	"testing"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -35,12 +36,27 @@ func (r *repoIntegrantesFalso) BuscarPorID(_ context.Context, id int64) (domain.
 	return p, nil
 }
 
-func (r *repoIntegrantesFalso) GuardarIntegrantes(_ context.Context, p *domain.Proyecto) error {
+func (r *repoIntegrantesFalso) AgregarIntegrante(_ context.Context, proyectoID int64, i domain.Integrante) error {
 	if r.errGuardar != nil {
 		return r.errGuardar
 	}
 	r.vecesGuardo++
-	r.porID[p.ID] = *p
+	p := r.porID[proyectoID]
+	p.Integrantes = append(slices.Clone(p.Integrantes), i)
+	r.porID[proyectoID] = p
+	return nil
+}
+
+func (r *repoIntegrantesFalso) QuitarIntegrante(_ context.Context, proyectoID int64, nombre string) error {
+	if r.errGuardar != nil {
+		return r.errGuardar
+	}
+	r.vecesGuardo++
+	p := r.porID[proyectoID]
+	p.Integrantes = slices.DeleteFunc(slices.Clone(p.Integrantes), func(i domain.Integrante) bool {
+		return domain.ClaveNombre(i.Nombre) == domain.ClaveNombre(nombre)
+	})
+	r.porID[proyectoID] = p
 	return nil
 }
 

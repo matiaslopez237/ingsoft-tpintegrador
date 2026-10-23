@@ -116,27 +116,26 @@ func (r *RepositorioProyectos) buscarIntegrantes(ctx context.Context, proyectoID
 	return integrantes, nil
 }
 
-// GuardarIntegrantes reemplaza, dentro de una transacción, la lista completa de integrantes
-// de un proyecto ya existente por la que trae p.Integrantes. Implementa HU-03 (app.RepositorioIntegrantes).
-func (r *RepositorioProyectos) GuardarIntegrantes(ctx context.Context, p *domain.Proyecto) error {
-	tx, err := r.db.BeginTx(ctx, nil)
+// AgregarIntegrante inserta un integrante sin tocar a los demás del proyecto, así dos altas
+// simultáneas no se pisan. Implementa HU-03 (app.RepositorioIntegrantes, sección 5).
+func (r *RepositorioProyectos) AgregarIntegrante(ctx context.Context, proyectoID int64, i domain.Integrante) error {
+	_, err := r.db.ExecContext(ctx,
+		`INSERT INTO integrantes (proyecto_id, nombre, nombre_clave, rol) VALUES (?, ?, ?, ?)`,
+		proyectoID, i.Nombre, domain.ClaveNombre(i.Nombre), i.Rol)
 	if err != nil {
-		return fmt.Errorf("iniciar transacción: %w", err)
+		return fmt.Errorf("insertar integrante %q del proyecto %d: %w", i.Nombre, proyectoID, err)
 	}
-	defer tx.Rollback()
+	return nil
+}
 
-	if _, err := tx.ExecContext(ctx, `DELETE FROM integrantes WHERE proyecto_id = ?`, p.ID); err != nil {
-		return fmt.Errorf("borrar integrantes previos del proyecto %d: %w", p.ID, err)
-	}
-	for _, i := range p.Integrantes {
-		if _, err := tx.ExecContext(ctx,
-			`INSERT INTO integrantes (proyecto_id, nombre, nombre_clave, rol) VALUES (?, ?, ?, ?)`,
-			p.ID, i.Nombre, domain.ClaveNombre(i.Nombre), i.Rol); err != nil {
-			return fmt.Errorf("insertar integrante %q del proyecto %d: %w", i.Nombre, p.ID, err)
-		}
-	}
-	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("confirmar transacción: %w", err)
+// QuitarIntegrante borra un integrante sin tocar a los demás del proyecto.
+// Implementa HU-03 (app.RepositorioIntegrantes, sección 5).
+func (r *RepositorioProyectos) QuitarIntegrante(ctx context.Context, proyectoID int64, nombre string) error {
+	_, err := r.db.ExecContext(ctx,
+		`DELETE FROM integrantes WHERE proyecto_id = ? AND nombre_clave = ?`,
+		proyectoID, domain.ClaveNombre(nombre))
+	if err != nil {
+		return fmt.Errorf("borrar integrante %q del proyecto %d: %w", nombre, proyectoID, err)
 	}
 	return nil
 }

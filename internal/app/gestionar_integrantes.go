@@ -11,8 +11,11 @@ import (
 type RepositorioIntegrantes interface {
 	// BuscarPorID devuelve domain.ErrProyectoNoEncontrado si no existe.
 	BuscarPorID(ctx context.Context, id int64) (domain.Proyecto, error)
-	// GuardarIntegrantes persiste la lista de integrantes de un proyecto ya existente.
-	GuardarIntegrantes(ctx context.Context, p *domain.Proyecto) error
+	// AgregarIntegrante inserta un integrante en el proyecto sin tocar a los demás,
+	// para que pedidos simultáneos no se pisen (HU-03, sección 5).
+	AgregarIntegrante(ctx context.Context, proyectoID int64, i domain.Integrante) error
+	// QuitarIntegrante borra un integrante del proyecto sin tocar a los demás.
+	QuitarIntegrante(ctx context.Context, proyectoID int64, nombre string) error
 }
 
 // DatosIntegrante son las entradas para agregar un integrante (HU-03).
@@ -42,8 +45,9 @@ func (uc *AgregarIntegrante) Ejecutar(ctx context.Context, d DatosIntegrante) er
 	if err := p.AgregarIntegrante(d.Nombre, d.Rol); err != nil {
 		return err
 	}
-	if err := uc.repo.GuardarIntegrantes(ctx, &p); err != nil {
-		return fmt.Errorf("guardar integrantes: %w", err)
+	nuevo := p.Integrantes[len(p.Integrantes)-1] // el que acaba de validar y normalizar el dominio
+	if err := uc.repo.AgregarIntegrante(ctx, p.ID, nuevo); err != nil {
+		return fmt.Errorf("guardar integrante: %w", err)
 	}
 	return nil
 }
@@ -74,8 +78,8 @@ func (uc *QuitarIntegrante) Ejecutar(ctx context.Context, d DatosQuitarIntegrant
 	if err := p.QuitarIntegrante(d.Nombre); err != nil {
 		return err
 	}
-	if err := uc.repo.GuardarIntegrantes(ctx, &p); err != nil {
-		return fmt.Errorf("guardar integrantes: %w", err)
+	if err := uc.repo.QuitarIntegrante(ctx, p.ID, d.Nombre); err != nil {
+		return fmt.Errorf("quitar integrante: %w", err)
 	}
 	return nil
 }
