@@ -11,7 +11,7 @@ import (
 // LargoMaximoNombre es la cantidad máxima de caracteres del nombre de un proyecto (RN-01.2).
 const LargoMaximoNombre = 100
 
-// Estado es el estado de un proyecto (RN-01.7).
+// Estado es el estado de un proyecto. Implementa HU-01 (RN-01.7).
 type Estado string
 
 const (
@@ -45,6 +45,7 @@ type Proyecto struct {
 
 // NuevoProyecto valida los datos y devuelve un proyecto en estado Activo, todavía sin ID.
 // Los errores se informan en el orden de la tabla de la spec.
+// Implementa HU-01 (RN-01.1, RN-01.2, RN-01.4, RN-01.5, RN-01.6).
 func NuevoProyecto(nombre string, fechaInicio time.Time, fechaFin *time.Time) (Proyecto, error) {
 	nombre = strings.TrimSpace(nombre)
 	switch {
@@ -66,7 +67,7 @@ func NuevoProyecto(nombre string, fechaInicio time.Time, fechaFin *time.Time) (P
 }
 
 // ClaveNombre normaliza un nombre para comparar duplicados: sin espacios alrededor
-// y sin distinguir mayúsculas (RN-01.3).
+// y sin distinguir mayúsculas. Implementa HU-01 (RN-01.3).
 func ClaveNombre(nombre string) string {
 	return strings.ToLower(strings.TrimSpace(nombre))
 }

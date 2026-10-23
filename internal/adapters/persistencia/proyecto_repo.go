@@ -13,6 +13,7 @@ import (
 )
 
 // RepositorioProyectos implementa app.RepositorioProyectos sobre SQLite.
+// Implementa HU-01 (RN-01.3, RN-01.8).
 type RepositorioProyectos struct {
 	db *sql.DB
 }

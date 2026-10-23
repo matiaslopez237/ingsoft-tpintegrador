@@ -49,7 +49,7 @@ var erroresDeValidacion = []error{
 }
 
 // handlerCrearProyecto atiende POST /proyectos: 201 con el proyecto creado, 400 si los datos
-// no son válidos y 500 ante una falla interna.
+// no son válidos y 500 ante una falla interna. Implementa HU-01 (expone CrearProyecto por HTTP).
 func handlerCrearProyecto(uc creadorProyectos) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		r.Body = http.MaxBytesReader(w, r.Body, tamanoMaximoCuerpo)

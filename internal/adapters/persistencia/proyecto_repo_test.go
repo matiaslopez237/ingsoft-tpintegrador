@@ -35,7 +35,7 @@ func proyectoDePrueba(t *testing.T, nombre string, fin *time.Time) domain.Proyec
 	return p
 }
 
-// CA-01.9: lo que se guarda se recupera igual, con ID asignado.
+// Traza: HU-01 CA-01.9: lo que se guarda se recupera igual, con ID asignado.
 func TestRepositorioProyectos_GuardarYBuscar_DevuelveLoMismo(t *testing.T) {
 	ctx := context.Background()
 	fin := time.Date(2026, 11, 30, 0, 0, 0, 0, time.UTC)
@@ -89,7 +89,7 @@ func TestRepositorioProyectos_IDsAutoincrementalesDistintos(t *testing.T) {
 	}
 }
 
-// RN-01.3: ExisteNombre usa la clave normalizada y la base rechaza duplicados.
+// Traza: HU-01 RN-01.3: ExisteNombre usa la clave normalizada y la base rechaza duplicados.
 func TestRepositorioProyectos_NombreDuplicado(t *testing.T) {
 	ctx := context.Background()
 	repo := nuevoRepoDePrueba(t)

@@ -18,7 +18,7 @@ func fecha(t *testing.T, s string) time.Time {
 
 func ptr(f time.Time) *time.Time { return &f }
 
-// CA-01.1, RN-01.6
+// Traza: HU-01 CA-01.1, RN-01.6
 func TestNuevoProyecto_DatosValidos_CreaProyectoActivo(t *testing.T) {
 	inicio, fin := fecha(t, "2026-03-01"), fecha(t, "2026-11-30")
 
@@ -44,7 +44,7 @@ func TestNuevoProyecto_DatosValidos_CreaProyectoActivo(t *testing.T) {
 	}
 }
 
-// CA-01.2, CA-01.3, CA-01.5, CA-01.6
+// Traza: HU-01 CA-01.2, CA-01.3, CA-01.5, CA-01.6
 func TestNuevoProyecto_DatosInvalidos_RetornaError(t *testing.T) {
 	inicio := fecha(t, "2026-03-02")
 	tests := []struct {
@@ -72,7 +72,7 @@ func TestNuevoProyecto_DatosInvalidos_RetornaError(t *testing.T) {
 	}
 }
 
-// CA-01.3, CA-01.7, CA-01.8
+// Traza: HU-01 CA-01.3, CA-01.7, CA-01.8
 func TestNuevoProyecto_CasosLimite_SonValidos(t *testing.T) {
 	inicio := fecha(t, "2026-03-01")
 	tests := []struct {
@@ -104,7 +104,7 @@ func TestNuevoProyecto_CasosLimite_SonValidos(t *testing.T) {
 	}
 }
 
-// RN-01.3: la clave de unicidad ignora espacios y mayúsculas.
+// Traza: HU-01 RN-01.3: la clave de unicidad ignora espacios y mayúsculas.
 func TestClaveNombre_IgnoraMayusculasYEspacios(t *testing.T) {
 	tests := []struct{ a, b string }{
 		{"Alfa", "alfa"},
@@ -122,7 +122,7 @@ func TestClaveNombre_IgnoraMayusculasYEspacios(t *testing.T) {
 	}
 }
 
-// RN-01.7
+// Traza: HU-01 RN-01.7
 func TestEstados_SonLosDefinidosEnLaSpec(t *testing.T) {
 	want := []Estado{"Activo", "En pausa", "Finalizado", "Postergado", "Cancelado"}
 	got := []Estado{EstadoActivo, EstadoEnPausa, EstadoFinalizado, EstadoPostergado, EstadoCancelado}

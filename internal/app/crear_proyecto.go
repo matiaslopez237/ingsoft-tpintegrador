@@ -25,7 +25,7 @@ type DatosNuevoProyecto struct {
 	FechaFin    *time.Time
 }
 
-// CrearProyecto es el caso de uso de HU-01.
+// CrearProyecto es el caso de uso de HU-01. Implementa HU-01 (RN-01.3, RN-01.8).
 type CrearProyecto struct {
 	repo RepositorioProyectos
 }

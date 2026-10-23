@@ -40,6 +40,7 @@ func postProyectos(t *testing.T, uc creadorProyectos, cuerpo string) *httptest.R
 	return rec
 }
 
+// Traza: HU-01 CA-01.1
 func TestPostProyectos_DatosValidos_Devuelve201ConProyecto(t *testing.T) {
 	rec := postProyectos(t, &creadorFalso{},
 		`{"nombre":"TP Integrador","fecha_inicio":"2026-03-01","fecha_fin":"2026-11-30"}`)
@@ -57,6 +58,7 @@ func TestPostProyectos_DatosValidos_Devuelve201ConProyecto(t *testing.T) {
 	}
 }
 
+// Traza: HU-01 CA-01.7
 func TestPostProyectos_SinFechaFin_DevuelveFechaFinNula(t *testing.T) {
 	rec := postProyectos(t, &creadorFalso{}, `{"nombre":"Alfa","fecha_inicio":"2026-03-01"}`)
 
@@ -68,6 +70,7 @@ func TestPostProyectos_SinFechaFin_DevuelveFechaFinNula(t *testing.T) {
 	}
 }
 
+// Traza: HU-01 CA-01.2, CA-01.4, CA-01.5, CA-01.6
 func TestPostProyectos_DatosInvalidos_Devuelve400(t *testing.T) {
 	tests := []struct {
 		nombre  string

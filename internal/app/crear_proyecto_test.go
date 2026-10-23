@@ -48,7 +48,7 @@ func datosValidos(nombre string) DatosNuevoProyecto {
 	}
 }
 
-// CA-01.1, CA-01.9
+// Traza: HU-01 CA-01.1, CA-01.9
 func TestCrearProyecto_DatosValidos_GuardaYDevuelveConID(t *testing.T) {
 	repo := &repoFalso{}
 	uc := NuevoCrearProyecto(repo)
@@ -69,7 +69,7 @@ func TestCrearProyecto_DatosValidos_GuardaYDevuelveConID(t *testing.T) {
 	}
 }
 
-// CA-01.9
+// Traza: HU-01 CA-01.9
 func TestCrearProyecto_DosProyectos_TienenIDsDistintos(t *testing.T) {
 	uc := NuevoCrearProyecto(&repoFalso{})
 
@@ -84,7 +84,7 @@ func TestCrearProyecto_DosProyectos_TienenIDsDistintos(t *testing.T) {
 	}
 }
 
-// CA-01.2: si el dominio rechaza los datos, no se consulta ni se guarda nada.
+// Traza: HU-01 CA-01.2: si el dominio rechaza los datos, no se consulta ni se guarda nada.
 func TestCrearProyecto_DatosInvalidos_NoGuarda(t *testing.T) {
 	repo := &repoFalso{errExiste: errors.New("no debería consultarse el repositorio")}
 	uc := NuevoCrearProyecto(repo)
@@ -99,7 +99,7 @@ func TestCrearProyecto_DatosInvalidos_NoGuarda(t *testing.T) {
 	}
 }
 
-// CA-01.4
+// Traza: HU-01 CA-01.4
 func TestCrearProyecto_NombreDuplicado_RetornaErrorYNoGuarda(t *testing.T) {
 	for _, nombre := range []string{"Alfa", "alfa", "  ALFA "} {
 		t.Run(nombre, func(t *testing.T) {
