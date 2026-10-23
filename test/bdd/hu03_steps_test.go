@@ -15,7 +15,9 @@ type sistemaIntegrantes interface {
 	CrearProyecto(nombre string) (int64, error)
 	AgregarIntegrante(proyectoID int64, nombre, rol string) error
 	QuitarIntegrante(proyectoID int64, nombre string) error
+	AgregarRol(proyectoID int64, nombre, rol string) error
 	Integrantes(proyectoID int64) ([]string, error)
+	Roles(proyectoID int64, nombre string) ([]string, error)
 	Cerrar() error
 }
 
@@ -50,6 +52,44 @@ func registrarStepsHU03(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto tiene como integrantes a "([^"]*)" y "([^"]*)"$`, w.tieneComoIntegrantesAAmbos)
 	ctx.Step(`^el proyecto no tiene integrantes$`, w.noTieneIntegrantes)
 	ctx.Step(`^se rechaza la operación con el error "([^"]*)"$`, w.seRechazaConError)
+
+	// Roles múltiples (CA-03.7 a CA-03.10)
+	ctx.Step(`^"([^"]*)" también tiene el rol "([^"]*)"$`, w.tambienTieneElRol)
+	ctx.Step(`^se le agrega el rol "([^"]*)" a "([^"]*)"$`, w.seLeAgregaElRol)
+	ctx.Step(`^"([^"]*)" tiene los roles "([^"]*)" y "([^"]*)"$`, w.tieneLosRoles)
+	ctx.Step(`^"([^"]*)" tiene solo el rol "([^"]*)"$`, w.tieneSoloElRol)
+}
+
+func (w *integrantesWorld) tambienTieneElRol(nombre, rol string) error {
+	if err := w.sistema.AgregarRol(w.proyectoID, nombre, rol); err != nil {
+		return fmt.Errorf("no se pudo preparar el rol %q de %q: %w", rol, nombre, err)
+	}
+	return nil
+}
+
+func (w *integrantesWorld) seLeAgregaElRol(rol, nombre string) error {
+	w.ultimoErr = w.sistema.AgregarRol(w.proyectoID, nombre, rol)
+	return nil
+}
+
+func (w *integrantesWorld) tieneLosRoles(nombre, a, b string) error {
+	return w.rolesSonExactamente(nombre, a, b)
+}
+
+func (w *integrantesWorld) tieneSoloElRol(nombre, rol string) error {
+	return w.rolesSonExactamente(nombre, rol)
+}
+
+// rolesSonExactamente compara los roles en el orden en que se agregaron.
+func (w *integrantesWorld) rolesSonExactamente(nombre string, esperados ...string) error {
+	roles, err := w.sistema.Roles(w.proyectoID, nombre)
+	if err != nil {
+		return fmt.Errorf("consultar roles de %q: %w", nombre, err)
+	}
+	if !slices.Equal(roles, esperados) {
+		return fmt.Errorf("roles de %q: se esperaba %v, se obtuvo %v", nombre, esperados, roles)
+	}
+	return nil
 }
 
 // --- Given / When ---

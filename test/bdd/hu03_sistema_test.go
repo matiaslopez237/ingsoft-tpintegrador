@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -92,4 +93,26 @@ func (s sistemaIntegrantesReal) Integrantes(proyectoID int64) ([]string, error) 
 		nombres[i] = integ.Nombre
 	}
 	return nombres, nil
+}
+
+// errAgregarRolNoImplementado hace fallar los escenarios de roles mientras AgregarRol no existe (rojo esperado).
+var errAgregarRolNoImplementado = errors.New("pendiente: AgregarRol todavía no está implementado")
+
+func (s sistemaIntegrantesReal) AgregarRol(int64, string, string) error {
+	return errAgregarRolNoImplementado
+}
+
+// Roles devuelve los roles del integrante en el orden en que se agregaron.
+// Mientras el dominio tenga un solo rol por integrante, devuelve ese.
+func (s sistemaIntegrantesReal) Roles(proyectoID int64, nombre string) ([]string, error) {
+	p, err := s.repo.BuscarPorID(context.Background(), proyectoID)
+	if err != nil {
+		return nil, err
+	}
+	for _, integ := range p.Integrantes {
+		if domain.ClaveNombre(integ.Nombre) == domain.ClaveNombre(nombre) {
+			return []string{integ.Rol}, nil
+		}
+	}
+	return nil, fmt.Errorf("%q no es integrante del proyecto", nombre)
 }

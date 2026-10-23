@@ -55,3 +55,36 @@ Feature: Registrar integrantes de un proyecto
     When se quita al integrante "Caro"
     Then se rechaza la operación con el error "integrante no encontrado"
     And el proyecto tiene como integrantes a "Ana"
+
+  @CA-03.7 @normal
+  Scenario: Sumarle un rol a un integrante que ya está en el proyecto
+    Given el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
+    When se le agrega el rol "Tester" a "Ana"
+    Then "Ana" tiene los roles "Desarrolladora" y "Tester"
+    And el proyecto tiene como integrantes a "Ana"
+
+  @CA-03.8 @error
+  Scenario: No se puede repetir un rol en el mismo integrante
+    Given el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
+    When se le agrega el rol "desarrolladora" a "Ana"
+    Then se rechaza la operación con el error "rol duplicado"
+    And "Ana" tiene solo el rol "Desarrolladora"
+
+  @CA-03.9 @error
+  Scenario: No se puede agregar un rol a quien no es integrante del proyecto
+    When se le agrega el rol "Tester" a "Caro"
+    Then se rechaza la operación con el error "integrante no encontrado"
+
+  @CA-03.10 @error
+  Scenario: No se puede agregar un rol vacío
+    Given el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
+    When se le agrega el rol "" a "Ana"
+    Then se rechaza la operación con el error "rol vacío"
+    And "Ana" tiene solo el rol "Desarrolladora"
+
+  @CA-03.3 @limite
+  Scenario: Quitar a un integrante con varios roles le quita todos
+    Given el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
+    And "Ana" también tiene el rol "Tester"
+    When se quita al integrante "Ana"
+    Then el proyecto no tiene integrantes
