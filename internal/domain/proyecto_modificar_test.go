@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -199,5 +200,31 @@ func TestEstadoValido(t *testing.T) {
 		if EstadoValido(e) {
 			t.Errorf("EstadoValido(%q) = true, se esperaba false", e)
 		}
+	}
+}
+
+// Traza: HU-02 CA-02.12, RN-02.10: modificar no borra los integrantes ni sus roles, y la copia no
+// comparte la lista con el original.
+func TestProyecto_Modificar_ConservaLosIntegrantes(t *testing.T) {
+	original := proyectoAlfa(t)
+	original.Integrantes = []Integrante{
+		{Nombre: "Ana", Roles: []string{"Desarrolladora", "Tester"}},
+		{Nombre: "Beto", Roles: []string{"Scrum Master"}},
+	}
+
+	p, err := original.Modificar(CambiosProyecto{Nombre: texto("Alfa Renovado")})
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+
+	if len(p.Integrantes) != 2 ||
+		p.Integrantes[0].Nombre != "Ana" || !slices.Equal(p.Integrantes[0].Roles, []string{"Desarrolladora", "Tester"}) ||
+		p.Integrantes[1].Nombre != "Beto" || !slices.Equal(p.Integrantes[1].Roles, []string{"Scrum Master"}) {
+		t.Fatalf("Integrantes = %+v, se esperaban los mismos del original", p.Integrantes)
+	}
+	p.Integrantes[0].Roles[0] = "Cambiado"
+	p.Integrantes[1].Nombre = "Cambiado"
+	if original.Integrantes[0].Roles[0] != "Desarrolladora" || original.Integrantes[1].Nombre != "Beto" {
+		t.Errorf("cambiar la copia alteró el original: %+v", original.Integrantes)
 	}
 }
