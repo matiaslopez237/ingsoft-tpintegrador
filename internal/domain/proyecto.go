@@ -41,6 +41,7 @@ type Proyecto struct {
 	FechaInicio time.Time
 	FechaFin    *time.Time // nil: el proyecto no tiene fecha de fin
 	Estado      Estado
+	Integrantes []Integrante // HU-03
 }
 
 // NuevoProyecto valida los datos y devuelve un proyecto en estado Activo, todavía sin ID.
