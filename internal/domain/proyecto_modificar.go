@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"slices"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func (c CambiosProyecto) vacios() bool {
 // Modificar devuelve una copia del proyecto con los cambios aplicados; el original no cambia.
 // Valida el resultado con las mismas reglas que al crear (NuevoProyecto) y luego el estado.
 // La unicidad del nombre se verifica en el caso de uso, como en HU-01.
-// Implementa HU-02 (RN-02.1, RN-02.2, RN-02.4 a RN-02.9).
+// Implementa HU-02 (RN-02.1, RN-02.2, RN-02.4 a RN-02.10).
 func (p Proyecto) Modificar(c CambiosProyecto) (Proyecto, error) {
 	if c.vacios() {
 		return Proyecto{}, ErrSinCambios
@@ -63,7 +64,18 @@ func (p Proyecto) Modificar(c CambiosProyecto) (Proyecto, error) {
 	}
 	modificado.ID = p.ID
 	modificado.Estado = estado
+	modificado.Integrantes = clonarIntegrantes(p.Integrantes) // RN-02.10
 	return modificado, nil
+}
+
+// clonarIntegrantes copia la lista y los roles de cada integrante, para que la copia
+// modificada no comparta memoria con el original.
+func clonarIntegrantes(integrantes []Integrante) []Integrante {
+	copia := slices.Clone(integrantes)
+	for i := range copia {
+		copia[i].Roles = slices.Clone(copia[i].Roles)
+	}
+	return copia
 }
 
 // EstadoValido indica si e es uno de los estados de RN-01.7 (distingue mayúsculas).
