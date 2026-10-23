@@ -2,6 +2,8 @@ package bdd
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"os"
 	"path/filepath"
 	"time"
@@ -27,6 +29,8 @@ func erroresHU01() map[string]error {
 type sistemaReal struct {
 	crear *app.CrearProyecto
 	repo  *persistencia.RepositorioProyectos
+	db    *sql.DB
+	dir   string
 }
 
 func nuevoSistemaProyectos() (sistemaProyectos, error) {
@@ -36,10 +40,16 @@ func nuevoSistemaProyectos() (sistemaProyectos, error) {
 	}
 	db, err := persistencia.AbrirDB(filepath.Join(dir, "bdd.db"))
 	if err != nil {
+		os.RemoveAll(dir)
 		return nil, err
 	}
 	repo := persistencia.NuevoRepositorioProyectos(db)
-	return sistemaReal{crear: app.NuevoCrearProyecto(repo), repo: repo}, nil
+	return sistemaReal{crear: app.NuevoCrearProyecto(repo), repo: repo, db: db, dir: dir}, nil
+}
+
+// Cerrar cierra la base del escenario y borra su carpeta temporal.
+func (s sistemaReal) Cerrar() error {
+	return errors.Join(s.db.Close(), os.RemoveAll(s.dir))
 }
 
 func (s sistemaReal) Crear(nombre string, inicio, fin *time.Time) (proyectoVisto, error) {

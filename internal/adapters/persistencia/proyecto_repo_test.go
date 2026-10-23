@@ -115,7 +115,7 @@ func TestRepositorioProyectos_NombreDuplicado(t *testing.T) {
 
 func TestRepositorioProyectos_BuscarInexistente(t *testing.T) {
 	_, err := nuevoRepoDePrueba(t).BuscarPorID(context.Background(), 999)
-	if !errors.Is(err, ErrProyectoNoEncontrado) {
-		t.Errorf("error = %v, se esperaba %v", err, ErrProyectoNoEncontrado)
+	if !errors.Is(err, domain.ErrProyectoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrProyectoNoEncontrado)
 	}
 }

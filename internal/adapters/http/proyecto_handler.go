@@ -36,6 +36,9 @@ type respuestaError struct {
 	Error string `json:"error"`
 }
 
+// tamanoMaximoCuerpo limita el JSON de entrada (1 MiB) para no leer cuerpos enormes en memoria.
+const tamanoMaximoCuerpo = 1 << 20
+
 // erroresDeValidacion son los errores de HU-01 que se responden como 400.
 var erroresDeValidacion = []error{
 	domain.ErrNombreVacio,
@@ -49,8 +52,11 @@ var erroresDeValidacion = []error{
 // no son válidos y 500 ante una falla interna.
 func handlerCrearProyecto(uc creadorProyectos) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		r.Body = http.MaxBytesReader(w, r.Body, tamanoMaximoCuerpo)
+		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields()
 		var pedido pedidoCrearProyecto
-		if err := json.NewDecoder(r.Body).Decode(&pedido); err != nil {
+		if err := dec.Decode(&pedido); err != nil {
 			escribirJSON(w, http.StatusBadRequest, respuestaError{"el cuerpo debe ser un JSON válido"})
 			return
 		}

@@ -29,6 +29,9 @@ var (
 	ErrNombreDuplicado        = errors.New("ya existe un proyecto con ese nombre")
 	ErrFechaInicioObligatoria = errors.New("la fecha de inicio es obligatoria")
 	ErrFechaFinAnterior       = errors.New("la fecha de fin no puede ser anterior a la de inicio")
+
+	// ErrProyectoNoEncontrado: no existe un proyecto con el ID buscado (lo usarán HU-02 y HU-04).
+	ErrProyectoNoEncontrado = errors.New("proyecto no encontrado")
 )
 
 // Proyecto es la entidad raíz: backlog, sprints, esfuerzo y métricas pertenecen a un proyecto.

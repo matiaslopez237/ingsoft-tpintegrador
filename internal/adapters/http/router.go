@@ -17,7 +17,5 @@ func NuevoRouter(crearProyecto creadorProyectos) *http.ServeMux {
 
 // handlerSalud es un endpoint mínimo para verificar que el servidor está vivo.
 func handlerSalud(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(`{"estado":"ok"}`))
+	escribirJSON(w, http.StatusOK, map[string]string{"estado": "ok"})
 }

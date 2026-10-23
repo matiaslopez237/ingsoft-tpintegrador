@@ -82,6 +82,8 @@ func TestPostProyectos_DatosInvalidos_Devuelve400(t *testing.T) {
 		{"fecha con formato inválido", `{"nombre":"Alfa","fecha_inicio":"01/03/2026"}`, &creadorFalso{}, "fecha_inicio debe tener el formato AAAA-MM-DD"},
 		{"fecha de fin con formato inválido", `{"nombre":"Alfa","fecha_inicio":"2026-03-01","fecha_fin":"x"}`, &creadorFalso{}, "fecha_fin debe tener el formato AAAA-MM-DD"},
 		{"JSON inválido", `{nombre`, &creadorFalso{}, "el cuerpo debe ser un JSON válido"},
+		{"campo desconocido", `{"nombre":"Alfa","fecha_inicio":"2026-03-01","estado":"Cancelado"}`, &creadorFalso{}, "el cuerpo debe ser un JSON válido"},
+		{"cuerpo demasiado grande", `{"nombre":"` + strings.Repeat("a", tamanoMaximoCuerpo) + `"}`, &creadorFalso{}, "el cuerpo debe ser un JSON válido"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {

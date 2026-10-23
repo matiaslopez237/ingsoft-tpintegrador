@@ -24,6 +24,7 @@ type sistemaProyectos interface {
 	Crear(nombre string, inicio, fin *time.Time) (proyectoVisto, error)
 	BuscarPorID(id int64) (proyectoVisto, error)
 	Cantidad() (int, error)
+	Cerrar() error
 }
 
 type crearProyectoWorld struct {
@@ -42,6 +43,9 @@ func registrarStepsHU01(ctx *godog.ScenarioContext) {
 		}
 		*w = crearProyectoWorld{sistema: sistema, porNombre: map[string]proyectoVisto{}}
 		return c, nil
+	})
+	ctx.After(func(c context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
+		return c, w.sistema.Cerrar()
 	})
 
 	ctx.Step(`^existe un proyecto "([^"]*)"$`, w.existeUnProyecto)

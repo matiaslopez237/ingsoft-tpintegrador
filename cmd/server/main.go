@@ -3,9 +3,13 @@
 package main
 
 import (
+	"context"
+	"errors"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
+	"time"
 
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
@@ -33,8 +37,29 @@ func main() {
 		puerto = "8080"
 	}
 
+	servidor := &http.Server{
+		Addr:              ":" + puerto,
+		Handler:           mux,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      15 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+
+	// Apagado ordenado con Ctrl+C: termina los pedidos en curso y deja correr el defer db.Close().
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+	go func() {
+		<-ctx.Done()
+		apagar, cancelar := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancelar()
+		if err := servidor.Shutdown(apagar); err != nil {
+			log.Printf("apagar servidor: %v", err)
+		}
+	}()
+
 	log.Printf("servidor escuchando en :%s", puerto)
-	if err := http.ListenAndServe(":"+puerto, mux); err != nil {
-		log.Fatalf("error del servidor: %v", err)
+	if err := servidor.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		log.Printf("error del servidor: %v", err)
 	}
 }

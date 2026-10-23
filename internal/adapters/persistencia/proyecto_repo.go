@@ -5,14 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
+	"modernc.org/sqlite"
+	sqlite3 "modernc.org/sqlite/lib"
 )
-
-// ErrProyectoNoEncontrado se devuelve cuando no existe un proyecto con el ID buscado.
-var ErrProyectoNoEncontrado = errors.New("proyecto no encontrado")
 
 // RepositorioProyectos implementa app.RepositorioProyectos sobre SQLite.
 type RepositorioProyectos struct {
@@ -44,7 +42,9 @@ func (r *RepositorioProyectos) Guardar(ctx context.Context, p *domain.Proyecto) 
 		`INSERT INTO proyectos (nombre, nombre_clave, fecha_inicio, fecha_fin, estado) VALUES (?, ?, ?, ?, ?)`,
 		p.Nombre, domain.ClaveNombre(p.Nombre), p.FechaInicio.Format(time.DateOnly), fin, string(p.Estado))
 	if err != nil {
-		if strings.Contains(err.Error(), "UNIQUE constraint failed: proyectos.nombre_clave") {
+		// La única restricción UNIQUE de la tabla es nombre_clave.
+		var se *sqlite.Error
+		if errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE {
 			return domain.ErrNombreDuplicado
 		}
 		return fmt.Errorf("insertar proyecto: %w", err)
@@ -67,7 +67,7 @@ func (r *RepositorioProyectos) BuscarPorID(ctx context.Context, id int64) (domai
 		`SELECT id, nombre, fecha_inicio, fecha_fin, estado FROM proyectos WHERE id = ?`, id).
 		Scan(&p.ID, &p.Nombre, &inicio, &fin, &est)
 	if errors.Is(err, sql.ErrNoRows) {
-		return domain.Proyecto{}, ErrProyectoNoEncontrado
+		return domain.Proyecto{}, domain.ErrProyectoNoEncontrado
 	}
 	if err != nil {
 		return domain.Proyecto{}, fmt.Errorf("buscar proyecto %d: %w", id, err)
