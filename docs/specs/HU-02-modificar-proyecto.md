@@ -33,6 +33,7 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - **RN-02.7:** Enviar un campo con el mismo valor que ya tiene no es un error.
 - **RN-02.8:** Debe enviarse al menos un campo para modificar.
 - **RN-02.9:** El `ID` del proyecto no se modifica.
+- **RN-02.10:** Modificar un proyecto no cambia sus integrantes ni sus roles: se gestionan con las operaciones de HU-03. Es un caso particular de RN-02.1.
 
 ## 5. Restricciones
 - Las validaciones de nombre y fechas reutilizan la lógica de dominio de HU-01 (`internal/domain`); no se duplican.
@@ -79,6 +80,7 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - **CA-02.9:** Dado un ID que no existe, cuando intento modificarlo, entonces obtengo `ErrProyectoNoEncontrado`. (RN-02.9)
 - **CA-02.10:** Dado un proyecto existente, cuando lo modifico, entonces su `ID` sigue siendo el mismo y la modificación queda persistida al recuperarlo. (RN-02.9)
 - **CA-02.11:** Dado un proyecto existente, cuando intento quitar su fecha de inicio, entonces obtengo `ErrFechaInicioObligatoria` y el proyecto no cambia. (RN-02.4)
+- **CA-02.12:** Dado un proyecto con integrantes, cuando modifico su nombre, entonces conserva los mismos integrantes con los mismos roles. (RN-02.10)
 
 ## Preguntas abiertas
 - Ninguna.
@@ -88,3 +90,4 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - 2026-10-22: edición parcial y cambio de estado en ambos sentidos, según decisión del equipo.
 - 2026-10-23: alineada al dominio implementado en HU-01: cinco estados de RN-01.7 (en lugar de "Activo/Cerrado"), fecha de fin opcional y anulable, reglas de nombre (máximo 100, único sin distinguir mayúsculas) y nombres de errores existentes.
 - 2026-10-23: agregado CA-02.11 para cubrir RN-02.4 (no se puede quitar la fecha de inicio).
+- 2026-10-23: agregados RN-02.10 y CA-02.12 (modificar no borra los integrantes de HU-03), detectado al revisar el PR #87.
