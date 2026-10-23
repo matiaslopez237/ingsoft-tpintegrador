@@ -22,6 +22,11 @@ type quitadorIntegrantes interface {
 	Ejecutar(ctx context.Context, d app.DatosQuitarIntegrante) error
 }
 
+// agregadorRoles es lo que el handler necesita del caso de uso AgregarRol.
+type agregadorRoles interface {
+	Ejecutar(ctx context.Context, d app.DatosRol) error
+}
+
 // pedidoIntegrante es el JSON de entrada de POST /proyectos/{id}/integrantes.
 type pedidoIntegrante struct {
 	Nombre string `json:"nombre"`
@@ -100,6 +105,48 @@ func handlerQuitarIntegrante(uc quitadorIntegrantes) http.HandlerFunc {
 		}
 
 		w.WriteHeader(http.StatusNoContent)
+	}
+}
+
+// pedidoRol es el JSON de entrada de POST /proyectos/{id}/integrantes/{nombre}/roles.
+type pedidoRol struct {
+	Rol string `json:"rol"`
+}
+
+// handlerAgregarRol atiende POST /proyectos/{id}/integrantes/{nombre}/roles: 204 si se agregó,
+// 400 si el rol es vacío o repetido, 404 si el proyecto o el integrante no existen y 500 ante una
+// falla interna. Implementa HU-03 (expone AgregarRol por HTTP).
+func handlerAgregarRol(uc agregadorRoles) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		id, err := proyectoIDDesdeRuta(r)
+		if err != nil {
+			escribirJSON(w, http.StatusBadRequest, respuestaError{err.Error()})
+			return
+		}
+
+		r.Body = http.MaxBytesReader(w, r.Body, tamanoMaximoCuerpo)
+		dec := json.NewDecoder(r.Body)
+		dec.DisallowUnknownFields()
+		var pedido pedidoRol
+		if err := dec.Decode(&pedido); err != nil {
+			escribirJSON(w, http.StatusBadRequest, respuestaError{"el cuerpo debe ser un JSON válido"})
+			return
+		}
+
+		err = uc.Ejecutar(r.Context(), app.DatosRol{ProyectoID: id, Nombre: r.PathValue("nombre"), Rol: pedido.Rol})
+		switch {
+		case err == nil:
+			w.WriteHeader(http.StatusNoContent)
+		case errors.Is(err, domain.ErrProyectoNoEncontrado), errors.Is(err, domain.ErrIntegranteNoEncontrado):
+			escribirJSON(w, http.StatusNotFound, respuestaError{err.Error()})
+		case errors.Is(err, domain.ErrRolIntegranteVacio):
+			escribirJSON(w, http.StatusBadRequest, respuestaError{domain.ErrRolIntegranteVacio.Error()})
+		case errors.Is(err, domain.ErrRolDuplicado):
+			escribirJSON(w, http.StatusBadRequest, respuestaError{domain.ErrRolDuplicado.Error()})
+		default:
+			log.Printf("agregar rol: %v", err)
+			escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al agregar el rol"})
+		}
 	}
 }
 
