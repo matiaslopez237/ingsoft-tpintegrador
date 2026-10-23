@@ -37,6 +37,7 @@ func main() {
 		app.NuevoAgregarRol(repoProyectos),
 		app.NuevoModificarProyecto(repoProyectos),
 	)
+	adapterhttp.RegistrarConsultarProyecto(mux, app.NuevoConsultarProyecto(repoProyectos)) // HU-04
 
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
