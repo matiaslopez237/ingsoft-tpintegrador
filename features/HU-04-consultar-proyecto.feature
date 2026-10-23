@@ -14,9 +14,9 @@ Feature: Consultar el estado de un proyecto
 
   @CA-04.2 @normal
   Scenario: La consulta incluye a los integrantes con sus roles, en orden de alta
-    Given un proyecto "TP Integrador" sin integrantes
-    And el integrante "Beto" con rol "Tester" ya está en el proyecto
-    And el integrante "Ana" con rol "Desarrolladora" ya está en el proyecto
+    Given existe un proyecto "TP Integrador" sin integrantes
+    And "Beto" se sumó al proyecto con el rol "Tester"
+    And "Ana" se sumó al proyecto con el rol "Desarrolladora"
     When consulto el proyecto "TP Integrador"
     Then veo los integrantes "Beto" y "Ana" en ese orden
     And veo que "Beto" tiene solo el rol "Tester"
@@ -24,16 +24,16 @@ Feature: Consultar el estado de un proyecto
 
   @CA-04.2 @limite
   Scenario: Un integrante con dos roles aparece una sola vez, con los roles en orden de alta
-    Given un proyecto "TP Integrador" sin integrantes
-    And el integrante "Ana" con rol "Tester" ya está en el proyecto
-    And "Ana" también tiene el rol "Desarrolladora"
+    Given existe un proyecto "TP Integrador" sin integrantes
+    And "Ana" se sumó al proyecto con el rol "Tester"
+    And "Ana" también sumó el rol "Desarrolladora"
     When consulto el proyecto "TP Integrador"
     Then veo al integrante "Ana" una sola vez
     And veo que "Ana" tiene los roles "Tester" y "Desarrolladora" en ese orden
 
   @CA-04.3 @limite
   Scenario: Un proyecto sin integrantes devuelve una lista vacía
-    Given un proyecto "TP Integrador" sin integrantes
+    Given existe un proyecto "TP Integrador" sin integrantes
     When consulto el proyecto "TP Integrador"
     Then veo que el proyecto no tiene integrantes
 
