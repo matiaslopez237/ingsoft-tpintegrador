@@ -1,7 +1,7 @@
 # HU-05: Crear un elemento de backlog
 
 **Historia:** Como Product Builder, quiero crear un elemento de backlog con id, título, descripción, prioridad, estado, story points y criterios de aceptación, para registrar una necesidad del producto.
-**Issue:** #16  ·  **Sprint:** sin asignar  ·  **Story points:** 5
+**Issue:** #16  ·  **Sprint:** 1  ·  **Story points:** 5
 **Estado de la spec:** Borrador
 
 ## 1. Objetivo
@@ -79,7 +79,7 @@ Errores de datos: HTTP 400. Si hay varios errores, se informa el primero en el o
 En todos los casos de error, no se crea ningún elemento.
 
 ## Decisiones tomadas
-Definidas por Nicolás Andino al refinar la historia (2026-10-23), para validar con el equipo en el PR:
+Las propuso Nicolás Andino al refinar la historia y las decidió el equipo completo en clase (2026-10-23):
 - Prioridad en tres niveles: Alta, Media y Baja.
 - Story points: cualquier entero positivo (no se restringe a Fibonacci).
 - Estados del elemento: Pendiente, En progreso y Hecho.
@@ -91,3 +91,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-23), para validar 
 
 ## Historial
 - 2026-10-23: creada (borrador).
+- 2026-10-23: el equipo confirma en clase las decisiones tomadas; la historia se suma al Sprint 1.

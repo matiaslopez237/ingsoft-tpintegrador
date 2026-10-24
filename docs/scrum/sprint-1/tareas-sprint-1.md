@@ -1,6 +1,8 @@
 # Tareas — Sprint 1 (MVP)
 
-Alcance del sprint: Épica 1 completa (HU-01 a HU-04) + HU-18. Total: **14 story points**.
+Alcance del sprint: Épica 1 completa (HU-01 a HU-04) + HU-18 + HU-05. Total: **19 story points**.
+
+> **Cambio de alcance (2026-10-23):** HU-05 (5 pts) se sumó al sprint por decisión del equipo en clase. La tomó Nicolás Andino; sus tareas se cargaron a partir de los commits de su PR (#92).
 
 ---
 
@@ -186,6 +188,47 @@ Estas no son de una historia puntual; habilitan que cualquiera pueda empezar a p
 
 **Tarea 4.6 — Revisión + trazabilidad**
 - **Terminada cuando:** `go vet`/`gofmt` limpios, revisión resuelta, HU-04 en la matriz de trazabilidad.
+
+---
+
+## HU-05: Crear un elemento de backlog (5 pts)
+
+Sumada al sprint el 2026-10-23 (ver el cambio de alcance arriba). Responsable: Nicolás Andino.
+
+**Tarea 5.1 — Spec SDD**
+- **Archivo a crear:** `docs/specs/HU-05-crear-elemento-backlog.md`
+- **Terminada cuando:** cubre las 8 secciones y las decisiones (prioridad, story points, estados, ID) quedaron validadas por el equipo.
+
+**Tarea 5.2 — Escenarios BDD**
+- **Archivo a crear:** `features/HU-05-crear-elemento-backlog.feature`
+- **Terminada cuando:** cada criterio de aceptación tiene al menos un escenario.
+
+**Tarea 5.3 — Steps de godog**
+- **Archivos a crear:** `test/bdd/hu05_steps_test.go`, `test/bdd/hu05_sistema_test.go`
+- **Terminada cuando:** los escenarios corren y fallan en rojo.
+
+**Tarea 5.4 — TDD: entidad `ElementoBacklog`**
+- **Archivos:** `internal/domain/backlog.go` + test
+- **Terminada cuando:** las validaciones, la prioridad y el estado inicial Pendiente están en verde.
+
+**Tarea 5.5 — TDD: caso de uso `CrearElementoBacklog`**
+- **Archivo:** `internal/app/crear_elemento_backlog.go` + test
+- **Terminada cuando:** hay tests con repositorio falso para el caso exitoso, el proyecto inexistente y el título duplicado.
+
+**Tarea 5.6 — Adaptador de persistencia**
+- **Archivo:** `internal/adapters/persistencia/backlog_repo.go`
+- **Terminada cuando:** un test de integración guarda un elemento con sus criterios y lo recupera igual.
+
+**Tarea 5.7 — Adaptador HTTP**
+- **Archivo:** `internal/adapters/http/backlog_handler.go`
+- **Qué hace:** expone `POST /proyectos/{id}/backlog`, devuelve 201 + elemento creado, 400, 404 o 500.
+- **Terminada cuando:** los escenarios BDD pasan en verde.
+
+**Tarea 5.8 — Revisión**
+- **Terminada cuando:** `go vet`/`gofmt` limpios y la revisión resuelta.
+
+**Tarea 5.9 — Trazabilidad**
+- **Terminada cuando:** HU-05 está en la matriz de trazabilidad.
 
 ---
 
