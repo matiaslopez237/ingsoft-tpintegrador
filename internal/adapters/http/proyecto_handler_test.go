@@ -36,7 +36,9 @@ func postProyectos(t *testing.T, uc creadorProyectos, cuerpo string) *httptest.R
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/proyectos", strings.NewReader(cuerpo))
 	rec := httptest.NewRecorder()
-	NuevoRouter(uc, &agregadorFalso{}, &quitadorFalso{}, &agregadorRolFalso{}, &modificadorFalso{}).ServeHTTP(rec, req)
+	mux := http.NewServeMux()
+	RegistrarCrearProyecto(mux, uc)
+	mux.ServeHTTP(rec, req)
 	return rec
 }
 
