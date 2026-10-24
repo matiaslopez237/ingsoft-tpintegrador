@@ -37,6 +37,9 @@ var (
 	ErrSinCriterios         = errors.New("debe haber al menos un criterio de aceptación")
 	ErrCriterioVacio        = errors.New("los criterios de aceptación no pueden estar vacíos")
 	ErrTituloDuplicado      = errors.New("ya existe un elemento con ese título en el proyecto")
+	// ErrElementoNoEncontrado: no existe un elemento con el ID buscado. Lo devuelve la persistencia
+	// y lo van a usar los casos de uso de HU-06 y HU-07, igual que ErrProyectoNoEncontrado.
+	ErrElementoNoEncontrado = errors.New("elemento de backlog no encontrado")
 )
 
 // ElementoBacklog es una necesidad del producto registrada en el backlog de un proyecto.

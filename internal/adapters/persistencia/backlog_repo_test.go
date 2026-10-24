@@ -129,7 +129,7 @@ func TestRepositorioBacklog_ProyectoInexistente(t *testing.T) {
 
 func TestRepositorioBacklog_BuscarInexistente(t *testing.T) {
 	repo, _ := nuevoBacklogDePrueba(t)
-	if _, err := repo.BuscarElementoPorID(context.Background(), 999); !errors.Is(err, ErrElementoNoEncontrado) {
-		t.Errorf("error = %v, se esperaba %v", err, ErrElementoNoEncontrado)
+	if _, err := repo.BuscarElementoPorID(context.Background(), 999); !errors.Is(err, domain.ErrElementoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
 	}
 }

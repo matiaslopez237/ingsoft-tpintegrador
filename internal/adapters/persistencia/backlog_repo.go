@@ -9,9 +9,6 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// ErrElementoNoEncontrado se devuelve cuando no existe un elemento del backlog con el ID buscado.
-var ErrElementoNoEncontrado = errors.New("elemento de backlog no encontrado")
-
 // RepositorioBacklog implementa app.RepositorioBacklog sobre SQLite.
 // Implementa HU-05 (RN-05.1, RN-05.3, RN-05.9).
 type RepositorioBacklog struct {
@@ -99,7 +96,7 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 		   FROM backlog_elementos WHERE id = ?`, id).
 		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp)
 	if errors.Is(err, sql.ErrNoRows) {
-		return domain.ElementoBacklog{}, ErrElementoNoEncontrado
+		return domain.ElementoBacklog{}, domain.ErrElementoNoEncontrado
 	}
 	if err != nil {
 		return domain.ElementoBacklog{}, fmt.Errorf("buscar elemento %d: %w", id, err)
