@@ -63,6 +63,29 @@ CREATE TABLE IF NOT EXISTS integrante_roles (
 	rol           TEXT    NOT NULL,
 	rol_clave     TEXT    NOT NULL,
 	UNIQUE (integrante_id, rol_clave)
+);
+
+-- HU-05. titulo_clave = domain.ClaveNombre(titulo): garantiza RN-05.3 también en la base.
+-- story_points NULL: elemento sin estimar (RN-05.6).
+CREATE TABLE IF NOT EXISTS backlog_elementos (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
+	titulo       TEXT    NOT NULL,
+	titulo_clave TEXT    NOT NULL,
+	descripcion  TEXT    NOT NULL,
+	prioridad    TEXT    NOT NULL,
+	estado       TEXT    NOT NULL,
+	story_points INTEGER,
+	UNIQUE (proyecto_id, titulo_clave)
+);
+
+-- HU-05. Criterios de aceptación de cada elemento; orden conserva el orden en que se enviaron.
+CREATE TABLE IF NOT EXISTS backlog_criterios (
+	id          INTEGER PRIMARY KEY AUTOINCREMENT,
+	elemento_id INTEGER NOT NULL REFERENCES backlog_elementos (id) ON DELETE CASCADE,
+	orden       INTEGER NOT NULL,
+	texto       TEXT    NOT NULL,
+	UNIQUE (elemento_id, orden)
 );`)
 	return err
 }
