@@ -301,6 +301,12 @@ func esUnique(err error) bool {
 	return errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_UNIQUE
 }
 
+// esForeignKey indica si err es una violación de llave foránea de SQLite.
+func esForeignKey(err error) bool {
+	var se *sqlite.Error
+	return errors.As(err, &se) && se.Code() == sqlite3.SQLITE_CONSTRAINT_FOREIGNKEY
+}
+
 // Contar devuelve la cantidad de proyectos guardados.
 func (r *RepositorioProyectos) Contar(ctx context.Context) (int, error) {
 	var n int

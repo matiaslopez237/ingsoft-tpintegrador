@@ -31,12 +31,13 @@ func main() {
 
 	repoProyectos := persistencia.NuevoRepositorioProyectos(db)
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
-		CrearProyecto:     app.NuevoCrearProyecto(repoProyectos),
-		ModificarProyecto: app.NuevoModificarProyecto(repoProyectos),
-		AgregarIntegrante: app.NuevoAgregarIntegrante(repoProyectos),
-		QuitarIntegrante:  app.NuevoQuitarIntegrante(repoProyectos),
-		AgregarRol:        app.NuevoAgregarRol(repoProyectos),
-		ConsultarProyecto: app.NuevoConsultarProyecto(repoProyectos),
+		CrearProyecto:        app.NuevoCrearProyecto(repoProyectos),
+		ModificarProyecto:    app.NuevoModificarProyecto(repoProyectos),
+		AgregarIntegrante:    app.NuevoAgregarIntegrante(repoProyectos),
+		QuitarIntegrante:     app.NuevoQuitarIntegrante(repoProyectos),
+		AgregarRol:           app.NuevoAgregarRol(repoProyectos),
+		ConsultarProyecto:    app.NuevoConsultarProyecto(repoProyectos),
+		CrearElementoBacklog: app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)),
 	})
 
 	puerto := os.Getenv("PORT")

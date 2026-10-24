@@ -7,12 +7,13 @@ import "net/http"
 // CasosDeUso son los casos de uso que exponen las rutas HTTP. Cada historia de usuario suma
 // los suyos acá y registra sus rutas con su propia función RegistrarX, en el archivo de su handler.
 type CasosDeUso struct {
-	CrearProyecto     creadorProyectos     // HU-01
-	ModificarProyecto modificadorProyectos // HU-02
-	AgregarIntegrante agregadorIntegrantes // HU-03
-	QuitarIntegrante  quitadorIntegrantes  // HU-03
-	AgregarRol        agregadorRoles       // HU-03
-	ConsultarProyecto consultorProyectos   // HU-04
+	CrearProyecto        creadorProyectos     // HU-01
+	ModificarProyecto    modificadorProyectos // HU-02
+	AgregarIntegrante    agregadorIntegrantes // HU-03
+	QuitarIntegrante     quitadorIntegrantes  // HU-03
+	AgregarRol           agregadorRoles       // HU-03
+	ConsultarProyecto    consultorProyectos   // HU-04
+	CrearElementoBacklog creadorElementos     // HU-05
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
@@ -24,6 +25,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarModificarProyecto(mux, cu.ModificarProyecto)
 	RegistrarIntegrantes(mux, cu.AgregarIntegrante, cu.QuitarIntegrante, cu.AgregarRol)
 	RegistrarConsultarProyecto(mux, cu.ConsultarProyecto)
+	RegistrarCrearElementoBacklog(mux, cu.CrearElementoBacklog)
 	return mux
 }
 

@@ -12,6 +12,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-02 Modificar un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 12/12 | 12/12 | ✓ | RED → GREEN ×7 | ✓ 24/24 escenarios |
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
+| HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
 
 ---
 
@@ -276,3 +277,58 @@ Sin CA propio en la spec:
 - Hay tests sin CA. Los de id inválido y falla interna se trazan a las secciones 6 y 7, y el de `roles` siempre array a la sección 3. Si el equipo quiere CA para estos casos, primero hay que agregarlos a la spec.
 - Los commits `66b2b81` (steps en rojo) y `dbbefcd` (BDD en verde) no llevan la etiqueta `[RED]`/`[GREEN]`, así que un `git log --grep="\[RED\]"` no los encuentra.
 - RN-04.2 (orden de alta) no está en el código de HU-04: la implementa la persistencia de HU-03 (`ORDER BY i.id, ir.id` en `buscarIntegrantes`). HU-04 solo la conserva y la verifica en los escenarios BDD.
+
+---
+
+## HU-05: Crear un elemento de backlog
+
+- **Issue:** [#16](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/16) · sin sprint asignado · 5 SP
+- **Spec:** [docs/specs/HU-05-crear-elemento-backlog.md](specs/HU-05-crear-elemento-backlog.md)
+- **Feature:** [features/HU-05-crear-elemento-backlog.feature](../features/HU-05-crear-elemento-backlog.feature) (steps en [test/bdd/hu05_steps_test.go](../test/bdd/hu05_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-05.1 Datos válidos → Pendiente con ID | RN-05.8, RN-05.9 | Crear un elemento con todos los datos válidos `@normal` | `TestNuevoElementoBacklog_DatosValidos_CreaPendiente`, `TestCrearElementoBacklog_DatosValidos_GuardaPendienteConID`, `TestPostBacklog_DatosValidos_Devuelve201ConElemento` | `domain.NuevoElementoBacklog`, `app.CrearElementoBacklog` |
+| CA-05.2 Sin story points | RN-05.6 | Crear un elemento sin story points `@alternativo` | `TestNuevoElementoBacklog_CasosLimite_SonValidos`, `TestPostBacklog_SinStoryPoints_DevuelveNull`, `TestRepositorioBacklog_GuardarYBuscar_DevuelveLoMismo` | `domain.NuevoElementoBacklog`, `persistencia.RepositorioBacklog` |
+| CA-05.3 Proyecto inexistente | RN-05.1 | No se puede crear un elemento en un proyecto que no existe `@error` | `TestCrearElementoBacklog_ProyectoInexistente_RetornaErrorYNoGuarda`, `TestRepositorioBacklog_ProyectoInexistente`, `TestPostBacklog_ProyectoInexistente_Devuelve404` | `app.CrearElementoBacklog`, `persistencia.RepositorioBacklog` |
+| CA-05.4 Título obligatorio, máx. 100 | RN-05.2 | El título es obligatorio y tiene un máximo `@error` (×3) · Un título de exactamente 100 caracteres es válido `@limite` | `TestNuevoElementoBacklog_DatosInvalidos_RetornaError`, `TestNuevoElementoBacklog_CasosLimite_SonValidos`, `TestCrearElementoBacklog_DatosInvalidos_NoConsultaTitulosNiGuarda` | `domain.NuevoElementoBacklog` |
+| CA-05.5 Descripción obligatoria | RN-05.4 | La descripción es obligatoria `@error` | `TestNuevoElementoBacklog_DatosInvalidos_RetornaError`, `TestPostBacklog_DatosInvalidos_Devuelve400` | `domain.NuevoElementoBacklog` |
+| CA-05.6 Prioridad Alta/Media/Baja | RN-05.5 | La prioridad debe ser Alta, Media o Baja `@error` (×3) | `TestNuevoElementoBacklog_DatosInvalidos_RetornaError`, `TestPrioridadesYEstados_SonLosDeLaSpec`, `TestPostBacklog_DatosInvalidos_Devuelve400` | `domain.NuevoElementoBacklog` |
+| CA-05.7 Story points positivos | RN-05.6 | Un story point es el mínimo válido `@limite` · Los story points deben ser positivos `@error` (×2) | `TestNuevoElementoBacklog_DatosInvalidos_RetornaError`, `TestNuevoElementoBacklog_CasosLimite_SonValidos` | `domain.NuevoElementoBacklog` |
+| CA-05.8 Al menos un criterio, ninguno vacío | RN-05.7 | Debe haber al menos un criterio `@error` · Ningún criterio puede estar vacío `@error` | `TestNuevoElementoBacklog_DatosInvalidos_RetornaError`, `TestPostBacklog_DatosInvalidos_Devuelve400` | `domain.NuevoElementoBacklog` |
+| CA-05.9 Título único por proyecto | RN-05.3 | No se repite un título dentro del mismo proyecto `@error` · El mismo título se puede usar en otro proyecto `@alternativo` | `TestCrearElementoBacklog_TituloDuplicado`, `TestRepositorioBacklog_TituloPorProyecto` | `app.CrearElementoBacklog`, `persistencia.RepositorioBacklog` (UNIQUE `proyecto_id, titulo_clave`) |
+| CA-05.10 IDs distintos, criterios en orden | RN-05.9 | Cada elemento recibe un identificador distinto y se recupera con sus criterios `@normal` | `TestCrearElementoBacklog_DatosValidos_GuardaPendienteConID`, `TestRepositorioBacklog_GuardarYBuscar_DevuelveLoMismo` | `persistencia.RepositorioBacklog.GuardarElemento` / `BuscarElementoPorID` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog.go](../internal/domain/backlog.go) | [backlog_test.go](../internal/domain/backlog_test.go) |
+| Caso de uso | [internal/app/crear_elemento_backlog.go](../internal/app/crear_elemento_backlog.go) | [crear_elemento_backlog_test.go](../internal/app/crear_elemento_backlog_test.go) |
+| Persistencia | [internal/adapters/persistencia/backlog_repo.go](../internal/adapters/persistencia/backlog_repo.go), [db.go](../internal/adapters/persistencia/db.go) (tablas `backlog_elementos` y `backlog_criterios`) | [backlog_repo_test.go](../internal/adapters/persistencia/backlog_repo_test.go) |
+| HTTP | [internal/adapters/http/backlog_handler.go](../internal/adapters/http/backlog_handler.go) (`POST /proyectos/{id}/backlog`) | [backlog_handler_test.go](../internal/adapters/http/backlog_handler_test.go) |
+| BDD | [test/bdd/hu05_sistema_test.go](../test/bdd/hu05_sistema_test.go) | 19 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 5.1 Spec | `584be96` docs(HU-05): [5.1] spec | — |
+| 5.2 Escenarios BDD | `9c015e2` test(HU-05): [5.2] escenarios BDD | — |
+| 5.3 Steps godog | `b9ba939` test(HU-05): [5.3] steps (en rojo) | BDD en rojo |
+| 5.4 Entidad ElementoBacklog | `97e91bc` test(HU-05): [5.4][RED] | **RED** |
+| | `62a8b33` feat(HU-05): [5.4][GREEN] | **GREEN** |
+| 5.5 Caso de uso | `62c8686` test(HU-05): [5.5][RED] | **RED** |
+| | `4882d1a` feat(HU-05): [5.5][GREEN] | **GREEN** |
+| 5.6 Persistencia | `c698466` feat(HU-05): [5.6] repositorio SQLite | adaptador + test de integración |
+| 5.7 HTTP | `3617ea4` feat(HU-05): [5.7] POST /proyectos/{id}/backlog y BDD en verde | BDD en verde |
+| 5.8 Revisión | `3485268` refactor(HU-05): [5.8] correcciones go-reviewer | **REFACTOR** |
+| 5.9 Trazabilidad | este commit | — |
+
+### Huecos
+
+- La spec está en **Borrador** y sus decisiones (prioridad Alta/Media/Baja, story points enteros positivos, estados Pendiente/En progreso/Hecho) se validan en el PR.
+- La historia no tiene sprint asignado ni sub-tareas en el tablero: se usó la numeración 5.1 a 5.9 por analogía con HU-01.
+- Los adaptadores (5.6 y 5.7) se commitearon con sus tests, sin RED aparte; las reglas de negocio (5.4 y 5.5) sí tienen RED → GREEN.
