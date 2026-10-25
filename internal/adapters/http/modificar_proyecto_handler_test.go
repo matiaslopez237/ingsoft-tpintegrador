@@ -35,7 +35,9 @@ func patchProyecto(t *testing.T, uc modificadorProyectos, id, cuerpo string) *ht
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPatch, "/proyectos/"+id, strings.NewReader(cuerpo))
 	rec := httptest.NewRecorder()
-	NuevoRouter(&creadorFalso{}, &agregadorFalso{}, &quitadorFalso{}, &agregadorRolFalso{}, uc).ServeHTTP(rec, req)
+	mux := http.NewServeMux()
+	RegistrarModificarProyecto(mux, uc)
+	mux.ServeHTTP(rec, req)
 	return rec
 }
 
