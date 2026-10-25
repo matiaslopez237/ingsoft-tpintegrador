@@ -8,3 +8,7 @@
 *.jpg binary
 *.ico binary
 *.db binary
+
+# Las skills y agentes de Claude Code (.claude/) traen sus propios scripts (JavaScript, shell):
+# no son código del proyecto, así que GitHub no los cuenta en el gráfico de lenguajes.
+.claude/** linguist-vendored
