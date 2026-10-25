@@ -1,6 +1,15 @@
 package domain
 
-import "time"
+import (
+	"errors"
+	"strings"
+	"time"
+)
+
+// Errores de HU-18 (spec, sección 7). El integrante vacío reutiliza ErrNombreIntegranteVacio (HU-03).
+var (
+	ErrActividadVacia = errors.New("la actividad es obligatoria")
+)
 
 // RegistroEsfuerzo deja constancia de las horas que un integrante trabajó en un elemento del backlog.
 // Implementa HU-18.
@@ -18,6 +27,15 @@ type RegistroEsfuerzo struct {
 // hoy lo pasa el caso de uso: el dominio no lee el reloj (spec, sección 5).
 func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fecha time.Time,
 	actividad string, horas float64, hoy time.Time) (RegistroEsfuerzo, error) {
+	integrante = strings.TrimSpace(integrante)
+	actividad = strings.TrimSpace(actividad)
+	switch {
+	case integrante == "":
+		return RegistroEsfuerzo{}, ErrNombreIntegranteVacio
+	case actividad == "":
+		return RegistroEsfuerzo{}, ErrActividadVacia
+	}
+
 	return RegistroEsfuerzo{
 		ProyectoID: proyectoID,
 		ElementoID: elementoID,
