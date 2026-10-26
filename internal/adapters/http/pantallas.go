@@ -50,6 +50,17 @@ var erroresDeValidacionPantallas = []error{
 	domain.ErrObjetivoDemasiadoLargo,
 	domain.ErrSprintFueraDelProyecto,
 	domain.ErrSprintSuperpuesto,
+	// HU-05 (alta desde la pantalla del backlog) y HU-07 (orden y filtro).
+	domain.ErrTituloVacio,
+	domain.ErrTituloDemasiadoLargo,
+	domain.ErrDescripcionVacia,
+	domain.ErrPrioridadInvalida,
+	domain.ErrStoryPointsInvalidos,
+	domain.ErrSinCriterios,
+	domain.ErrCriterioVacio,
+	domain.ErrTituloDuplicado,
+	domain.ErrOrdenInvalido,
+	domain.ErrEstadoElementoInvalido,
 }
 
 // estadosProyecto son las opciones del formulario de edición (RN-01.7). Validarlas es tarea
@@ -107,7 +118,7 @@ type pantallas struct {
 	paginas map[string]*template.Template
 }
 
-var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html", "sprints.html"}
+var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html", "sprints.html", "backlog.html"}
 
 // funcionesPlantillas son las funciones disponibles en las plantillas. segmento escapa un texto
 // para usarlo como parte de una ruta: html/template no escapa "/", "?" ni "#" dentro de una URL.
@@ -149,8 +160,10 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes", p.formulario(p.agregarIntegrante))
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/quitar", p.formulario(p.quitarIntegrante))
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/roles", p.formulario(p.agregarRol))
-	mux.HandleFunc("GET /web/proyectos/{id}/sprints", p.sprints)                    // HU-08
-	mux.HandleFunc("POST /web/proyectos/{id}/sprints", p.formulario(p.crearSprint)) // HU-08
+	mux.HandleFunc("GET /web/proyectos/{id}/sprints", p.sprints)                      // HU-08
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints", p.formulario(p.crearSprint))   // HU-08
+	mux.HandleFunc("GET /web/proyectos/{id}/backlog", p.backlog)                      // HU-07
+	mux.HandleFunc("POST /web/proyectos/{id}/backlog", p.formulario(p.crearElemento)) // HU-07 (alta de HU-05)
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio

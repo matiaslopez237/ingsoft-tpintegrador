@@ -136,3 +136,67 @@ func (r *RepositorioBacklog) ContarElementos(ctx context.Context, proyectoID int
 	}
 	return n, nil
 }
+
+// ListarElementos devuelve los elementos del proyecto con sus criterios en orden. Usa dos
+// consultas (elementos y criterios) en lugar de una por elemento. El orden de la lista lo decide
+// el dominio (HU-07, RN-07.2): acá solo se ordena por ID para que el resultado sea estable.
+// Implementa HU-07 (app.ListadorElementos, RN-07.1).
+func (r *RepositorioBacklog) ListarElementos(ctx context.Context, proyectoID int64) ([]domain.ElementoBacklog, error) {
+	rows, err := r.db.QueryContext(ctx,
+		`SELECT id, titulo, descripcion, prioridad, estado, story_points
+		   FROM backlog_elementos WHERE proyecto_id = ? ORDER BY id`, proyectoID)
+	if err != nil {
+		return nil, fmt.Errorf("listar elementos del proyecto %d: %w", proyectoID, err)
+	}
+	defer rows.Close()
+
+	var (
+		elementos []domain.ElementoBacklog
+		posicion  = map[int64]int{} // ID del elemento -> índice en elementos
+	)
+	for rows.Next() {
+		var (
+			e                 = domain.ElementoBacklog{ProyectoID: proyectoID}
+			prioridad, estado string
+			sp                sql.NullInt64
+		)
+		if err := rows.Scan(&e.ID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp); err != nil {
+			return nil, fmt.Errorf("leer elemento del proyecto %d: %w", proyectoID, err)
+		}
+		e.Prioridad, e.Estado = domain.Prioridad(prioridad), domain.EstadoElemento(estado)
+		if sp.Valid {
+			n := int(sp.Int64)
+			e.StoryPoints = &n
+		}
+		posicion[e.ID] = len(elementos)
+		elementos = append(elementos, e)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer elementos del proyecto %d: %w", proyectoID, err)
+	}
+
+	criterios, err := r.db.QueryContext(ctx,
+		`SELECT c.elemento_id, c.texto
+		   FROM backlog_criterios c JOIN backlog_elementos e ON e.id = c.elemento_id
+		  WHERE e.proyecto_id = ? ORDER BY c.elemento_id, c.orden`, proyectoID)
+	if err != nil {
+		return nil, fmt.Errorf("listar criterios del proyecto %d: %w", proyectoID, err)
+	}
+	defer criterios.Close()
+	for criterios.Next() {
+		var (
+			elementoID int64
+			texto      string
+		)
+		if err := criterios.Scan(&elementoID, &texto); err != nil {
+			return nil, fmt.Errorf("leer criterio del proyecto %d: %w", proyectoID, err)
+		}
+		if i, ok := posicion[elementoID]; ok {
+			elementos[i].Criterios = append(elementos[i].Criterios, texto)
+		}
+	}
+	if err := criterios.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer criterios del proyecto %d: %w", proyectoID, err)
+	}
+	return elementos, nil
+}

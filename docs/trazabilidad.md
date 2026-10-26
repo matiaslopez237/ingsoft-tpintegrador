@@ -13,6 +13,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
+| HU-07 Listar y ordenar el backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 14/14 escenarios |
 | HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
 | HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
@@ -335,6 +336,69 @@ Sin CA propio en la spec:
 - La spec está en **Borrador** y sus decisiones (prioridad Alta/Media/Baja, story points enteros positivos, estados Pendiente/En progreso/Hecho) se validan en el PR.
 - La historia no tiene sprint asignado ni sub-tareas en el tablero: se usó la numeración 5.1 a 5.9 por analogía con HU-01.
 - Los adaptadores (5.6 y 5.7) se commitearon con sus tests, sin RED aparte; las reglas de negocio (5.4 y 5.5) sí tienen RED → GREEN.
+
+---
+
+## HU-07: Listar y ordenar el backlog por prioridad
+
+- **Issue:** [#18](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/18) · Sprint 2 · 2 SP
+- **Spec:** [docs/specs/HU-07-listar-backlog.md](specs/HU-07-listar-backlog.md)
+- **Feature:** [features/HU-07-listar-backlog.feature](../features/HU-07-listar-backlog.feature) (steps en [test/bdd/hu07_steps_test.go](../test/bdd/hu07_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-07.1 Alta primero | RN-07.2 | Por defecto el backlog se ordena por prioridad, de Alta a Baja `@normal` | `TestOrdenarBacklog`, `TestListarBacklog_DevuelveLosDelProyectoOrdenados`, `TestGetBacklog_DevuelveLosElementos`, `TestPantallaBacklog_ListaControlesYFormulario` | `domain.OrdenarBacklog`, `app.ListarBacklog`, `http.handlerListarBacklog` |
+| CA-07.2 Orden ascendente | RN-07.2 | En orden ascendente el backlog va de Baja a Alta `@alternativo` | `TestOrdenarBacklog` (ascendente), `TestListarBacklog_DevuelveLosDelProyectoOrdenados`, `TestGetBacklog_PasaOrdenYEstado`, `TestPantallaBacklog_OrdenYFiltro` | `domain.OrdenarBacklog` |
+| CA-07.3 Desempate por creación | RN-07.3 | A igual prioridad se respeta el orden de creación `@limite` (2 ejemplos) | `TestOrdenarBacklog`, `TestOrdenarBacklog_DesempataPorCreacionAunqueLleguenDesordenados` | `domain.OrdenarBacklog` |
+| CA-07.4 Filtro por estado | RN-07.4 | Se puede filtrar el backlog por estado `@normal` (3 ejemplos) · Sin filtro se listan todos los estados `@normal` | `TestOrdenarBacklog` (filtros), `TestListarBacklog_DevuelveLosDelProyectoOrdenados`, `TestGetBacklog_PasaOrdenYEstado`, `TestPantallaBacklog_OrdenYFiltro` | `domain.OrdenarBacklog` |
+| CA-07.5 Lista vacía | RN-07.5 | Un proyecto sin elementos tiene el backlog vacío `@limite` · Un filtro sin coincidencias da un backlog vacío `@limite` | `TestOrdenarBacklog_ListaVacia`, `TestRepositorioBacklog_ListarElementos_SinElementos`, `TestGetBacklog_SinElementos_DevuelveArrayVacio`, `TestPantallaBacklog_SinElementos_MuestraMensaje` | `domain.OrdenarBacklog`, `http.handlerListarBacklog` |
+| CA-07.6 Solo su proyecto | RN-07.1 | El backlog solo muestra los elementos de su proyecto `@alternativo` | `TestListarBacklog_DevuelveLosDelProyectoOrdenados`, `TestRepositorioBacklog_ListarElementos_DevuelveLosDelProyectoCompletos` | `persistencia.RepositorioBacklog.ListarElementos` |
+| CA-07.7 Proyecto inexistente | RN-07.1 | No se puede listar el backlog de un proyecto que no existe `@error` | `TestListarBacklog_Errores`, `TestGetBacklog_Errores`, `TestPantallaBacklog_ProyectoInexistente_Devuelve404` | `app.ListarBacklog` |
+| CA-07.8 Orden o estado inválidos | Sección 7 | El orden tiene que ser asc o desc `@error` · El estado del filtro tiene que ser uno de los tres válidos `@error` | `TestOrdenarBacklog_Invalido_RetornaError`, `TestListarBacklog_Errores`, `TestGetBacklog_Errores`, `TestPantallaBacklog_OrdenInvalido_Devuelve400` | `domain.OrdenarBacklog` |
+
+Pantalla (tarea 7.8, Definition of Done del Sprint 2): `/web/proyectos/{id}/backlog` lista el backlog con el orden y el filtro, y agrega elementos con el caso de uso de HU-05, que no tenía pantalla. Tests del alta: `TestPantallaBacklog_CrearElemento_RedirigeAlBacklog`, `TestPantallaBacklog_CrearSinStoryPoints`, `TestPantallaBacklog_StoryPointsNoNumericos_NoLlamaAlCasoDeUso`, `TestPantallaBacklog_ErrorAlCrear_MuestraElMensajeYConservaElFormulario`, `TestPantallaBacklog_CrearEnProyectoInexistente_Devuelve404` y `TestPantallaDetalle_EnlazaAlBacklog`. Que el alta conserve el orden y el filtro: `TestPantallaBacklog_FormularioConservaOrdenYFiltro`, `TestPantallaBacklog_CrearVuelveConElMismoOrdenYFiltro` y `TestPantallaBacklog_ErrorAlCrearConservaOrdenYFiltro`.
+
+Listar no modifica nada (sección 3): `TestOrdenarBacklog_NoModificaLaListaRecibida`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog_listado.go](../internal/domain/backlog_listado.go) (`OrdenarBacklog`) | [backlog_listado_test.go](../internal/domain/backlog_listado_test.go) |
+| Caso de uso | [internal/app/listar_backlog.go](../internal/app/listar_backlog.go) | [listar_backlog_test.go](../internal/app/listar_backlog_test.go) |
+| Persistencia | [internal/adapters/persistencia/backlog_repo.go](../internal/adapters/persistencia/backlog_repo.go) (`ListarElementos`) | [listar_backlog_test.go](../internal/adapters/persistencia/listar_backlog_test.go) |
+| HTTP | [internal/adapters/http/listar_backlog_handler.go](../internal/adapters/http/listar_backlog_handler.go) (`GET /proyectos/{id}/backlog`, `RegistrarListarBacklog`) | [listar_backlog_handler_test.go](../internal/adapters/http/listar_backlog_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_backlog.go](../internal/adapters/http/pantallas_backlog.go), [web/plantillas/backlog.html](../internal/adapters/http/web/plantillas/backlog.html) | [pantallas_backlog_test.go](../internal/adapters/http/pantallas_backlog_test.go) |
+| BDD | [test/bdd/hu07_sistema_test.go](../test/bdd/hu07_sistema_test.go), [hu07_steps_test.go](../test/bdd/hu07_steps_test.go) | 14 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 7.1 Spec | `fbc91bb` docs(HU-07): [7.1] spec | — |
+| 7.2 Escenarios BDD | `5d29f6b` test(HU-07): [7.2] escenarios BDD | — |
+| 7.3 Steps godog | `9ac9ef4` test(HU-07): [7.3] steps de godog (en rojo) | BDD en rojo |
+| 7.4 Dominio | `2347e81` test(HU-07): [7.4][RED] | **RED** |
+| | `2cdd20f` feat(HU-07): [7.4][GREEN] | **GREEN** |
+| 7.5 Caso de uso | `bfff2a8` test(HU-07): [7.5][RED] | **RED** |
+| | `f7b57c0` feat(HU-07): [7.5][GREEN] | **GREEN** |
+| 7.6 Persistencia | `9ec3df9` test(HU-07): [7.6][RED] | **RED** |
+| | `8b37212` feat(HU-07): [7.6][GREEN] | **GREEN** |
+| | `7f36d27` test(HU-07): escenarios BDD conectados (en verde) | BDD en verde |
+| 7.7 HTTP | `bedaa9e` test(HU-07): [7.7][RED] | **RED** |
+| | `fce353f` feat(HU-07): [7.7][GREEN] | **GREEN** |
+| | `fd1eb05` refactor(HU-07): [7.7][REFACTOR] HU-05 usa aRespuestaElemento | **REFACTOR** |
+| 7.8 Pantalla | `348dc5e` test(HU-07): [7.8][RED] | **RED** |
+| | `4549f0f` feat(HU-07): [7.8][GREEN] | **GREEN** |
+| | `82ac0e1` test(HU-07): [7.8][RED] el alta conserva el orden y el filtro | **RED** |
+| | `7db8183` feat(HU-07): [7.8][GREEN] el alta conserva el orden y el filtro | **GREEN** |
+| 7.9 Revisión y trazabilidad | `fb08cbe` docs(HU-07): [7.9] matriz de trazabilidad, y este commit | — |
+
+### Huecos
+
+- La spec sigue en estado **Borrador**: pasa a Aprobada cuando se apruebe el PR.
 
 ---
 

@@ -46,6 +46,7 @@ func main() {
 			persistencia.NuevoRepositorioEsfuerzo(db), time.Now),
 		CrearSprint:   app.NuevoCrearSprint(repoProyectos, repoSprints),
 		ListarSprints: app.NuevoListarSprints(repoProyectos, repoSprints),
+		ListarBacklog: app.NuevoListarBacklog(repoProyectos, repoBacklog),
 	})
 
 	puerto := os.Getenv("PORT")
