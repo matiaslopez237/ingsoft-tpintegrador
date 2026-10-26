@@ -162,6 +162,63 @@ func TestRegistrarEsfuerzo_ElementoDeOtroProyecto_RetornaErrorYNoGuarda(t *testi
 	}
 }
 
+// Traza: HU-18 CA-18.8 (RN-18.3)
+func TestRegistrarEsfuerzo_IntegranteQueNoPertenece_RetornaErrorYNoGuarda(t *testing.T) {
+	tests := []struct {
+		nombre     string
+		integrante string
+	}{
+		{"no está en ningún proyecto", "Caro"},
+		{"está en otro proyecto", "Beto"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			f := nuevoEsfuerzoFalso()
+			d := datosEsfuerzo()
+			d.Integrante = tt.integrante
+
+			_, err := registrarEsfuerzoCon(f).Ejecutar(context.Background(), d)
+
+			if !errors.Is(err, domain.ErrIntegranteNoEncontrado) {
+				t.Errorf("error = %v, se esperaba %v", err, domain.ErrIntegranteNoEncontrado)
+			}
+			if len(f.guardados) != 0 {
+				t.Errorf("no se esperaban registros guardados, hay %d", len(f.guardados))
+			}
+		})
+	}
+}
+
+// Traza: HU-18 CA-18.8 (el nombre se compara con domain.ClaveNombre y se guarda como figura en el proyecto)
+func TestRegistrarEsfuerzo_IntegranteConOtrasMayusculas_GuardaElNombreDelProyecto(t *testing.T) {
+	f := nuevoEsfuerzoFalso()
+	d := datosEsfuerzo()
+	d.Integrante = "  aNA "
+
+	r, err := registrarEsfuerzoCon(f).Ejecutar(context.Background(), d)
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if r.Integrante != "Ana" || f.guardados[0].Integrante != "Ana" {
+		t.Errorf("Integrante = %q (guardado %q), se esperaba \"Ana\"", r.Integrante, f.guardados[0].Integrante)
+	}
+}
+
+// Traza: HU-18 sección 7 (el dominio valida antes de verificar que el integrante pertenezca)
+func TestRegistrarEsfuerzo_IntegranteAjenoYDatosInvalidos_InformaElErrorDelDominio(t *testing.T) {
+	f := nuevoEsfuerzoFalso()
+	d := datosEsfuerzo()
+	d.Integrante = "Caro"
+	d.Horas = 0
+
+	_, err := registrarEsfuerzoCon(f).Ejecutar(context.Background(), d)
+
+	if !errors.Is(err, domain.ErrHorasInvalidas) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrHorasInvalidas)
+	}
+}
+
 // Traza: HU-18 CA-18.4, CA-18.6 (el "hoy" sale del reloj que recibe el caso de uso)
 func TestRegistrarEsfuerzo_DatosInvalidos_NoLleganAlRepositorio(t *testing.T) {
 	tests := []struct {
