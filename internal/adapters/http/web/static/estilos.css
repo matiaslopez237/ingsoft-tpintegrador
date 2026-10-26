@@ -102,6 +102,9 @@ button.peligro { background: #fff; color: var(--peligro); border-color: var(--pe
 }
 .vacio, .ayuda { color: var(--suave); }
 
+.confirmar { margin-top: 1.5rem; }
+.confirmar summary { cursor: pointer; color: var(--peligro); }
+
 .saltar { position: absolute; left: -999px; top: 0; padding: 0.5rem; background: #fff; }
 .saltar:focus { left: 0.5rem; }
 

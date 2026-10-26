@@ -41,7 +41,11 @@
   </div>
 </form>
 
-<form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.ElementoID}}/eliminar" class="en-linea">
-  <button type="submit" class="peligro">Eliminar elemento</button>
-</form>
+<details class="confirmar">
+  <summary>Eliminar elemento</summary>
+  <p>Se elimina el elemento con sus criterios de aceptación. No se puede deshacer.</p>
+  <form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.ElementoID}}/eliminar" class="en-linea">
+    <button type="submit" class="peligro">Sí, eliminar «{{.Original.Titulo}}»</button>
+  </form>
+</details>
 {{end}}

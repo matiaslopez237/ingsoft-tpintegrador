@@ -159,3 +159,26 @@ func TestPantallaElemento_Eliminar(t *testing.T) {
 		t.Errorf("datos recibidos: %+v", eliminador.recibido)
 	}
 }
+
+// Agregar espacios alrededor del título no cuenta como cambio: el dominio los recorta igual.
+func TestPantallaElemento_EspaciosAlrededorNoSonUnCambio(t *testing.T) {
+	editor := &editorElementosFalso{}
+	cu := casosBacklogFalsos(editor, &eliminadorElementosFalso{})
+	cu.EditarElementoBacklog = editarQueAcepta(editor)
+	form := formElementoOriginal()
+	form.Set("titulo", "  Login ")
+	form.Set("estado", "Hecho")
+
+	pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", form)
+
+	if c := editor.recibido.Cambios; c.Titulo != nil || c.Estado == nil {
+		t.Errorf("cambios: título %v, estado %v", c.Titulo, c.Estado)
+	}
+}
+
+// Eliminar pide confirmación antes de enviar el formulario.
+func TestPantallaElemento_EliminarPideConfirmacion(t *testing.T) {
+	rec := pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}),
+		http.MethodGet, "/web/proyectos/7/backlog/7", nil)
+	contiene(t, rec, "<details", "<summary>Eliminar elemento</summary>", "Sí, eliminar «Login»")
+}

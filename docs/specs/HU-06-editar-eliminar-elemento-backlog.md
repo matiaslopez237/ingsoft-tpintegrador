@@ -21,7 +21,7 @@ Mantener al día el Product Backlog de un proyecto: corregir o completar los dat
 | `criterios` | `*[]string` | No | Si se envía: reemplaza la lista; al menos uno y ninguno vacío (RN-05.7). |
 | `estado` | `*domain.EstadoElemento` | No | Si se envía: `Pendiente`, `En progreso` o `Hecho`. |
 
-Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `null` quita la estimación.
+Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `null` quita la estimación. En los demás campos, `null` se toma como "no enviado" (igual que en HU-02).
 
 **Eliminar** (`DELETE /proyectos/{id}/backlog/{elementoID}`): `proyectoID` y `elementoID`.
 
@@ -67,7 +67,7 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 | Estado que no es Pendiente, En progreso ni Hecho | `ErrEstadoElementoInvalido` | 400 |
 | Otro elemento del proyecto ya tiene ese título | `domain.ErrTituloDuplicado` (HU-05) | 400 |
 | Eliminar un elemento con esfuerzo registrado | `ErrElementoConEsfuerzo` | 409 |
-| Cuerpo JSON mal formado o con campos desconocidos | — (adaptador) | 400 |
+| Cuerpo JSON mal formado, con campos desconocidos o `story_points` que no es un entero | — (adaptador) | 400. Es un error de formato: se informa antes de buscar el elemento, como las fechas mal formadas en HU-30. |
 
 Si hay varios errores, se informa el primero en el orden de la tabla: primero se busca el elemento, después el dominio valida los campos (en el orden de HU-05 y al final el estado) y por último se verifica el título duplicado.
 
@@ -95,3 +95,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 
 ## Historial
 - 2026-10-26: creada (borrador).
+- 2026-10-26: aclarados, a partir de la revisión con go-reviewer, el `null` en campos que no son `story_points` y que el formato inválido de `story_points` se informa antes de buscar el elemento. La pantalla pide confirmación antes de eliminar.

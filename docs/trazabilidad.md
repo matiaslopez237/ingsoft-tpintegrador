@@ -13,6 +13,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
+| HU-06 Editar o eliminar un elemento del backlog | ✓ (Borrador, pendiente de aprobación en el PR; RN-06.8 pendiente de HU-09) | 10/10 | 10/10 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 21/21 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
 | HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
 
@@ -529,3 +530,59 @@ Además: `TestPantallas_RechazaFormulariosDeOtroSitio` (403, CSRF), `TestPantall
 - La spec está en **Borrador**: las decisiones (prefijo `/web`, orden por nombre, POST con redirección 303, CSS propio sin JavaScript) se validan en el PR.
 - Las pantallas de las demás historias (HU-05 en adelante) no están incluidas: cada historia suma la suya sobre este layout.
 - Los tests de los arreglos de la revisión (30.8) se escribieron junto con el arreglo, no en un commit RED aparte.
+
+---
+
+## HU-06: Editar o eliminar un elemento del backlog
+
+- **Issue:** [#17](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/17) · Sprint 2 · 3 SP · tareas #123 a #131
+- **Spec:** [docs/specs/HU-06-editar-eliminar-elemento-backlog.md](specs/HU-06-editar-eliminar-elemento-backlog.md)
+- **Feature:** [features/HU-06-editar-eliminar-elemento-backlog.feature](../features/HU-06-editar-eliminar-elemento-backlog.feature) (steps en [test/bdd/hu06_steps_test.go](../test/bdd/hu06_steps_test.go); los escenarios de CA-06.10 usan la pantalla real)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-06.1 Solo la prioridad | RN-06.1 | Cambiar solo la prioridad `@normal` | `TestEditar_SoloPrioridad_ElRestoNoCambia`, `TestEditarElemento_DatosValidos_GuardaSoloLoEnviadoYDevuelveLoGuardado`, `TestPatchElemento_Valido_Devuelve200YSoloEnviaLoRecibido` | `domain.ElementoBacklog.Editar`, `app.EditarElementoBacklog` |
+| CA-06.2 Varios campos y estado | RN-06.1, RN-06.4, RN-06.9 | Editar varios campos juntos `@normal` · Un elemento Hecho puede volver a Pendiente `@limite` | `TestEditar_TodosLosCampos`, `TestEditar_EstadoEnCualquierSentido`, `TestRepositorioBacklog_ActualizarElemento_TodosLosCampos` | `domain.ElementoBacklog.Editar`, `persistencia.RepositorioBacklog.ActualizarElemento` |
+| CA-06.3 Quitar la estimación | RN-06.3 | Quitar la estimación `@alternativo` | `TestEditar_StoryPointsNil_QuedaSinEstimar`, `TestPatchElemento_StoryPoints`, `TestPantallaElemento_StoryPointsVacioQuitaLaEstimacion` | `domain.ElementoBacklog.Editar`, `pedidoEditarElemento.aCambios` |
+| CA-06.4 Datos inválidos | RN-06.2 | Los datos editados cumplen las reglas de HU-05 `@error` (×7) | `TestEditar_DatosInvalidos_RetornaError`, `TestEditarElemento_DatosInvalidos_NoActualiza`, `TestPatchElemento_Errores` | `domain.ElementoBacklog.Editar` (reutiliza `NuevoElementoBacklog`) |
+| CA-06.5 Título duplicado | RN-06.2 | No se puede renombrar a un título que ya existe `@error` · Renombrar con otras mayúsculas `@alternativo` | `TestEditarElemento_TituloDuplicado`, `TestRepositorioBacklog_ActualizarElemento_Errores` | `app.EditarElementoBacklog`, UNIQUE `(proyecto_id, titulo_clave)` |
+| CA-06.6 Sin cambios | RN-06.5 | Editar sin enviar ningún campo `@error` | `TestEditar_DatosInvalidos_RetornaError` (sin cambios), `TestPatchElemento_Errores` | `domain.ElementoBacklog.Editar` |
+| CA-06.7 Otro proyecto / inexistente | RN-06.6 | No se edita ni se elimina un elemento de otro proyecto `@error` · No se elimina un elemento inexistente `@error` | `TestEditarElemento_DeOtroProyectoOInexistente_NoEncontrado`, `TestEliminarElemento_DeOtroProyectoOInexistente_NoEncontrado`, `TestConsultarElemento_DeOtroProyectoOInexistente` | `buscarElementoDelProyecto` |
+| CA-06.8 Eliminar sin esfuerzo | RN-06.7 | Eliminar un elemento sin esfuerzo `@normal` | `TestEliminarElemento_SinEsfuerzo_LoElimina`, `TestRepositorioBacklog_EliminarElemento_BorraElElementoYSusCriterios`, `TestDeleteElemento` | `app.EliminarElementoBacklog`, `persistencia.RepositorioBacklog.EliminarElemento` |
+| CA-06.9 Con esfuerzo no se elimina | RN-06.7 | No se elimina un elemento con esfuerzo registrado `@error` | `TestEliminarElemento_ConEsfuerzo_NoLoElimina`, `TestRepositorioBacklog_ElementoConEsfuerzo`, `TestDeleteElemento` (409) | `app.EliminarElementoBacklog`, clave foránea de `registros_esfuerzo` |
+| CA-06.10 Pantalla | Restricciones | Editar desde la pantalla guarda solo lo que cambió `@normal` · La pantalla muestra el error `@error` · Eliminar desde la pantalla `@normal` | `TestPantallaElemento_*` (7 tests), `TestConsultarElemento_DelProyecto` | `pantallas_backlog.go`, `web/plantillas/elemento.html`, `app.ConsultarElementoBacklog` |
+
+RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implementa HU-09 en `EliminarElementoBacklog`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog_editar.go](../internal/domain/backlog_editar.go) | [backlog_editar_test.go](../internal/domain/backlog_editar_test.go) |
+| Casos de uso | [internal/app/editar_elemento_backlog.go](../internal/app/editar_elemento_backlog.go), [consultar_elemento_backlog.go](../internal/app/consultar_elemento_backlog.go) | [editar_elemento_backlog_test.go](../internal/app/editar_elemento_backlog_test.go), [consultar_elemento_backlog_test.go](../internal/app/consultar_elemento_backlog_test.go) |
+| Persistencia | [internal/adapters/persistencia/backlog_editar.go](../internal/adapters/persistencia/backlog_editar.go) | [backlog_editar_test.go](../internal/adapters/persistencia/backlog_editar_test.go) |
+| HTTP (JSON) | [internal/adapters/http/backlog_editar_handler.go](../internal/adapters/http/backlog_editar_handler.go) (`PATCH`/`DELETE /proyectos/{id}/backlog/{elementoID}`) | [backlog_editar_handler_test.go](../internal/adapters/http/backlog_editar_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_backlog.go](../internal/adapters/http/pantallas_backlog.go), [web/plantillas/elemento.html](../internal/adapters/http/web/plantillas/elemento.html) (`/web/proyectos/{id}/backlog/{elementoID}`) | [pantallas_backlog_test.go](../internal/adapters/http/pantallas_backlog_test.go) |
+| BDD | [test/bdd/hu06_sistema_test.go](../test/bdd/hu06_sistema_test.go) | 21 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 6.1 Spec | `790172d` | — |
+| 6.2 Escenarios BDD | `315f3b8` | — |
+| 6.3 Steps godog | `2330d68` | BDD en rojo |
+| 6.4 Edición en el dominio | `78c6573`, `8183241` [RED] → `0925cd6` [GREEN] | **RED → GREEN** |
+| 6.5 Casos de uso | `b4692bf` [RED] → `0555f28` [GREEN] | **RED → GREEN** |
+| 6.6 Persistencia | `4321ddb` [RED] → `11283dd` [GREEN] | **RED → GREEN** |
+| 6.7 HTTP | `23afd32` [RED] → `f1e086b` [GREEN] | **RED → GREEN** |
+| 6.8 Pantalla | `422994e` [RED] → `be127d1` [GREEN] | **RED → GREEN**, BDD en verde |
+| 6.9 Revisión y trazabilidad | este commit | **REFACTOR** |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- RN-06.8 (Sprint activo) depende de HU-09.
+- La lista del backlog (HU-07) todavía no enlaza a la pantalla del elemento: hoy se llega por URL (`/web/proyectos/{id}/backlog/{elementoID}`).

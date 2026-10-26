@@ -177,10 +177,11 @@ func leerFormElemento(r *http.Request) (formElemento, formElemento) {
 // quita la estimación; los criterios van uno por línea y se ignoran las líneas vacías.
 func cambiosDeFormElemento(f, original formElemento) (domain.CambiosElemento, error) {
 	var c domain.CambiosElemento
-	if f.Titulo != original.Titulo {
+	// Título y descripción se comparan recortados: el dominio los recorta igual al guardar.
+	if strings.TrimSpace(f.Titulo) != strings.TrimSpace(original.Titulo) {
 		c.Titulo = &f.Titulo
 	}
-	if f.Descripcion != original.Descripcion {
+	if strings.TrimSpace(f.Descripcion) != strings.TrimSpace(original.Descripcion) {
 		c.Descripcion = &f.Descripcion
 	}
 	if f.Prioridad != original.Prioridad {
