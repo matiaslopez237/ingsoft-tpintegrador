@@ -1,0 +1,25 @@
+{{define "layout"}}<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{template "titulo" .}} · Software Metrics &amp; Estimation</title>
+  <link rel="stylesheet" href="/static/estilos.css">
+</head>
+<body>
+  <header class="encabezado">
+    <a class="marca" href="/web/proyectos">Software Metrics &amp; Estimation</a>
+    <nav aria-label="Principal">
+      <ul>
+        <li><a href="/web/proyectos">Proyectos</a></li>
+      </ul>
+    </nav>
+  </header>
+  <main class="contenido">
+    {{template "contenido" .}}
+  </main>
+  <footer class="pie">Ingeniería y Calidad de Software 2026 · UTN FRSR</footer>
+</body>
+</html>{{end}}
+
+{{define "error_form"}}{{if .}}<p class="alerta" role="alert">{{.}}</p>{{end}}{{end}}

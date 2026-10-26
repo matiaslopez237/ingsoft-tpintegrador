@@ -1,0 +1,55 @@
+{{define "titulo"}}{{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>{{.Proyecto.Nombre}}</h1>
+  <a class="boton" href="/web/proyectos/{{.Proyecto.ID}}/editar">Editar</a>
+</div>
+<dl class="datos">
+  <dt>Estado</dt><dd><span class="estado">{{.Proyecto.Estado}}</span></dd>
+  <dt>Inicio</dt><dd>{{.Proyecto.FechaInicio}}</dd>
+  <dt>Fin</dt><dd>{{if .Proyecto.FechaFin}}{{.Proyecto.FechaFin}}{{else}}Sin fecha de fin{{end}}</dd>
+</dl>
+
+<section aria-labelledby="titulo-integrantes">
+  <h2 id="titulo-integrantes">Integrantes</h2>
+  {{template "error_form" .Error}}
+  {{if .Proyecto.Integrantes}}
+  <table>
+    <thead>
+      <tr><th scope="col">Nombre</th><th scope="col">Roles</th><th scope="col">Sumar rol</th><th scope="col"><span class="oculto">Quitar</span></th></tr>
+    </thead>
+    <tbody>
+      {{range .Proyecto.Integrantes}}
+      <tr>
+        <td>{{.Nombre}}</td>
+        <td>{{range $i, $rol := .Roles}}{{if $i}}, {{end}}{{$rol}}{{end}}</td>
+        <td>
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/integrantes/{{.Nombre}}/roles" class="en-linea">
+            <label class="oculto" for="rol-{{.Nombre}}">Rol para {{.Nombre}}</label>
+            <input id="rol-{{.Nombre}}" name="rol" type="text" required>
+            <button type="submit">Sumar</button>
+          </form>
+        </td>
+        <td>
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/integrantes/{{.Nombre}}/quitar" class="en-linea">
+            <button type="submit" class="peligro">Quitar</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="vacio">El proyecto todavía no tiene integrantes.</p>
+  {{end}}
+
+  <h3>Agregar integrante</h3>
+  <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/integrantes" class="formulario en-linea">
+    <label for="nuevo-nombre">Nombre</label>
+    <input id="nuevo-nombre" name="nombre" type="text" value="{{.FormIntegrante.Nombre}}" required>
+    <label for="nuevo-rol">Rol</label>
+    <input id="nuevo-rol" name="rol" type="text" value="{{.FormIntegrante.Rol}}" required>
+    <button type="submit" class="boton">Agregar</button>
+  </form>
+</section>
+{{end}}

@@ -1,0 +1,27 @@
+{{define "titulo"}}{{if .ID}}Editar {{.Form.Nombre}}{{else}}Nuevo proyecto{{end}}{{end}}
+{{define "contenido"}}
+<h1>{{if .ID}}Editar proyecto{{else}}Nuevo proyecto{{end}}</h1>
+{{template "error_form" .Error}}
+<form method="post" action="{{if .ID}}/web/proyectos/{{.ID}}/editar{{else}}/web/proyectos{{end}}" class="formulario">
+  <label for="nombre">Nombre</label>
+  <input id="nombre" name="nombre" type="text" maxlength="100" value="{{.Form.Nombre}}" required>
+
+  <label for="fecha_inicio">Fecha de inicio</label>
+  <input id="fecha_inicio" name="fecha_inicio" type="date" value="{{.Form.FechaInicio}}" required>
+
+  <label for="fecha_fin">Fecha de fin <span class="ayuda">(opcional)</span></label>
+  <input id="fecha_fin" name="fecha_fin" type="date" value="{{.Form.FechaFin}}">
+
+  {{if .ID}}
+  <label for="estado">Estado</label>
+  <select id="estado" name="estado">
+    {{range .Estados}}<option value="{{.}}"{{if eq . $.Form.Estado}} selected{{end}}>{{.}}</option>{{end}}
+  </select>
+  {{end}}
+
+  <div class="acciones">
+    <button type="submit" class="boton">Guardar</button>
+    <a href="{{if .ID}}/web/proyectos/{{.ID}}{{else}}/web/proyectos{{end}}">Cancelar</a>
+  </div>
+</form>
+{{end}}
