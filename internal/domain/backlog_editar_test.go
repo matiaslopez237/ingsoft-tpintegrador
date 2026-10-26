@@ -16,8 +16,6 @@ func login(t *testing.T) ElementoBacklog {
 	return e
 }
 
-func texto(s string) *string { return &s }
-
 // Traza: HU-06 CA-06.1 (RN-06.1)
 func TestEditar_SoloPrioridad_ElRestoNoCambia(t *testing.T) {
 	original := login(t)
