@@ -66,6 +66,12 @@ func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
 	}
 	f, original := leerFormElemento(r)
 	cambios, err := cambiosDeFormElemento(f, original)
+	if err == nil && cambios == (domain.CambiosElemento{}) {
+		// Si no cambió ningún campo, se vuelve al elemento sin mensaje: no es un error del
+		// usuario (igual que el formulario de proyecto, DEF-01).
+		http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog/%d", pid, eid), http.StatusSeeOther)
+		return
+	}
 	if err == nil {
 		_, err = p.cu.EditarElementoBacklog.Ejecutar(r.Context(), app.DatosEditarElemento{ProyectoID: pid, ElementoID: eid, Cambios: cambios})
 	}
