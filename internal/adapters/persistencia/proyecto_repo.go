@@ -174,6 +174,44 @@ func (r *RepositorioProyectos) BuscarPorID(ctx context.Context, id int64) (domai
 	return p, nil
 }
 
+// ListarProyectos devuelve todos los proyectos sin sus integrantes. El orden lo decide el caso de uso.
+// Implementa HU-30 (app.ListadorProyectos).
+func (r *RepositorioProyectos) ListarProyectos(ctx context.Context) ([]domain.Proyecto, error) {
+	rows, err := r.db.QueryContext(ctx, `SELECT id, nombre, fecha_inicio, fecha_fin, estado FROM proyectos`)
+	if err != nil {
+		return nil, fmt.Errorf("listar proyectos: %w", err)
+	}
+	defer rows.Close()
+
+	var proyectos []domain.Proyecto
+	for rows.Next() {
+		var (
+			p           domain.Proyecto
+			inicio, est string
+			fin         sql.NullString
+		)
+		if err := rows.Scan(&p.ID, &p.Nombre, &inicio, &fin, &est); err != nil {
+			return nil, fmt.Errorf("leer proyecto: %w", err)
+		}
+		if p.FechaInicio, err = time.Parse(time.DateOnly, inicio); err != nil {
+			return nil, fmt.Errorf("fecha de inicio guardada inválida: %w", err)
+		}
+		if fin.Valid {
+			f, err := time.Parse(time.DateOnly, fin.String)
+			if err != nil {
+				return nil, fmt.Errorf("fecha de fin guardada inválida: %w", err)
+			}
+			p.FechaFin = &f
+		}
+		p.Estado = domain.Estado(est)
+		proyectos = append(proyectos, p)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("recorrer proyectos: %w", err)
+	}
+	return proyectos, nil
+}
+
 // buscarIntegrantes devuelve los integrantes del proyecto con sus roles, ambos en el orden en que se agregaron.
 func (r *RepositorioProyectos) buscarIntegrantes(ctx context.Context, proyectoID int64) ([]domain.Integrante, error) {
 	rows, err := r.db.QueryContext(ctx,

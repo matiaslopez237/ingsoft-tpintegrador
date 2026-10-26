@@ -1,0 +1,26 @@
+{{define "titulo"}}Proyectos{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Proyectos</h1>
+  <a class="boton" href="/web/proyectos/nuevo">Nuevo proyecto</a>
+</div>
+{{if .Proyectos}}
+<table>
+  <thead>
+    <tr><th scope="col">Nombre</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Estado</th></tr>
+  </thead>
+  <tbody>
+    {{range .Proyectos}}
+    <tr>
+      <td><a href="/web/proyectos/{{.ID}}">{{.Nombre}}</a></td>
+      <td>{{.FechaInicio}}</td>
+      <td>{{if .FechaFin}}{{.FechaFin}}{{else}}—{{end}}</td>
+      <td><span class="estado">{{.Estado}}</span></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="vacio">Todavía no hay proyectos. <a href="/web/proyectos/nuevo">Creá el primero</a>.</p>
+{{end}}
+{{end}}

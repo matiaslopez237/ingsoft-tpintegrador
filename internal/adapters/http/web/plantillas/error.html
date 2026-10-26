@@ -1,0 +1,6 @@
+{{define "titulo"}}Error{{end}}
+{{define "contenido"}}
+<h1>No se pudo completar el pedido</h1>
+{{template "error_form" .Mensaje}}
+<p><a href="/web/proyectos">Volver a la lista de proyectos</a></p>
+{{end}}

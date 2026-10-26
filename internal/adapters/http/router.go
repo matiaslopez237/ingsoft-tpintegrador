@@ -17,6 +17,7 @@ type CasosDeUso struct {
 	RegistrarEsfuerzo    registradorEsfuerzo  // HU-18
 	CrearSprint          creadorSprints       // HU-08
 	ListarSprints        listadorSprints      // HU-08
+	ListarProyectos      listadorProyectos    // HU-30
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
@@ -31,6 +32,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarCrearElementoBacklog(mux, cu.CrearElementoBacklog)
 	RegistrarRegistrarEsfuerzo(mux, cu.RegistrarEsfuerzo)
 	RegistrarSprints(mux, cu.CrearSprint, cu.ListarSprints)
+	RegistrarPantallas(mux, cu)
 	return mux
 }
 
