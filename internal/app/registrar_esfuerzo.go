@@ -65,6 +65,19 @@ func (uc *RegistrarEsfuerzo) Ejecutar(ctx context.Context, d DatosRegistroEsfuer
 		return domain.RegistroEsfuerzo{}, fmt.Errorf("registrar esfuerzo: %w", err)
 	}
 
+	// RN-18.3: el integrante tiene que estar en el proyecto. Se guarda con el nombre que figura ahí.
+	encontrado := false
+	for _, i := range p.Integrantes {
+		if domain.ClaveNombre(i.Nombre) == domain.ClaveNombre(r.Integrante) {
+			r.Integrante = i.Nombre
+			encontrado = true
+			break
+		}
+	}
+	if !encontrado {
+		return domain.RegistroEsfuerzo{}, fmt.Errorf("integrante %q: %w", r.Integrante, domain.ErrIntegranteNoEncontrado)
+	}
+
 	if err := uc.registros.GuardarRegistro(ctx, &r); err != nil {
 		return domain.RegistroEsfuerzo{}, fmt.Errorf("guardar registro de esfuerzo: %w", err)
 	}
