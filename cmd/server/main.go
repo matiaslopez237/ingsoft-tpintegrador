@@ -31,6 +31,7 @@ func main() {
 
 	repoProyectos := persistencia.NuevoRepositorioProyectos(db)
 	repoBacklog := persistencia.NuevoRepositorioBacklog(db)
+	repoSprints := persistencia.NuevoRepositorioSprints(db)
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		CrearProyecto:        app.NuevoCrearProyecto(repoProyectos),
 		ModificarProyecto:    app.NuevoModificarProyecto(repoProyectos),
@@ -43,6 +44,9 @@ func main() {
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-18, RN-18.4).
 		RegistrarEsfuerzo: app.NuevoRegistrarEsfuerzo(repoProyectos, repoBacklog,
 			persistencia.NuevoRepositorioEsfuerzo(db), time.Now),
+		CrearSprint:   app.NuevoCrearSprint(repoProyectos, repoSprints),
+		ListarSprints: app.NuevoListarSprints(repoProyectos, repoSprints),
+		ListarBacklog: app.NuevoListarBacklog(repoProyectos, repoBacklog),
 	})
 
 	puerto := os.Getenv("PORT")

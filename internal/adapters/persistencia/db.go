@@ -98,6 +98,19 @@ CREATE TABLE IF NOT EXISTS registros_esfuerzo (
 	fecha        TEXT    NOT NULL,
 	actividad    TEXT    NOT NULL,
 	medias_horas INTEGER NOT NULL
+);
+
+-- HU-08. numero: 1, 2, 3… dentro de cada proyecto (RN-08.7); lo calcula el INSERT de GuardarSprint.
+-- Fechas AAAA-MM-DD: compararlas como texto respeta el orden de las fechas (RN-08.5).
+CREATE TABLE IF NOT EXISTS sprints (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
+	numero       INTEGER NOT NULL,
+	fecha_inicio TEXT    NOT NULL,
+	fecha_fin    TEXT    NOT NULL,
+	objetivo     TEXT    NOT NULL,
+	estado       TEXT    NOT NULL,
+	UNIQUE (proyecto_id, numero)
 );`)
 	return err
 }

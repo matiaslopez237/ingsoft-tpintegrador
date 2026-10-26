@@ -43,6 +43,24 @@ var erroresDeValidacionPantallas = []error{
 	domain.ErrIntegranteDuplicado,
 	domain.ErrIntegranteNoEncontrado,
 	domain.ErrRolDuplicado,
+	// HU-08: los de crear un sprint.
+	domain.ErrProyectoNoActivo,
+	domain.ErrFechaFinObligatoria,
+	domain.ErrObjetivoVacio,
+	domain.ErrObjetivoDemasiadoLargo,
+	domain.ErrSprintFueraDelProyecto,
+	domain.ErrSprintSuperpuesto,
+	// HU-05 (alta desde la pantalla del backlog) y HU-07 (orden y filtro).
+	domain.ErrTituloVacio,
+	domain.ErrTituloDemasiadoLargo,
+	domain.ErrDescripcionVacia,
+	domain.ErrPrioridadInvalida,
+	domain.ErrStoryPointsInvalidos,
+	domain.ErrSinCriterios,
+	domain.ErrCriterioVacio,
+	domain.ErrTituloDuplicado,
+	domain.ErrOrdenInvalido,
+	domain.ErrEstadoElementoInvalido,
 }
 
 // estadosProyecto son las opciones del formulario de edición (RN-01.7). Validarlas es tarea
@@ -76,10 +94,11 @@ type (
 		Proyectos []vistaProyecto
 	}
 	datosFormProyecto struct {
-		ID      int64 // 0: proyecto nuevo
-		Form    formProyecto
-		Error   string
-		Estados []domain.Estado
+		ID       int64 // 0: proyecto nuevo
+		Form     formProyecto
+		Original formProyecto // DEF-01: valores con los que se abrió el formulario de edición
+		Error    string
+		Estados  []domain.Estado
 	}
 	datosDetalle struct {
 		Proyecto       vistaProyecto
@@ -99,7 +118,7 @@ type pantallas struct {
 	paginas map[string]*template.Template
 }
 
-var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html"}
+var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html", "sprints.html", "backlog.html"}
 
 // funcionesPlantillas son las funciones disponibles en las plantillas. segmento escapa un texto
 // para usarlo como parte de una ruta: html/template no escapa "/", "?" ni "#" dentro de una URL.
@@ -141,6 +160,10 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes", p.formulario(p.agregarIntegrante))
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/quitar", p.formulario(p.quitarIntegrante))
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/roles", p.formulario(p.agregarRol))
+	mux.HandleFunc("GET /web/proyectos/{id}/sprints", p.sprints)                      // HU-08
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints", p.formulario(p.crearSprint))   // HU-08
+	mux.HandleFunc("GET /web/proyectos/{id}/backlog", p.backlog)                      // HU-07
+	mux.HandleFunc("POST /web/proyectos/{id}/backlog", p.formulario(p.crearElemento)) // HU-07 (alta de HU-05)
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio
@@ -258,7 +281,8 @@ func (p *pantallas) formEditar(w http.ResponseWriter, r *http.Request) {
 	}
 	v := aVistaProyecto(pr)
 	form := formProyecto{Nombre: v.Nombre, FechaInicio: v.FechaInicio, FechaFin: v.FechaFin, Estado: v.Estado}
-	p.renderizar(w, http.StatusOK, "proyecto_form.html", datosFormProyecto{ID: id, Form: form, Estados: estadosProyecto})
+	p.renderizar(w, http.StatusOK, "proyecto_form.html",
+		datosFormProyecto{ID: id, Form: form, Original: form, Estados: estadosProyecto})
 }
 
 func (p *pantallas) editar(w http.ResponseWriter, r *http.Request) {
@@ -267,7 +291,13 @@ func (p *pantallas) editar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	form := leerFormProyecto(r)
-	cambios, err := cambiosDeForm(form)
+	original, conOriginal := leerOriginalProyecto(r)
+	cambios, err := cambiosDeForm(form, original, conOriginal)
+	if err == nil && conOriginal && cambios == (domain.CambiosProyecto{}) {
+		// RN-30.3: si no cambió ningún campo, se vuelve al detalle sin mensaje (no es un error).
+		redirigirAlDetalle(w, r, id)
+		return
+	}
 	if err == nil {
 		_, err = p.cu.ModificarProyecto.Ejecutar(r.Context(), app.DatosModificarProyecto{ProyectoID: id, Cambios: cambios})
 	}
@@ -278,7 +308,7 @@ func (p *pantallas) editar(w http.ResponseWriter, r *http.Request) {
 		}
 		if mensaje, ok := mensajeDeValidacion(err); ok {
 			p.renderizar(w, http.StatusBadRequest, "proyecto_form.html",
-				datosFormProyecto{ID: id, Form: form, Error: mensaje, Estados: estadosProyecto})
+				datosFormProyecto{ID: id, Form: form, Original: original, Error: mensaje, Estados: estadosProyecto})
 			return
 		}
 		p.fallaInterna(w, "modificar proyecto", err)
@@ -287,28 +317,40 @@ func (p *pantallas) editar(w http.ResponseWriter, r *http.Request) {
 	redirigirAlDetalle(w, r, id)
 }
 
-// cambiosDeForm arma una modificación con todos los campos: el formulario siempre los envía
-// (RN-30.3). Una fecha de fin vacía la quita; una de inicio vacía la rechaza el dominio (RN-02.4).
-func cambiosDeForm(f formProyecto) (domain.CambiosProyecto, error) {
-	inicio, err := fechaDeForm(f.FechaInicio, "fecha_inicio")
-	if err != nil {
-		return domain.CambiosProyecto{}, err
+// cambiosDeForm arma la modificación con los campos que el usuario cambió respecto de los valores
+// con los que se abrió el formulario (RN-30.3, DEF-01): así dos ediciones simultáneas de campos
+// distintos no se pisan, igual que con la API (HU-02, sección 5). Si el pedido no trae los valores
+// originales (un cliente que no es el formulario), se envían todos los campos.
+// Una fecha de fin vacía la quita; una de inicio vacía la rechaza el dominio (RN-02.4).
+func cambiosDeForm(f, original formProyecto, conOriginal bool) (domain.CambiosProyecto, error) {
+	cambio := func(nuevo, viejo string) bool { return !conOriginal || nuevo != viejo }
+	var c domain.CambiosProyecto
+	if cambio(f.Nombre, original.Nombre) {
+		nombre := f.Nombre
+		c.Nombre = &nombre
 	}
-	if inicio == nil {
-		inicio = &time.Time{}
+	if cambio(f.FechaInicio, original.FechaInicio) {
+		inicio, err := fechaDeForm(f.FechaInicio, "fecha_inicio")
+		if err != nil {
+			return domain.CambiosProyecto{}, err
+		}
+		if inicio == nil {
+			inicio = &time.Time{}
+		}
+		c.FechaInicio = inicio
 	}
-	fin, err := fechaDeForm(f.FechaFin, "fecha_fin")
-	if err != nil {
-		return domain.CambiosProyecto{}, err
+	if cambio(f.FechaFin, original.FechaFin) {
+		fin, err := fechaDeForm(f.FechaFin, "fecha_fin")
+		if err != nil {
+			return domain.CambiosProyecto{}, err
+		}
+		c.CambiarFechaFin, c.FechaFin = true, fin
 	}
-	nombre, estado := f.Nombre, domain.Estado(f.Estado)
-	return domain.CambiosProyecto{
-		Nombre:          &nombre,
-		FechaInicio:     inicio,
-		CambiarFechaFin: true,
-		FechaFin:        fin,
-		Estado:          &estado,
-	}, nil
+	if cambio(f.Estado, original.Estado) {
+		estado := domain.Estado(f.Estado)
+		c.Estado = &estado
+	}
+	return c, nil
 }
 
 // --- Integrantes ---
@@ -425,6 +467,20 @@ func leerFormProyecto(r *http.Request) formProyecto {
 		FechaFin:    r.PostFormValue("fecha_fin"),
 		Estado:      r.PostFormValue("estado"),
 	}
+}
+
+// leerOriginalProyecto lee los valores con los que se abrió el formulario de edición (campos
+// ocultos original_*). Devuelve false si el pedido no los trae.
+func leerOriginalProyecto(r *http.Request) (formProyecto, bool) {
+	if _, ok := r.PostForm["original_nombre"]; !ok {
+		return formProyecto{}, false
+	}
+	return formProyecto{
+		Nombre:      r.PostFormValue("original_nombre"),
+		FechaInicio: r.PostFormValue("original_fecha_inicio"),
+		FechaFin:    r.PostFormValue("original_fecha_fin"),
+		Estado:      r.PostFormValue("original_estado"),
+	}, true
 }
 
 // fechaDeForm convierte una fecha AAAA-MM-DD del formulario; vacía devuelve nil.
