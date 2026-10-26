@@ -1,0 +1,47 @@
+{{define "titulo"}}{{.Original.Titulo}}{{end}}
+{{define "contenido"}}
+<p><a href="/web/proyectos/{{.ProyectoID}}">← Volver al proyecto</a></p>
+<h1>{{.Original.Titulo}}</h1>
+{{template "error_form" .Error}}
+
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.ElementoID}}/editar" class="formulario">
+  {{/* Valores con los que se abrió la pantalla: se guarda solo lo que cambió (HU-06, sección 5). */}}
+  <input type="hidden" name="original_titulo" value="{{.Original.Titulo}}">
+  <input type="hidden" name="original_descripcion" value="{{.Original.Descripcion}}">
+  <input type="hidden" name="original_prioridad" value="{{.Original.Prioridad}}">
+  <input type="hidden" name="original_story_points" value="{{.Original.StoryPoints}}">
+  <input type="hidden" name="original_criterios" value="{{.Original.Criterios}}">
+  <input type="hidden" name="original_estado" value="{{.Original.Estado}}">
+
+  <label for="titulo">Título</label>
+  <input id="titulo" name="titulo" type="text" maxlength="100" value="{{.Form.Titulo}}" required>
+
+  <label for="descripcion">Descripción</label>
+  <textarea id="descripcion" name="descripcion" rows="3" required>{{.Form.Descripcion}}</textarea>
+
+  <label for="prioridad">Prioridad</label>
+  <select id="prioridad" name="prioridad">
+    {{range .Prioridades}}<option value="{{.}}"{{if eq (print .) $.Form.Prioridad}} selected{{end}}>{{.}}</option>{{end}}
+  </select>
+
+  <label for="story_points">Story points <span class="ayuda">(vacío: sin estimar)</span></label>
+  <input id="story_points" name="story_points" type="number" min="1" step="1" value="{{.Form.StoryPoints}}">
+
+  <label for="criterios">Criterios de aceptación <span class="ayuda">(uno por línea)</span></label>
+  <textarea id="criterios" name="criterios" rows="4" required>{{.Form.Criterios}}</textarea>
+
+  <label for="estado">Estado</label>
+  <select id="estado" name="estado">
+    {{range .Estados}}<option value="{{.}}"{{if eq (print .) $.Form.Estado}} selected{{end}}>{{.}}</option>{{end}}
+  </select>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Guardar</button>
+    <a href="/web/proyectos/{{.ProyectoID}}">Cancelar</a>
+  </div>
+</form>
+
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.ElementoID}}/eliminar" class="en-linea">
+  <button type="submit" class="peligro">Eliminar elemento</button>
+</form>
+{{end}}

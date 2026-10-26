@@ -78,10 +78,11 @@ func nuevoSistemaEdicionBacklog() (sistemaEdicionBacklog, error) {
 		dir:           dir,
 	}
 	s.servidor = httptest.NewServer(adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
-		ConsultarProyecto:       app.NuevoConsultarProyecto(proyectos),
-		ListarProyectos:         app.NuevoListarProyectos(proyectos),
-		EditarElementoBacklog:   s.editar,
-		EliminarElementoBacklog: s.eliminar,
+		ConsultarProyecto:        app.NuevoConsultarProyecto(proyectos),
+		ListarProyectos:          app.NuevoListarProyectos(proyectos),
+		EditarElementoBacklog:    s.editar,
+		EliminarElementoBacklog:  s.eliminar,
+		ConsultarElementoBacklog: app.NuevoConsultarElementoBacklog(backlog),
 	}))
 	s.cliente = s.servidor.Client()
 	s.cliente.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }

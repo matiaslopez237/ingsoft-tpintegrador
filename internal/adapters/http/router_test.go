@@ -12,17 +12,18 @@ import (
 // olvida de sumarla a NuevoRouter, el pedido da 404 o 405 y el test falla.
 func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 	mux := NuevoRouter(CasosDeUso{
-		CrearProyecto:           &creadorFalso{},
-		ModificarProyecto:       &modificadorFalso{},
-		AgregarIntegrante:       &agregadorFalso{},
-		QuitarIntegrante:        &quitadorFalso{},
-		AgregarRol:              &agregadorRolFalso{},
-		ConsultarProyecto:       &consultorFalso{},
-		CrearElementoBacklog:    &creadorElementosFalso{},
-		RegistrarEsfuerzo:       &registradorEsfuerzoFalso{},
-		ListarProyectos:         casosFalsos().ListarProyectos,
-		EditarElementoBacklog:   &editorElementosFalso{},
-		EliminarElementoBacklog: &eliminadorElementosFalso{},
+		CrearProyecto:            &creadorFalso{},
+		ModificarProyecto:        &modificadorFalso{},
+		AgregarIntegrante:        &agregadorFalso{},
+		QuitarIntegrante:         &quitadorFalso{},
+		AgregarRol:               &agregadorRolFalso{},
+		ConsultarProyecto:        &consultorFalso{},
+		CrearElementoBacklog:     &creadorElementosFalso{},
+		RegistrarEsfuerzo:        &registradorEsfuerzoFalso{},
+		ListarProyectos:          casosFalsos().ListarProyectos,
+		EditarElementoBacklog:    &editorElementosFalso{},
+		EliminarElementoBacklog:  &eliminadorElementosFalso{},
+		ConsultarElementoBacklog: casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}).ConsultarElementoBacklog,
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -36,10 +37,11 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPatch, "/proyectos/1/backlog/7", `{"prioridad":"Baja"}`},                                                                 // HU-06
 		{http.MethodDelete, "/proyectos/1/backlog/7", ""},                                                                                    // HU-06
 		{http.MethodPost, "/proyectos/1/backlog/1/esfuerzo", `{"integrante":"Ana","fecha":"2026-10-25","actividad":"Desarrollo","horas":2}`}, // HU-18
-		{http.MethodGet, "/", ""},                    // HU-30
-		{http.MethodGet, "/web/proyectos", ""},       // HU-30
-		{http.MethodGet, "/static/estilos.css", ""},  // HU-30
-		{http.MethodGet, "/web/proyectos/nuevo", ""}, // HU-30
+		{http.MethodGet, "/", ""},                          // HU-30
+		{http.MethodGet, "/web/proyectos", ""},             // HU-30
+		{http.MethodGet, "/static/estilos.css", ""},        // HU-30
+		{http.MethodGet, "/web/proyectos/nuevo", ""},       // HU-30
+		{http.MethodGet, "/web/proyectos/7/backlog/7", ""}, // HU-06
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {
