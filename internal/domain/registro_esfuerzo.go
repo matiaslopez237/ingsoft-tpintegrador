@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"math"
 	"strings"
 	"time"
 )
@@ -11,6 +12,9 @@ var (
 	ErrFechaEsfuerzoObligatoria = errors.New("la fecha es obligatoria")
 	ErrFechaEsfuerzoFutura      = errors.New("la fecha no puede ser futura")
 	ErrActividadVacia           = errors.New("la actividad es obligatoria")
+	ErrHorasInvalidas           = errors.New("las horas deben ser mayores a 0")
+	ErrHorasNoMultiploMediaHora = errors.New("las horas se registran en múltiplos de media hora")
+	ErrHorasExcedenMaximo       = errors.New("un registro no puede superar las 24 horas")
 )
 
 // RegistroEsfuerzo deja constancia de las horas que un integrante trabajó en un elemento del backlog.
@@ -42,6 +46,12 @@ func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fech
 		return RegistroEsfuerzo{}, ErrFechaEsfuerzoFutura
 	case actividad == "":
 		return RegistroEsfuerzo{}, ErrActividadVacia
+	case horas <= 0:
+		return RegistroEsfuerzo{}, ErrHorasInvalidas
+	case horas*2 != math.Trunc(horas*2):
+		return RegistroEsfuerzo{}, ErrHorasNoMultiploMediaHora
+	case horas > 24:
+		return RegistroEsfuerzo{}, ErrHorasExcedenMaximo
 	}
 
 	return RegistroEsfuerzo{
