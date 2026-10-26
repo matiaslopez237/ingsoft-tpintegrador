@@ -1,6 +1,6 @@
 {{define "titulo"}}{{.Original.Titulo}}{{end}}
 {{define "contenido"}}
-<p><a href="/web/proyectos/{{.ProyectoID}}">← Volver al proyecto</a></p>
+<p><a href="/web/proyectos/{{.ProyectoID}}/backlog">Volver al backlog</a></p>
 <h1>{{.Original.Titulo}}</h1>
 {{template "error_form" .Error}}
 
@@ -37,7 +37,7 @@
 
   <div class="acciones">
     <button type="submit" class="boton">Guardar</button>
-    <a href="/web/proyectos/{{.ProyectoID}}">Cancelar</a>
+    <a href="/web/proyectos/{{.ProyectoID}}/backlog">Cancelar</a>
   </div>
 </form>
 

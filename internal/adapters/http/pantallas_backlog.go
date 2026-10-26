@@ -22,6 +22,7 @@ var (
 // Datos de la pantalla del backlog (HU-07): solo texto ya formateado, sin lógica de negocio.
 type (
 	vistaElemento struct {
+		ID                        int64 // HU-06: para enlazar a editar y eliminar
 		Titulo, Prioridad, Estado string
 		StoryPoints               int // 0: sin estimar
 		Criterios                 []string
@@ -123,7 +124,7 @@ func (p *pantallas) mostrarBacklog(w http.ResponseWriter, r *http.Request, id in
 
 	vistas := make([]vistaElemento, len(elementos))
 	for i, e := range elementos {
-		vistas[i] = vistaElemento{Titulo: e.Titulo, Prioridad: string(e.Prioridad), Estado: string(e.Estado), Criterios: e.Criterios}
+		vistas[i] = vistaElemento{ID: e.ID, Titulo: e.Titulo, Prioridad: string(e.Prioridad), Estado: string(e.Estado), Criterios: e.Criterios}
 		if e.StoryPoints != nil {
 			vistas[i].StoryPoints = *e.StoryPoints
 		}

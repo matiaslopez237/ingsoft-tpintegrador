@@ -96,7 +96,8 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 	err := p.cu.EliminarElementoBacklog.Ejecutar(r.Context(), app.DatosEliminarElemento{ProyectoID: pid, ElementoID: eid})
 	switch {
 	case err == nil:
-		redirigirAlDetalle(w, r, pid)
+		// Se vuelve a la lista del backlog (HU-07), desde donde se elimina.
+		http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog", pid), http.StatusSeeOther)
 	case errors.Is(err, domain.ErrElementoConEsfuerzo):
 		e, errConsulta := p.cu.ConsultarElementoBacklog.Ejecutar(r.Context(), pid, eid)
 		if errConsulta != nil {
