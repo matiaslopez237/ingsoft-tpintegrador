@@ -707,7 +707,8 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | 6.7 HTTP | `23afd32` [RED] → `f1e086b` [GREEN] | **RED → GREEN** |
 | 6.8 Pantalla | `422994e` [RED] → `be127d1` [GREEN] | **RED → GREEN**, BDD en verde |
 | 6.9 Revisión y trazabilidad | `a22d553` | **REFACTOR** |
-72b4724` [GREEN] | **RED → GREEN** |
+| Guardar sin cambios (alineado con DEF-01) | `b1caa63` [RED] → `d7de2cc` [GREEN] | **RED → GREEN** |
+| Editar y eliminar desde la lista del backlog (HU-07) | `01ae24f` [RED] → `72b4724` [GREEN] | **RED → GREEN** |
 
 ### Huecos
 
