@@ -98,15 +98,6 @@ func handlerCrearElementoBacklog(uc creadorElementos) http.HandlerFunc {
 			return
 		}
 
-		escribirJSON(w, http.StatusCreated, respuestaElemento{
-			ID:          e.ID,
-			ProyectoID:  e.ProyectoID,
-			Titulo:      e.Titulo,
-			Descripcion: e.Descripcion,
-			Prioridad:   string(e.Prioridad),
-			Estado:      string(e.Estado),
-			StoryPoints: e.StoryPoints,
-			Criterios:   e.Criterios,
-		})
+		escribirJSON(w, http.StatusCreated, aRespuestaElemento(e))
 	}
 }
