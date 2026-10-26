@@ -13,23 +13,28 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errSprintsNoImplementado hace fallar los escenarios mientras CrearSprint no existe (rojo esperado).
-var errSprintsNoImplementado = errors.New("pendiente: CrearSprint y ListarSprints todavía no están implementados")
-
 // erroresHU08 traduce la descripción del escenario al error definido en la spec (sección 7).
 func erroresHU08() map[string]error {
 	return map[string]error{
 		"proyecto no encontrado":      domain.ErrProyectoNoEncontrado,
+		"proyecto no activo":          domain.ErrProyectoNoActivo,
 		"fecha de inicio obligatoria": domain.ErrFechaInicioObligatoria,
+		"fecha de fin obligatoria":    domain.ErrFechaFinObligatoria,
 		"fecha de fin anterior":       domain.ErrFechaFinAnterior,
+		"Sprint Goal vacío":           domain.ErrObjetivoVacio,
+		"Sprint Goal demasiado largo": domain.ErrObjetivoDemasiadoLargo,
+		"sprint fuera del proyecto":   domain.ErrSprintFueraDelProyecto,
+		"sprint superpuesto":          domain.ErrSprintSuperpuesto,
 	}
 }
 
-// sistemaSprintsReal prepara los proyectos con los casos de uso de HU-01 y HU-02 sobre SQLite,
-// en una base nueva por escenario. Crear y listar sprints todavía no está implementado.
+// sistemaSprintsReal prepara los proyectos con los casos de uso de HU-01 y HU-02, y crea y lista
+// sprints con los de HU-08, sobre SQLite real, en una base nueva por escenario.
 type sistemaSprintsReal struct {
 	crearProyecto     *app.CrearProyecto
 	modificarProyecto *app.ModificarProyecto
+	crearSprint       *app.CrearSprint
+	listarSprints     *app.ListarSprints
 	db                *sql.DB
 	dir               string
 }
@@ -45,9 +50,12 @@ func nuevoSistemaSprints() (sistemaSprints, error) {
 		return nil, err
 	}
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
+	sprints := persistencia.NuevoRepositorioSprints(db)
 	return sistemaSprintsReal{
 		crearProyecto:     app.NuevoCrearProyecto(proyectos),
 		modificarProyecto: app.NuevoModificarProyecto(proyectos),
+		crearSprint:       app.NuevoCrearSprint(proyectos, sprints),
+		listarSprints:     app.NuevoListarSprints(proyectos, sprints),
 		db:                db,
 		dir:               dir,
 	}, nil
@@ -69,12 +77,41 @@ func (s sistemaSprintsReal) FijarEstadoProyecto(proyectoID int64, estado string)
 	return err
 }
 
-func (s sistemaSprintsReal) CrearSprint(int64, *time.Time, *time.Time, string) (sprintVisto, error) {
-	return sprintVisto{}, errSprintsNoImplementado
+func (s sistemaSprintsReal) CrearSprint(proyectoID int64, inicio, fin *time.Time, objetivo string) (sprintVisto, error) {
+	datos := app.DatosNuevoSprint{ProyectoID: proyectoID, Objetivo: objetivo}
+	if inicio != nil {
+		datos.FechaInicio = *inicio
+	}
+	if fin != nil {
+		datos.FechaFin = *fin
+	}
+	sp, err := s.crearSprint.Ejecutar(context.Background(), datos)
+	if err != nil {
+		return sprintVisto{}, err
+	}
+	return verSprint(sp), nil
 }
 
-func (s sistemaSprintsReal) ListarSprints(int64) ([]sprintVisto, error) {
-	return nil, errSprintsNoImplementado
+func (s sistemaSprintsReal) ListarSprints(proyectoID int64) ([]sprintVisto, error) {
+	sprints, err := s.listarSprints.Ejecutar(context.Background(), proyectoID)
+	if err != nil {
+		return nil, err
+	}
+	vistos := make([]sprintVisto, len(sprints))
+	for i, sp := range sprints {
+		vistos[i] = verSprint(sp)
+	}
+	return vistos, nil
+}
+
+func verSprint(sp domain.Sprint) sprintVisto {
+	return sprintVisto{
+		Numero:   sp.Numero,
+		Inicio:   sp.FechaInicio.Format(time.DateOnly),
+		Fin:      sp.FechaFin.Format(time.DateOnly),
+		Objetivo: sp.Objetivo,
+		Estado:   string(sp.Estado),
+	}
 }
 
 // Cerrar cierra la base del escenario y borra su carpeta temporal.
