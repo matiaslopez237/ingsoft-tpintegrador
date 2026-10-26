@@ -104,6 +104,8 @@ func TestPostAsignacion_DatosInvalidos_Devuelve400(t *testing.T) {
 		{"campo desconocido", rutaAsignacion, `{"sprint_id":10,"extra":true}`, &asignarHistoriaFalso{}, "el cuerpo debe ser un JSON válido"},
 		{"id de proyecto no numérico", "/proyectos/abc/backlog/3/sprint", `{"sprint_id":10}`, &asignarHistoriaFalso{}, "el id del proyecto debe ser un número entero positivo"},
 		{"id de elemento no numérico", "/proyectos/7/backlog/abc/sprint", `{"sprint_id":10}`, &asignarHistoriaFalso{}, "el id del elemento debe ser un número entero positivo"},
+		{"sprint_id en cero", rutaAsignacion, `{"sprint_id":0}`, &asignarHistoriaFalso{}, "el sprint_id debe ser un número entero positivo"},
+		{"sprint_id negativo", rutaAsignacion, `{"sprint_id":-1}`, &asignarHistoriaFalso{}, "el sprint_id debe ser un número entero positivo"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
