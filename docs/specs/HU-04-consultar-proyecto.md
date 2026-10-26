@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero consultar el estado general de un proyecto, para ver su progreso.
 **Issue:** #15  ·  **Sprint:** 1  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada
 
 ## 1. Objetivo
 Permitir que un Product Builder consulte, a partir del identificador de un proyecto, su información general: nombre, fechas, estado actual y los integrantes registrados con sus roles. Es una operación de solo lectura que reúne lo definido en HU-01 (datos y estado) y HU-03 (integrantes) en una única respuesta.
@@ -95,3 +95,4 @@ Si el caso de uso envuelve errores, usa `fmt.Errorf("...: %w", err)` y no `%v`, 
 - 2026-10-23: correcciones de la revisión: contrato JSON de salida (`integrantes` siempre array, `fecha_fin` null); "solo lectura" pasa de RN a restricción y se quita el CA-04.6 de idempotencia; RN reducidas a reglas reales (se agrega el orden de integrantes, pendiente de confirmar); validación del id igual a HU-03; puerto propio `LectorProyectos`; error 500 definido con `errors.Is`; el estado no se promete validado; sin autenticación; limitación de lectura no atómica.
 - 2026-10-23: decisión del equipo (Matías): "estado general" = datos del proyecto + estado + integrantes; el progreso medido queda para HU-22 a HU-24; integrantes y roles en orden de alta. Quedan resueltas las preguntas abiertas. Se adapta a HU-03 mergeada (PR #87): `Integrante.Roles []string`.
 - 2026-10-23: sección 3 actualizada: con HU-02 mergeada, el estado también lo puede cambiar la modificación del proyecto.
+- 2026-10-25: aprobada (PR #89). 
