@@ -14,6 +14,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
+| HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
 
 ---
 
@@ -474,3 +475,57 @@ En la tabla se omite el scope `(HU-18)` de los mensajes a partir de 18.4: todos 
   - los hooks de BDD de cada historia corren en todos los escenarios;
   - las claves foráneas de `registros_esfuerzo` no tienen `ON DELETE`, y eso va a importar en HU-06;
   - el nombre `RegistrarRegistrarEsfuerzo`.
+
+---
+
+## HU-30: Interfaz web base
+
+- **Issue:** [#103](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/103) · Sprint 2 · 5 SP · ADR-0003
+- **Spec:** [docs/specs/HU-30-interfaz-web-base.md](specs/HU-30-interfaz-web-base.md)
+- **Feature:** [features/HU-30-interfaz-web-base.feature](../features/HU-30-interfaz-web-base.feature) (steps en [test/bdd/hu30_steps_test.go](../test/bdd/hu30_steps_test.go); los escenarios hacen pedidos HTTP reales a las pantallas)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-30.1 Layout común y estilos | Restricciones | Las pantallas comparten el layout común `@normal` | `TestPantallas_Lista_TieneLayoutYProyectos`, `TestPantallas_EstilosSeSirven`, `TestNuevoRouter_RegistraTodasLasRutas` | `web/plantillas/layout.html`, `web/static/estilos.css`, `RegistrarPantallas` |
+| CA-30.2 Lista ordenada por nombre / vacía | RN-30.1 | La lista muestra los proyectos ordenados por nombre `@normal` · Sin proyectos se muestra la lista vacía `@limite` | `TestListarProyectos_OrdenaPorNombreSinDistinguirMayusculas`, `TestListarProyectos_AIgualNombreOrdenaPorID`, `TestListarProyectos_SinProyectos_DevuelveListaVacia`, `TestRepositorioProyectos_ListarProyectos_*`, `TestPantallas_ListaVacia` | `app.ListarProyectos`, `persistencia.RepositorioProyectos.ListarProyectos`, `web/plantillas/proyectos.html` |
+| CA-30.3 Crear desde el formulario | RN-30.2 | Crear un proyecto desde el formulario `@normal` · El formulario muestra el error de dominio `@error` · Fecha con formato inválido `@error` | `TestPantallas_NuevoProyecto` | `pantallas.crear`, `web/plantillas/proyecto_form.html` |
+| CA-30.4 Detalle con integrantes / 404 | RN-30.2 | El detalle muestra los datos y sus integrantes `@normal` · Proyecto inexistente es una página 404 `@error` | `TestPantallas_Detalle` | `pantallas.detalle`, `web/plantillas/proyecto_detalle.html` |
+| CA-30.5 Editar, quitar fecha de fin | RN-30.2, RN-30.3 | Editar un proyecto y quitarle la fecha de fin `@normal` · El formulario de edición muestra el error `@error` | `TestPantallas_EditarProyecto` | `pantallas.editar`, `cambiosDeForm` |
+| CA-30.6 Agregar integrante | RN-30.2 | Agregar un integrante desde el detalle `@normal` · Integrante repetido `@error` | `TestPantallas_Integrantes` | `pantallas.agregarIntegrante` |
+| CA-30.7 Quitar integrante | RN-30.2 | Quitar un integrante desde el detalle `@normal` | `TestPantallas_Integrantes`, `TestPantallas_NombreConCaracteresReservados` | `pantallas.quitarIntegrante` |
+| CA-30.8 Sumar rol | RN-30.2 | Sumar un rol `@normal` · Rol repetido `@error` | `TestPantallas_Integrantes` | `pantallas.agregarRol` |
+| CA-30.9 Contenido escapado | RN-30.4 | El contenido del usuario se muestra escapado `@limite` | `TestPantallas_EscapaElContenido` | `html/template`, función `segmento` |
+| CA-30.10 Inicio redirige a la lista | — | La página de inicio lleva a la lista de proyectos `@normal` | `TestPantallas_Inicio_RedirigeALaLista` | `RegistrarPantallas` (`GET /{$}`) |
+
+Además: `TestPantallas_RechazaFormulariosDeOtroSitio` (403, CSRF), `TestPantallas_FormularioDemasiadoGrande` (413), `TestPantallas_CabecerasDeSeguridad` y `TestPantallas_FallaInterna_Devuelve500SinDetalles` (sección 7 de la spec).
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Caso de uso | [internal/app/listar_proyectos.go](../internal/app/listar_proyectos.go) | [listar_proyectos_test.go](../internal/app/listar_proyectos_test.go) |
+| Persistencia | [internal/adapters/persistencia/proyecto_repo.go](../internal/adapters/persistencia/proyecto_repo.go) (`ListarProyectos`) | [listar_proyectos_test.go](../internal/adapters/persistencia/listar_proyectos_test.go) |
+| Pantallas | [internal/adapters/http/pantallas.go](../internal/adapters/http/pantallas.go), [web/plantillas/](../internal/adapters/http/web/plantillas/), [web/static/estilos.css](../internal/adapters/http/web/static/estilos.css) | [pantallas_test.go](../internal/adapters/http/pantallas_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| BDD | [test/bdd/hu30_sistema_test.go](../test/bdd/hu30_sistema_test.go) (servidor HTTP de prueba + SQLite) | 17 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 30.1 Spec | `4089bbd` docs(HU-30): [30.1] spec | — |
+| 30.2 Escenarios BDD | `a067092` test(HU-30): [30.2] escenarios BDD | — |
+| 30.3 Steps godog | `becbe6d` test(HU-30): [30.3] steps (en rojo) | BDD en rojo |
+| 30.4 Caso de uso ListarProyectos | `28cddd3` [RED] → `1e69c44` [GREEN] | **RED → GREEN** |
+| 30.5 Persistencia | `74230a8` [RED] → `fe2bd86` [GREEN] | **RED → GREEN** |
+| 30.6 Pantallas | `6320169` [RED] → `488bcb4` [GREEN] | **RED → GREEN** |
+| 30.7 main y BDD | `ef284be` feat(HU-30): [30.7] BDD en verde | BDD en verde |
+| 30.8 Revisión | `29fbdd5` refactor(HU-30): [30.8] correcciones go-reviewer | **REFACTOR** |
+| 30.9 Trazabilidad | este commit | — |
+
+### Huecos
+
+- La spec está en **Borrador**: las decisiones (prefijo `/web`, orden por nombre, POST con redirección 303, CSS propio sin JavaScript) se validan en el PR.
+- Las pantallas de las demás historias (HU-05 en adelante) no están incluidas: cada historia suma la suya sobre este layout.
+- Los tests de los arreglos de la revisión (30.8) se escribieron junto con el arreglo, no en un commit RED aparte.
