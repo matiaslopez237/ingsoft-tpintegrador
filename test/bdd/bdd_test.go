@@ -2,11 +2,15 @@
 package bdd
 
 import (
+	"os"
 	"testing"
 
 	"github.com/cucumber/godog"
 )
 
+// TestFeatures corre todos los escenarios. Para correr solo los de una historia, por ejemplo:
+//
+//	BDD_TAGS=@HU-08 go test ./test/bdd/
 func TestFeatures(t *testing.T) {
 	suite := godog.TestSuite{
 		ScenarioInitializer: InitializeScenario,
@@ -14,6 +18,7 @@ func TestFeatures(t *testing.T) {
 			Format:   "pretty",
 			Paths:    []string{"../../features"},
 			Strict:   true,
+			Tags:     os.Getenv("BDD_TAGS"), // vacío: todos los escenarios
 			TestingT: t,
 		},
 	}
