@@ -43,6 +43,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/static/estilos.css", ""},      // HU-30
 		{http.MethodGet, "/web/proyectos/nuevo", ""},     // HU-30
 		{http.MethodGet, "/web/proyectos/1/sprints", ""}, // HU-08
+		{http.MethodGet, "/web/proyectos/1/backlog", ""}, // HU-07
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {
