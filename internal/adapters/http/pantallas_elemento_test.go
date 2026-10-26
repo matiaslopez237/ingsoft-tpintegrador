@@ -54,7 +54,7 @@ func TestPantallaElemento_MuestraElFormulario(t *testing.T) {
 	}
 	contiene(t, rec, "<header", `name="titulo"`, `value="Login"`, `name="original_titulo" value="Login"`,
 		`<option value="Alta" selected>`, `<option value="Pendiente" selected>`, `value="5"`,
-		">Con email</textarea>", `action="/web/proyectos/7/backlog/7/eliminar"`, `href="/web/proyectos/7"`)
+		">Con email</textarea>", `action="/web/proyectos/7/backlog/7/eliminar"`, `href="/web/proyectos/7/backlog"`)
 
 	rec = pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}),
 		http.MethodGet, "/web/proyectos/7/backlog/99", nil)
@@ -152,7 +152,7 @@ func TestPantallaElemento_Eliminar(t *testing.T) {
 	rec := pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, eliminador),
 		http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", url.Values{})
 
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7" {
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7/backlog" {
 		t.Errorf("status = %d, Location = %q", rec.Code, rec.Header().Get("Location"))
 	}
 	if eliminador.recibido != (app.DatosEliminarElemento{ProyectoID: 7, ElementoID: 7}) {
@@ -201,4 +201,32 @@ func TestPantallaElemento_SinCambios_VuelveSinError(t *testing.T) {
 	if llamado {
 		t.Error("no se esperaba llamar al caso de uso si no cambió ningún campo")
 	}
+}
+
+// Traza: HU-06 CA-06.10. La lista del backlog (HU-07) enlaza cada elemento a su pantalla de
+// edición y permite eliminarlo, con confirmación.
+func TestPantallaBacklog_EnlazaAEditarYEliminarCadaElemento(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodGet, "/web/proyectos/7/backlog", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
+	}
+	contiene(t, rec,
+		`href="/web/proyectos/7/backlog/2"`, `href="/web/proyectos/7/backlog/1"`,
+		`action="/web/proyectos/7/backlog/2/eliminar"`, `action="/web/proyectos/7/backlog/1/eliminar"`,
+		`aria-label="Editar Login"`, "Sí, eliminar «Login»")
+}
+
+// Traza: HU-06 CA-06.10. Después de eliminar se vuelve a la lista del backlog, y la pantalla
+// del elemento enlaza al backlog.
+func TestPantallaElemento_VuelveAlBacklog(t *testing.T) {
+	cu := casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{})
+
+	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", url.Values{})
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7/backlog" {
+		t.Errorf("eliminar: status = %d, Location = %q", rec.Code, rec.Header().Get("Location"))
+	}
+
+	rec = pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7/backlog/7", nil)
+	contiene(t, rec, `href="/web/proyectos/7/backlog">Volver al backlog`)
 }
