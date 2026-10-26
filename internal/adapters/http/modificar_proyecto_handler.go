@@ -31,6 +31,11 @@ type pedidoModificarProyecto struct {
 // erroresDeValidacionModificar son los errores de HU-02 que se responden como 400.
 var erroresDeValidacionModificar = append([]error{domain.ErrSinCambios, domain.ErrEstadoInvalido}, erroresDeValidacion...)
 
+// RegistrarModificarProyecto agrega PATCH /proyectos/{id} al mux. Implementa HU-02.
+func RegistrarModificarProyecto(mux *http.ServeMux, uc modificadorProyectos) {
+	mux.HandleFunc("PATCH /proyectos/{id}", handlerModificarProyecto(uc))
+}
+
 // handlerModificarProyecto atiende PATCH /proyectos/{id}: 200 con el proyecto modificado, 400 si
 // los datos no son válidos, 404 si el proyecto no existe y 500 ante una falla interna.
 // Implementa HU-02 (expone ModificarProyecto por HTTP).

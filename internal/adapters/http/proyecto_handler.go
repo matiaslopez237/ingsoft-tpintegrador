@@ -48,6 +48,11 @@ var erroresDeValidacion = []error{
 	domain.ErrFechaFinAnterior,
 }
 
+// RegistrarCrearProyecto agrega POST /proyectos al mux. Implementa HU-01.
+func RegistrarCrearProyecto(mux *http.ServeMux, uc creadorProyectos) {
+	mux.HandleFunc("POST /proyectos", handlerCrearProyecto(uc))
+}
+
 // handlerCrearProyecto atiende POST /proyectos: 201 con el proyecto creado, 400 si los datos
 // no son válidos y 500 ante una falla interna. Implementa HU-01 (expone CrearProyecto por HTTP).
 func handlerCrearProyecto(uc creadorProyectos) http.HandlerFunc {

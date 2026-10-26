@@ -50,7 +50,9 @@ func postRol(t *testing.T, uc agregadorRoles, id, nombre, cuerpo string) *httpte
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/proyectos/"+id+"/integrantes/"+nombre+"/roles", strings.NewReader(cuerpo))
 	rec := httptest.NewRecorder()
-	NuevoRouter(&creadorFalso{}, &agregadorFalso{}, &quitadorFalso{}, uc, &modificadorFalso{}).ServeHTTP(rec, req)
+	mux := http.NewServeMux()
+	RegistrarIntegrantes(mux, &agregadorFalso{}, &quitadorFalso{}, uc)
+	mux.ServeHTTP(rec, req)
 	return rec
 }
 
@@ -58,7 +60,9 @@ func postIntegrante(t *testing.T, uc agregadorIntegrantes, id, cuerpo string) *h
 	t.Helper()
 	req := httptest.NewRequest(http.MethodPost, "/proyectos/"+id+"/integrantes", strings.NewReader(cuerpo))
 	rec := httptest.NewRecorder()
-	NuevoRouter(&creadorFalso{}, uc, &quitadorFalso{}, &agregadorRolFalso{}, &modificadorFalso{}).ServeHTTP(rec, req)
+	mux := http.NewServeMux()
+	RegistrarIntegrantes(mux, uc, &quitadorFalso{}, &agregadorRolFalso{})
+	mux.ServeHTTP(rec, req)
 	return rec
 }
 
@@ -66,7 +70,9 @@ func deleteIntegrante(t *testing.T, uc quitadorIntegrantes, id, nombre string) *
 	t.Helper()
 	req := httptest.NewRequest(http.MethodDelete, "/proyectos/"+id+"/integrantes/"+nombre, nil)
 	rec := httptest.NewRecorder()
-	NuevoRouter(&creadorFalso{}, &agregadorFalso{}, uc, &agregadorRolFalso{}, &modificadorFalso{}).ServeHTTP(rec, req)
+	mux := http.NewServeMux()
+	RegistrarIntegrantes(mux, &agregadorFalso{}, uc, &agregadorRolFalso{})
+	mux.ServeHTTP(rec, req)
 	return rec
 }
 

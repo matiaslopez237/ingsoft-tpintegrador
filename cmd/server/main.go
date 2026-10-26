@@ -30,16 +30,15 @@ func main() {
 	log.Printf("conectado a la base de datos (%s)", rutaDB)
 
 	repoProyectos := persistencia.NuevoRepositorioProyectos(db)
-	mux := adapterhttp.NuevoRouter(
-		app.NuevoCrearProyecto(repoProyectos),
-		app.NuevoAgregarIntegrante(repoProyectos),
-		app.NuevoQuitarIntegrante(repoProyectos),
-		app.NuevoAgregarRol(repoProyectos),
-		app.NuevoModificarProyecto(repoProyectos),
-	)
-	adapterhttp.RegistrarConsultarProyecto(mux, app.NuevoConsultarProyecto(repoProyectos)) // HU-04
-	// HU-05
-	adapterhttp.RegistrarCrearElementoBacklog(mux, app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)))
+	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
+		CrearProyecto:        app.NuevoCrearProyecto(repoProyectos),
+		ModificarProyecto:    app.NuevoModificarProyecto(repoProyectos),
+		AgregarIntegrante:    app.NuevoAgregarIntegrante(repoProyectos),
+		QuitarIntegrante:     app.NuevoQuitarIntegrante(repoProyectos),
+		AgregarRol:           app.NuevoAgregarRol(repoProyectos),
+		ConsultarProyecto:    app.NuevoConsultarProyecto(repoProyectos),
+		CrearElementoBacklog: app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)),
+	})
 
 	puerto := os.Getenv("PORT")
 	if puerto == "" {

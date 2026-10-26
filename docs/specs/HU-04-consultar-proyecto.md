@@ -16,7 +16,7 @@ Permitir que un Product Builder consulte, a partir del identificador de un proye
 Se devuelve el proyecto con:
 - `ID`, `Nombre`.
 - `FechaInicio` y `FechaFin` (esta última puede no existir).
-- `Estado`: el estado guardado del proyecto. Esta historia no lo valida al leerlo; hoy solo HU-01 lo escribe, siempre como `Activo` (RN-01.6, RN-01.7).
+- `Estado`: el estado guardado del proyecto. Esta historia no lo valida al leerlo: HU-01 lo crea como `Activo` (RN-01.6) y HU-02 lo puede cambiar a cualquiera de los estados de RN-01.7 (RN-02.6). Siempre se devuelve el estado actual.
 - `Integrantes`: lista de `Integrante` (`Nombre` y `Roles []string`). Cada integrante figura una sola vez. Los integrantes van en el orden en que se agregaron al proyecto, y los roles de cada uno, en el orden en que se le asignaron. Lista vacía si no hay integrantes.
 
 No se modifica ningún dato. Si el proyecto no existe, se devuelve un error y no se devuelve ningún dato.
@@ -94,3 +94,4 @@ Si el caso de uso envuelve errores, usa `fmt.Errorf("...: %w", err)` y no `%v`, 
 - 2026-10-23: creada (borrador).
 - 2026-10-23: correcciones de la revisión: contrato JSON de salida (`integrantes` siempre array, `fecha_fin` null); "solo lectura" pasa de RN a restricción y se quita el CA-04.6 de idempotencia; RN reducidas a reglas reales (se agrega el orden de integrantes, pendiente de confirmar); validación del id igual a HU-03; puerto propio `LectorProyectos`; error 500 definido con `errors.Is`; el estado no se promete validado; sin autenticación; limitación de lectura no atómica.
 - 2026-10-23: decisión del equipo (Matías): "estado general" = datos del proyecto + estado + integrantes; el progreso medido queda para HU-22 a HU-24; integrantes y roles en orden de alta. Quedan resueltas las preguntas abiertas. Se adapta a HU-03 mergeada (PR #87): `Integrante.Roles []string`.
+- 2026-10-23: sección 3 actualizada: con HU-02 mergeada, el estado también lo puede cambiar la modificación del proyecto.
