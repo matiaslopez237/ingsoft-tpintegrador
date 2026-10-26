@@ -21,14 +21,20 @@ func NuevoRepositorioEsfuerzo(db *sql.DB) *RepositorioEsfuerzo {
 	return &RepositorioEsfuerzo{db: db}
 }
 
-// GuardarRegistro inserta el registro y le asigna su ID.
+// GuardarRegistro inserta el registro y le asigna su ID. Si el elemento ya no existe (otro pedido
+// lo borró después de que el caso de uso lo verificara), la clave foránea lo rechaza y se devuelve
+// domain.ErrElementoNoEncontrado. El proyecto no puede faltar si el elemento existe, porque el
+// elemento también tiene clave foránea hacia su proyecto.
 func (r *RepositorioEsfuerzo) GuardarRegistro(ctx context.Context, reg *domain.RegistroEsfuerzo) error {
 	res, err := r.db.ExecContext(ctx,
 		`INSERT INTO registros_esfuerzo (proyecto_id, elemento_id, integrante, fecha, actividad, medias_horas)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		reg.ProyectoID, reg.ElementoID, reg.Integrante, reg.Fecha.Format(time.DateOnly), reg.Actividad,
 		int(math.Round(reg.Horas*2)))
-	if err != nil {
+	switch {
+	case esForeignKey(err):
+		return fmt.Errorf("elemento %d: %w", reg.ElementoID, domain.ErrElementoNoEncontrado)
+	case err != nil:
 		return fmt.Errorf("insertar registro de esfuerzo de %q: %w", reg.Integrante, err)
 	}
 	id, err := res.LastInsertId()
