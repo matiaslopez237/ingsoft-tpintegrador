@@ -23,6 +23,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		CrearSprint:          &creadorSprintsFalso{},
 		ListarSprints:        &listadorSprintsFalso{},
 		ListarBacklog:        &listadorBacklogFalso{},
+		AsignarHistoria:      &asignarHistoriaFalso{},
+		DesasignarHistoria:   &desasignarHistoriaFalso{},
 		ListarProyectos:      casosFalsos().ListarProyectos,
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
@@ -38,6 +40,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/sprints", `{"fecha_inicio":"2026-10-26","fecha_fin":"2026-10-27","objetivo":"x"}`},                   // HU-08
 		{http.MethodGet, "/proyectos/1/sprints", ""},                                                                                         // HU-08
 		{http.MethodGet, "/proyectos/1/backlog", ""},                                                                                         // HU-07
+		{http.MethodPost, "/proyectos/1/backlog/1/sprint", `{"sprint_id":1}`},                                                                // HU-09
+		{http.MethodDelete, "/proyectos/1/backlog/1/sprint", ""},                                                                             // HU-09
 		{http.MethodGet, "/", ""},                        // HU-30
 		{http.MethodGet, "/web/proyectos", ""},           // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},      // HU-30

@@ -18,6 +18,8 @@ type CasosDeUso struct {
 	CrearSprint          creadorSprints       // HU-08
 	ListarSprints        listadorSprints      // HU-08
 	ListarBacklog        listadorBacklog      // HU-07
+	AsignarHistoria      agregadorAsignacion  // HU-09
+	DesasignarHistoria   quitadorAsignacion   // HU-09
 	ListarProyectos      listadorProyectos    // HU-30
 }
 
@@ -34,6 +36,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarRegistrarEsfuerzo(mux, cu.RegistrarEsfuerzo)
 	RegistrarSprints(mux, cu.CrearSprint, cu.ListarSprints)
 	RegistrarListarBacklog(mux, cu.ListarBacklog)
+	RegistrarAsignacion(mux, cu.AsignarHistoria, cu.DesasignarHistoria)
 	RegistrarPantallas(mux, cu)
 	return mux
 }

@@ -14,8 +14,9 @@ type sistemaAsignacion interface {
 	CrearProyecto(nombre string) (int64, error)
 	CrearElemento(proyectoID int64, titulo string) (int64, error)
 	CrearSprint(proyectoID int64, abierto bool) int64
-	AsignarElemento(elementoID, sprintID int64) error
-	DesasignarElemento(elementoID int64) error
+	AsignarElemento(proyectoID, elementoID, sprintID int64) error
+	AsignarDirectamente(elementoID, sprintID int64) error
+	DesasignarElemento(proyectoID, elementoID int64) error
 	SprintDeElemento(elementoID int64) (sprintID int64, asignado bool, err error)
 	Cerrar() error
 }
@@ -94,7 +95,7 @@ func (w *asignacionWorld) unSprintAbiertoDeOtroProyecto(nombre string) error {
 }
 
 func (w *asignacionWorld) yaEstaAsignado(nombreElemento, nombreSprint string) error {
-	err := w.sistema.AsignarElemento(w.elementoPorNombre[nombreElemento], w.sprintPorNombre[nombreSprint])
+	err := w.sistema.AsignarDirectamente(w.elementoPorNombre[nombreElemento], w.sprintPorNombre[nombreSprint])
 	if err != nil {
 		return fmt.Errorf("no se pudo preparar la asignación de %q al sprint %q: %w", nombreElemento, nombreSprint, err)
 	}
@@ -102,12 +103,12 @@ func (w *asignacionWorld) yaEstaAsignado(nombreElemento, nombreSprint string) er
 }
 
 func (w *asignacionWorld) seAsigna(nombreElemento, nombreSprint string) error {
-	w.ultimoErr = w.sistema.AsignarElemento(w.elementoPorNombre[nombreElemento], w.sprintPorNombre[nombreSprint])
+	w.ultimoErr = w.sistema.AsignarElemento(w.proyectoID, w.elementoPorNombre[nombreElemento], w.sprintPorNombre[nombreSprint])
 	return nil
 }
 
 func (w *asignacionWorld) seDesasigna(nombreElemento string) error {
-	w.ultimoErr = w.sistema.DesasignarElemento(w.elementoPorNombre[nombreElemento])
+	w.ultimoErr = w.sistema.DesasignarElemento(w.proyectoID, w.elementoPorNombre[nombreElemento])
 	return nil
 }
 
