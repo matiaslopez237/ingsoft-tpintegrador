@@ -72,9 +72,9 @@ func handlerRegistrarEsfuerzo(uc registradorEsfuerzo) http.HandlerFunc {
 			escribirJSON(w, http.StatusBadRequest, respuestaError{err.Error()})
 			return
 		}
-		elementoID, err := strconv.ParseInt(r.PathValue("elementoID"), 10, 64)
-		if err != nil || elementoID <= 0 {
-			escribirJSON(w, http.StatusBadRequest, respuestaError{"el id del elemento debe ser un número entero positivo"})
+		elementoID, err := elementoIDDesdeRuta(r)
+		if err != nil {
+			escribirJSON(w, http.StatusBadRequest, respuestaError{err.Error()})
 			return
 		}
 
@@ -86,13 +86,10 @@ func handlerRegistrarEsfuerzo(uc registradorEsfuerzo) http.HandlerFunc {
 			escribirJSON(w, http.StatusBadRequest, respuestaError{"el cuerpo debe ser un JSON válido"})
 			return
 		}
-		var fecha time.Time
-		if pedido.Fecha != "" {
-			// RN-18.4: la fecha es un día de la zona del servidor, igual que "hoy".
-			if fecha, err = time.ParseInLocation(time.DateOnly, pedido.Fecha, time.Local); err != nil {
-				escribirJSON(w, http.StatusBadRequest, respuestaError{"la fecha debe tener el formato AAAA-MM-DD"})
-				return
-			}
+		fecha, err := fechaDelPedido(pedido.Fecha)
+		if err != nil {
+			escribirJSON(w, http.StatusBadRequest, respuestaError{err.Error()})
+			return
 		}
 
 		reg, err := uc.Ejecutar(r.Context(), app.DatosRegistroEsfuerzo{
@@ -121,14 +118,40 @@ func handlerRegistrarEsfuerzo(uc registradorEsfuerzo) http.HandlerFunc {
 			return
 		}
 
-		escribirJSON(w, http.StatusCreated, respuestaRegistroEsfuerzo{
-			ID:         reg.ID,
-			ProyectoID: reg.ProyectoID,
-			ElementoID: reg.ElementoID,
-			Integrante: reg.Integrante,
-			Fecha:      reg.Fecha.Format(time.DateOnly),
-			Actividad:  reg.Actividad,
-			Horas:      reg.Horas,
-		})
+		escribirJSON(w, http.StatusCreated, aRespuestaRegistroEsfuerzo(reg))
+	}
+}
+
+// elementoIDDesdeRuta lee {elementoID} de la ruta, igual que proyectoIDDesdeRuta lee {id}.
+func elementoIDDesdeRuta(r *http.Request) (int64, error) {
+	id, err := strconv.ParseInt(r.PathValue("elementoID"), 10, 64)
+	if err != nil || id <= 0 {
+		return 0, errors.New("el id del elemento debe ser un número entero positivo")
+	}
+	return id, nil
+}
+
+// fechaDelPedido interpreta la fecha AAAA-MM-DD como un día de la zona del servidor, igual que
+// "hoy" (RN-18.4). Vacía devuelve la fecha cero: el dominio responde que es obligatoria.
+func fechaDelPedido(s string) (time.Time, error) {
+	if s == "" {
+		return time.Time{}, nil
+	}
+	f, err := time.ParseInLocation(time.DateOnly, s, time.Local)
+	if err != nil {
+		return time.Time{}, errors.New("la fecha debe tener el formato AAAA-MM-DD")
+	}
+	return f, nil
+}
+
+func aRespuestaRegistroEsfuerzo(reg domain.RegistroEsfuerzo) respuestaRegistroEsfuerzo {
+	return respuestaRegistroEsfuerzo{
+		ID:         reg.ID,
+		ProyectoID: reg.ProyectoID,
+		ElementoID: reg.ElementoID,
+		Integrante: reg.Integrante,
+		Fecha:      reg.Fecha.Format(time.DateOnly),
+		Actividad:  reg.Actividad,
+		Horas:      reg.Horas,
 	}
 }
