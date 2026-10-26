@@ -271,6 +271,11 @@ func (p *pantallas) editar(w http.ResponseWriter, r *http.Request) {
 	form := leerFormProyecto(r)
 	original, conOriginal := leerOriginalProyecto(r)
 	cambios, err := cambiosDeForm(form, original, conOriginal)
+	if err == nil && conOriginal && cambios == (domain.CambiosProyecto{}) {
+		// RN-30.3: si no cambió ningún campo, se vuelve al detalle sin mensaje (no es un error).
+		redirigirAlDetalle(w, r, id)
+		return
+	}
 	if err == nil {
 		_, err = p.cu.ModificarProyecto.Ejecutar(r.Context(), app.DatosModificarProyecto{ProyectoID: id, Cambios: cambios})
 	}
