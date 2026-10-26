@@ -17,41 +17,19 @@ import (
 // caso de uso todavía no existe. Se va cuando las tareas 18.4 a 18.6 conecten RegistrarEsfuerzo.
 var errHU18SinImplementar = errors.New("HU-18 todavía no está implementada: falta conectar el caso de uso RegistrarEsfuerzo (tareas 18.4 a 18.6)")
 
-// errorEsperado es un error de la spec de HU-18 (sección 7). Los reutilizados de otras historias
-// ya existen en el dominio y se comparan con errors.Is. Los nuevos todavía no existen, así que
-// se comparan por el mensaje de la spec.
-// TODO(HU-18, tarea 18.4): cuando el dominio defina los errores nuevos, completar err y quitar mensaje.
-type errorEsperado struct {
-	err     error
-	mensaje string
-}
-
-// coincide recorre la cadena de errores envueltos (%w) buscando el error esperado.
-func (e errorEsperado) coincide(got error) bool {
-	if e.err != nil {
-		return errors.Is(got, e.err)
-	}
-	for ; got != nil; got = errors.Unwrap(got) {
-		if got.Error() == e.mensaje {
-			return true
-		}
-	}
-	return false
-}
-
 // erroresHU18 traduce la descripción del escenario al error definido en la spec.
-func erroresHU18() map[string]errorEsperado {
-	return map[string]errorEsperado{
-		"proyecto no encontrado":          {err: domain.ErrProyectoNoEncontrado},
-		"elemento no encontrado":          {err: domain.ErrElementoNoEncontrado},
-		"integrante vacío":                {err: domain.ErrNombreIntegranteVacio},
-		"integrante no encontrado":        {err: domain.ErrIntegranteNoEncontrado},
-		"fecha obligatoria":               {mensaje: "la fecha es obligatoria"},                           // ErrFechaEsfuerzoObligatoria
-		"fecha futura":                    {mensaje: "la fecha no puede ser futura"},                      // ErrFechaEsfuerzoFutura
-		"actividad vacía":                 {mensaje: "la actividad es obligatoria"},                       // ErrActividadVacia
-		"horas inválidas":                 {mensaje: "las horas deben ser mayores a 0"},                   // ErrHorasInvalidas
-		"horas no múltiplo de media hora": {mensaje: "las horas se registran en múltiplos de media hora"}, // ErrHorasNoMultiploMediaHora
-		"horas exceden el máximo":         {mensaje: "un registro no puede superar las 24 horas"},         // ErrHorasExcedenMaximo
+func erroresHU18() map[string]error {
+	return map[string]error{
+		"proyecto no encontrado":          domain.ErrProyectoNoEncontrado,
+		"elemento no encontrado":          domain.ErrElementoNoEncontrado,
+		"integrante vacío":                domain.ErrNombreIntegranteVacio,
+		"integrante no encontrado":        domain.ErrIntegranteNoEncontrado,
+		"fecha obligatoria":               domain.ErrFechaEsfuerzoObligatoria,
+		"fecha futura":                    domain.ErrFechaEsfuerzoFutura,
+		"actividad vacía":                 domain.ErrActividadVacia,
+		"horas inválidas":                 domain.ErrHorasInvalidas,
+		"horas no múltiplo de media hora": domain.ErrHorasNoMultiploMediaHora,
+		"horas exceden el máximo":         domain.ErrHorasExcedenMaximo,
 	}
 }
 

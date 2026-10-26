@@ -305,7 +305,7 @@ func (w *registrarEsfuerzoWorld) seRechazaConError(descripcion string) error {
 	if w.ultimoErr == nil {
 		return fmt.Errorf("se esperaba el error %q, pero el esfuerzo se registró", descripcion)
 	}
-	if !esperado.coincide(w.ultimoErr) {
+	if !errors.Is(w.ultimoErr, esperado) {
 		return fmt.Errorf("se esperaba el error %q, se obtuvo: %w", descripcion, w.ultimoErr)
 	}
 	return nil
