@@ -13,6 +13,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
+| HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ (falta la pantalla, 8.8) | RED → GREEN ×4 | ✓ 28/28 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
 
 ---
@@ -333,6 +334,63 @@ Sin CA propio en la spec:
 - La spec está en **Borrador** y sus decisiones (prioridad Alta/Media/Baja, story points enteros positivos, estados Pendiente/En progreso/Hecho) se validan en el PR.
 - La historia no tiene sprint asignado ni sub-tareas en el tablero: se usó la numeración 5.1 a 5.9 por analogía con HU-01.
 - Los adaptadores (5.6 y 5.7) se commitearon con sus tests, sin RED aparte; las reglas de negocio (5.4 y 5.5) sí tienen RED → GREEN.
+
+---
+
+## HU-08: Crear un Sprint con Sprint Goal
+
+- **Issue:** [#19](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/19) · Sprint 2 · 3 SP
+- **Spec:** [docs/specs/HU-08-crear-sprint.md](specs/HU-08-crear-sprint.md)
+- **Feature:** [features/HU-08-crear-sprint.feature](../features/HU-08-crear-sprint.feature) (steps en [test/bdd/hu08_steps_test.go](../test/bdd/hu08_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-08.1 Crear el primer sprint | RN-08.6, RN-08.7, RN-08.8 | Crear el primer sprint de un proyecto `@normal` | `TestNuevoSprint_Valido`, `TestCrearSprint_Valido_GuardaYDevuelveConNumero`, `TestRepositorioSprints_GuardarYListar`, `TestPostSprints_DatosValidos_Devuelve201ConElSprint` | `domain.NuevoSprint`, `app.CrearSprint`, `persistencia.RepositorioSprints.GuardarSprint`, `http.handlerCrearSprint` |
+| CA-08.2 Numeración por proyecto | RN-08.7 | El segundo sprint de un proyecto recibe el número siguiente `@normal` · Cada proyecto tiene su propia numeración `@alternativo` | `TestCrearSprint_Valido_GuardaYDevuelveConNumero`, `TestRepositorioSprints_NumeracionPorProyecto`, `TestCrearSprint_DosSimultaneos_RecibenNumerosDistintos` | `persistencia.RepositorioSprints.GuardarSprint` |
+| CA-08.3 Proyecto inexistente | RN-08.1 | No se puede crear un sprint en un proyecto que no existe `@error` | `TestCrearSprint_Invalido_RetornaErrorYNoGuarda` (proyecto inexistente), `TestRepositorioSprints_ProyectoInexistente_RetornaError`, `TestPostSprints_ProyectoInexistente_Devuelve404` | `app.CrearSprint` |
+| CA-08.4 Proyecto no activo | RN-08.2 | Solo se crean sprints en proyectos activos `@error` (4 ejemplos) | `TestNuevoSprint_Invalido_RetornaError` (4 estados), `TestCrearSprint_Invalido_RetornaErrorYNoGuarda` (proyecto no activo), `TestPostSprints_DatosInvalidos_Devuelve400` | `domain.NuevoSprint` |
+| CA-08.5 Fechas | RN-08.3 | Las fechas son obligatorias `@error` (2 ejemplos) · La fecha de fin no puede ser anterior `@error` · Un sprint de un solo día es válido `@limite` | `TestNuevoSprint_Invalido_RetornaError`, `TestNuevoSprint_CasosLimiteValidos` (un día), `TestPostSprints_SinFechas_LlegaComoFechaCero`, `TestPostSprints_DatosInvalidos_Devuelve400` | `domain.NuevoSprint`, `http.pedidoCrearSprint.aDatos` |
+| CA-08.6 Sprint Goal | RN-08.6 | El Sprint Goal es obligatorio `@error` · Un Sprint Goal de solo espacios cuenta como vacío `@error` · No puede superar los 200 caracteres `@error` · Uno de exactamente 200 es válido `@limite` | `TestNuevoSprint_Invalido_RetornaError`, `TestNuevoSprint_CasosLimiteValidos` (200 caracteres), `TestCrearSprint_Invalido_RetornaErrorYNoGuarda` (Sprint Goal vacío) | `domain.NuevoSprint` |
+| CA-08.7 Dentro del proyecto | RN-08.4 | El sprint tiene que estar dentro de las fechas del proyecto `@error` (2 ejemplos) · Justo en los límites es válido `@limite` (2 ejemplos) · Proyecto sin fecha de fin `@alternativo` | `TestNuevoSprint_Invalido_RetornaError`, `TestNuevoSprint_CasosLimiteValidos` | `domain.NuevoSprint`, `domain.dentroDelProyecto` |
+| CA-08.8 Sin superposición | RN-08.5 | Los sprints de un proyecto no se superponen `@error` (5 ejemplos) · Uno que empieza el día siguiente al fin de otro es válido `@limite` | `TestNuevoSprint_Invalido_RetornaError` (5 casos), `TestNuevoSprint_CasosLimiteValidos`, `TestNuevoSprint_ComparaPorDiaCalendario`, `TestRepositorioSprints_SuperpuestoAlGuardar_RetornaError`, `TestCrearSprint_DosSimultaneosSuperpuestos_SegundoEsRechazado` | `domain.seSuperponen`, `persistencia.RepositorioSprints.GuardarSprint` |
+| CA-08.9 Listar los sprints | Sección 3 | Los sprints del proyecto se listan ordenados por número `@normal` | `TestListarSprints_DevuelveLosDelProyecto`, `TestListarSprints_ProyectoInexistente_RetornaError`, `TestRepositorioSprints_GuardarYListar`, `TestGetSprints_DevuelveLosSprintsDelProyecto`, `TestGetSprints_SinSprints_DevuelveArrayVacio`, `TestGetSprints_Errores` | `app.ListarSprints`, `persistencia.RepositorioSprints.ListarSprints`, `http.handlerListarSprints` |
+
+Pedidos simultáneos (sección 5 de la spec; sin CA propio porque no se puede expresar en Gherkin): `TestCrearSprint_DosSimultaneos_RecibenNumerosDistintos` y `TestCrearSprint_DosSimultaneosSuperpuestos_SegundoEsRechazado`. El número y el control de superposición se resuelven en un solo `INSERT`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/sprint.go](../internal/domain/sprint.go) | [sprint_test.go](../internal/domain/sprint_test.go) |
+| Casos de uso | [internal/app/gestionar_sprints.go](../internal/app/gestionar_sprints.go) (`CrearSprint`, `ListarSprints`) | [gestionar_sprints_test.go](../internal/app/gestionar_sprints_test.go) |
+| Persistencia | [internal/adapters/persistencia/sprint_repo.go](../internal/adapters/persistencia/sprint_repo.go), [db.go](../internal/adapters/persistencia/db.go) (tabla `sprints`) | [sprint_repo_test.go](../internal/adapters/persistencia/sprint_repo_test.go) |
+| HTTP | [internal/adapters/http/sprint_handler.go](../internal/adapters/http/sprint_handler.go) (`POST` y `GET /proyectos/{id}/sprints`, `RegistrarSprints`) | [sprint_handler_test.go](../internal/adapters/http/sprint_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| BDD | [test/bdd/hu08_sistema_test.go](../test/bdd/hu08_sistema_test.go), [hu08_steps_test.go](../test/bdd/hu08_steps_test.go) | 28 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 8.1 Spec | `4e8aa05` docs(HU-08): [8.1] spec de crear un sprint | — |
+| 8.2 Escenarios BDD | `6c91cca` test(HU-08): [8.2] escenarios BDD | — |
+| 8.3 Steps godog | `5057f43` test(HU-08): [8.3] steps de godog (en rojo) | BDD en rojo |
+| 8.4 Entidad Sprint | `a7b2947` test(HU-08): [8.4][RED] | **RED** |
+| | `6679372` feat(HU-08): [8.4][GREEN] | **GREEN** |
+| 8.5 Casos de uso | `90786ee` test(HU-08): [8.5][RED] | **RED** |
+| | `7b36d87` feat(HU-08): [8.5][GREEN] | **GREEN** |
+| 8.6 Persistencia | `9a97f16` test(HU-08): [8.6][RED] | **RED** |
+| | `5b371d7` feat(HU-08): [8.6][GREEN] | **GREEN** |
+| | `4bafeeb` test(HU-08): escenarios BDD conectados (en verde) | BDD en verde |
+| 8.7 HTTP | `0f36e9e` test(HU-08): [8.7][RED] | **RED** |
+| | `e603d46` feat(HU-08): [8.7][GREEN] | **GREEN** |
+| 8.9 Trazabilidad | este commit | — |
+
+### Huecos
+
+- La spec sigue en estado **Borrador**: pasa a Aprobada cuando se apruebe el PR.
+- **Tarea 8.8 (pantalla) pendiente:** depende del layout de HU-30 (PR #106), que todavía no está en `main`. Se suma en un PR aparte cuando se mergee, para no demorar a HU-09, HU-10, HU-11 y HU-20, que necesitan la entidad Sprint.
 
 ---
 
