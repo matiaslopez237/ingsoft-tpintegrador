@@ -31,7 +31,7 @@ Las pantallas reciben formularios HTML (`application/x-www-form-urlencoded`) y r
 ## 4. Reglas de negocio
 - **RN-30.1:** La lista de proyectos muestra todos los proyectos ordenados por nombre, sin distinguir mayúsculas (`domain.ClaveNombre`); a igual clave, por ID. El orden lo decide el caso de uso `ListarProyectos`, no la plantilla.
 - **RN-30.2:** Las pantallas no tienen reglas de negocio propias: cada acción llama al mismo caso de uso que su endpoint JSON (HU-01 a HU-04) y muestra el error que este devuelve.
-- **RN-30.3:** El formulario de edición envía siempre todos los campos. Una fecha de fin vacía quita la fecha de fin (RN-02.5); una fecha de inicio vacía da el error de HU-02 (RN-02.4).
+- **RN-30.3:** El formulario de edición guarda solo los campos que el usuario cambió respecto de los valores con los que lo abrió (que viaja en campos ocultos `original_*`). Así, dos personas que editan campos distintos del mismo proyecto a la vez no se pisan, igual que con la API (HU-02, sección 5). Si no cambió ningún campo, se muestra el error de HU-02 `ErrSinCambios` (RN-02.8). Una fecha de fin vaciada quita la fecha de fin (RN-02.5); una fecha de inicio vaciada da el error de HU-02 (RN-02.4). Un pedido sin los campos `original_*` (que no viene del formulario) envía todos los campos.
 - **RN-30.4:** Todo texto que viene del usuario se muestra escapado (sin interpretar HTML).
 
 ## 5. Restricciones
@@ -64,7 +64,7 @@ Las pantallas reciben formularios HTML (`application/x-www-form-urlencoded`) y r
 - **CA-30.2:** Dados proyectos "beta", "Alfa" y "Gamma", cuando abro la lista, entonces aparecen en el orden "Alfa", "beta", "Gamma"; sin proyectos, aparece el mensaje de lista vacía. (RN-30.1)
 - **CA-30.3:** Cuando creo un proyecto válido desde el formulario, entonces se guarda y me lleva a su detalle; con el nombre vacío, veo "el nombre del proyecto es obligatorio" en el mismo formulario y no se crea. (RN-30.2)
 - **CA-30.4:** Dado un proyecto con integrantes, cuando abro su detalle, entonces veo sus datos, su estado y sus integrantes con sus roles; si no existe, veo una página de error 404. (RN-30.2)
-- **CA-30.5:** Cuando edito un proyecto desde el formulario, entonces se guardan los cambios y vuelvo al detalle; si dejo la fecha de fin vacía, queda sin fecha de fin; si la fecha de fin es anterior a la de inicio, veo el mensaje del error en el formulario. (RN-30.2, RN-30.3)
+- **CA-30.5:** Cuando edito un proyecto desde el formulario, entonces se guardan los cambios y vuelvo al detalle; si dejo la fecha de fin vacía, queda sin fecha de fin; si la fecha de fin es anterior a la de inicio, veo el mensaje del error en el formulario; si dos personas abren el formulario y guardan cambios en campos distintos, se conservan los dos (DEF-01). (RN-30.2, RN-30.3)
 - **CA-30.6:** Cuando agrego un integrante con rol desde el detalle, entonces aparece en la lista; si ya existe, veo el mensaje del error en el detalle. (RN-30.2)
 - **CA-30.7:** Cuando quito un integrante desde el detalle, entonces deja de aparecer. (RN-30.2)
 - **CA-30.8:** Cuando le sumo un rol a un integrante, entonces aparece con ese rol; si ya lo tiene, veo el mensaje del error. (RN-30.2)
@@ -84,3 +84,4 @@ Definidas por Nicolás Andino al implementar la historia (2026-10-26), para vali
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-26: agregados los errores 403 (formulario de otro sitio) y 413 (formulario demasiado grande), a partir de la revisión con go-reviewer. Límite conocido: la lista de proyectos no tiene paginación.
+- 2026-10-26: RN-30.3 y CA-30.5 corregidas por DEF-01 (#179): el formulario de edición guarda solo los campos cambiados, para no pisar ediciones simultáneas.
