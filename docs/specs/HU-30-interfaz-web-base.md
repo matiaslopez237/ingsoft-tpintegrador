@@ -55,6 +55,8 @@ Las pantallas reciben formularios HTML (`application/x-www-form-urlencoded`) y r
 | Id de proyecto inválido en la ruta | — (adaptador) | Página de error, HTTP 400 |
 | Fecha con formato distinto de AAAA-MM-DD | — (adaptador) | Mismo formulario con "fecha_inicio debe tener el formato AAAA-MM-DD" (o fecha_fin), HTTP 400 |
 | Cualquier error de validación de HU-01, HU-02 o HU-03 | los de `internal/domain` | Misma pantalla con el mensaje del error, HTTP 400 |
+| Formulario enviado desde otro sitio (`Sec-Fetch-Site: cross-site` u `Origin` de otro host) | — (adaptador) | Página de error, HTTP 403. Es la protección CSRF: no hay sesiones, así que alcanza con verificar el origen. |
+| Formulario de más de 64 KiB | — (adaptador) | Página de error, HTTP 413 |
 | Falla interna | — | Página de error genérica, HTTP 500, sin mostrar el detalle |
 
 ## 8. Criterios de aceptación
@@ -81,3 +83,4 @@ Definidas por Nicolás Andino al implementar la historia (2026-10-26), para vali
 
 ## Historial
 - 2026-10-26: creada (borrador).
+- 2026-10-26: agregados los errores 403 (formulario de otro sitio) y 413 (formulario demasiado grande), a partir de la revisión con go-reviewer. Límite conocido: la lista de proyectos no tiene paginación.

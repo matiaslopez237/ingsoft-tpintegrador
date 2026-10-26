@@ -15,24 +15,25 @@
   {{template "error_form" .Error}}
   {{if .Proyecto.Integrantes}}
   <table>
+    <caption class="oculto">Integrantes del proyecto</caption>
     <thead>
       <tr><th scope="col">Nombre</th><th scope="col">Roles</th><th scope="col">Sumar rol</th><th scope="col"><span class="oculto">Quitar</span></th></tr>
     </thead>
     <tbody>
-      {{range .Proyecto.Integrantes}}
+      {{range $i, $integrante := .Proyecto.Integrantes}}
       <tr>
         <td>{{.Nombre}}</td>
-        <td>{{range $i, $rol := .Roles}}{{if $i}}, {{end}}{{$rol}}{{end}}</td>
+        <td>{{range $j, $rol := .Roles}}{{if $j}}, {{end}}{{$rol}}{{end}}</td>
         <td>
-          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/integrantes/{{.Nombre}}/roles" class="en-linea">
-            <label class="oculto" for="rol-{{.Nombre}}">Rol para {{.Nombre}}</label>
-            <input id="rol-{{.Nombre}}" name="rol" type="text" required>
-            <button type="submit">Sumar</button>
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/integrantes/{{segmento .Nombre}}/roles" class="en-linea">
+            <label class="oculto" for="rol-{{$i}}">Rol para {{.Nombre}}</label>
+            <input id="rol-{{$i}}" name="rol" type="text" required>
+            <button type="submit" aria-label="Sumar rol a {{.Nombre}}">Sumar</button>
           </form>
         </td>
         <td>
-          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/integrantes/{{.Nombre}}/quitar" class="en-linea">
-            <button type="submit" class="peligro">Quitar</button>
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/integrantes/{{segmento .Nombre}}/quitar" class="en-linea">
+            <button type="submit" class="peligro" aria-label="Quitar a {{.Nombre}}">Quitar</button>
           </form>
         </td>
       </tr>

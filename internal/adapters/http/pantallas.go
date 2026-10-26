@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"context"
 	"embed"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"io/fs"
 	"log"
 	"net/http"
+	"net/url"
 	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
@@ -99,12 +101,20 @@ type pantallas struct {
 
 var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html"}
 
+// funcionesPlantillas son las funciones disponibles en las plantillas. segmento escapa un texto
+// para usarlo como parte de una ruta: html/template no escapa "/", "?" ni "#" dentro de una URL.
+var funcionesPlantillas = template.FuncMap{"segmento": url.PathEscape}
+
+// tamanoMaximoFormulario limita el cuerpo de los formularios de las pantallas (64 KiB).
+const tamanoMaximoFormulario = 64 << 10
+
 func nuevasPantallas(cu CasosDeUso) *pantallas {
 	p := &pantallas{cu: cu, paginas: map[string]*template.Template{}}
 	for _, nombre := range paginas {
 		// Must: las plantillas están embebidas, así que un error acá es de programación y lo
 		// detecta cualquier test que registre las pantallas.
-		p.paginas[nombre] = template.Must(template.ParseFS(archivosWeb, "web/plantillas/layout.html", "web/plantillas/"+nombre))
+		p.paginas[nombre] = template.Must(template.New("layout.html").Funcs(funcionesPlantillas).
+			ParseFS(archivosWeb, "web/plantillas/layout.html", "web/plantillas/"+nombre))
 	}
 	return p
 }
@@ -124,13 +134,48 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	})
 	mux.HandleFunc("GET /web/proyectos", p.lista)
 	mux.HandleFunc("GET /web/proyectos/nuevo", p.formNuevo)
-	mux.HandleFunc("POST /web/proyectos", p.crear)
+	mux.HandleFunc("POST /web/proyectos", p.formulario(p.crear))
 	mux.HandleFunc("GET /web/proyectos/{id}", p.detalle)
 	mux.HandleFunc("GET /web/proyectos/{id}/editar", p.formEditar)
-	mux.HandleFunc("POST /web/proyectos/{id}/editar", p.editar)
-	mux.HandleFunc("POST /web/proyectos/{id}/integrantes", p.agregarIntegrante)
-	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/quitar", p.quitarIntegrante)
-	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/roles", p.agregarRol)
+	mux.HandleFunc("POST /web/proyectos/{id}/editar", p.formulario(p.editar))
+	mux.HandleFunc("POST /web/proyectos/{id}/integrantes", p.formulario(p.agregarIntegrante))
+	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/quitar", p.formulario(p.quitarIntegrante))
+	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/roles", p.formulario(p.agregarRol))
+}
+
+// formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio
+// (protección CSRF sin token, alcanza porque no hay sesiones) y limita el tamaño del cuerpo.
+func (p *pantallas) formulario(h http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if !mismoOrigen(r) {
+			p.renderizar(w, http.StatusForbidden, "error.html", datosError{"el formulario se envió desde otro sitio"})
+			return
+		}
+		r.Body = http.MaxBytesReader(w, r.Body, tamanoMaximoFormulario)
+		if err := r.ParseForm(); err != nil {
+			p.renderizar(w, http.StatusRequestEntityTooLarge, "error.html", datosError{"el formulario es demasiado grande"})
+			return
+		}
+		h(w, r)
+	}
+}
+
+// mismoOrigen indica si el pedido viene de una página de este mismo servidor. Los navegadores
+// mandan Sec-Fetch-Site u Origin en los POST; un pedido sin ninguno de los dos (curl, tests) se acepta.
+func mismoOrigen(r *http.Request) bool {
+	switch r.Header.Get("Sec-Fetch-Site") {
+	case "same-origin", "none":
+		return true
+	case "":
+	default:
+		return false
+	}
+	origen := r.Header.Get("Origin")
+	if origen == "" {
+		return true
+	}
+	u, err := url.Parse(origen)
+	return err == nil && u.Host == r.Host
 }
 
 // --- Proyectos ---
@@ -316,11 +361,23 @@ func (p *pantallas) resultadoIntegrante(w http.ResponseWriter, r *http.Request, 
 
 // --- Ayudantes ---
 
+// renderizar arma la página en memoria antes de escribirla: si la plantilla falla, se responde
+// 500 en lugar de una página cortada con el estado original.
 func (p *pantallas) renderizar(w http.ResponseWriter, status int, pagina string, datos any) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(status)
-	if err := p.paginas[pagina].ExecuteTemplate(w, "layout", datos); err != nil {
+	var buf bytes.Buffer
+	if err := p.paginas[pagina].ExecuteTemplate(&buf, "layout", datos); err != nil {
 		log.Printf("renderizar %s: %v", pagina, err)
+		http.Error(w, "error interno al mostrar la página", http.StatusInternalServerError)
+		return
+	}
+	h := w.Header()
+	h.Set("Content-Type", "text/html; charset=utf-8")
+	h.Set("X-Content-Type-Options", "nosniff")
+	h.Set("Content-Security-Policy", "default-src 'self'")
+	h.Set("Referrer-Policy", "same-origin")
+	w.WriteHeader(status)
+	if _, err := buf.WriteTo(w); err != nil {
+		log.Printf("escribir %s: %v", pagina, err)
 	}
 }
 

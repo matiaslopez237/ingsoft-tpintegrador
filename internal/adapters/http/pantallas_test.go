@@ -282,3 +282,75 @@ func TestPantallas_FallaInterna_Devuelve500SinDetalles(t *testing.T) {
 		t.Errorf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
 	}
 }
+
+// Un nombre con caracteres reservados de URL llega entero a la ruta de quitar y de sumar rol.
+func TestPantallas_NombreConCaracteresReservados(t *testing.T) {
+	const raro = "a/b?c#d%e"
+	cu := casosFalsos()
+	cu.ConsultarProyecto = consultarFunc(func(context.Context, int64) (domain.Proyecto, error) {
+		p := alfa
+		p.Integrantes = []domain.Integrante{{Nombre: raro, Roles: []string{"Tester"}}}
+		return p, nil
+	})
+	var quitado string
+	cu.QuitarIntegrante = quitarFunc(func(_ context.Context, d app.DatosQuitarIntegrante) error {
+		quitado = d.Nombre
+		return nil
+	})
+
+	rec := pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7", nil)
+	ruta := "/web/proyectos/7/integrantes/" + url.PathEscape(raro) + "/quitar"
+	contiene(t, rec, `action="`+ruta+`"`)
+
+	pedirPantalla(t, cu, http.MethodPost, ruta, url.Values{})
+	if quitado != raro {
+		t.Errorf("nombre recibido = %q, se esperaba %q", quitado, raro)
+	}
+}
+
+// Los formularios enviados desde otro sitio se rechazan (CSRF).
+func TestPantallas_RechazaFormulariosDeOtroSitio(t *testing.T) {
+	tests := []struct {
+		nombre, encabezado, valor string
+		want                      int
+	}{
+		{"Sec-Fetch-Site cross-site", "Sec-Fetch-Site", "cross-site", http.StatusForbidden},
+		{"Origin de otro host", "Origin", "http://malicioso.example", http.StatusForbidden},
+		{"Sec-Fetch-Site same-origin", "Sec-Fetch-Site", "same-origin", http.StatusSeeOther},
+		{"Origin del mismo host", "Origin", "http://example.com", http.StatusSeeOther},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			mux := http.NewServeMux()
+			RegistrarPantallas(mux, casosFalsos())
+			req := httptest.NewRequest(http.MethodPost, "/web/proyectos/7/integrantes/Ana/quitar", strings.NewReader(""))
+			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+			req.Header.Set(tt.encabezado, tt.valor)
+			rec := httptest.NewRecorder()
+			mux.ServeHTTP(rec, req)
+			if rec.Code != tt.want {
+				t.Errorf("status = %d, se esperaba %d", rec.Code, tt.want)
+			}
+		})
+	}
+}
+
+func TestPantallas_FormularioDemasiadoGrande(t *testing.T) {
+	rec := pedirPantalla(t, casosFalsos(), http.MethodPost, "/web/proyectos",
+		url.Values{"nombre": {strings.Repeat("a", tamanoMaximoFormulario)}})
+	if rec.Code != http.StatusRequestEntityTooLarge {
+		t.Errorf("status = %d, se esperaba 413", rec.Code)
+	}
+}
+
+func TestPantallas_CabecerasDeSeguridad(t *testing.T) {
+	rec := pedirPantalla(t, casosFalsos(), http.MethodGet, "/web/proyectos", nil)
+	for encabezado, want := range map[string]string{
+		"X-Content-Type-Options":  "nosniff",
+		"Content-Security-Policy": "default-src 'self'",
+	} {
+		if got := rec.Header().Get(encabezado); got != want {
+			t.Errorf("%s = %q, se esperaba %q", encabezado, got, want)
+		}
+	}
+}
