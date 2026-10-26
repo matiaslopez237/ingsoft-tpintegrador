@@ -18,6 +18,9 @@ var (
 	ErrHorasInvalidas           = errors.New("las horas deben ser mayores a 0")
 	ErrHorasNoMultiploMediaHora = errors.New("las horas se registran en múltiplos de media hora")
 	ErrHorasExcedenMaximo       = errors.New("un registro no puede superar las 24 horas")
+	// ErrRegistroEsfuerzoNoEncontrado: no existe un registro con el ID buscado. Lo devuelve la
+	// persistencia, igual que ErrElementoNoEncontrado (sección 3: el registro se recupera por su ID).
+	ErrRegistroEsfuerzoNoEncontrado = errors.New("registro de esfuerzo no encontrado")
 )
 
 // RegistroEsfuerzo deja constancia de las horas que un integrante trabajó en un elemento del backlog.

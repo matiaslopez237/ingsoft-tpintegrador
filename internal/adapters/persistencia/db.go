@@ -86,6 +86,18 @@ CREATE TABLE IF NOT EXISTS backlog_criterios (
 	orden       INTEGER NOT NULL,
 	texto       TEXT    NOT NULL,
 	UNIQUE (elemento_id, orden)
+);
+
+-- HU-18. integrante guarda el nombre y no referencia a integrantes: quitar a un integrante no
+-- borra ni bloquea sus registros (RN-18.3). medias_horas = horas * 2, entero para no redondear.
+CREATE TABLE IF NOT EXISTS registros_esfuerzo (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
+	elemento_id  INTEGER NOT NULL REFERENCES backlog_elementos (id),
+	integrante   TEXT    NOT NULL,
+	fecha        TEXT    NOT NULL,
+	actividad    TEXT    NOT NULL,
+	medias_horas INTEGER NOT NULL
 );`)
 	return err
 }
