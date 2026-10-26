@@ -146,6 +146,23 @@ func TestRepositorioEsfuerzo_GuardaHorasEnMediasHorasYFechaComoTexto(t *testing.
 	}
 }
 
+// Traza: HU-18 CA-18.7 (si el elemento ya no existe al guardar, la clave foránea lo rechaza)
+func TestRepositorioEsfuerzo_ElementoInexistente_RetornaErrElementoNoEncontrado(t *testing.T) {
+	ctx := context.Background()
+	b := nuevaBaseEsfuerzo(t)
+	r := b.registro(t, 2)
+	r.ElementoID = 999
+
+	err := b.repo.GuardarRegistro(ctx, &r)
+
+	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
+	}
+	if n, err := b.repo.ContarRegistros(ctx, 999); err != nil || n != 0 {
+		t.Errorf("ContarRegistros = %d, %v; no se esperaban registros", n, err)
+	}
+}
+
 // Traza: HU-18 CA-18.13 (RN-18.3: no hay clave foránea hacia integrantes)
 func TestRepositorioEsfuerzo_QuitarAlIntegrante_ConservaSusRegistros(t *testing.T) {
 	ctx := context.Background()
