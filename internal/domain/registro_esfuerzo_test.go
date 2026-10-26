@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"math"
 	"testing"
 	"time"
 )
@@ -147,6 +148,8 @@ func TestNuevoRegistroEsfuerzo_HorasNegativas_RetornaError(t *testing.T) {
 		{-2, ErrHorasInvalidas},
 		{-0.5, ErrHorasInvalidas},
 		{-1.25, ErrHorasInvalidas},
+		{math.NaN(), ErrHorasInvalidas}, // NaN no es mayor a 0: es el primer control
+		{math.Inf(-1), ErrHorasInvalidas},
 		{1.25, ErrHorasNoMultiploMediaHora},
 		{0.3, ErrHorasNoMultiploMediaHora},
 		{25.3, ErrHorasNoMultiploMediaHora},
