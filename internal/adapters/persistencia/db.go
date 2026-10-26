@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS backlog_elementos (
 	prioridad    TEXT    NOT NULL,
 	estado       TEXT    NOT NULL,
 	story_points INTEGER,
+	sprint_id    INTEGER REFERENCES sprints (id), -- HU-09: NULL = sin asignar a un sprint
 	UNIQUE (proyecto_id, titulo_clave)
 );
 

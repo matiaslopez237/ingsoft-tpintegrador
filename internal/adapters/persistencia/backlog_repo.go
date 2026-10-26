@@ -90,11 +90,12 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 		e                 domain.ElementoBacklog
 		prioridad, estado string
 		sp                sql.NullInt64
+		sprintID          sql.NullInt64
 	)
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, proyecto_id, titulo, descripcion, prioridad, estado, story_points
+		`SELECT id, proyecto_id, titulo, descripcion, prioridad, estado, story_points, sprint_id
 		   FROM backlog_elementos WHERE id = ?`, id).
-		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp)
+		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.ElementoBacklog{}, domain.ErrElementoNoEncontrado
 	}
@@ -105,6 +106,9 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 	if sp.Valid {
 		n := int(sp.Int64)
 		e.StoryPoints = &n
+	}
+	if sprintID.Valid {
+		e.SprintID = &sprintID.Int64
 	}
 
 	rows, err := r.db.QueryContext(ctx,
