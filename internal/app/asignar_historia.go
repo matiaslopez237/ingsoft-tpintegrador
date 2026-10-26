@@ -25,6 +25,7 @@ type RepositorioAsignacion interface {
 
 // DatosAsignacion son las entradas para asignar un elemento a un sprint (HU-09).
 type DatosAsignacion struct {
+	ProyectoID int64 // de la ruta /proyectos/{id}/backlog/{elementoID}/sprint
 	ElementoID int64
 	SprintID   int64
 }
@@ -41,11 +42,14 @@ func NuevoAsignarHistoria(repo RepositorioAsignacion) *AsignarHistoria {
 // Ejecutar busca el elemento y el sprint destino, calcula si el sprint que el elemento ya tenía
 // (si tenía) sigue activo, aplica la regla de dominio y persiste el resultado. Si el elemento o
 // el sprint no existen, o los datos son inválidos, no se guarda nada.
-// Implementa HU-09 (CA-09.1, CA-09.2, CA-09.3, CA-09.7, CA-09.8).
+// Implementa HU-09 (CA-09.1, CA-09.2, CA-09.3, CA-09.7, CA-09.8, RN-09.7).
 func (uc *AsignarHistoria) Ejecutar(ctx context.Context, d DatosAsignacion) error {
 	e, err := uc.repo.BuscarElementoPorID(ctx, d.ElementoID)
 	if err != nil {
 		return err
+	}
+	if e.ProyectoID != d.ProyectoID { // RN-09.7, igual que RN-18.1: de otro proyecto es "inexistente"
+		return domain.ErrElementoNoEncontrado
 	}
 
 	destinoProyectoID, destinoAbierto, err := uc.repo.BuscarSprint(ctx, d.SprintID)
@@ -83,6 +87,7 @@ func (uc *AsignarHistoria) sprintActualActivo(ctx context.Context, e domain.Elem
 
 // DatosDesasignacion son las entradas para desasignar un elemento de su sprint (HU-09).
 type DatosDesasignacion struct {
+	ProyectoID int64 // de la ruta /proyectos/{id}/backlog/{elementoID}/sprint
 	ElementoID int64
 }
 
@@ -97,11 +102,14 @@ func NuevoDesasignarHistoria(repo RepositorioAsignacion) *DesasignarHistoria {
 
 // Ejecutar busca el elemento, calcula si su sprint actual sigue activo, aplica la regla de
 // dominio y persiste el resultado. Si el elemento no existe o no se puede desasignar, no se
-// guarda nada. Implementa HU-09 (CA-09.4, CA-09.5, CA-09.6).
+// guarda nada. Implementa HU-09 (CA-09.4, CA-09.5, CA-09.6, RN-09.7).
 func (uc *DesasignarHistoria) Ejecutar(ctx context.Context, d DatosDesasignacion) error {
 	e, err := uc.repo.BuscarElementoPorID(ctx, d.ElementoID)
 	if err != nil {
 		return err
+	}
+	if e.ProyectoID != d.ProyectoID { // RN-09.7, igual que RN-18.1: de otro proyecto es "inexistente"
+		return domain.ErrElementoNoEncontrado
 	}
 
 	var sprintActualActivo bool

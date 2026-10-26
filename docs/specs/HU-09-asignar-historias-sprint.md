@@ -10,10 +10,11 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 ## 2. Entradas
 | Dato | Tipo (Go) | Obligatorio | Validación |
 |---|---|---|---|
+| `proyectoID` | `int64` | Sí | Debe existir un proyecto con ese id; el elemento tiene que pertenecerle (RN-09.7) |
 | `elementoID` | `int64` | Sí | Debe existir un elemento de backlog con ese id |
 | `sprintID` | `int64` | Sí (al asignar) | Debe existir un sprint con ese id, del mismo proyecto que el elemento |
 
-**En HTTP:** `POST /proyectos/{id}/elementos/{elementoID}/sprint` con `{ "sprint_id": 2 }` para asignar; `DELETE /proyectos/{id}/elementos/{elementoID}/sprint` para desasignar.
+**En HTTP:** `POST /proyectos/{id}/backlog/{elementoID}/sprint` con `{ "sprint_id": 2 }` para asignar; `DELETE /proyectos/{id}/backlog/{elementoID}/sprint` para desasignar. La ruta sigue la misma forma que usa HU-18 para los elementos del backlog (`/proyectos/{id}/backlog/{elementoID}/esfuerzo`), no `/elementos/` como se había escrito en el borrador original de esta spec.
 
 ## 3. Salidas esperadas
 - **Asignar:** el elemento queda con `SprintID` apuntando al sprint indicado.
@@ -27,6 +28,7 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 - **RN-09.4 (CA del issue #20):** Se puede desasignar un elemento de su sprint mientras ese sprint sigue **Abierto**. Una vez que el sprint está **Cerrado**, no se puede desasignar (queda como registro histórico de qué se completó en ese sprint).
 - **RN-09.5:** El sprint de destino tiene que pertenecer al mismo proyecto que el elemento de backlog; no se puede asignar un elemento de un proyecto a un sprint de otro.
 - **RN-09.6:** Solo se puede asignar a un sprint que esté **Abierto** (no tiene sentido sumar trabajo nuevo a un sprint ya cerrado).
+- **RN-09.7:** El elemento tiene que pertenecer al proyecto de la ruta (`/proyectos/{id}/backlog/{elementoID}/sprint`); si es de otro proyecto, se trata como inexistente (`ErrElementoNoEncontrado`). Misma regla que RN-18.1 de HU-18, para la misma forma de ruta anidada.
 
 ## 5. Restricciones
 - El núcleo (`internal/domain`) **no depende de `domain.Sprint`** (de HU-08, todavía no mergeada a `main` al momento de escribir esta spec). Las reglas que necesitan saber si un sprint está activo (RN-09.2, RN-09.4, RN-09.6) reciben ese dato como un `bool` simple, calculado por el caso de uso. Esto permite implementar dominio y caso de uso sin esperar el merge de HU-08; solo la persistencia, el HTTP y la pantalla (Tareas 9.6 a 9.8) necesitan que exista la tabla real de sprints.
