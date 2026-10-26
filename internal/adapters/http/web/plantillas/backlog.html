@@ -1,0 +1,70 @@
+{{define "titulo"}}Backlog de {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Backlog de {{.Proyecto.Nombre}}</h1>
+  <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+</div>
+
+<form method="get" action="/web/proyectos/{{.Proyecto.ID}}/backlog" class="formulario en-linea">
+  <label for="orden">Orden</label>
+  <select id="orden" name="orden">
+    <option value="desc"{{if ne .Orden "asc"}} selected{{end}}>Prioridad: Alta primero</option>
+    <option value="asc"{{if eq .Orden "asc"}} selected{{end}}>Prioridad: Baja primero</option>
+  </select>
+  <label for="estado">Estado</label>
+  <select id="estado" name="estado">
+    <option value=""{{if eq .Estado ""}} selected{{end}}>Todos</option>
+    {{range .Estados}}<option value="{{.}}"{{if eq (print .) $.Estado}} selected{{end}}>{{.}}</option>{{end}}
+  </select>
+  <button type="submit" class="boton">Aplicar</button>
+</form>
+
+{{if .Elementos}}
+<table>
+  <caption class="oculto">Elementos del backlog</caption>
+  <thead>
+    <tr><th scope="col">Título</th><th scope="col">Prioridad</th><th scope="col">Estado</th><th scope="col">Story points</th><th scope="col">Criterios de aceptación</th></tr>
+  </thead>
+  <tbody>
+    {{range .Elementos}}
+    <tr>
+      <td>{{.Titulo}}</td>
+      <td>{{.Prioridad}}</td>
+      <td><span class="estado">{{.Estado}}</span></td>
+      <td>{{if .StoryPoints}}{{.StoryPoints}}{{else}}Sin estimar{{end}}</td>
+      <td><ul>{{range .Criterios}}<li>{{.}}</li>{{end}}</ul></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="vacio">No hay elementos en el backlog{{if .Estado}} con el estado {{.Estado}}{{end}}.</p>
+{{end}}
+
+<section aria-labelledby="titulo-nuevo-elemento">
+  <h2 id="titulo-nuevo-elemento">Nuevo elemento</h2>
+  {{template "error_form" .Error}}
+  <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/backlog" class="formulario">
+    <label for="titulo">Título</label>
+    <input id="titulo" name="titulo" type="text" value="{{.Form.Titulo}}" required>
+
+    <label for="descripcion">Descripción</label>
+    <textarea id="descripcion" name="descripcion" rows="3" required>{{.Form.Descripcion}}</textarea>
+
+    <label for="prioridad">Prioridad</label>
+    <select id="prioridad" name="prioridad">
+      {{range .Prioridades}}<option value="{{.}}"{{if eq (print .) $.Form.Prioridad}} selected{{end}}>{{.}}</option>{{end}}
+    </select>
+
+    <label for="story_points">Story points <span class="ayuda">(opcional)</span></label>
+    <input id="story_points" name="story_points" type="number" min="1" value="{{.Form.StoryPoints}}">
+
+    <label for="criterios">Criterios de aceptación <span class="ayuda">(uno por línea)</span></label>
+    <textarea id="criterios" name="criterios" rows="4" required>{{.Form.Criterios}}</textarea>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Agregar elemento</button>
+    </div>
+  </form>
+</section>
+{{end}}
