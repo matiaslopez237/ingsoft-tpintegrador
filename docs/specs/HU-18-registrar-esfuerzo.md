@@ -42,7 +42,8 @@ Dejar constancia de las horas que cada integrante trabajó realmente sobre un el
 - **RN-18.5:** La actividad es obligatoria (una de solo espacios es vacía) y es texto libre.
 - **RN-18.6:** Las horas son obligatorias y mayores a 0.
 - **RN-18.7:** Las horas se registran en múltiplos de media hora (0,5; 1; 1,5; …).
-- **RN-18.8:** Un registro tiene como máximo 24 h. El tope es por registro: no se suman los otros registros del integrante en el mismo día.- **RN-18.9:** Se pueden registrar varios esfuerzos sobre el mismo elemento, del mismo integrante y del mismo día; cada uno es un registro independiente.
+- **RN-18.8:** Un registro tiene como máximo 24 h. El tope es por registro: no se suman los otros registros del integrante en el mismo día.
+- **RN-18.9:** Se pueden registrar varios esfuerzos sobre el mismo elemento, del mismo integrante y del mismo día; cada uno es un registro independiente.
 - **RN-18.10:** El `ID` es único y lo genera el sistema (entero autoincremental), igual que en HU-05.
 
 ## 5. Restricciones
@@ -86,10 +87,11 @@ Dejar constancia de las horas que cada integrante trabajó realmente sobre un el
 | Horas mayores a 24 | `ErrHorasExcedenMaximo` | "un registro no puede superar las 24 horas" (HTTP 400) |
 | El integrante no pertenece al proyecto | `domain.ErrIntegranteNoEncontrado` (HU-03, se reutiliza) | "integrante no encontrado en el proyecto" (HTTP 400: el integrante viene en el cuerpo, no en la ruta, a diferencia de HU-03) |
 | Cuerpo JSON mal formado o fecha con otro formato | — (adaptador HTTP) | HTTP 400; no se llama al caso de uso. |
+| Se busca por ID un registro que no existe | `domain.ErrRegistroEsfuerzoNoEncontrado` | "registro de esfuerzo no encontrado". Lo devuelve la búsqueda por ID de la persistencia (sección 3: el registro se recupera por su ID). No es parte de registrar y no tiene endpoint en HU-18. |
 
 Los mensajes de los errores reutilizados son los que ya están definidos en `internal/domain`; los nuevos siguen el mismo estilo (minúscula y sin punto final).
 
-Si hay varios errores, se informa el primero en el orden de la tabla: primero se buscan el proyecto y el elemento, después el dominio valida los campos y por último el caso de uso verifica que el integrante pertenezca al proyecto. Dentro de las horas, el orden es: mayores a 0, después múltiplo de 0,5 y al final máximo 24 h.
+Si hay varios errores al registrar, se informa el primero en el orden de la tabla (la última fila es de la búsqueda, no de registrar): primero se buscan el proyecto y el elemento, después el dominio valida los campos y por último el caso de uso verifica que el integrante pertenezca al proyecto. Dentro de las horas, el orden es: mayores a 0, después múltiplo de 0,5 y al final máximo 24 h.
 
 ## 8. Criterios de aceptación
 - **CA-18.1:** Dado un proyecto con el elemento "Login" y la integrante "Ana", cuando registro 2 h de "Desarrollo" de Ana con fecha de hoy, entonces se crea un registro con ID asignado y los datos enviados. (RN-18.10)
@@ -128,3 +130,4 @@ Las acordó el equipo en el chat el 2026-10-25, a partir del borrador de esta sp
 - 2026-10-25: creada (borrador), con las decisiones P-1 a P-4 todavía sin confirmar por el equipo.
 - 2026-10-25: el equipo resuelve P-1 a P-6. El tope de horas pasa a ser por registro (24 h) en vez de diario: se quitan `ErrTopeHorasDiarias` y la suma por día, y se agrega `ErrHorasExcedenMaximo` en el dominio. Se agregan la conservación de registros al quitar un integrante (RN-18.3, CA-18.13), la falta de validación contra las fechas y el estado del proyecto (RN-18.4, CA-18.14), la ruta y el contrato JSON (CA-18.15), y la aclaración de que la vista web va en HU-30.
 - 2026-10-25: ajustes: `ErrIntegranteNoEncontrado` responde HTTP 400 (el integrante va en el cuerpo, no en la ruta) en las secciones 3 y 7 y en CA-18.15; los mensajes de los errores reutilizados se copian de `internal/domain` y los nuevos siguen su estilo (minúscula, sin punto final); "hoy" se define en la zona horaria del servidor (RN-18.4 y Restricciones); se fija el orden de validación de las horas (> 0, múltiplo de 0,5, máximo 24). "Decisiones tomadas" registra que se acordaron en el chat y que Matías confirmó P-5. P-6 (ruta) vuelve a "Preguntas abiertas", pendiente de confirmar con Matías.
+- 2026-10-25: correcciones de la revisión con go-reviewer (tarea 18.8): se separan RN-18.8 y RN-18.9, que habían quedado en la misma línea; se agrega a la sección 7 `ErrRegistroEsfuerzoNoEncontrado`, que devuelve la búsqueda por ID de la persistencia (sin endpoint en HU-18). En el código, una fecha cero en cualquier zona horaria y unas horas NaN se rechazan con `ErrFechaEsfuerzoObligatoria` y `ErrHorasInvalidas`, sin cambiar las reglas.
