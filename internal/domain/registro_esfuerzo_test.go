@@ -112,6 +112,19 @@ func TestNuevoRegistroEsfuerzo_FechaHoyOPasada_EsValidaYGuardaSoloElDia(t *testi
 	}
 }
 
+// Traza: HU-18 CA-18.6 (RN-18.4: se comparan días de calendario, aunque las zonas difieran)
+func TestNuevoRegistroEsfuerzo_FechaYHoyEnZonasDistintas_ComparaElDiaDeCalendario(t *testing.T) {
+	menosTres := time.FixedZone("UTC-3", -3*60*60)
+	fecha := time.Date(2026, time.October, 25, 0, 0, 0, 0, menosTres) // 03:00 UTC del 25
+	hoy := time.Date(2026, time.October, 25, 1, 0, 0, 0, time.UTC)    // 01:00 UTC del 25
+
+	_, err := NuevoRegistroEsfuerzo(1, 1, "Ana", fecha, "Desarrollo", 2, hoy)
+
+	if err != nil {
+		t.Errorf("la fecha es el mismo día que hoy, error inesperado: %v", err)
+	}
+}
+
 // Traza: HU-18 CA-18.3, CA-18.9, CA-18.10
 // El orden es > 0, después múltiplo de 0,5 y al final máximo 24: -1,25 y 25,3 lo verifican.
 func TestNuevoRegistroEsfuerzo_HorasNegativas_RetornaError(t *testing.T) {
