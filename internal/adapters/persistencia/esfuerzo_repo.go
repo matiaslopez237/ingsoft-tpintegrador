@@ -30,7 +30,7 @@ func (r *RepositorioEsfuerzo) GuardarRegistro(ctx context.Context, reg *domain.R
 		`INSERT INTO registros_esfuerzo (proyecto_id, elemento_id, integrante, fecha, actividad, medias_horas)
 		 VALUES (?, ?, ?, ?, ?, ?)`,
 		reg.ProyectoID, reg.ElementoID, reg.Integrante, reg.Fecha.Format(time.DateOnly), reg.Actividad,
-		int(math.Round(reg.Horas*2)))
+		aMediasHoras(reg.Horas))
 	switch {
 	case esForeignKey(err):
 		return fmt.Errorf("elemento %d: %w", reg.ElementoID, domain.ErrElementoNoEncontrado)
@@ -65,8 +65,18 @@ func (r *RepositorioEsfuerzo) BuscarRegistroPorID(ctx context.Context, id int64)
 	if reg.Fecha, err = time.ParseInLocation(time.DateOnly, fecha, time.Local); err != nil {
 		return domain.RegistroEsfuerzo{}, fmt.Errorf("leer fecha del registro de esfuerzo %d: %w", id, err)
 	}
-	reg.Horas = float64(medias) / 2
+	reg.Horas = desdeMediasHoras(medias)
 	return reg, nil
+}
+
+// aMediasHoras pasa las horas a un entero de medias horas (1,5 h → 3). El dominio ya garantiza
+// que son múltiplo de 0,5 (RN-18.7); Round solo absorbe la representación binaria del float64.
+func aMediasHoras(horas float64) int {
+	return int(math.Round(horas * 2))
+}
+
+func desdeMediasHoras(medias int) float64 {
+	return float64(medias) / 2
 }
 
 // ContarRegistros devuelve la cantidad de registros del elemento (lo usan los tests y el BDD).
