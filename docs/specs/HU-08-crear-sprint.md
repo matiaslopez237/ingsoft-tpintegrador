@@ -32,6 +32,8 @@ En HTTP se responde `201` con el sprint:
 { "id": 1, "proyecto_id": 1, "numero": 1, "fecha_inicio": "2026-10-26", "fecha_fin": "2026-10-27", "objetivo": "Gestionar el backlog desde la web", "estado": "Abierto" }
 ```
 
+La lista de sprints del proyecto se consulta con `GET /proyectos/{id}/sprints`: `200` con un array de sprints con el mismo formato, ordenados por número (`[]` si el proyecto no tiene sprints), o `404` si el proyecto no existe.
+
 ## 4. Reglas de negocio
 - **RN-08.1:** Todo sprint pertenece a un proyecto existente.
 - **RN-08.2:** Solo se pueden crear sprints en proyectos en estado `Activo` (RN-01.7). En un proyecto En pausa, Finalizado, Postergado o Cancelado no se planifica trabajo nuevo.
@@ -104,3 +106,4 @@ Propuestas para validar en el PR: estado inicial `Abierto` (HU-11 lo pasa a `Cer
 
 ## Historial
 - 2026-10-26: creada (borrador).
+- 2026-10-26: se agrega la consulta de la lista de sprints por HTTP (sección 3).
