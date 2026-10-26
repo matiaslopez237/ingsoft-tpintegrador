@@ -78,14 +78,3 @@ func aMediasHoras(horas float64) int {
 func desdeMediasHoras(medias int) float64 {
 	return float64(medias) / 2
 }
-
-// ContarRegistros devuelve la cantidad de registros del elemento (lo usan los tests y el BDD).
-func (r *RepositorioEsfuerzo) ContarRegistros(ctx context.Context, elementoID int64) (int, error) {
-	var n int
-	err := r.db.QueryRowContext(ctx,
-		`SELECT COUNT(*) FROM registros_esfuerzo WHERE elemento_id = ?`, elementoID).Scan(&n)
-	if err != nil {
-		return 0, fmt.Errorf("contar registros de esfuerzo del elemento %d: %w", elementoID, err)
-	}
-	return n, nil
-}

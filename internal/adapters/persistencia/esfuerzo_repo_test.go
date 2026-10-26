@@ -63,6 +63,19 @@ func (b baseEsfuerzo) registro(t *testing.T, horas float64) domain.RegistroEsfue
 	return r
 }
 
+// contarRegistros cuenta los registros del elemento directo en la base: solo lo necesitan los
+// tests, así que no es parte del repositorio.
+func contarRegistros(t *testing.T, db *sql.DB, elementoID int64) int {
+	t.Helper()
+	var n int
+	err := db.QueryRowContext(context.Background(),
+		`SELECT COUNT(*) FROM registros_esfuerzo WHERE elemento_id = ?`, elementoID).Scan(&n)
+	if err != nil {
+		t.Fatalf("contar registros de esfuerzo del elemento %d: %v", elementoID, err)
+	}
+	return n
+}
+
 // mismoRegistro compara la fecha con Equal (el mismo instante) y el resto campo por campo.
 func mismoRegistro(a, b domain.RegistroEsfuerzo) bool {
 	fa, fb := a.Fecha, b.Fecha
@@ -107,8 +120,8 @@ func TestRepositorioEsfuerzo_DosRegistrosIguales_TienenIDsDistintos(t *testing.T
 	if r1.ID == 0 || r1.ID == r2.ID {
 		t.Errorf("IDs = %d y %d, se esperaban asignados y distintos", r1.ID, r2.ID)
 	}
-	if n, err := b.repo.ContarRegistros(ctx, b.elementoID); err != nil || n != 2 {
-		t.Errorf("ContarRegistros = %d, %v; se esperaban 2", n, err)
+	if n := contarRegistros(t, b.db, b.elementoID); n != 2 {
+		t.Errorf("registros del elemento = %d, se esperaban 2", n)
 	}
 }
 
@@ -158,8 +171,8 @@ func TestRepositorioEsfuerzo_ElementoInexistente_RetornaErrElementoNoEncontrado(
 	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
 	}
-	if n, err := b.repo.ContarRegistros(ctx, 999); err != nil || n != 0 {
-		t.Errorf("ContarRegistros = %d, %v; no se esperaban registros", n, err)
+	if n := contarRegistros(t, b.db, 999); n != 0 {
+		t.Errorf("registros del elemento = %d, no se esperaban registros", n)
 	}
 }
 

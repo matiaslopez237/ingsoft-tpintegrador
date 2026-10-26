@@ -137,8 +137,13 @@ func (s sistemaEsfuerzoReal) BuscarRegistro(id int64) (registroVisto, error) {
 	return verRegistro(r), nil
 }
 
+// ContarRegistros cuenta directo en la base del escenario: es una consulta solo de los tests,
+// así que no está en el repositorio de producción.
 func (s sistemaEsfuerzoReal) ContarRegistros(elementoID int64) (int, error) {
-	return s.esfuerzo.ContarRegistros(context.Background(), elementoID)
+	var n int
+	err := s.db.QueryRowContext(context.Background(),
+		`SELECT COUNT(*) FROM registros_esfuerzo WHERE elemento_id = ?`, elementoID).Scan(&n)
+	return n, err
 }
 
 func verRegistro(r domain.RegistroEsfuerzo) registroVisto {
