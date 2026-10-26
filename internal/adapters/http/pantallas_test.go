@@ -391,3 +391,26 @@ func TestPantallas_EditarProyecto_SoloEnviaLosCamposCambiados(t *testing.T) {
 		t.Errorf("fecha de fin enviada: CambiarFechaFin=%v FechaFin=%v", c.CambiarFechaFin, c.FechaFin)
 	}
 }
+
+// Traza: DEF-01, RN-30.3. Guardar el formulario sin cambiar nada vuelve al detalle sin mensaje y
+// sin llamar al caso de uso (no es un error del usuario).
+func TestPantallas_EditarProyecto_SinCambios_VuelveAlDetalleSinError(t *testing.T) {
+	llamado := false
+	cu := casosFalsos()
+	cu.ModificarProyecto = modificarFunc(func(context.Context, app.DatosModificarProyecto) (domain.Proyecto, error) {
+		llamado = true
+		return domain.Proyecto{}, domain.ErrSinCambios
+	})
+
+	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/editar", url.Values{
+		"nombre": {"Alfa"}, "fecha_inicio": {"2026-03-01"}, "fecha_fin": {""}, "estado": {"Activo"},
+		"original_nombre": {"Alfa"}, "original_fecha_inicio": {"2026-03-01"}, "original_fecha_fin": {""}, "original_estado": {"Activo"},
+	})
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7" {
+		t.Errorf("status = %d, Location = %q; se esperaba volver al detalle", rec.Code, rec.Header().Get("Location"))
+	}
+	if llamado {
+		t.Error("no se esperaba llamar al caso de uso si no cambió ningún campo")
+	}
+}
