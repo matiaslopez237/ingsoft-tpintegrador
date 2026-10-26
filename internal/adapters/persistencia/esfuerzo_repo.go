@@ -23,8 +23,13 @@ func NuevoRepositorioEsfuerzo(db *sql.DB) *RepositorioEsfuerzo {
 
 // GuardarRegistro inserta el registro y le asigna su ID. Si el elemento ya no existe (otro pedido
 // lo borró después de que el caso de uso lo verificara), la clave foránea lo rechaza y se devuelve
-// domain.ErrElementoNoEncontrado. El proyecto no puede faltar si el elemento existe, porque el
-// elemento también tiene clave foránea hacia su proyecto.
+// domain.ErrElementoNoEncontrado.
+//
+// Toda violación de clave foránea se traduce a ErrElementoNoEncontrado porque SQLite no informa
+// cuál de las dos claves (proyecto_id o elemento_id) falló, y en la práctica solo puede faltar el
+// elemento: si el elemento existe, su proyecto también (backlog_elementos tiene clave foránea hacia
+// proyectos), y el caso de uso ya verificó que el elemento sea del proyecto (RN-18.1). La tabla no
+// impone esa coincidencia por sí sola: la garantiza RegistrarEsfuerzo.
 func (r *RepositorioEsfuerzo) GuardarRegistro(ctx context.Context, reg *domain.RegistroEsfuerzo) error {
 	res, err := r.db.ExecContext(ctx,
 		`INSERT INTO registros_esfuerzo (proyecto_id, elemento_id, integrante, fecha, actividad, medias_horas)
