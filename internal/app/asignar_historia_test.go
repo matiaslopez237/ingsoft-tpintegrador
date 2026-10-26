@@ -8,10 +8,16 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
+// sprintFalso es lo que el repositorio falso guarda de un sprint para los tests.
+type sprintFalso struct {
+	proyectoID int64
+	abierto    bool
+}
+
 // repoAsignacionFalso guarda elementos y sprints en memoria y permite simular fallas.
 type repoAsignacionFalso struct {
 	elementos      map[int64]domain.ElementoBacklog
-	sprints        map[int64]InfoSprint
+	sprints        map[int64]sprintFalso
 	errBuscarElem  error
 	errBuscarSprnt error
 	errGuardar     error
@@ -19,10 +25,10 @@ type repoAsignacionFalso struct {
 }
 
 func nuevoRepoAsignacionFalso() *repoAsignacionFalso {
-	return &repoAsignacionFalso{elementos: map[int64]domain.ElementoBacklog{}, sprints: map[int64]InfoSprint{}}
+	return &repoAsignacionFalso{elementos: map[int64]domain.ElementoBacklog{}, sprints: map[int64]sprintFalso{}}
 }
 
-func (r *repoAsignacionFalso) BuscarElemento(_ context.Context, id int64) (domain.ElementoBacklog, error) {
+func (r *repoAsignacionFalso) BuscarElementoPorID(_ context.Context, id int64) (domain.ElementoBacklog, error) {
 	if r.errBuscarElem != nil {
 		return domain.ElementoBacklog{}, r.errBuscarElem
 	}
@@ -33,15 +39,15 @@ func (r *repoAsignacionFalso) BuscarElemento(_ context.Context, id int64) (domai
 	return e, nil
 }
 
-func (r *repoAsignacionFalso) BuscarSprint(_ context.Context, id int64) (InfoSprint, error) {
+func (r *repoAsignacionFalso) BuscarSprint(_ context.Context, id int64) (proyectoID int64, abierto bool, err error) {
 	if r.errBuscarSprnt != nil {
-		return InfoSprint{}, r.errBuscarSprnt
+		return 0, false, r.errBuscarSprnt
 	}
 	s, ok := r.sprints[id]
 	if !ok {
-		return InfoSprint{}, ErrSprintNoEncontrado
+		return 0, false, ErrSprintNoEncontrado
 	}
-	return s, nil
+	return s.proyectoID, s.abierto, nil
 }
 
 func (r *repoAsignacionFalso) GuardarAsignacion(_ context.Context, e *domain.ElementoBacklog) error {
@@ -65,7 +71,7 @@ func elementoFalso(id, proyectoID int64, sprintID *int64) domain.ElementoBacklog
 func TestAsignarHistoria_DatosValidos_GuardaElSprintID(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	repo.elementos[1] = elementoFalso(1, 100, nil)
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: true}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
@@ -87,8 +93,8 @@ func TestAsignarHistoria_SprintPrevioCerrado_Reasigna(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	sprintPrevio := int64(20)
 	repo.elementos[1] = elementoFalso(1, 100, &sprintPrevio)
-	repo.sprints[20] = InfoSprint{ProyectoID: 100, Abierto: false}
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: true}
+	repo.sprints[20] = sprintFalso{proyectoID: 100, abierto: false}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
@@ -106,8 +112,8 @@ func TestAsignarHistoria_YaAsignadoAOtroSprintActivo_NoGuarda(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	sprintPrevio := int64(20)
 	repo.elementos[1] = elementoFalso(1, 100, &sprintPrevio)
-	repo.sprints[20] = InfoSprint{ProyectoID: 100, Abierto: true}
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: true}
+	repo.sprints[20] = sprintFalso{proyectoID: 100, abierto: true}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
@@ -124,7 +130,7 @@ func TestAsignarHistoria_YaAsignadoAOtroSprintActivo_NoGuarda(t *testing.T) {
 func TestAsignarHistoria_SprintDeOtroProyecto_NoGuarda(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	repo.elementos[1] = elementoFalso(1, 100, nil)
-	repo.sprints[10] = InfoSprint{ProyectoID: 999, Abierto: true}
+	repo.sprints[10] = sprintFalso{proyectoID: 999, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
@@ -141,7 +147,7 @@ func TestAsignarHistoria_SprintDeOtroProyecto_NoGuarda(t *testing.T) {
 func TestAsignarHistoria_SprintDestinoCerrado_NoGuarda(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	repo.elementos[1] = elementoFalso(1, 100, nil)
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: false}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: false}
 	uc := NuevoAsignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
@@ -157,7 +163,7 @@ func TestAsignarHistoria_SprintDestinoCerrado_NoGuarda(t *testing.T) {
 // Traza: HU-09, sección 7: elemento inexistente
 func TestAsignarHistoria_ElementoInexistente_RetornaError(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: true}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 99, SprintID: 10})
@@ -194,7 +200,7 @@ func TestAsignarHistoria_FallaDelRepositorio_SePropaga(t *testing.T) {
 
 	repoGuardar := nuevoRepoAsignacionFalso()
 	repoGuardar.elementos[1] = elementoFalso(1, 100, nil)
-	repoGuardar.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: true}
+	repoGuardar.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	repoGuardar.errGuardar = errBase
 
 	tests := []struct {
@@ -222,7 +228,7 @@ func TestDesasignarHistoria_SprintActivo_Desasigna(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	sprintID := int64(10)
 	repo.elementos[1] = elementoFalso(1, 100, &sprintID)
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: true}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoDesasignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ElementoID: 1})
@@ -240,7 +246,7 @@ func TestDesasignarHistoria_SprintCerrado_RetornaErrorYNoGuarda(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	sprintID := int64(10)
 	repo.elementos[1] = elementoFalso(1, 100, &sprintID)
-	repo.sprints[10] = InfoSprint{ProyectoID: 100, Abierto: false}
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: false}
 	uc := NuevoDesasignarHistoria(repo)
 
 	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ElementoID: 1})

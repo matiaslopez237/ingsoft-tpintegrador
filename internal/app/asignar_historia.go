@@ -13,19 +13,12 @@ import (
 // persistencia (Tarea 9.6) lo traduce a partir de lo que devuelva el repositorio real de sprints.
 var ErrSprintNoEncontrado = errors.New("sprint no encontrado")
 
-// InfoSprint es lo mínimo que este caso de uso necesita saber de un sprint, sin depender de
-// domain.Sprint (de HU-08).
-type InfoSprint struct {
-	ProyectoID int64
-	Abierto    bool
-}
-
 // RepositorioAsignacion es el puerto de persistencia que necesitan AsignarHistoria y DesasignarHistoria.
 type RepositorioAsignacion interface {
-	// BuscarElemento devuelve domain.ErrElementoNoEncontrado si no existe.
-	BuscarElemento(ctx context.Context, id int64) (domain.ElementoBacklog, error)
-	// BuscarSprint devuelve ErrSprintNoEncontrado si no existe.
-	BuscarSprint(ctx context.Context, id int64) (InfoSprint, error)
+	LectorElementos // BuscarElementoPorID (de HU-18): devuelve domain.ErrElementoNoEncontrado si no existe.
+	// BuscarSprint devuelve el proyecto al que pertenece el sprint y si está Abierto, sin depender
+	// de domain.Sprint (de HU-08). Devuelve ErrSprintNoEncontrado si no existe.
+	BuscarSprint(ctx context.Context, id int64) (proyectoID int64, abierto bool, err error)
 	// GuardarAsignacion persiste el SprintID del elemento ya existente.
 	GuardarAsignacion(ctx context.Context, e *domain.ElementoBacklog) error
 }
@@ -50,12 +43,12 @@ func NuevoAsignarHistoria(repo RepositorioAsignacion) *AsignarHistoria {
 // el sprint no existen, o los datos son inválidos, no se guarda nada.
 // Implementa HU-09 (CA-09.1, CA-09.2, CA-09.3, CA-09.7, CA-09.8).
 func (uc *AsignarHistoria) Ejecutar(ctx context.Context, d DatosAsignacion) error {
-	e, err := uc.repo.BuscarElemento(ctx, d.ElementoID)
+	e, err := uc.repo.BuscarElementoPorID(ctx, d.ElementoID)
 	if err != nil {
 		return err
 	}
 
-	destino, err := uc.repo.BuscarSprint(ctx, d.SprintID)
+	destinoProyectoID, destinoAbierto, err := uc.repo.BuscarSprint(ctx, d.SprintID)
 	if err != nil {
 		return err
 	}
@@ -65,7 +58,7 @@ func (uc *AsignarHistoria) Ejecutar(ctx context.Context, d DatosAsignacion) erro
 		return err
 	}
 
-	if err := e.AsignarASprint(d.SprintID, destino.ProyectoID, destino.Abierto, sprintActualActivo); err != nil {
+	if err := e.AsignarASprint(d.SprintID, destinoProyectoID, destinoAbierto, sprintActualActivo); err != nil {
 		return err
 	}
 
@@ -81,11 +74,11 @@ func (uc *AsignarHistoria) sprintActualActivo(ctx context.Context, e domain.Elem
 	if e.SprintID == nil || *e.SprintID == sprintDestinoID {
 		return false, nil
 	}
-	actual, err := uc.repo.BuscarSprint(ctx, *e.SprintID)
+	_, abierto, err := uc.repo.BuscarSprint(ctx, *e.SprintID)
 	if err != nil {
 		return false, err
 	}
-	return actual.Abierto, nil
+	return abierto, nil
 }
 
 // DatosDesasignacion son las entradas para desasignar un elemento de su sprint (HU-09).
@@ -106,18 +99,18 @@ func NuevoDesasignarHistoria(repo RepositorioAsignacion) *DesasignarHistoria {
 // dominio y persiste el resultado. Si el elemento no existe o no se puede desasignar, no se
 // guarda nada. Implementa HU-09 (CA-09.4, CA-09.5, CA-09.6).
 func (uc *DesasignarHistoria) Ejecutar(ctx context.Context, d DatosDesasignacion) error {
-	e, err := uc.repo.BuscarElemento(ctx, d.ElementoID)
+	e, err := uc.repo.BuscarElementoPorID(ctx, d.ElementoID)
 	if err != nil {
 		return err
 	}
 
 	var sprintActualActivo bool
 	if e.SprintID != nil {
-		actual, err := uc.repo.BuscarSprint(ctx, *e.SprintID)
+		_, abierto, err := uc.repo.BuscarSprint(ctx, *e.SprintID)
 		if err != nil {
 			return err
 		}
-		sprintActualActivo = actual.Abierto
+		sprintActualActivo = abierto
 	}
 
 	if err := e.DesasignarDeSprint(sprintActualActivo); err != nil {
