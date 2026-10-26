@@ -112,6 +112,71 @@ func TestNuevoRegistroEsfuerzo_FechaHoyOPasada_EsValidaYGuardaSoloElDia(t *testi
 	}
 }
 
+// Traza: HU-18 CA-18.3, CA-18.9, CA-18.10
+// El orden es > 0, después múltiplo de 0,5 y al final máximo 24: -1,25 y 25,3 lo verifican.
+func TestNuevoRegistroEsfuerzo_HorasNegativas_RetornaError(t *testing.T) {
+	tests := []struct {
+		horas   float64
+		wantErr error
+	}{
+		{0, ErrHorasInvalidas},
+		{-2, ErrHorasInvalidas},
+		{-0.5, ErrHorasInvalidas},
+		{-1.25, ErrHorasInvalidas},
+		{1.25, ErrHorasNoMultiploMediaHora},
+		{0.3, ErrHorasNoMultiploMediaHora},
+		{25.3, ErrHorasNoMultiploMediaHora},
+		{24.5, ErrHorasExcedenMaximo},
+		{100, ErrHorasExcedenMaximo},
+	}
+	for _, tt := range tests {
+		_, err := NuevoRegistroEsfuerzo(1, 1, "Ana", hoyEsfuerzo, "Desarrollo", tt.horas, hoyEsfuerzo)
+		if !errors.Is(err, tt.wantErr) {
+			t.Errorf("horas %v: error = %v, se esperaba %v", tt.horas, err, tt.wantErr)
+		}
+	}
+}
+
+// Traza: HU-18 CA-18.2, CA-18.10
+func TestNuevoRegistroEsfuerzo_HorasLimite_SonValidas(t *testing.T) {
+	for _, horas := range []float64{0.5, 1, 7.5, 24} {
+		r, err := NuevoRegistroEsfuerzo(1, 1, "Ana", hoyEsfuerzo, "Desarrollo", horas, hoyEsfuerzo)
+		if err != nil {
+			t.Errorf("horas %v: error inesperado: %v", horas, err)
+			continue
+		}
+		if r.Horas != horas {
+			t.Errorf("Horas = %v, se esperaba %v", r.Horas, horas)
+		}
+	}
+}
+
+// Traza: HU-18 sección 7 (si hay varios errores, se informa el primero en el orden de la tabla)
+func TestNuevoRegistroEsfuerzo_VariosErrores_InformaElPrimero(t *testing.T) {
+	manana := dia(2026, time.October, 26, 0)
+	tests := []struct {
+		nombre     string
+		integrante string
+		fecha      time.Time
+		actividad  string
+		horas      float64
+		wantErr    error
+	}{
+		{"todo inválido", "", time.Time{}, "", -1, ErrNombreIntegranteVacio},
+		{"sin fecha antes que actividad y horas", "Ana", time.Time{}, "", -1, ErrFechaEsfuerzoObligatoria},
+		{"fecha futura antes que actividad y horas", "Ana", manana, "", -1, ErrFechaEsfuerzoFutura},
+		{"actividad antes que horas", "Ana", hoyEsfuerzo, " ", -1, ErrActividadVacia},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			_, err := NuevoRegistroEsfuerzo(1, 1, tt.integrante, tt.fecha, tt.actividad, tt.horas, hoyEsfuerzo)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("error = %v, se esperaba %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
 // Traza: HU-18 CA-18.5
 func TestNuevoRegistroEsfuerzo_SinIntegrante_RetornaError(t *testing.T) {
 	for _, integrante := range []string{"", "   "} {
