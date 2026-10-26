@@ -1,15 +1,10 @@
 package domain
 
-import (
-	"errors"
-	"slices"
-)
+import "errors"
 
-// Errores nuevos de HU-06 (spec, sección 7). Los de los campos son los de HU-05.
-var (
-	ErrEstadoElementoInvalido = errors.New("el estado debe ser Pendiente, En progreso o Hecho")
-	ErrElementoConEsfuerzo    = errors.New("no se puede eliminar un elemento con esfuerzo registrado")
-)
+// Error nuevo de HU-06 (spec, sección 7). Los de los campos son los de HU-05, y el de estado
+// inválido (ErrEstadoElementoInvalido) se comparte con HU-07 (backlog_listado.go).
+var ErrElementoConEsfuerzo = errors.New("no se puede eliminar un elemento con esfuerzo registrado")
 
 // CambiosElemento son los datos de una edición parcial de un elemento (HU-06, RN-06.1).
 // Un campo en nil no se envía y conserva su valor.
@@ -73,8 +68,4 @@ func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	editado.ID = e.ID
 	editado.Estado = estado
 	return editado, nil
-}
-
-func estadoElementoValido(e EstadoElemento) bool {
-	return slices.Contains([]EstadoElemento{EstadoPendiente, EstadoEnProgreso, EstadoHecho}, e)
 }

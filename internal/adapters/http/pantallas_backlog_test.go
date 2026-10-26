@@ -4,201 +4,237 @@ import (
 	"context"
 	"net/http"
 	"net/url"
+	"slices"
 	"testing"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-type consultarElementoFunc func(context.Context, int64, int64) (domain.ElementoBacklog, error)
+// Adaptadores de funciones a las interfaces de los casos de uso de HU-05 y HU-07.
+type (
+	listarBacklogFunc func(context.Context, app.DatosListarBacklog) ([]domain.ElementoBacklog, error)
+	crearElementoFunc func(context.Context, app.DatosNuevoElemento) (domain.ElementoBacklog, error)
+)
 
-func (f consultarElementoFunc) Ejecutar(ctx context.Context, proyectoID, elementoID int64) (domain.ElementoBacklog, error) {
-	return f(ctx, proyectoID, elementoID)
+func (f listarBacklogFunc) Ejecutar(ctx context.Context, d app.DatosListarBacklog) ([]domain.ElementoBacklog, error) {
+	return f(ctx, d)
 }
-
-// casosBacklogFalsos agrega a casosFalsos el elemento Login (7) del proyecto Alfa (7).
-func casosBacklogFalsos(editor *editorElementosFalso, eliminador *eliminadorElementosFalso) CasosDeUso {
-	cu := casosFalsos()
-	cu.ConsultarElementoBacklog = consultarElementoFunc(func(_ context.Context, pid, eid int64) (domain.ElementoBacklog, error) {
-		if pid != 7 || eid != 7 {
-			return domain.ElementoBacklog{}, domain.ErrElementoNoEncontrado
-		}
-		e := elementoLogin()
-		e.ProyectoID = 7
-		return e, nil
-	})
-	cu.EditarElementoBacklog = editor
-	cu.EliminarElementoBacklog = eliminador
-	return cu
-}
-
-// formElementoOriginal es el formulario tal como lo devuelve la pantalla de Login, sin cambios.
-func formElementoOriginal() url.Values {
-	v := url.Values{
-		"titulo": {"Login"}, "descripcion": {"Ingresar"}, "prioridad": {"Alta"},
-		"story_points": {"5"}, "criterios": {"Con email"}, "estado": {"Pendiente"},
-	}
-	for k, val := range v {
-		v["original_"+k] = val
-	}
-	return v
-}
-
-// Traza: HU-06 CA-06.10
-func TestPantallaElemento_MuestraElFormulario(t *testing.T) {
-	rec := pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}),
-		http.MethodGet, "/web/proyectos/7/backlog/7", nil)
-
-	if rec.Code != http.StatusOK {
-		t.Fatalf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
-	}
-	contiene(t, rec, "<header", `name="titulo"`, `value="Login"`, `name="original_titulo" value="Login"`,
-		`<option value="Alta" selected>`, `<option value="Pendiente" selected>`, `value="5"`,
-		">Con email</textarea>", `action="/web/proyectos/7/backlog/7/eliminar"`, `href="/web/proyectos/7"`)
-
-	rec = pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}),
-		http.MethodGet, "/web/proyectos/7/backlog/99", nil)
-	if rec.Code != http.StatusNotFound {
-		t.Errorf("inexistente: status = %d", rec.Code)
-	}
-}
-
-// Traza: HU-06 CA-06.10 (sección 5: solo los campos cambiados, como DEF-01)
-func TestPantallaElemento_EditarEnviaSoloLoQueCambio(t *testing.T) {
-	editor := &editorElementosFalso{}
-	cu := casosBacklogFalsos(editor, &eliminadorElementosFalso{})
-	cu.EditarElementoBacklog = editarQueAcepta(editor)
-	form := formElementoOriginal()
-	form.Set("prioridad", "Media")
-	form.Set("criterios", "Uno\r\n\r\n  Dos  \r\n")
-
-	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", form)
-
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7/backlog/7" {
-		t.Fatalf("status = %d, Location = %q; cuerpo %.300s", rec.Code, rec.Header().Get("Location"), rec.Body)
-	}
-	c := editor.recibido.Cambios
-	if c.Titulo != nil || c.Descripcion != nil || c.CambiarStoryPoints || c.Estado != nil {
-		t.Errorf("se enviaron campos que no cambiaron: %+v", c)
-	}
-	if c.Prioridad == nil || *c.Prioridad != domain.PrioridadMedia || c.Criterios == nil ||
-		len(*c.Criterios) != 2 || (*c.Criterios)[0] != "Uno" || (*c.Criterios)[1] != "Dos" {
-		t.Errorf("cambios: prioridad %v, criterios %v", c.Prioridad, c.Criterios)
-	}
-}
-
-// editarQueAcepta registra lo recibido y responde con el elemento sin validar el proyecto.
-func editarQueAcepta(f *editorElementosFalso) editorElementos {
-	return editarElementoFunc(func(_ context.Context, d app.DatosEditarElemento) (domain.ElementoBacklog, error) {
-		f.recibido = d
-		return elementoLogin().Editar(d.Cambios)
-	})
-}
-
-type editarElementoFunc func(context.Context, app.DatosEditarElemento) (domain.ElementoBacklog, error)
-
-func (f editarElementoFunc) Ejecutar(ctx context.Context, d app.DatosEditarElemento) (domain.ElementoBacklog, error) {
+func (f crearElementoFunc) Ejecutar(ctx context.Context, d app.DatosNuevoElemento) (domain.ElementoBacklog, error) {
 	return f(ctx, d)
 }
 
-// Traza: HU-06 CA-06.10: story points vacío quita la estimación.
-func TestPantallaElemento_StoryPointsVacioQuitaLaEstimacion(t *testing.T) {
-	editor := &editorElementosFalso{}
-	cu := casosBacklogFalsos(editor, &eliminadorElementosFalso{})
-	cu.EditarElementoBacklog = editarQueAcepta(editor)
-	form := formElementoOriginal()
-	form.Set("story_points", "")
+// llamadasBacklog guarda lo que recibieron los casos de uso en una prueba.
+type llamadasBacklog struct {
+	listado app.DatosListarBacklog
+	creado  *app.DatosNuevoElemento
+}
 
-	pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", form)
+// casosConBacklog suma a casosFalsos los casos de uso de HU-05 y HU-07: el backlog de alfa (ID 7)
+// tiene dos elementos; listar devuelve errListar y crear devuelve errCrear (nil: funcionan).
+func casosConBacklog(errListar, errCrear error, llamadas *llamadasBacklog) CasosDeUso {
+	cinco := 5
+	cu := casosFalsos()
+	cu.ListarBacklog = listarBacklogFunc(func(_ context.Context, d app.DatosListarBacklog) ([]domain.ElementoBacklog, error) {
+		llamadas.listado = d
+		if d.ProyectoID != alfa.ID {
+			return nil, domain.ErrProyectoNoEncontrado
+		}
+		if errListar != nil {
+			return nil, errListar
+		}
+		return []domain.ElementoBacklog{
+			{ID: 2, ProyectoID: 7, Titulo: "Login", Prioridad: domain.PrioridadAlta, Estado: domain.EstadoPendiente,
+				StoryPoints: &cinco, Criterios: []string{"Con usuario y clave"}},
+			{ID: 1, ProyectoID: 7, Titulo: "Reportes", Prioridad: domain.PrioridadBaja, Estado: domain.EstadoHecho,
+				Criterios: []string{"Exporta a PDF"}},
+		}, nil
+	})
+	cu.CrearElementoBacklog = crearElementoFunc(func(_ context.Context, d app.DatosNuevoElemento) (domain.ElementoBacklog, error) {
+		llamadas.creado = &d
+		if d.ProyectoID != alfa.ID {
+			return domain.ElementoBacklog{}, domain.ErrProyectoNoEncontrado
+		}
+		return domain.ElementoBacklog{ID: 3, ProyectoID: d.ProyectoID}, errCrear
+	})
+	return cu
+}
 
-	c := editor.recibido.Cambios
-	if !c.CambiarStoryPoints || c.StoryPoints != nil {
-		t.Errorf("CambiarStoryPoints=%v StoryPoints=%v", c.CambiarStoryPoints, c.StoryPoints)
+func formElemento(titulo, descripcion, prioridad, storyPoints, criterios string) url.Values {
+	return url.Values{"titulo": {titulo}, "descripcion": {descripcion}, "prioridad": {prioridad},
+		"story_points": {storyPoints}, "criterios": {criterios}}
+}
+
+// Traza: HU-07 CA-07.1: la pantalla lista el backlog, con los controles de orden y filtro y el
+// formulario para agregar elementos.
+func TestPantallaBacklog_ListaControlesYFormulario(t *testing.T) {
+	var ll llamadasBacklog
+
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &ll), http.MethodGet, "/web/proyectos/7/backlog", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "Alfa", "Login", "Alta", "Pendiente", "Con usuario y clave", "Reportes", "Sin estimar",
+		`name="orden"`, `name="estado"`, `action="/web/proyectos/7/backlog"`,
+		`name="titulo"`, `name="descripcion"`, `name="prioridad"`, `name="story_points"`, `name="criterios"`)
+	if ll.listado != (app.DatosListarBacklog{ProyectoID: 7}) {
+		t.Errorf("listado pedido = %+v, se esperaba el orden y el estado por defecto", ll.listado)
 	}
 }
 
-// Traza: HU-06 CA-06.10: los errores se muestran en la misma pantalla.
-func TestPantallaElemento_Errores(t *testing.T) {
-	tests := []struct {
-		nombre   string
-		ruta     string
-		form     url.Values
-		editor   *editorElementosFalso
-		elim     *eliminadorElementosFalso
-		wantCode int
-		wantMsg  string
-	}{
-		{"título vacío", "/web/proyectos/7/backlog/7/editar", func() url.Values { f := formElementoOriginal(); f.Set("titulo", ""); return f }(),
-			&editorElementosFalso{err: domain.ErrTituloVacio}, &eliminadorElementosFalso{}, http.StatusBadRequest, domain.ErrTituloVacio.Error()},
-		{"story points no numéricos", "/web/proyectos/7/backlog/7/editar", func() url.Values { f := formElementoOriginal(); f.Set("story_points", "muchos"); return f }(),
-			&editorElementosFalso{}, &eliminadorElementosFalso{}, http.StatusBadRequest, "story_points debe ser un número entero"},
-		{"eliminar con esfuerzo", "/web/proyectos/7/backlog/7/eliminar", url.Values{},
-			&editorElementosFalso{}, &eliminadorElementosFalso{err: domain.ErrElementoConEsfuerzo}, http.StatusConflict, domain.ErrElementoConEsfuerzo.Error()},
+// Traza: HU-07 CA-07.2, CA-07.4: el orden y el filtro de la URL llegan al caso de uso y quedan elegidos.
+func TestPantallaBacklog_OrdenYFiltro(t *testing.T) {
+	var ll llamadasBacklog
+
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &ll), http.MethodGet, "/web/proyectos/7/backlog?orden=asc&estado=Hecho", nil)
+
+	if ll.listado != (app.DatosListarBacklog{ProyectoID: 7, Orden: "asc", Estado: "Hecho"}) {
+		t.Errorf("listado pedido = %+v", ll.listado)
 	}
-	for _, tt := range tests {
-		t.Run(tt.nombre, func(t *testing.T) {
-			rec := pedirPantalla(t, casosBacklogFalsos(tt.editor, tt.elim), http.MethodPost, tt.ruta, tt.form)
-			if rec.Code != tt.wantCode {
-				t.Fatalf("status = %d, se esperaba %d; cuerpo %.300s", rec.Code, tt.wantCode, rec.Body)
+	contiene(t, rec, `value="asc" selected`, `value="Hecho" selected`)
+}
+
+// Traza: HU-07 CA-07.8: un orden inválido en la URL muestra el error.
+func TestPantallaBacklog_OrdenInvalido_Devuelve400(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(domain.ErrOrdenInvalido, nil, &llamadasBacklog{}), http.MethodGet,
+		"/web/proyectos/7/backlog?orden=ASC", nil)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, se esperaba 400", rec.Code)
+	}
+	contiene(t, rec, domain.ErrOrdenInvalido.Error())
+}
+
+// Traza: HU-07 CA-07.7
+func TestPantallaBacklog_ProyectoInexistente_Devuelve404(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodGet, "/web/proyectos/99/backlog", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, se esperaba 404", rec.Code)
+	}
+}
+
+// Traza: HU-07 CA-07.5
+func TestPantallaBacklog_SinElementos_MuestraMensaje(t *testing.T) {
+	cu := casosConBacklog(nil, nil, &llamadasBacklog{})
+	cu.ListarBacklog = listarBacklogFunc(func(context.Context, app.DatosListarBacklog) ([]domain.ElementoBacklog, error) {
+		return nil, nil
+	})
+
+	rec := pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7/backlog", nil)
+
+	contiene(t, rec, "No hay elementos")
+}
+
+// Traza: HU-07 sección 5 (formulario de HU-05): crear un elemento vuelve al backlog; los criterios
+// van uno por línea y las líneas vacías se ignoran.
+func TestPantallaBacklog_CrearElemento_RedirigeAlBacklog(t *testing.T) {
+	var ll llamadasBacklog
+
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &ll), http.MethodPost, "/web/proyectos/7/backlog",
+		formElemento("Perfil", "Editar mis datos", "Media", "3", "Cambia el nombre\r\n\r\n  Cambia la foto  \n"))
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7/backlog" {
+		t.Fatalf("status = %d, Location = %q; se esperaba 303 al backlog", rec.Code, rec.Header().Get("Location"))
+	}
+	d := ll.creado
+	if d == nil || d.ProyectoID != 7 || d.Titulo != "Perfil" || d.Descripcion != "Editar mis datos" ||
+		d.Prioridad != domain.PrioridadMedia || d.StoryPoints == nil || *d.StoryPoints != 3 ||
+		!slices.Equal(d.Criterios, []string{"Cambia el nombre", "Cambia la foto"}) {
+		t.Errorf("datos recibidos por el caso de uso: %+v", d)
+	}
+}
+
+// Traza: HU-05 RN-05.6: sin story points el elemento queda sin estimar.
+func TestPantallaBacklog_CrearSinStoryPoints(t *testing.T) {
+	var ll llamadasBacklog
+
+	pedirPantalla(t, casosConBacklog(nil, nil, &ll), http.MethodPost, "/web/proyectos/7/backlog",
+		formElemento("Perfil", "x", "Media", "", "Un criterio"))
+
+	if ll.creado == nil || ll.creado.StoryPoints != nil {
+		t.Errorf("datos recibidos = %+v, se esperaba sin story points", ll.creado)
+	}
+}
+
+// Traza: HU-07 sección 5: story points que no son un número se informan sin llamar al caso de uso.
+func TestPantallaBacklog_StoryPointsNoNumericos_NoLlamaAlCasoDeUso(t *testing.T) {
+	var ll llamadasBacklog
+
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &ll), http.MethodPost, "/web/proyectos/7/backlog",
+		formElemento("Perfil", "x", "Media", "tres", "Un criterio"))
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, se esperaba 400", rec.Code)
+	}
+	contiene(t, rec, "story_points debe ser un número entero")
+	if ll.creado != nil {
+		t.Errorf("no se esperaba llamar al caso de uso, recibió %+v", ll.creado)
+	}
+}
+
+// Traza: HU-05 sección 7 desde la pantalla: el error se muestra con lo que se había escrito.
+func TestPantallaBacklog_ErrorAlCrear_MuestraElMensajeYConservaElFormulario(t *testing.T) {
+	tests := []error{domain.ErrTituloDuplicado, domain.ErrTituloVacio, domain.ErrPrioridadInvalida,
+		domain.ErrStoryPointsInvalidos, domain.ErrSinCriterios, domain.ErrDescripcionVacia}
+	for _, errCrear := range tests {
+		t.Run(errCrear.Error(), func(t *testing.T) {
+			rec := pedirPantalla(t, casosConBacklog(nil, errCrear, &llamadasBacklog{}), http.MethodPost, "/web/proyectos/7/backlog",
+				formElemento("Login", "Mi descripción", "Alta", "8", "Mi criterio"))
+
+			if rec.Code != http.StatusBadRequest {
+				t.Fatalf("status = %d, se esperaba 400; cuerpo: %.400s", rec.Code, rec.Body)
 			}
-			contiene(t, rec, tt.wantMsg, `name="titulo"`)
+			contiene(t, rec, errCrear.Error(), `value="Login"`, "Mi descripción", `value="8"`, "Mi criterio",
+				"Reportes") // la lista sigue visible
 		})
 	}
 }
 
-// Traza: HU-06 CA-06.10 (CA-06.8)
-func TestPantallaElemento_Eliminar(t *testing.T) {
-	eliminador := &eliminadorElementosFalso{}
-	rec := pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, eliminador),
-		http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", url.Values{})
+// Traza: HU-07 CA-07.7
+func TestPantallaBacklog_CrearEnProyectoInexistente_Devuelve404(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodPost, "/web/proyectos/99/backlog",
+		formElemento("Login", "x", "Alta", "", "a"))
 
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7" {
-		t.Errorf("status = %d, Location = %q", rec.Code, rec.Header().Get("Location"))
-	}
-	if eliminador.recibido != (app.DatosEliminarElemento{ProyectoID: 7, ElementoID: 7}) {
-		t.Errorf("datos recibidos: %+v", eliminador.recibido)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d, se esperaba 404", rec.Code)
 	}
 }
 
-// Agregar espacios alrededor del título no cuenta como cambio: el dominio los recorta igual.
-func TestPantallaElemento_EspaciosAlrededorNoSonUnCambio(t *testing.T) {
-	editor := &editorElementosFalso{}
-	cu := casosBacklogFalsos(editor, &eliminadorElementosFalso{})
-	cu.EditarElementoBacklog = editarQueAcepta(editor)
-	form := formElementoOriginal()
-	form.Set("titulo", "  Login ")
-	form.Set("estado", "Hecho")
+// Traza: HU-07: desde el detalle del proyecto se llega a su backlog.
+func TestPantallaDetalle_EnlazaAlBacklog(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodGet, "/web/proyectos/7", nil)
 
-	pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", form)
+	contiene(t, rec, `href="/web/proyectos/7/backlog"`)
+}
 
-	if c := editor.recibido.Cambios; c.Titulo != nil || c.Estado == nil {
-		t.Errorf("cambios: título %v, estado %v", c.Titulo, c.Estado)
+// Traza: HU-07 sección 5: el formulario de alta conserva el orden y el filtro elegidos.
+func TestPantallaBacklog_FormularioConservaOrdenYFiltro(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodGet,
+		"/web/proyectos/7/backlog?orden=asc&estado=Hecho", nil)
+
+	contiene(t, rec, `action="/web/proyectos/7/backlog?orden=asc&amp;estado=Hecho"`)
+}
+
+// Traza: HU-07 sección 5: después de agregar un elemento se vuelve al backlog con el mismo orden y filtro.
+func TestPantallaBacklog_CrearVuelveConElMismoOrdenYFiltro(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodPost,
+		"/web/proyectos/7/backlog?orden=asc&estado=Hecho", formElemento("Perfil", "x", "Media", "", "Un criterio"))
+
+	if got := rec.Header().Get("Location"); got != "/web/proyectos/7/backlog?estado=Hecho&orden=asc" {
+		t.Errorf("Location = %q, se esperaba volver con el orden y el filtro", got)
 	}
 }
 
-// Eliminar pide confirmación antes de enviar el formulario.
-func TestPantallaElemento_EliminarPideConfirmacion(t *testing.T) {
-	rec := pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}),
-		http.MethodGet, "/web/proyectos/7/backlog/7", nil)
-	contiene(t, rec, "<details", "<summary>Eliminar elemento</summary>", "Sí, eliminar «Login»")
-}
+// Traza: HU-07 sección 5: si el alta falla, la lista se sigue mostrando con el orden y el filtro elegidos.
+func TestPantallaBacklog_ErrorAlCrearConservaOrdenYFiltro(t *testing.T) {
+	var ll llamadasBacklog
 
-// Traza: HU-06 CA-06.10. Guardar la pantalla sin cambiar nada vuelve al elemento sin mensaje y sin
-// llamar al caso de uso (no es un error del usuario), igual que el formulario de proyecto (DEF-01).
-func TestPantallaElemento_SinCambios_VuelveSinError(t *testing.T) {
-	llamado := false
-	cu := casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{})
-	cu.EditarElementoBacklog = editarElementoFunc(func(context.Context, app.DatosEditarElemento) (domain.ElementoBacklog, error) {
-		llamado = true
-		return domain.ElementoBacklog{}, domain.ErrSinCambios
-	})
+	pedirPantalla(t, casosConBacklog(nil, domain.ErrTituloDuplicado, &ll), http.MethodPost,
+		"/web/proyectos/7/backlog?orden=asc&estado=Hecho", formElemento("Login", "x", "Alta", "", "Un criterio"))
 
-	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", formElementoOriginal())
-
-	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7/backlog/7" {
-		t.Errorf("status = %d, Location = %q; se esperaba volver al elemento", rec.Code, rec.Header().Get("Location"))
-	}
-	if llamado {
-		t.Error("no se esperaba llamar al caso de uso si no cambió ningún campo")
+	if ll.listado != (app.DatosListarBacklog{ProyectoID: 7, Orden: "asc", Estado: "Hecho"}) {
+		t.Errorf("listado pedido = %+v, se esperaba con el orden y el filtro", ll.listado)
 	}
 }

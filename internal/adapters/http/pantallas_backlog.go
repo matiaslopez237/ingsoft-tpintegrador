@@ -1,11 +1,10 @@
 package http
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -13,215 +12,148 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// consultorElementos es lo que la pantalla del elemento necesita de ConsultarElementoBacklog.
-type consultorElementos interface {
-	Ejecutar(ctx context.Context, proyectoID, elementoID int64) (domain.ElementoBacklog, error)
-}
-
+// Opciones de los <select> de la pantalla del backlog. Validarlas es tarea del dominio: acá solo
+// se listan.
 var (
 	prioridadesElemento = []domain.Prioridad{domain.PrioridadAlta, domain.PrioridadMedia, domain.PrioridadBaja}
 	estadosElemento     = []domain.EstadoElemento{domain.EstadoPendiente, domain.EstadoEnProgreso, domain.EstadoHecho}
 )
 
-// formElemento son los campos del formulario del elemento, como texto. Los criterios van uno por línea.
-type formElemento struct {
-	Titulo, Descripcion, Prioridad, StoryPoints, Criterios, Estado string
-}
+// Datos de la pantalla del backlog (HU-07): solo texto ya formateado, sin lógica de negocio.
+type (
+	vistaElemento struct {
+		Titulo, Prioridad, Estado string
+		StoryPoints               int // 0: sin estimar
+		Criterios                 []string
+	}
+	formularioElemento struct {
+		Titulo, Descripcion, Prioridad, StoryPoints, Criterios string
+	}
+	datosBacklog struct {
+		Proyecto      vistaProyecto
+		Elementos     []vistaElemento
+		Orden, Estado string // el orden y el filtro elegidos
+		Form          formularioElemento
+		Error         string
+		Prioridades   []domain.Prioridad
+		Estados       []domain.EstadoElemento
+	}
+)
 
-type datosElemento struct {
-	ProyectoID, ElementoID int64
-	Form                   formElemento
-	Original               formElemento // valores con los que se abrió la pantalla
-	Error                  string
-	Prioridades            []domain.Prioridad
-	Estados                []domain.EstadoElemento
-}
-
-// registrarPantallasBacklog agrega la pantalla para ver, editar y eliminar un elemento.
-// Implementa HU-06 (CA-06.10).
-func (p *pantallas) registrarPantallasBacklog(mux *http.ServeMux) {
-	mux.HandleFunc("GET /web/proyectos/{id}/backlog/{elementoID}", p.elemento)
-	mux.HandleFunc("POST /web/proyectos/{id}/backlog/{elementoID}/editar", p.formulario(p.editarElemento))
-	mux.HandleFunc("POST /web/proyectos/{id}/backlog/{elementoID}/eliminar", p.formulario(p.eliminarElemento))
-}
-
-func (p *pantallas) elemento(w http.ResponseWriter, r *http.Request) {
-	pid, eid, ok := p.idsElemento(w, r)
+// backlog muestra el backlog del proyecto con el orden y el filtro de la URL. Implementa HU-07.
+func (p *pantallas) backlog(w http.ResponseWriter, r *http.Request) {
+	id, ok := p.idDeRuta(w, r)
 	if !ok {
 		return
 	}
-	e, err := p.cu.ConsultarElementoBacklog.Ejecutar(r.Context(), pid, eid)
-	if err != nil {
-		p.errorDeElemento(w, err)
-		return
-	}
-	f := aFormElemento(e)
-	p.mostrarElemento(w, http.StatusOK, pid, eid, f, f, "")
+	p.mostrarBacklog(w, r, id, http.StatusOK, formularioElemento{Prioridad: string(domain.PrioridadMedia)}, "")
 }
 
-func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
-	pid, eid, ok := p.idsElemento(w, r)
+// crearElemento agrega un elemento con el caso de uso de HU-05 y vuelve al backlog con el mismo
+// orden y filtro, o lo muestra con el error y lo que se había escrito. Implementa HU-07 (sección 5).
+func (p *pantallas) crearElemento(w http.ResponseWriter, r *http.Request) {
+	id, ok := p.idDeRuta(w, r)
 	if !ok {
 		return
 	}
-	f, original := leerFormElemento(r)
-	cambios, err := cambiosDeFormElemento(f, original)
-	if err == nil && cambios == (domain.CambiosElemento{}) {
-		// Si no cambió ningún campo, se vuelve al elemento sin mensaje: no es un error del
-		// usuario (igual que el formulario de proyecto, DEF-01).
-		http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog/%d", pid, eid), http.StatusSeeOther)
-		return
+	form := formularioElemento{
+		Titulo:      r.PostFormValue("titulo"),
+		Descripcion: r.PostFormValue("descripcion"),
+		Prioridad:   r.PostFormValue("prioridad"),
+		StoryPoints: r.PostFormValue("story_points"),
+		Criterios:   r.PostFormValue("criterios"),
 	}
+	datos, err := datosNuevoElemento(id, form)
 	if err == nil {
-		_, err = p.cu.EditarElementoBacklog.Ejecutar(r.Context(), app.DatosEditarElemento{ProyectoID: pid, ElementoID: eid, Cambios: cambios})
+		_, err = p.cu.CrearElementoBacklog.Ejecutar(r.Context(), datos)
 	}
 	if err != nil {
-		if errors.Is(err, domain.ErrElementoNoEncontrado) {
-			p.errorDeElemento(w, err)
+		if errors.Is(err, domain.ErrProyectoNoEncontrado) {
+			p.errorDeConsulta(w, err)
 			return
 		}
-		if mensaje, ok := mensajeDeValidacionElemento(err); ok {
-			p.mostrarElemento(w, http.StatusBadRequest, pid, eid, f, original, mensaje)
+		if mensaje, ok := mensajeDeValidacion(err); ok {
+			p.mostrarBacklog(w, r, id, http.StatusBadRequest, form, mensaje)
 			return
 		}
-		p.fallaInterna(w, "editar elemento", err)
+		p.fallaInterna(w, "crear elemento del backlog", err)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog/%d", pid, eid), http.StatusSeeOther)
+	http.Redirect(w, r, rutaBacklog(id, r.URL.Query()), http.StatusSeeOther)
 }
 
-func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
-	pid, eid, ok := p.idsElemento(w, r)
-	if !ok {
+// rutaBacklog arma la ruta del backlog conservando el orden y el filtro elegidos, si los hay.
+func rutaBacklog(id int64, q url.Values) string {
+	conservar := url.Values{}
+	for _, clave := range []string{"orden", "estado"} {
+		if v := q.Get(clave); v != "" {
+			conservar.Set(clave, v)
+		}
+	}
+	ruta := fmt.Sprintf("/web/proyectos/%d/backlog", id)
+	if len(conservar) > 0 {
+		ruta += "?" + conservar.Encode()
+	}
+	return ruta
+}
+
+// mostrarBacklog renderiza la pantalla con el proyecto, su backlog ordenado y filtrado según la
+// URL, el formulario y el error si lo hay. Un orden o estado inválidos muestran la página de error.
+func (p *pantallas) mostrarBacklog(w http.ResponseWriter, r *http.Request, id int64, status int, form formularioElemento, mensaje string) {
+	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.errorDeConsulta(w, err)
 		return
 	}
-	err := p.cu.EliminarElementoBacklog.Ejecutar(r.Context(), app.DatosEliminarElemento{ProyectoID: pid, ElementoID: eid})
-	switch {
-	case err == nil:
-		redirigirAlDetalle(w, r, pid)
-	case errors.Is(err, domain.ErrElementoConEsfuerzo):
-		e, errConsulta := p.cu.ConsultarElementoBacklog.Ejecutar(r.Context(), pid, eid)
-		if errConsulta != nil {
-			p.errorDeElemento(w, errConsulta)
+	q := r.URL.Query()
+	orden, estado := q.Get("orden"), q.Get("estado")
+	elementos, err := p.cu.ListarBacklog.Ejecutar(r.Context(), app.DatosListarBacklog{ProyectoID: id, Orden: orden, Estado: estado})
+	if err != nil {
+		if errors.Is(err, domain.ErrProyectoNoEncontrado) {
+			p.errorDeConsulta(w, err)
 			return
 		}
-		f := aFormElemento(e)
-		p.mostrarElemento(w, http.StatusConflict, pid, eid, f, f, domain.ErrElementoConEsfuerzo.Error())
-	default:
-		p.errorDeElemento(w, err)
+		if m, ok := mensajeDeValidacion(err); ok {
+			p.renderizar(w, http.StatusBadRequest, "error.html", datosError{m})
+			return
+		}
+		p.fallaInterna(w, "listar el backlog", err)
+		return
 	}
-}
 
-// --- Ayudantes ---
-
-func (p *pantallas) mostrarElemento(w http.ResponseWriter, status int, pid, eid int64, f, original formElemento, mensaje string) {
-	p.renderizar(w, status, "elemento.html", datosElemento{
-		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
-		Prioridades: prioridadesElemento, Estados: estadosElemento,
+	vistas := make([]vistaElemento, len(elementos))
+	for i, e := range elementos {
+		vistas[i] = vistaElemento{Titulo: e.Titulo, Prioridad: string(e.Prioridad), Estado: string(e.Estado), Criterios: e.Criterios}
+		if e.StoryPoints != nil {
+			vistas[i].StoryPoints = *e.StoryPoints
+		}
+	}
+	p.renderizar(w, status, "backlog.html", datosBacklog{
+		Proyecto: aVistaProyecto(proyecto), Elementos: vistas, Orden: orden, Estado: estado,
+		Form: form, Error: mensaje, Prioridades: prioridadesElemento, Estados: estadosElemento,
 	})
 }
 
-func (p *pantallas) idsElemento(w http.ResponseWriter, r *http.Request) (int64, int64, bool) {
-	pid, eid, err := idsElementoDesdeRuta(r)
-	if err != nil {
-		p.renderizar(w, http.StatusBadRequest, "error.html", datosError{err.Error()})
-		return 0, 0, false
+// datosNuevoElemento convierte el formulario: story points vacíos quedan sin estimar, y los
+// criterios van uno por línea, ignorando las líneas vacías (spec HU-07, sección 5).
+func datosNuevoElemento(proyectoID int64, f formularioElemento) (app.DatosNuevoElemento, error) {
+	d := app.DatosNuevoElemento{
+		ProyectoID:  proyectoID,
+		Titulo:      f.Titulo,
+		Descripcion: f.Descripcion,
+		Prioridad:   domain.Prioridad(f.Prioridad),
 	}
-	return pid, eid, true
-}
-
-// errorDeElemento muestra la página 404 si el elemento no existe en el proyecto, o la de falla interna.
-func (p *pantallas) errorDeElemento(w http.ResponseWriter, err error) {
-	if errors.Is(err, domain.ErrElementoNoEncontrado) {
-		p.renderizar(w, http.StatusNotFound, "error.html", datosError{domain.ErrElementoNoEncontrado.Error()})
-		return
+	if sp := strings.TrimSpace(f.StoryPoints); sp != "" {
+		n, err := strconv.Atoi(sp)
+		if err != nil {
+			return app.DatosNuevoElemento{}, errFormulario{"story_points debe ser un número entero"}
+		}
+		d.StoryPoints = &n
 	}
-	p.fallaInterna(w, "elemento del backlog", err)
-}
-
-func mensajeDeValidacionElemento(err error) (string, bool) {
-	var ef errFormulario
-	if errors.As(err, &ef) {
-		return ef.mensaje, true
-	}
-	for _, e := range erroresDeValidacionEdicion {
-		if errors.Is(err, e) {
-			return e.Error(), true
+	for _, linea := range strings.Split(f.Criterios, "\n") {
+		if c := strings.TrimSpace(linea); c != "" {
+			d.Criterios = append(d.Criterios, c)
 		}
 	}
-	return "", false
-}
-
-func aFormElemento(e domain.ElementoBacklog) formElemento {
-	f := formElemento{
-		Titulo: e.Titulo, Descripcion: e.Descripcion, Prioridad: string(e.Prioridad),
-		Criterios: strings.Join(e.Criterios, "\n"), Estado: string(e.Estado),
-	}
-	if e.StoryPoints != nil {
-		f.StoryPoints = strconv.Itoa(*e.StoryPoints)
-	}
-	return f
-}
-
-// leerFormElemento lee el formulario y los valores originales (campos ocultos original_*).
-func leerFormElemento(r *http.Request) (formElemento, formElemento) {
-	leer := func(prefijo string) formElemento {
-		return formElemento{
-			Titulo:      r.PostFormValue(prefijo + "titulo"),
-			Descripcion: r.PostFormValue(prefijo + "descripcion"),
-			Prioridad:   r.PostFormValue(prefijo + "prioridad"),
-			StoryPoints: r.PostFormValue(prefijo + "story_points"),
-			Criterios:   r.PostFormValue(prefijo + "criterios"),
-			Estado:      r.PostFormValue(prefijo + "estado"),
-		}
-	}
-	return leer(""), leer("original_")
-}
-
-// cambiosDeFormElemento arma la edición con los campos que cambiaron respecto de los originales,
-// para no pisar ediciones simultáneas (HU-06, sección 5; lección de DEF-01). Story points vacío
-// quita la estimación; los criterios van uno por línea y se ignoran las líneas vacías.
-func cambiosDeFormElemento(f, original formElemento) (domain.CambiosElemento, error) {
-	var c domain.CambiosElemento
-	// Título y descripción se comparan recortados: el dominio los recorta igual al guardar.
-	if strings.TrimSpace(f.Titulo) != strings.TrimSpace(original.Titulo) {
-		c.Titulo = &f.Titulo
-	}
-	if strings.TrimSpace(f.Descripcion) != strings.TrimSpace(original.Descripcion) {
-		c.Descripcion = &f.Descripcion
-	}
-	if f.Prioridad != original.Prioridad {
-		pr := domain.Prioridad(f.Prioridad)
-		c.Prioridad = &pr
-	}
-	if strings.TrimSpace(f.StoryPoints) != strings.TrimSpace(original.StoryPoints) {
-		c.CambiarStoryPoints = true
-		if s := strings.TrimSpace(f.StoryPoints); s != "" {
-			n, err := strconv.Atoi(s)
-			if err != nil {
-				return domain.CambiosElemento{}, errFormulario{"story_points debe ser un número entero"}
-			}
-			c.StoryPoints = &n
-		}
-	}
-	// Los criterios se comparan como lista: el navegador envía el textarea con saltos CRLF.
-	if criterios := lineas(f.Criterios); !slices.Equal(criterios, lineas(original.Criterios)) {
-		c.Criterios = &criterios
-	}
-	if f.Estado != original.Estado {
-		e := domain.EstadoElemento(f.Estado)
-		c.Estado = &e
-	}
-	return c, nil
-}
-
-// lineas separa un texto en líneas recortadas, sin las vacías.
-func lineas(texto string) []string {
-	resultado := []string{}
-	for _, l := range strings.Split(strings.ReplaceAll(texto, "\r\n", "\n"), "\n") {
-		if l = strings.TrimSpace(l); l != "" {
-			resultado = append(resultado, l)
-		}
-	}
-	return resultado
+	return d, nil
 }

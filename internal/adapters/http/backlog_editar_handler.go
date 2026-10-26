@@ -148,17 +148,3 @@ func handlerEliminarElemento(uc eliminadorElementos) http.HandlerFunc {
 		}
 	}
 }
-
-// aRespuestaElemento convierte un elemento del dominio al JSON de respuesta (HU-05 y HU-06).
-func aRespuestaElemento(e domain.ElementoBacklog) respuestaElemento {
-	return respuestaElemento{
-		ID:          e.ID,
-		ProyectoID:  e.ProyectoID,
-		Titulo:      e.Titulo,
-		Descripcion: e.Descripcion,
-		Prioridad:   string(e.Prioridad),
-		Estado:      string(e.Estado),
-		StoryPoints: e.StoryPoints,
-		Criterios:   e.Criterios,
-	}
-}

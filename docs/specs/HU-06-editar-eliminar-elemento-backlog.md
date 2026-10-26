@@ -64,7 +64,7 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 | El elemento no existe o es de otro proyecto | `domain.ErrElementoNoEncontrado` (HU-05) | 404 |
 | No se envió ningún campo | `domain.ErrSinCambios` (HU-02, se reutiliza) | 400 |
 | Título, descripción, prioridad, story points o criterios inválidos | los de HU-05 (`ErrTituloVacio`, `ErrTituloDemasiadoLargo`, `ErrDescripcionVacia`, `ErrPrioridadInvalida`, `ErrStoryPointsInvalidos`, `ErrSinCriterios`, `ErrCriterioVacio`) | 400 |
-| Estado que no es Pendiente, En progreso ni Hecho | `ErrEstadoElementoInvalido` | 400 |
+| Estado que no es Pendiente, En progreso ni Hecho | `domain.ErrEstadoElementoInvalido` (el mismo de HU-07) | 400 |
 | Otro elemento del proyecto ya tiene ese título | `domain.ErrTituloDuplicado` (HU-05) | 400 |
 | Eliminar un elemento con esfuerzo registrado | `ErrElementoConEsfuerzo` | 409 |
 | Cuerpo JSON mal formado, con campos desconocidos o `story_points` que no es un entero | — (adaptador) | 400. Es un error de formato: se informa antes de buscar el elemento, como las fechas mal formadas en HU-30. |
