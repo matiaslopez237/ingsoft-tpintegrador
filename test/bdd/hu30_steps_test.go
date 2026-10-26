@@ -3,6 +3,7 @@ package bdd
 import (
 	"context"
 	"fmt"
+	"html"
 	"net/url"
 	"regexp"
 	"strconv"
@@ -23,6 +24,7 @@ type proyectoGuardado struct {
 	Nombre   string
 	Estado   string
 	TieneFin bool
+	Fin      string // AAAA-MM-DD, vacío si no tiene fecha de fin
 }
 
 // sistemaWeb es la puerta de entrada de los escenarios a las pantallas, sobre un servidor HTTP
@@ -38,12 +40,19 @@ type sistemaWeb interface {
 	Cerrar() error
 }
 
-var rutaDetalle = regexp.MustCompile(`^/web/proyectos/(\d+)$`)
+var (
+	rutaDetalle = regexp.MustCompile(`^/web/proyectos/(\d+)$`)
+	// campoInput y opcionElegida leen los valores de un formulario HTML como los enviaría el navegador.
+	campoInput    = regexp.MustCompile(`<input[^>]*\sname="([^"]+)"[^>]*\svalue="([^"]*)"`)
+	opcionElegida = regexp.MustCompile(`<select[^>]*\sname="([^"]+)"[\s\S]*?<option value="([^"]*)" selected>`)
+)
 
 type webWorld struct {
-	sistema   sistemaWeb
-	proyectos map[string]int64
-	ultima    respuestaWeb
+	sistema     sistemaWeb
+	proyectos   map[string]int64
+	ultima      respuestaWeb
+	formularios [2]url.Values // DEF-01: el formulario de edición que abrió cada persona
+	editado     string        // DEF-01: proyecto de esos formularios
 }
 
 func registrarStepsHU30(ctx *godog.ScenarioContext) {
@@ -85,6 +94,12 @@ func registrarStepsHU30(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el detalle de "([^"]*)" muestra al integrante "([^"]*)" con rol "([^"]*)"$`, w.detalleMuestraIntegrante)
 	ctx.Step(`^el detalle de "([^"]*)" no muestra al integrante "([^"]*)"$`, w.detalleNoMuestraIntegrante)
 	ctx.Step(`^el proyecto "([^"]*)" queda en estado "([^"]*)" y sin fecha de fin$`, w.quedaEnEstadoSinFin)
+
+	// DEF-01
+	ctx.Step(`^dos personas abren el formulario de edición de "([^"]*)"$`, w.dosPersonasAbrenEdicion)
+	ctx.Step(`^la primera guarda el formulario cambiando el estado a "([^"]*)"$`, w.primeraCambiaEstado)
+	ctx.Step(`^la segunda guarda el formulario cambiando la fecha de fin a "([^"]*)"$`, w.segundaCambiaFin)
+	ctx.Step(`^el proyecto "([^"]*)" queda en estado "([^"]*)" con fecha de fin "([^"]*)"$`, w.quedaEnEstadoConFin)
 }
 
 // --- Given ---
@@ -317,4 +332,81 @@ func (w *webWorld) quedaEnEstadoSinFin(proyecto, estado string) error {
 		return fmt.Errorf("se esperaba %q en estado %q sin fecha de fin, se obtuvo %+v", proyecto, estado, p)
 	}
 	return nil
+}
+
+// --- DEF-01: ediciones simultáneas ---
+
+// dosPersonasAbrenEdicion abre dos veces el formulario de edición, antes de que nadie guarde.
+func (w *webWorld) dosPersonasAbrenEdicion(proyecto string) error {
+	id, err := w.idDe(proyecto)
+	if err != nil {
+		return err
+	}
+	for i := range w.formularios {
+		r, err := w.sistema.Pedir("GET", fmt.Sprintf("/web/proyectos/%d/editar", id), nil)
+		if err != nil {
+			return err
+		}
+		if r.Estado != 200 {
+			return fmt.Errorf("abrir el formulario de edición: estado %d", r.Estado)
+		}
+		w.formularios[i] = leerFormulario(r.Cuerpo)
+	}
+	w.editado = proyecto
+	return nil
+}
+
+func (w *webWorld) primeraCambiaEstado(estado string) error {
+	return w.guardarFormulario(0, "estado", estado)
+}
+
+func (w *webWorld) segundaCambiaFin(fin string) error {
+	return w.guardarFormulario(1, "fecha_fin", fin)
+}
+
+// guardarFormulario envía el formulario que abrió la persona i con un solo campo cambiado.
+func (w *webWorld) guardarFormulario(i int, campo, valor string) error {
+	id, err := w.idDe(w.editado)
+	if err != nil {
+		return err
+	}
+	form := url.Values{}
+	for k, v := range w.formularios[i] {
+		form[k] = append([]string(nil), v...)
+	}
+	form.Set(campo, valor)
+	if err := w.pedir("POST", fmt.Sprintf("/web/proyectos/%d/editar", id), form); err != nil {
+		return err
+	}
+	if w.ultima.Estado != 303 {
+		return fmt.Errorf("guardar el formulario %d: estado %d; cuerpo: %.300s", i+1, w.ultima.Estado, w.ultima.Cuerpo)
+	}
+	return nil
+}
+
+func (w *webWorld) quedaEnEstadoConFin(proyecto, estado, fin string) error {
+	id, err := w.idDe(proyecto)
+	if err != nil {
+		return err
+	}
+	p, err := w.sistema.BuscarProyecto(id)
+	if err != nil {
+		return err
+	}
+	if p.Estado != estado || p.Fin != fin {
+		return fmt.Errorf("se esperaba estado %q y fin %q, se obtuvo %+v", estado, fin, p)
+	}
+	return nil
+}
+
+// leerFormulario devuelve los campos <input> y los <select> elegidos de una página HTML.
+func leerFormulario(pagina string) url.Values {
+	form := url.Values{}
+	for _, m := range campoInput.FindAllStringSubmatch(pagina, -1) {
+		form.Set(m[1], html.UnescapeString(m[2]))
+	}
+	for _, m := range opcionElegida.FindAllStringSubmatch(pagina, -1) {
+		form.Set(m[1], html.UnescapeString(m[2]))
+	}
+	return form
 }
