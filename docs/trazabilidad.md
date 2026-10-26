@@ -579,10 +579,18 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | 6.6 Persistencia | `4321ddb` [RED] → `11283dd` [GREEN] | **RED → GREEN** |
 | 6.7 HTTP | `23afd32` [RED] → `f1e086b` [GREEN] | **RED → GREEN** |
 | 6.8 Pantalla | `422994e` [RED] → `be127d1` [GREEN] | **RED → GREEN**, BDD en verde |
-| 6.9 Revisión y trazabilidad | este commit | **REFACTOR** |
+| 6.9 Revisión y trazabilidad | `a22d553` | **REFACTOR** |
 
 ### Huecos
 
 - La spec está en **Borrador** hasta la aprobación del PR.
 - RN-06.8 (Sprint activo) depende de HU-09.
 - La lista del backlog (HU-07) todavía no enlaza a la pantalla del elemento: hoy se llega por URL (`/web/proyectos/{id}/backlog/{elementoID}`).
+
+---
+
+## Defectos
+
+| Defecto | Historia | Issue | Escenario BDD | Tests Go | Corrección | Commits |
+|---|---|---|---|---|---|---|
+| DEF-01 El formulario de edición de proyecto pisa cambios simultáneos | HU-30 (RN-30.3, CA-30.5) | [#179](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/179) | Dos ediciones simultáneas de campos distintos no se pisan `@DEF-01` | `TestPantallas_EditarProyecto_FormularioLlevaLosValoresOriginales`, `TestPantallas_EditarProyecto_SoloEnviaLosCamposCambiados`, `TestPantallas_EditarProyecto_SinCambios_VuelveAlDetalleSinError` | `cambiosDeForm` y `leerOriginalProyecto` en [pantallas.go](../internal/adapters/http/pantallas.go); campos ocultos `original_*` en [proyecto_form.html](../internal/adapters/http/web/plantillas/proyecto_form.html) | `1bbf72a` [RED] → `49c6303` [GREEN] → `7af3f6e` (spec y trazabilidad); sin cambios vuelve al detalle: `4a95342` [RED] → `73439b0` [GREEN] → este commit |

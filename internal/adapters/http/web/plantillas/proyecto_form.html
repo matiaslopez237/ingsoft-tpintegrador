@@ -13,6 +13,12 @@
   <input id="fecha_fin" name="fecha_fin" type="date" value="{{.Form.FechaFin}}">
 
   {{if .ID}}
+  {{/* DEF-01: valores con los que se abrió el formulario, para enviar solo lo que cambió. */}}
+  <input type="hidden" name="original_nombre" value="{{.Original.Nombre}}">
+  <input type="hidden" name="original_fecha_inicio" value="{{.Original.FechaInicio}}">
+  <input type="hidden" name="original_fecha_fin" value="{{.Original.FechaFin}}">
+  <input type="hidden" name="original_estado" value="{{.Original.Estado}}">
+
   <label for="estado">Estado</label>
   <select id="estado" name="estado">
     {{range .Estados}}<option value="{{.}}"{{if eq . $.Form.Estado}} selected{{end}}>{{.}}</option>{{end}}
