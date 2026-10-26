@@ -1,0 +1,48 @@
+{{define "titulo"}}Sprints de {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Sprints de {{.Proyecto.Nombre}}</h1>
+  <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+</div>
+
+{{if .Sprints}}
+<table>
+  <caption class="oculto">Sprints del proyecto</caption>
+  <thead>
+    <tr><th scope="col">N.º</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Sprint Goal</th><th scope="col">Estado</th></tr>
+  </thead>
+  <tbody>
+    {{range .Sprints}}
+    <tr>
+      <td>{{.Numero}}</td>
+      <td>{{.FechaInicio}}</td>
+      <td>{{.FechaFin}}</td>
+      <td>{{.Objetivo}}</td>
+      <td><span class="estado">{{.Estado}}</span></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="vacio">El proyecto todavía no tiene sprints.</p>
+{{end}}
+
+<section aria-labelledby="titulo-nuevo-sprint">
+  <h2 id="titulo-nuevo-sprint">Nuevo sprint</h2>
+  {{template "error_form" .Error}}
+  <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/sprints" class="formulario">
+    <label for="fecha_inicio">Fecha de inicio</label>
+    <input id="fecha_inicio" name="fecha_inicio" type="date" value="{{.Form.FechaInicio}}" required>
+
+    <label for="fecha_fin">Fecha de fin</label>
+    <input id="fecha_fin" name="fecha_fin" type="date" value="{{.Form.FechaFin}}" required>
+
+    <label for="objetivo">Sprint Goal</label>
+    <input id="objetivo" name="objetivo" type="text" value="{{.Form.Objetivo}}" required>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Crear sprint</button>
+    </div>
+  </form>
+</section>
+{{end}}
