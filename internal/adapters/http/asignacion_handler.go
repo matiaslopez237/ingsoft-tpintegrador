@@ -65,6 +65,10 @@ func handlerAsignarHistoria(uc agregadorAsignacion) http.HandlerFunc {
 			escribirJSON(w, http.StatusBadRequest, respuestaError{"el cuerpo debe ser un JSON válido"})
 			return
 		}
+		if pedido.SprintID <= 0 {
+			escribirJSON(w, http.StatusBadRequest, respuestaError{"el sprint_id debe ser un número entero positivo"})
+			return
+		}
 
 		err = uc.Ejecutar(r.Context(), app.DatosAsignacion{ProyectoID: proyectoID, ElementoID: elementoID, SprintID: pedido.SprintID})
 		if err != nil {
