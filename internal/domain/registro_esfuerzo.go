@@ -46,7 +46,7 @@ func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fech
 		return RegistroEsfuerzo{}, ErrNombreIntegranteVacio
 	case fecha.IsZero():
 		return RegistroEsfuerzo{}, ErrFechaEsfuerzoObligatoria
-	case fecha.After(soloDia(hoy)):
+	case diaCalendario(fecha).After(diaCalendario(hoy)):
 		return RegistroEsfuerzo{}, ErrFechaEsfuerzoFutura
 	case actividad == "":
 		return RegistroEsfuerzo{}, ErrActividadVacia
@@ -81,4 +81,10 @@ func validarHoras(horas float64) error {
 // soloDia descarta la hora de t y conserva su día y su zona (RN-18.4: se compara por día).
 func soloDia(t time.Time) time.Time {
 	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+}
+
+// diaCalendario lleva el día de t, tal como se lee en su zona, a UTC. Así dos fechas se comparan
+// por año, mes y día aunque vengan en zonas distintas (After compara instantes, no días).
+func diaCalendario(t time.Time) time.Time {
+	return time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, time.UTC)
 }
