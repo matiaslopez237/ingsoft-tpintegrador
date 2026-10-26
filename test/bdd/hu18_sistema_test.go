@@ -13,10 +13,6 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errHU18SinImplementar es el rojo de la tarea 18.3: los escenarios compilan y corren, pero el
-// caso de uso todavía no existe. Se va cuando las tareas 18.4 a 18.6 conecten RegistrarEsfuerzo.
-var errHU18SinImplementar = errors.New("HU-18 todavía no está implementada: falta conectar el caso de uso RegistrarEsfuerzo (tareas 18.4 a 18.6)")
-
 // erroresHU18 traduce la descripción del escenario al error definido en la spec.
 func erroresHU18() map[string]error {
 	return map[string]error{
@@ -33,16 +29,16 @@ func erroresHU18() map[string]error {
 	}
 }
 
-// sistemaEsfuerzoReal prepara los datos con los casos de uso de HU-01, HU-02, HU-03 y HU-05,
-// sobre SQLite real, en una base nueva por escenario. Registrar, buscar y contar esfuerzo
-// todavía devuelven errHU18SinImplementar.
+// sistemaEsfuerzoReal prepara los datos con los casos de uso de HU-01, HU-02, HU-03 y HU-05 y
+// registra con RegistrarEsfuerzo (HU-18), sobre SQLite real, en una base nueva por escenario.
 type sistemaEsfuerzoReal struct {
 	crearProyecto *app.CrearProyecto
 	modificar     *app.ModificarProyecto
 	agregar       *app.AgregarIntegrante
 	quitar        *app.QuitarIntegrante
 	crearElemento *app.CrearElementoBacklog
-	reloj         func() time.Time // el reloj falso del escenario; lo va a recibir RegistrarEsfuerzo
+	registrar     *app.RegistrarEsfuerzo
+	esfuerzo      *persistencia.RepositorioEsfuerzo
 	db            *sql.DB
 	dir           string
 }
@@ -58,13 +54,16 @@ func nuevoSistemaEsfuerzo(reloj func() time.Time) (sistemaEsfuerzo, error) {
 		return nil, err
 	}
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
+	backlog := persistencia.NuevoRepositorioBacklog(db)
+	esfuerzo := persistencia.NuevoRepositorioEsfuerzo(db)
 	return sistemaEsfuerzoReal{
 		crearProyecto: app.NuevoCrearProyecto(proyectos),
 		modificar:     app.NuevoModificarProyecto(proyectos),
 		agregar:       app.NuevoAgregarIntegrante(proyectos),
 		quitar:        app.NuevoQuitarIntegrante(proyectos),
-		crearElemento: app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)),
-		reloj:         reloj,
+		crearElemento: app.NuevoCrearElementoBacklog(backlog),
+		registrar:     app.NuevoRegistrarEsfuerzo(proyectos, backlog, esfuerzo, reloj),
+		esfuerzo:      esfuerzo,
 		db:            db,
 		dir:           dir,
 	}, nil
@@ -115,14 +114,41 @@ func (s sistemaEsfuerzoReal) CrearElemento(proyectoID int64, titulo string) (int
 	return e.ID, err
 }
 
-func (s sistemaEsfuerzoReal) RegistrarEsfuerzo(datosEsfuerzo) (registroVisto, error) {
-	return registroVisto{}, errHU18SinImplementar
+func (s sistemaEsfuerzoReal) RegistrarEsfuerzo(d datosEsfuerzo) (registroVisto, error) {
+	r, err := s.registrar.Ejecutar(context.Background(), app.DatosRegistroEsfuerzo{
+		ProyectoID: d.ProyectoID,
+		ElementoID: d.ElementoID,
+		Integrante: d.Integrante,
+		Fecha:      d.Fecha,
+		Actividad:  d.Actividad,
+		Horas:      d.Horas,
+	})
+	if err != nil {
+		return registroVisto{}, err
+	}
+	return verRegistro(r), nil
 }
 
-func (s sistemaEsfuerzoReal) BuscarRegistro(int64) (registroVisto, error) {
-	return registroVisto{}, errHU18SinImplementar
+func (s sistemaEsfuerzoReal) BuscarRegistro(id int64) (registroVisto, error) {
+	r, err := s.esfuerzo.BuscarRegistroPorID(context.Background(), id)
+	if err != nil {
+		return registroVisto{}, err
+	}
+	return verRegistro(r), nil
 }
 
-func (s sistemaEsfuerzoReal) ContarRegistros(int64) (int, error) {
-	return 0, errHU18SinImplementar
+func (s sistemaEsfuerzoReal) ContarRegistros(elementoID int64) (int, error) {
+	return s.esfuerzo.ContarRegistros(context.Background(), elementoID)
+}
+
+func verRegistro(r domain.RegistroEsfuerzo) registroVisto {
+	return registroVisto{
+		ID:         r.ID,
+		ProyectoID: r.ProyectoID,
+		ElementoID: r.ElementoID,
+		Integrante: r.Integrante,
+		Fecha:      r.Fecha.Format(time.DateOnly),
+		Actividad:  r.Actividad,
+		Horas:      r.Horas,
+	}
 }
