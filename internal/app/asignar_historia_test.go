@@ -74,7 +74,7 @@ func TestAsignarHistoria_DatosValidos_GuardaElSprintID(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
 
 	if err != nil {
 		t.Fatalf("error inesperado: %v", err)
@@ -97,7 +97,7 @@ func TestAsignarHistoria_SprintPrevioCerrado_Reasigna(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
 
 	if err != nil {
 		t.Fatalf("error inesperado: %v", err)
@@ -116,7 +116,7 @@ func TestAsignarHistoria_YaAsignadoAOtroSprintActivo_NoGuarda(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
 
 	if !errors.Is(err, domain.ErrElementoYaAsignado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoYaAsignado)
@@ -133,7 +133,7 @@ func TestAsignarHistoria_SprintDeOtroProyecto_NoGuarda(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 999, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
 
 	if !errors.Is(err, domain.ErrSprintDeOtroProyecto) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrSprintDeOtroProyecto)
@@ -150,7 +150,7 @@ func TestAsignarHistoria_SprintDestinoCerrado_NoGuarda(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: false}
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
 
 	if !errors.Is(err, domain.ErrSprintCerrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrSprintCerrado)
@@ -166,7 +166,7 @@ func TestAsignarHistoria_ElementoInexistente_RetornaError(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 99, SprintID: 10})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 99, SprintID: 10})
 
 	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
@@ -179,7 +179,7 @@ func TestAsignarHistoria_SprintInexistente_RetornaError(t *testing.T) {
 	repo.elementos[1] = elementoFalso(1, 100, nil)
 	uc := NuevoAsignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 99})
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 99})
 
 	if !errors.Is(err, ErrSprintNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, ErrSprintNoEncontrado)
@@ -213,7 +213,7 @@ func TestAsignarHistoria_FallaDelRepositorio_SePropaga(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
-			err := NuevoAsignarHistoria(tt.repo).Ejecutar(context.Background(), DatosAsignacion{ElementoID: 1, SprintID: 10})
+			err := NuevoAsignarHistoria(tt.repo).Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
 			if !errors.Is(err, errBase) {
 				t.Errorf("error = %v, se esperaba que envuelva %v", err, errBase)
 			}
@@ -231,7 +231,7 @@ func TestDesasignarHistoria_SprintActivo_Desasigna(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
 	uc := NuevoDesasignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ElementoID: 1})
+	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ProyectoID: 100, ElementoID: 1})
 
 	if err != nil {
 		t.Fatalf("error inesperado: %v", err)
@@ -249,7 +249,7 @@ func TestDesasignarHistoria_SprintCerrado_RetornaErrorYNoGuarda(t *testing.T) {
 	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: false}
 	uc := NuevoDesasignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ElementoID: 1})
+	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ProyectoID: 100, ElementoID: 1})
 
 	if !errors.Is(err, domain.ErrSprintCerrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrSprintCerrado)
@@ -265,7 +265,7 @@ func TestDesasignarHistoria_SinSprintAsignado_RetornaError(t *testing.T) {
 	repo.elementos[1] = elementoFalso(1, 100, nil)
 	uc := NuevoDesasignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ElementoID: 1})
+	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ProyectoID: 100, ElementoID: 1})
 
 	if !errors.Is(err, domain.ErrElementoSinSprint) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoSinSprint)
@@ -277,9 +277,43 @@ func TestDesasignarHistoria_ElementoInexistente_RetornaError(t *testing.T) {
 	repo := nuevoRepoAsignacionFalso()
 	uc := NuevoDesasignarHistoria(repo)
 
-	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ElementoID: 99})
+	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ProyectoID: 100, ElementoID: 99})
 
 	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
 		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
+	}
+}
+
+// Traza: HU-09, sección 7, RN-09.7 (igual que RN-18.1): un elemento de otro proyecto se trata
+// como inexistente para la ruta anidada /proyectos/{id}/backlog/{elementoID}/sprint.
+func TestAsignarHistoria_ElementoDeOtroProyecto_RetornaError(t *testing.T) {
+	repo := nuevoRepoAsignacionFalso()
+	repo.elementos[1] = elementoFalso(1, 200, nil) // el elemento es del proyecto 200
+	repo.sprints[10] = sprintFalso{proyectoID: 100, abierto: true}
+	uc := NuevoAsignarHistoria(repo)
+
+	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 10})
+
+	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
+	}
+	if repo.vecesGuardo != 0 {
+		t.Errorf("no se esperaba ningún guardado, hubo %d", repo.vecesGuardo)
+	}
+}
+
+func TestDesasignarHistoria_ElementoDeOtroProyecto_RetornaError(t *testing.T) {
+	repo := nuevoRepoAsignacionFalso()
+	sprintID := int64(10)
+	repo.elementos[1] = elementoFalso(1, 200, &sprintID) // el elemento es del proyecto 200
+	uc := NuevoDesasignarHistoria(repo)
+
+	err := uc.Ejecutar(context.Background(), DatosDesasignacion{ProyectoID: 100, ElementoID: 1})
+
+	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
+	}
+	if repo.vecesGuardo != 0 {
+		t.Errorf("no se esperaba ningún guardado, hubo %d", repo.vecesGuardo)
 	}
 }
