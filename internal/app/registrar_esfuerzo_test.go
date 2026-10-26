@@ -129,6 +129,39 @@ func TestRegistrarEsfuerzo_ElementoInexistente_RetornaErrorYNoGuarda(t *testing.
 	}
 }
 
+// Traza: HU-18 CA-18.7
+func TestRegistrarEsfuerzo_ProyectoInexistente_RetornaErrorYNoGuarda(t *testing.T) {
+	f := nuevoEsfuerzoFalso()
+	d := datosEsfuerzo()
+	d.ProyectoID = 99
+	d.Actividad = "" // aunque los datos sean inválidos, primero se informa el proyecto (sección 7)
+
+	_, err := registrarEsfuerzoCon(f).Ejecutar(context.Background(), d)
+
+	if !errors.Is(err, domain.ErrProyectoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrProyectoNoEncontrado)
+	}
+	if len(f.guardados) != 0 {
+		t.Errorf("no se esperaban registros guardados, hay %d", len(f.guardados))
+	}
+}
+
+// Traza: HU-18 CA-18.7 (RN-18.1: un elemento de otro proyecto se trata como inexistente)
+func TestRegistrarEsfuerzo_ElementoDeOtroProyecto_RetornaErrorYNoGuarda(t *testing.T) {
+	f := nuevoEsfuerzoFalso()
+	d := datosEsfuerzo()
+	d.ElementoID = 20 // es del proyecto 2
+
+	_, err := registrarEsfuerzoCon(f).Ejecutar(context.Background(), d)
+
+	if !errors.Is(err, domain.ErrElementoNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoNoEncontrado)
+	}
+	if len(f.guardados) != 0 {
+		t.Errorf("no se esperaban registros guardados, hay %d", len(f.guardados))
+	}
+}
+
 // Traza: HU-18 CA-18.4, CA-18.6 (el "hoy" sale del reloj que recibe el caso de uso)
 func TestRegistrarEsfuerzo_DatosInvalidos_NoLleganAlRepositorio(t *testing.T) {
 	tests := []struct {
@@ -164,6 +197,7 @@ func TestRegistrarEsfuerzo_FallaDelRepositorio_SePropaga(t *testing.T) {
 		nombre string
 		fallar func(*esfuerzoFalso)
 	}{
+		{"al buscar el proyecto", func(f *esfuerzoFalso) { f.errProyecto = errBase }},
 		{"al buscar el elemento", func(f *esfuerzoFalso) { f.errElemento = errBase }},
 		{"al guardar", func(f *esfuerzoFalso) { f.errGuardar = errBase }},
 	}
