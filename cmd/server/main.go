@@ -39,6 +39,7 @@ func main() {
 		AgregarRol:           app.NuevoAgregarRol(repoProyectos),
 		ConsultarProyecto:    app.NuevoConsultarProyecto(repoProyectos),
 		CrearElementoBacklog: app.NuevoCrearElementoBacklog(repoBacklog),
+		ListarProyectos:      app.NuevoListarProyectos(repoProyectos), // HU-30
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-18, RN-18.4).
 		RegistrarEsfuerzo: app.NuevoRegistrarEsfuerzo(repoProyectos, repoBacklog,
 			persistencia.NuevoRepositorioEsfuerzo(db), time.Now),
