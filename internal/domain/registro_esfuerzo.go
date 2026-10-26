@@ -72,7 +72,7 @@ func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fech
 // validarHoras aplica RN-18.6 a RN-18.8 en este orden: > 0, múltiplo de 0,5 y máximo 24.
 func validarHoras(horas float64) error {
 	switch {
-	case horas <= 0:
+	case !(horas > 0): // así también NaN, que no es mayor ni menor que 0, cae acá
 		return ErrHorasInvalidas
 	case horas*2 != math.Trunc(horas*2): // en medias horas tiene que dar un número entero
 		return ErrHorasNoMultiploMediaHora
