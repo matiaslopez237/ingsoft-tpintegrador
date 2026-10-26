@@ -44,7 +44,7 @@
 <section aria-labelledby="titulo-nuevo-elemento">
   <h2 id="titulo-nuevo-elemento">Nuevo elemento</h2>
   {{template "error_form" .Error}}
-  <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/backlog" class="formulario">
+  <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/backlog?orden={{.Orden}}&amp;estado={{.Estado}}" class="formulario">
     <label for="titulo">Título</label>
     <input id="titulo" name="titulo" type="text" value="{{.Form.Titulo}}" required>
 

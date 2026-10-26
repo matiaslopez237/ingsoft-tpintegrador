@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -48,8 +49,8 @@ func (p *pantallas) backlog(w http.ResponseWriter, r *http.Request) {
 	p.mostrarBacklog(w, r, id, http.StatusOK, formularioElemento{Prioridad: string(domain.PrioridadMedia)}, "")
 }
 
-// crearElemento agrega un elemento con el caso de uso de HU-05 y vuelve al backlog, o lo muestra
-// con el error y lo que se había escrito. Implementa HU-07 (sección 5: formulario de alta).
+// crearElemento agrega un elemento con el caso de uso de HU-05 y vuelve al backlog con el mismo
+// orden y filtro, o lo muestra con el error y lo que se había escrito. Implementa HU-07 (sección 5).
 func (p *pantallas) crearElemento(w http.ResponseWriter, r *http.Request) {
 	id, ok := p.idDeRuta(w, r)
 	if !ok {
@@ -78,7 +79,22 @@ func (p *pantallas) crearElemento(w http.ResponseWriter, r *http.Request) {
 		p.fallaInterna(w, "crear elemento del backlog", err)
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog", id), http.StatusSeeOther)
+	http.Redirect(w, r, rutaBacklog(id, r.URL.Query()), http.StatusSeeOther)
+}
+
+// rutaBacklog arma la ruta del backlog conservando el orden y el filtro elegidos, si los hay.
+func rutaBacklog(id int64, q url.Values) string {
+	conservar := url.Values{}
+	for _, clave := range []string{"orden", "estado"} {
+		if v := q.Get(clave); v != "" {
+			conservar.Set(clave, v)
+		}
+	}
+	ruta := fmt.Sprintf("/web/proyectos/%d/backlog", id)
+	if len(conservar) > 0 {
+		ruta += "?" + conservar.Encode()
+	}
+	return ruta
 }
 
 // mostrarBacklog renderiza la pantalla con el proyecto, su backlog ordenado y filtrado según la
