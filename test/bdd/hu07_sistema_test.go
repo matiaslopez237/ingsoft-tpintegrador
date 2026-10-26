@@ -14,21 +14,21 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errListarBacklogNoImplementado hace fallar los escenarios mientras ListarBacklog no existe (rojo esperado).
-var errListarBacklogNoImplementado = errors.New("pendiente: ListarBacklog todavía no está implementado")
-
 // erroresHU07 traduce la descripción del escenario al error definido en la spec (sección 7).
 func erroresHU07() map[string]error {
 	return map[string]error{
 		"proyecto no encontrado": domain.ErrProyectoNoEncontrado,
+		"orden inválido":         domain.ErrOrdenInvalido,
+		"estado inválido":        domain.ErrEstadoElementoInvalido,
 	}
 }
 
-// sistemaListadoBacklogReal prepara proyectos y elementos con los casos de uso de HU-01 y HU-05
-// sobre SQLite, en una base nueva por escenario. Listar el backlog todavía no está implementado.
+// sistemaListadoBacklogReal prepara proyectos y elementos con los casos de uso de HU-01 y HU-05,
+// y lo lista con el de HU-07, sobre SQLite, en una base nueva por escenario.
 type sistemaListadoBacklogReal struct {
 	crearProyecto *app.CrearProyecto
 	crearElemento *app.CrearElementoBacklog
+	listar        *app.ListarBacklog
 	db            *sql.DB
 	dir           string
 }
@@ -43,9 +43,11 @@ func nuevoSistemaListadoBacklog() (sistemaListadoBacklog, error) {
 		os.RemoveAll(dir)
 		return nil, err
 	}
+	proyectos, backlog := persistencia.NuevoRepositorioProyectos(db), persistencia.NuevoRepositorioBacklog(db)
 	return sistemaListadoBacklogReal{
-		crearProyecto: app.NuevoCrearProyecto(persistencia.NuevoRepositorioProyectos(db)),
-		crearElemento: app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)),
+		crearProyecto: app.NuevoCrearProyecto(proyectos),
+		crearElemento: app.NuevoCrearElementoBacklog(backlog),
+		listar:        app.NuevoListarBacklog(proyectos, backlog),
 		db:            db,
 		dir:           dir,
 	}, nil
@@ -81,8 +83,16 @@ func (s sistemaListadoBacklogReal) FijarEstadoElemento(proyectoID int64, titulo,
 	return nil
 }
 
-func (s sistemaListadoBacklogReal) ListarBacklog(int64, string, string) ([]string, error) {
-	return nil, errListarBacklogNoImplementado
+func (s sistemaListadoBacklogReal) ListarBacklog(proyectoID int64, orden, estado string) ([]string, error) {
+	elementos, err := s.listar.Ejecutar(context.Background(), app.DatosListarBacklog{ProyectoID: proyectoID, Orden: orden, Estado: estado})
+	if err != nil {
+		return nil, err
+	}
+	titulos := make([]string, len(elementos))
+	for i, e := range elementos {
+		titulos[i] = e.Titulo
+	}
+	return titulos, nil
 }
 
 // Cerrar cierra la base del escenario y borra su carpeta temporal.
