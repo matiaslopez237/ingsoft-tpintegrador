@@ -115,6 +115,7 @@ func registrarStepsHU06(ctx *godog.ScenarioContext) {
 	ctx.Step(`^elimino desde el proyecto "([^"]*)" el elemento "([^"]*)"$`, w.eliminoDesdeProyecto)
 	ctx.Step(`^desde la pantalla del elemento "([^"]*)" cambio "([^"]*)" a "([^"]*)"$`, w.desdePantallaCambio)
 	ctx.Step(`^desde la pantalla elimino el elemento "([^"]*)"$`, w.desdePantallaElimino)
+	ctx.Step(`^desde la pantalla del elemento "([^"]*)" guardo sin cambiar nada$`, w.desdePantallaGuardoSinCambios)
 
 	ctx.Step(`^el elemento "([^"]*)" queda con:$`, w.quedaCon)
 	ctx.Step(`^el elemento "([^"]*)" conserva el identificador de "([^"]*)"$`, w.conservaIdentificador)
@@ -125,6 +126,7 @@ func registrarStepsHU06(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el elemento "([^"]*)" ya no existe$`, w.yaNoExiste)
 	ctx.Step(`^el backlog de "([^"]*)" tiene (\d+) elementos$`, w.backlogTiene)
 	ctx.Step(`^la pantalla del elemento responde (\d+) y muestra "([^"]*)"$`, w.pantallaMuestra)
+	ctx.Step(`^la pantalla del elemento vuelve al elemento sin mostrar un error$`, w.pantallaVuelveSinError)
 }
 
 // --- Given ---
@@ -276,6 +278,31 @@ func (w *edicionBacklogWorld) desdePantallaCambio(titulo, campo, valor string) e
 	form.Set(campo, valor)
 	w.pantalla, err = w.sistema.Pedir("POST", ruta+"/editar", form)
 	return err
+}
+
+// desdePantallaGuardoSinCambios envía el formulario de la pantalla tal como se abrió.
+func (w *edicionBacklogWorld) desdePantallaGuardoSinCambios(titulo string) error {
+	ruta, err := w.rutaPantalla(titulo)
+	if err != nil {
+		return err
+	}
+	r, err := w.sistema.Pedir("GET", ruta, nil)
+	if err != nil {
+		return err
+	}
+	w.pantalla, err = w.sistema.Pedir("POST", ruta+"/editar", leerFormularioElemento(r.Cuerpo))
+	return err
+}
+
+var rutaElemento = regexp.MustCompile(`^/web/proyectos/\d+/backlog/\d+$`)
+
+// pantallaVuelveSinError verifica que el envío redirigió a la pantalla del elemento (sin página de error).
+func (w *edicionBacklogWorld) pantallaVuelveSinError() error {
+	if w.pantalla.Estado != 303 || !rutaElemento.MatchString(w.pantalla.Ubicacion) {
+		return fmt.Errorf("se esperaba volver al elemento (303), estado %d, Location %q; cuerpo: %.300s",
+			w.pantalla.Estado, w.pantalla.Ubicacion, w.pantalla.Cuerpo)
+	}
+	return nil
 }
 
 func (w *edicionBacklogWorld) desdePantallaElimino(titulo string) error {

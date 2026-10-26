@@ -121,6 +121,12 @@ Feature: Editar o eliminar un elemento del backlog
       | prioridad    | Media |
       | story_points | 5     |
 
+  @CA-06.10 @alternativo
+  Scenario: Guardar la pantalla sin cambiar nada vuelve sin error
+    When desde la pantalla del elemento "Login" guardo sin cambiar nada
+    Then la pantalla del elemento vuelve al elemento sin mostrar un error
+    And el elemento "Login" no cambió
+
   @CA-06.10 @error
   Scenario: La pantalla muestra el error de dominio
     When desde la pantalla del elemento "Login" cambio "titulo" a ""

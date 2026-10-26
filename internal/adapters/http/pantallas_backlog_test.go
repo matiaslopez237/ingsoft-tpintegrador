@@ -182,3 +182,23 @@ func TestPantallaElemento_EliminarPideConfirmacion(t *testing.T) {
 		http.MethodGet, "/web/proyectos/7/backlog/7", nil)
 	contiene(t, rec, "<details", "<summary>Eliminar elemento</summary>", "Sí, eliminar «Login»")
 }
+
+// Traza: HU-06 CA-06.10. Guardar la pantalla sin cambiar nada vuelve al elemento sin mensaje y sin
+// llamar al caso de uso (no es un error del usuario), igual que el formulario de proyecto (DEF-01).
+func TestPantallaElemento_SinCambios_VuelveSinError(t *testing.T) {
+	llamado := false
+	cu := casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{})
+	cu.EditarElementoBacklog = editarElementoFunc(func(context.Context, app.DatosEditarElemento) (domain.ElementoBacklog, error) {
+		llamado = true
+		return domain.ElementoBacklog{}, domain.ErrSinCambios
+	})
+
+	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", formElementoOriginal())
+
+	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/web/proyectos/7/backlog/7" {
+		t.Errorf("status = %d, Location = %q; se esperaba volver al elemento", rec.Code, rec.Header().Get("Location"))
+	}
+	if llamado {
+		t.Error("no se esperaba llamar al caso de uso si no cambió ningún campo")
+	}
+}
