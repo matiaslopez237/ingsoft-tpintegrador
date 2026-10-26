@@ -44,15 +44,23 @@ func NuevoRegistrarEsfuerzo(proyectos LectorProyectos, elementos LectorElementos
 	return &RegistrarEsfuerzo{proyectos: proyectos, elementos: elementos, registros: registros, reloj: reloj}
 }
 
-// Ejecutar busca el elemento, valida el registro en el dominio y lo guarda.
+// Ejecutar busca el proyecto y el elemento, valida el registro en el dominio y lo guarda.
 // Si algo falla, no se guarda nada.
 func (uc *RegistrarEsfuerzo) Ejecutar(ctx context.Context, d DatosRegistroEsfuerzo) (domain.RegistroEsfuerzo, error) {
+	p, err := uc.proyectos.BuscarPorID(ctx, d.ProyectoID)
+	if err != nil {
+		return domain.RegistroEsfuerzo{}, fmt.Errorf("buscar proyecto %d: %w", d.ProyectoID, err)
+	}
+
 	e, err := uc.elementos.BuscarElementoPorID(ctx, d.ElementoID)
 	if err != nil {
 		return domain.RegistroEsfuerzo{}, fmt.Errorf("buscar elemento %d: %w", d.ElementoID, err)
 	}
+	if e.ProyectoID != p.ID { // RN-18.1: un elemento de otro proyecto se trata como inexistente
+		return domain.RegistroEsfuerzo{}, fmt.Errorf("elemento %d en el proyecto %d: %w", d.ElementoID, p.ID, domain.ErrElementoNoEncontrado)
+	}
 
-	r, err := domain.NuevoRegistroEsfuerzo(d.ProyectoID, e.ID, d.Integrante, d.Fecha, d.Actividad, d.Horas, uc.reloj())
+	r, err := domain.NuevoRegistroEsfuerzo(p.ID, e.ID, d.Integrante, d.Fecha, d.Actividad, d.Horas, uc.reloj())
 	if err != nil {
 		return domain.RegistroEsfuerzo{}, fmt.Errorf("registrar esfuerzo: %w", err)
 	}
