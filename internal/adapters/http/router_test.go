@@ -36,10 +36,11 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/backlog/1/esfuerzo", `{"integrante":"Ana","fecha":"2026-10-25","actividad":"Desarrollo","horas":2}`}, // HU-18
 		{http.MethodPost, "/proyectos/1/sprints", `{"fecha_inicio":"2026-10-26","fecha_fin":"2026-10-27","objetivo":"x"}`},                   // HU-08
 		{http.MethodGet, "/proyectos/1/sprints", ""},                                                                                         // HU-08
-		{http.MethodGet, "/", ""},                    // HU-30
-		{http.MethodGet, "/web/proyectos", ""},       // HU-30
-		{http.MethodGet, "/static/estilos.css", ""},  // HU-30
-		{http.MethodGet, "/web/proyectos/nuevo", ""}, // HU-30
+		{http.MethodGet, "/", ""},                        // HU-30
+		{http.MethodGet, "/web/proyectos", ""},           // HU-30
+		{http.MethodGet, "/static/estilos.css", ""},      // HU-30
+		{http.MethodGet, "/web/proyectos/nuevo", ""},     // HU-30
+		{http.MethodGet, "/web/proyectos/1/sprints", ""}, // HU-08
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {
