@@ -354,3 +354,40 @@ func TestPantallas_CabecerasDeSeguridad(t *testing.T) {
 		}
 	}
 }
+
+// Traza: DEF-01. El formulario de edición lleva los valores con los que se abrió.
+func TestPantallas_EditarProyecto_FormularioLlevaLosValoresOriginales(t *testing.T) {
+	rec := pedirPantalla(t, casosFalsos(), http.MethodGet, "/web/proyectos/7/editar", nil)
+	contiene(t, rec,
+		`name="original_nombre" value="Alfa"`,
+		`name="original_fecha_inicio" value="2026-03-01"`,
+		`name="original_fecha_fin" value=""`,
+		`name="original_estado" value="Activo"`)
+}
+
+// Traza: DEF-01. Con los valores originales en el formulario, solo se envían al caso de uso los
+// campos que el usuario cambió: así dos ediciones simultáneas de campos distintos no se pisan.
+func TestPantallas_EditarProyecto_SoloEnviaLosCamposCambiados(t *testing.T) {
+	var recibido app.DatosModificarProyecto
+	cu := casosFalsos()
+	cu.ModificarProyecto = modificarFunc(func(_ context.Context, d app.DatosModificarProyecto) (domain.Proyecto, error) {
+		recibido = d
+		return alfa, nil
+	})
+
+	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/editar", url.Values{
+		"nombre": {"Alfa"}, "fecha_inicio": {"2026-03-01"}, "fecha_fin": {"2026-12-15"}, "estado": {"Activo"},
+		"original_nombre": {"Alfa"}, "original_fecha_inicio": {"2026-03-01"}, "original_fecha_fin": {""}, "original_estado": {"Activo"},
+	})
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
+	}
+	c := recibido.Cambios
+	if c.Nombre != nil || c.FechaInicio != nil || c.Estado != nil {
+		t.Errorf("se enviaron campos que no cambiaron: %+v", c)
+	}
+	if !c.CambiarFechaFin || c.FechaFin == nil || c.FechaFin.Format(time.DateOnly) != "2026-12-15" {
+		t.Errorf("fecha de fin enviada: CambiarFechaFin=%v FechaFin=%v", c.CambiarFechaFin, c.FechaFin)
+	}
+}
