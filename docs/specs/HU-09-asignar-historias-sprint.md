@@ -33,6 +33,11 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 ## 5. Restricciones
 - El núcleo (`internal/domain`) **no depende de `domain.Sprint`** (de HU-08, todavía no mergeada a `main` al momento de escribir esta spec). Las reglas que necesitan saber si un sprint está activo (RN-09.2, RN-09.4, RN-09.6) reciben ese dato como un `bool` simple, calculado por el caso de uso. Esto permite implementar dominio y caso de uso sin esperar el merge de HU-08; solo la persistencia, el HTTP y la pantalla (Tareas 9.6 a 9.8) necesitan que exista la tabla real de sprints.
 - El puerto de persistencia que necesita el caso de uso para consultar el estado del sprint es angosto a propósito (p. ej. `SprintEstaActivo(ctx, sprintID) (bool, error)`), en vez de devolver un `domain.Sprint` completo, para no acoplar con el tipo de HU-08.
+- **Pantalla** (`/web/proyectos/{id}/sprints/{sprintID}`, ADR-0003, Tarea 9.8): el detalle del sprint (número, fechas, objetivo, estado — reutiliza `ListarSprints` de HU-08), con dos secciones:
+  - Los elementos ya asignados a ese sprint (reutiliza `ListarBacklog` de HU-07, filtrando por `SprintID`), cada uno con un botón "Quitar" si el sprint sigue Abierto.
+  - Un `<select>` con los elementos del proyecto que todavía no tienen sprint asignado, para sumarlos a este. Los elementos asignados a **otro** sprint no aparecen acá (no se ofrece "robarlos" desde la pantalla; sí se puede por la API si ese otro sprint ya está Cerrado, RN-09.2).
+  - Acciones: `POST /web/proyectos/{id}/sprints/{sprintID}/asignar` (campo `elemento_id`) y `POST /web/proyectos/{id}/sprints/{sprintID}/quitar` (campo `elemento_id`), mismo patrón que "quitar integrante" de HU-03.
+  - La pantalla de sprints (HU-08) suma un enlace "Ver detalle" a cada fila para llegar acá.
 
 ## 6. Casos límite
 - Elemento nunca asignado (`SprintID` nil): se puede asignar directo, sin pasar por la validación de "ya asignado".
