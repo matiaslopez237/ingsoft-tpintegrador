@@ -208,3 +208,33 @@ func TestPantallaDetalle_EnlazaAlBacklog(t *testing.T) {
 
 	contiene(t, rec, `href="/web/proyectos/7/backlog"`)
 }
+
+// Traza: HU-07 sección 5: el formulario de alta conserva el orden y el filtro elegidos.
+func TestPantallaBacklog_FormularioConservaOrdenYFiltro(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodGet,
+		"/web/proyectos/7/backlog?orden=asc&estado=Hecho", nil)
+
+	contiene(t, rec, `action="/web/proyectos/7/backlog?orden=asc&amp;estado=Hecho"`)
+}
+
+// Traza: HU-07 sección 5: después de agregar un elemento se vuelve al backlog con el mismo orden y filtro.
+func TestPantallaBacklog_CrearVuelveConElMismoOrdenYFiltro(t *testing.T) {
+	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodPost,
+		"/web/proyectos/7/backlog?orden=asc&estado=Hecho", formElemento("Perfil", "x", "Media", "", "Un criterio"))
+
+	if got := rec.Header().Get("Location"); got != "/web/proyectos/7/backlog?estado=Hecho&orden=asc" {
+		t.Errorf("Location = %q, se esperaba volver con el orden y el filtro", got)
+	}
+}
+
+// Traza: HU-07 sección 5: si el alta falla, la lista se sigue mostrando con el orden y el filtro elegidos.
+func TestPantallaBacklog_ErrorAlCrearConservaOrdenYFiltro(t *testing.T) {
+	var ll llamadasBacklog
+
+	pedirPantalla(t, casosConBacklog(nil, domain.ErrTituloDuplicado, &ll), http.MethodPost,
+		"/web/proyectos/7/backlog?orden=asc&estado=Hecho", formElemento("Login", "x", "Alta", "", "Un criterio"))
+
+	if ll.listado != (app.DatosListarBacklog{ProyectoID: 7, Orden: "asc", Estado: "Hecho"}) {
+		t.Errorf("listado pedido = %+v, se esperaba con el orden y el filtro", ll.listado)
+	}
+}
