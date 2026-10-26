@@ -13,7 +13,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
-| HU-06 Editar o eliminar un elemento del backlog | ✓ (Borrador, pendiente de aprobación en el PR; RN-06.8 pendiente de HU-09) | 10/10 | 10/10 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 21/21 escenarios |
+| HU-06 Editar o eliminar un elemento del backlog | ✓ (Borrador, pendiente de aprobación en el PR; RN-06.8 pendiente de HU-09) | 10/10 | 10/10 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 22/22 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
 | HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
 
@@ -552,7 +552,7 @@ Además: `TestPantallas_RechazaFormulariosDeOtroSitio` (403, CSRF), `TestPantall
 | CA-06.7 Otro proyecto / inexistente | RN-06.6 | No se edita ni se elimina un elemento de otro proyecto `@error` · No se elimina un elemento inexistente `@error` | `TestEditarElemento_DeOtroProyectoOInexistente_NoEncontrado`, `TestEliminarElemento_DeOtroProyectoOInexistente_NoEncontrado`, `TestConsultarElemento_DeOtroProyectoOInexistente` | `buscarElementoDelProyecto` |
 | CA-06.8 Eliminar sin esfuerzo | RN-06.7 | Eliminar un elemento sin esfuerzo `@normal` | `TestEliminarElemento_SinEsfuerzo_LoElimina`, `TestRepositorioBacklog_EliminarElemento_BorraElElementoYSusCriterios`, `TestDeleteElemento` | `app.EliminarElementoBacklog`, `persistencia.RepositorioBacklog.EliminarElemento` |
 | CA-06.9 Con esfuerzo no se elimina | RN-06.7 | No se elimina un elemento con esfuerzo registrado `@error` | `TestEliminarElemento_ConEsfuerzo_NoLoElimina`, `TestRepositorioBacklog_ElementoConEsfuerzo`, `TestDeleteElemento` (409) | `app.EliminarElementoBacklog`, clave foránea de `registros_esfuerzo` |
-| CA-06.10 Pantalla | Restricciones | Editar desde la pantalla guarda solo lo que cambió `@normal` · La pantalla muestra el error `@error` · Eliminar desde la pantalla `@normal` | `TestPantallaElemento_*` (7 tests), `TestConsultarElemento_DelProyecto` | `pantallas_backlog.go`, `web/plantillas/elemento.html`, `app.ConsultarElementoBacklog` |
+| CA-06.10 Pantalla | Restricciones | Editar desde la pantalla guarda solo lo que cambió `@normal` · La pantalla muestra el error `@error` · Guardar sin cambios vuelve sin error `@alternativo` · Eliminar desde la pantalla `@normal` | `TestPantallaElemento_*` (8 tests), `TestConsultarElemento_DelProyecto` | `pantallas_backlog.go`, `web/plantillas/elemento.html`, `app.ConsultarElementoBacklog` |
 
 RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implementa HU-09 en `EliminarElementoBacklog`.
 
@@ -565,7 +565,7 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | Persistencia | [internal/adapters/persistencia/backlog_editar.go](../internal/adapters/persistencia/backlog_editar.go) | [backlog_editar_test.go](../internal/adapters/persistencia/backlog_editar_test.go) |
 | HTTP (JSON) | [internal/adapters/http/backlog_editar_handler.go](../internal/adapters/http/backlog_editar_handler.go) (`PATCH`/`DELETE /proyectos/{id}/backlog/{elementoID}`) | [backlog_editar_handler_test.go](../internal/adapters/http/backlog_editar_handler_test.go) |
 | Pantalla | [internal/adapters/http/pantallas_backlog.go](../internal/adapters/http/pantallas_backlog.go), [web/plantillas/elemento.html](../internal/adapters/http/web/plantillas/elemento.html) (`/web/proyectos/{id}/backlog/{elementoID}`) | [pantallas_backlog_test.go](../internal/adapters/http/pantallas_backlog_test.go) |
-| BDD | [test/bdd/hu06_sistema_test.go](../test/bdd/hu06_sistema_test.go) | 21 escenarios en verde |
+| BDD | [test/bdd/hu06_sistema_test.go](../test/bdd/hu06_sistema_test.go) | 22 escenarios en verde |
 
 ### Commits
 
@@ -580,6 +580,7 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | 6.7 HTTP | `23afd32` [RED] → `f1e086b` [GREEN] | **RED → GREEN** |
 | 6.8 Pantalla | `422994e` [RED] → `be127d1` [GREEN] | **RED → GREEN**, BDD en verde |
 | 6.9 Revisión y trazabilidad | `a22d553` | **REFACTOR** |
+| Guardar sin cambios (alineado con DEF-01) | `b1caa63` [RED] → `d7de2cc` [GREEN] | **RED → GREEN** |
 
 ### Huecos
 

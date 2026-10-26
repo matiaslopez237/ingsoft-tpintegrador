@@ -81,7 +81,7 @@ Si hay varios errores, se informa el primero en el orden de la tabla: primero se
 - **CA-06.7:** Dado un elemento de otro proyecto o un ID inexistente, cuando lo edito o lo elimino, entonces obtengo `ErrElementoNoEncontrado`. (RN-06.6)
 - **CA-06.8:** Dado un elemento sin esfuerzo, cuando lo elimino, entonces deja de existir junto con sus criterios. (RN-06.7)
 - **CA-06.9:** Dado un elemento con esfuerzo registrado, cuando lo elimino, entonces obtengo `ErrElementoConEsfuerzo` y el elemento sigue existiendo. (RN-06.7)
-- **CA-06.10:** Desde la pantalla del elemento puedo editarlo (se guardan solo los campos que cambié) y eliminarlo, y los errores se muestran en la misma pantalla. (Restricciones)
+- **CA-06.10:** Desde la pantalla del elemento puedo editarlo (se guardan solo los campos que cambié) y eliminarlo, y los errores se muestran en la misma pantalla. Si guardo sin cambiar nada, vuelvo al elemento sin mensaje de error, igual que en el formulario de proyecto (DEF-01). (Restricciones)
 
 ## Decisiones tomadas
 Definidas por Nicolás Andino al refinar la historia (2026-10-26):
@@ -96,3 +96,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-26: aclarados, a partir de la revisión con go-reviewer, el `null` en campos que no son `story_points` y que el formato inválido de `story_points` se informa antes de buscar el elemento. La pantalla pide confirmación antes de eliminar.
+- 2026-10-26: guardar la pantalla sin cambios vuelve al elemento sin error, alineado con DEF-01 (la API sigue devolviendo `ErrSinCambios`).
