@@ -30,6 +30,7 @@ func main() {
 	log.Printf("conectado a la base de datos (%s)", rutaDB)
 
 	repoProyectos := persistencia.NuevoRepositorioProyectos(db)
+	repoBacklog := persistencia.NuevoRepositorioBacklog(db)
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		CrearProyecto:        app.NuevoCrearProyecto(repoProyectos),
 		ModificarProyecto:    app.NuevoModificarProyecto(repoProyectos),
@@ -37,7 +38,10 @@ func main() {
 		QuitarIntegrante:     app.NuevoQuitarIntegrante(repoProyectos),
 		AgregarRol:           app.NuevoAgregarRol(repoProyectos),
 		ConsultarProyecto:    app.NuevoConsultarProyecto(repoProyectos),
-		CrearElementoBacklog: app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)),
+		CrearElementoBacklog: app.NuevoCrearElementoBacklog(repoBacklog),
+		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-18, RN-18.4).
+		RegistrarEsfuerzo: app.NuevoRegistrarEsfuerzo(repoProyectos, repoBacklog,
+			persistencia.NuevoRepositorioEsfuerzo(db), time.Now),
 	})
 
 	puerto := os.Getenv("PORT")
