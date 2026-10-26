@@ -31,7 +31,7 @@ Las pantallas reciben formularios HTML (`application/x-www-form-urlencoded`) y r
 ## 4. Reglas de negocio
 - **RN-30.1:** La lista de proyectos muestra todos los proyectos ordenados por nombre, sin distinguir mayúsculas (`domain.ClaveNombre`); a igual clave, por ID. El orden lo decide el caso de uso `ListarProyectos`, no la plantilla.
 - **RN-30.2:** Las pantallas no tienen reglas de negocio propias: cada acción llama al mismo caso de uso que su endpoint JSON (HU-01 a HU-04) y muestra el error que este devuelve.
-- **RN-30.3:** El formulario de edición guarda solo los campos que el usuario cambió respecto de los valores con los que lo abrió (que viaja en campos ocultos `original_*`). Así, dos personas que editan campos distintos del mismo proyecto a la vez no se pisan, igual que con la API (HU-02, sección 5). Si no cambió ningún campo, se muestra el error de HU-02 `ErrSinCambios` (RN-02.8). Una fecha de fin vaciada quita la fecha de fin (RN-02.5); una fecha de inicio vaciada da el error de HU-02 (RN-02.4). Un pedido sin los campos `original_*` (que no viene del formulario) envía todos los campos.
+- **RN-30.3:** El formulario de edición guarda solo los campos que el usuario cambió respecto de los valores con los que lo abrió (que viaja en campos ocultos `original_*`). Así, dos personas que editan campos distintos del mismo proyecto a la vez no se pisan, igual que con la API (HU-02, sección 5). Si no cambió ningún campo, se vuelve al detalle sin ningún mensaje: guardar sin cambios no es un error del usuario. Una fecha de fin vaciada quita la fecha de fin (RN-02.5); una fecha de inicio vaciada da el error de HU-02 (RN-02.4). Un pedido sin los campos `original_*` (que no viene del formulario) envía todos los campos.
 - **RN-30.4:** Todo texto que viene del usuario se muestra escapado (sin interpretar HTML).
 
 ## 5. Restricciones
@@ -85,3 +85,4 @@ Definidas por Nicolás Andino al implementar la historia (2026-10-26), para vali
 - 2026-10-26: creada (borrador).
 - 2026-10-26: agregados los errores 403 (formulario de otro sitio) y 413 (formulario demasiado grande), a partir de la revisión con go-reviewer. Límite conocido: la lista de proyectos no tiene paginación.
 - 2026-10-26: RN-30.3 y CA-30.5 corregidas por DEF-01 (#179): el formulario de edición guarda solo los campos cambiados, para no pisar ediciones simultáneas.
+- 2026-10-26: guardar el formulario de edición sin cambiar nada vuelve al detalle sin mensaje, en lugar de mostrar `ErrSinCambios` (decisión del equipo, revisión del PR #181).
