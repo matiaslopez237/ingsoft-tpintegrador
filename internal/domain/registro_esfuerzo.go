@@ -43,7 +43,6 @@ func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fech
 	actividad string, horas float64, hoy time.Time) (RegistroEsfuerzo, error) {
 	integrante = strings.TrimSpace(integrante)
 	actividad = strings.TrimSpace(actividad)
-	fecha = soloDia(fecha)
 	switch {
 	case integrante == "":
 		return RegistroEsfuerzo{}, ErrNombreIntegranteVacio
@@ -57,6 +56,8 @@ func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fech
 	if err := validarHoras(horas); err != nil {
 		return RegistroEsfuerzo{}, err
 	}
+	// Recién acá: soloDia rearma la fecha y una fecha cero en otra zona dejaría de ser cero.
+	fecha = soloDia(fecha)
 
 	return RegistroEsfuerzo{
 		ProyectoID: proyectoID,
