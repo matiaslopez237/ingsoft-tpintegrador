@@ -8,7 +8,9 @@ import (
 
 // Errores de HU-18 (spec, sección 7). El integrante vacío reutiliza ErrNombreIntegranteVacio (HU-03).
 var (
-	ErrActividadVacia = errors.New("la actividad es obligatoria")
+	ErrFechaEsfuerzoObligatoria = errors.New("la fecha es obligatoria")
+	ErrFechaEsfuerzoFutura      = errors.New("la fecha no puede ser futura")
+	ErrActividadVacia           = errors.New("la actividad es obligatoria")
 )
 
 // RegistroEsfuerzo deja constancia de las horas que un integrante trabajó en un elemento del backlog.
@@ -29,9 +31,15 @@ func NuevoRegistroEsfuerzo(proyectoID, elementoID int64, integrante string, fech
 	actividad string, horas float64, hoy time.Time) (RegistroEsfuerzo, error) {
 	integrante = strings.TrimSpace(integrante)
 	actividad = strings.TrimSpace(actividad)
+	fecha = time.Date(fecha.Year(), fecha.Month(), fecha.Day(), 0, 0, 0, 0, fecha.Location())
+	hoy = time.Date(hoy.Year(), hoy.Month(), hoy.Day(), 0, 0, 0, 0, hoy.Location())
 	switch {
 	case integrante == "":
 		return RegistroEsfuerzo{}, ErrNombreIntegranteVacio
+	case fecha.IsZero():
+		return RegistroEsfuerzo{}, ErrFechaEsfuerzoObligatoria
+	case fecha.After(hoy):
+		return RegistroEsfuerzo{}, ErrFechaEsfuerzoFutura
 	case actividad == "":
 		return RegistroEsfuerzo{}, ErrActividadVacia
 	}
