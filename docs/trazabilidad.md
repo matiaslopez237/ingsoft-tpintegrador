@@ -13,6 +13,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
+| HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
 
 ---
 
@@ -332,3 +333,144 @@ Sin CA propio en la spec:
 - La spec está en **Borrador** y sus decisiones (prioridad Alta/Media/Baja, story points enteros positivos, estados Pendiente/En progreso/Hecho) se validan en el PR.
 - La historia no tiene sprint asignado ni sub-tareas en el tablero: se usó la numeración 5.1 a 5.9 por analogía con HU-01.
 - Los adaptadores (5.6 y 5.7) se commitearon con sus tests, sin RED aparte; las reglas de negocio (5.4 y 5.5) sí tienen RED → GREEN.
+
+---
+
+## HU-18: Registrar esfuerzo en una historia o tarea
+
+- **Issue:** #29 · Sprint 1 · 3 SP
+- **Spec:** [docs/specs/HU-18-registrar-esfuerzo.md](specs/HU-18-registrar-esfuerzo.md)
+- **Feature:** [features/HU-18-registrar-esfuerzo.feature](../features/HU-18-registrar-esfuerzo.feature) (steps en [test/bdd/hu18_steps_test.go](../test/bdd/hu18_steps_test.go))
+- **Ruta HTTP:** `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`. **Pendiente de confirmar (P-6):** reemplaza el `POST /esfuerzo` de la tarea 18.7 y falta el OK de Matías.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-18.1 Registro válido con ID y los datos enviados | RN-18.10 | Registrar esfuerzo con todos los datos válidos `@normal` · La actividad se guarda sin los espacios de alrededor `@alternativo` | `TestNuevoRegistroEsfuerzo_Valido`, `TestNuevoRegistroEsfuerzo_RecortaIntegranteYActividad`, `TestRegistrarEsfuerzo_DatosValidos_GuardaConID`, `TestPostEsfuerzo_DatosValidos_Devuelve201ConElRegistro` | `domain.NuevoRegistroEsfuerzo`, `app.RegistrarEsfuerzo.Ejecutar` |
+| CA-18.2 Media hora en un elemento sin esfuerzo | RN-18.6, RN-18.7 | Media hora es válida en un elemento sin esfuerzo registrado `@limite` | `TestNuevoRegistroEsfuerzo_HorasLimite_SonValidas` | `domain.validarHoras` |
+| CA-18.3 Horas 0 o negativas | RN-18.6 | Las horas deben ser mayores a 0, múltiplo de media hora y como máximo 24 `@error` (ejemplos 0, -2, -1,25) | `TestNuevoRegistroEsfuerzo_HorasNegativas_RetornaError` (incluye NaN y -Inf), `TestRegistrarEsfuerzo_DatosInvalidos_NoLleganAlRepositorio`, `TestPostEsfuerzo_DatosInvalidos_Devuelve400ConElError` | `domain.validarHoras` |
+| CA-18.4 Actividad vacía o con espacios | RN-18.5 | La actividad es obligatoria `@error` (×2) | `TestNuevoRegistroEsfuerzo_SinActividad_RetornaError`, `TestRegistrarEsfuerzo_DatosInvalidos_NoLleganAlRepositorio`, `TestPostEsfuerzo_DatosInvalidos_Devuelve400ConElError` | `domain.NuevoRegistroEsfuerzo` |
+| CA-18.5 Integrante vacío | RN-18.2 | El integrante es obligatorio `@error` (×2) | `TestNuevoRegistroEsfuerzo_SinIntegrante_RetornaError`, `TestPostEsfuerzo_DatosInvalidos_Devuelve400ConElError` | `domain.NuevoRegistroEsfuerzo` |
+| CA-18.6 Fecha obligatoria, no futura; hoy es válida | RN-18.4 | La fecha es obligatoria `@error` · La fecha no puede ser futura `@error` · La fecha de hoy es válida `@limite` | `TestNuevoRegistroEsfuerzo_SinFecha_RetornaError`, `_FechaCeroEnOtraZona_RetornaError`, `_FechaFutura_RetornaError`, `_FechaHoyOPasada_EsValidaYGuardaSoloElDia`, `_FechaYHoyEnZonasDistintas_ComparaElDiaDeCalendario`, `TestRegistrarEsfuerzo_DatosInvalidos_NoLleganAlRepositorio` (reloj), `TestPostEsfuerzo_DatosValidos_PasaLosDatosAlCasoDeUso` (zona local) | `domain.NuevoRegistroEsfuerzo`, `domain.soloDia`, `domain.diaCalendario`, `http.fechaDelPedido` |
+| CA-18.7 Proyecto o elemento inexistente, o elemento de otro proyecto | RN-18.1 | No se puede registrar esfuerzo en un proyecto que no existe `@error` · … en un elemento que no existe `@error` · Un elemento de otro proyecto se trata como inexistente `@error` | `TestRegistrarEsfuerzo_ProyectoInexistente_RetornaErrorYNoGuarda`, `_ElementoInexistente_RetornaErrorYNoGuarda`, `_ElementoDeOtroProyecto_RetornaErrorYNoGuarda`, `TestRepositorioEsfuerzo_ElementoInexistente_RetornaErrElementoNoEncontrado`, `TestPostEsfuerzo_ProyectoOElementoInexistente_Devuelve404` | `app.RegistrarEsfuerzo.Ejecutar`, `persistencia.RepositorioEsfuerzo.GuardarRegistro` (clave foránea) |
+| CA-18.8 Integrante que no pertenece al proyecto | RN-18.3 | Quien registra tiene que ser integrante del proyecto `@error` · Un integrante de otro proyecto no puede registrar en este `@error` · El nombre del integrante se compara sin espacios ni mayúsculas `@alternativo` · Un integrante quitado del proyecto ya no puede registrar esfuerzo nuevo `@error` | `TestRegistrarEsfuerzo_IntegranteQueNoPertenece_RetornaErrorYNoGuarda`, `_IntegranteConOtrasMayusculas_GuardaElNombreDelProyecto`, `TestPostEsfuerzo_DatosInvalidos_Devuelve400ConElError` | `app.RegistrarEsfuerzo.Ejecutar`, `app.nombreEnProyecto` |
+| CA-18.9 Horas que no son múltiplo de 0,5 | RN-18.7 | Outline de horas `@error` (ejemplos 1,25 y 25,3) | `TestNuevoRegistroEsfuerzo_HorasNegativas_RetornaError`, `TestPostEsfuerzo_DatosInvalidos_Devuelve400ConElError` | `domain.validarHoras` |
+| CA-18.10 24 h es válido, 24,5 h no | RN-18.8 | Outline de horas `@error` (ejemplo 24,5) · Un registro de exactamente 24 horas es válido `@limite` | `TestNuevoRegistroEsfuerzo_HorasNegativas_RetornaError`, `_HorasLimite_SonValidas`, `TestPostEsfuerzo_DatosInvalidos_Devuelve400ConElError` | `domain.validarHoras`, `domain.HorasMaximasPorRegistro` |
+| CA-18.11 El tope no suma los registros del día | RN-18.8, RN-18.9 | El tope de 24 horas es por registro, no se suman los registros del día `@alternativo` | ✗ sin test unitario propio (ver Huecos) | `domain.validarHoras` (mira un solo registro) |
+| CA-18.12 Dos registros iguales, IDs distintos, recuperables | RN-18.9, RN-18.10 | Dos registros con los mismos datos son independientes `@normal` | `TestRegistrarEsfuerzo_DatosValidos_GuardaConID`, `TestRepositorioEsfuerzo_GuardarYBuscar_DevuelveLoMismo`, `_DosRegistrosIguales_TienenIDsDistintos` | `persistencia.RepositorioEsfuerzo.GuardarRegistro` / `BuscarRegistroPorID` |
+| CA-18.13 Los registros se conservan al quitar al integrante | RN-18.3 | Los registros se conservan al quitar al integrante del proyecto `@alternativo` · Un integrante quitado del proyecto ya no puede registrar esfuerzo nuevo `@error` | `TestRepositorioEsfuerzo_QuitarAlIntegrante_ConservaSusRegistros` | Tabla `registros_esfuerzo` en `db.go` (sin clave foránea a `integrantes`) |
+| CA-18.14 Proyecto no Activo y fecha anterior al inicio | RN-18.4 | Se registra esfuerzo en un proyecto no Activo y con fecha anterior a su inicio `@alternativo` | `TestNuevoRegistroEsfuerzo_FechaHoyOPasada_EsValidaYGuardaSoloElDia` (fecha de hace meses) | `domain.NuevoRegistroEsfuerzo` y `app.RegistrarEsfuerzo` no miran las fechas ni el estado del proyecto |
+| CA-18.15 Respuestas HTTP 201 / 400 / 404 | — (secciones 3 y 7) | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y no pasan por HTTP. Se cubre con los tests del handler (tarea 18.7). | `TestPostEsfuerzo_DatosValidos_Devuelve201ConElRegistro`, `_ProyectoOElementoInexistente_Devuelve404`, `_DatosInvalidos_Devuelve400ConElError`, `_PedidoMalFormado_Devuelve400SinLlamarAlCasoDeUso`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerRegistrarEsfuerzo`, `http.RegistrarRegistrarEsfuerzo`, `http.NuevoRouter` |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-18.1 El elemento existe y es del proyecto | CA-18.7 | `app.RegistrarEsfuerzo.Ejecutar` (`e.ProyectoID != p.ID`) |
+| RN-18.2 Integrante obligatorio | CA-18.5 | `domain.NuevoRegistroEsfuerzo` |
+| RN-18.3 Integrante del proyecto; sus registros se conservan si se lo quita | CA-18.8, CA-18.13 | `app.nombreEnProyecto`; tabla `registros_esfuerzo` sin clave foránea a `integrantes` |
+| RN-18.4 Fecha obligatoria, no futura, por día y en la zona del servidor; sin control de fechas ni estado del proyecto | CA-18.6, CA-18.14 | `domain.NuevoRegistroEsfuerzo`, `domain.diaCalendario`, `http.fechaDelPedido`, `persistencia.BuscarRegistroPorID` (lee con `time.Local`) |
+| RN-18.5 Actividad obligatoria, texto libre | CA-18.4 | `domain.NuevoRegistroEsfuerzo` |
+| RN-18.6 Horas mayores a 0 | CA-18.2, CA-18.3 | `domain.validarHoras` |
+| RN-18.7 Múltiplos de media hora | CA-18.2, CA-18.9 | `domain.validarHoras`; en la base, `medias_horas` entero (`persistencia.aMediasHoras`) |
+| RN-18.8 Máximo 24 h por registro | CA-18.10, CA-18.11 | `domain.validarHoras`, `domain.HorasMaximasPorRegistro` |
+| RN-18.9 Registros independientes | CA-18.11, CA-18.12 | `persistencia.RepositorioEsfuerzo.GuardarRegistro` (sin restricción UNIQUE) |
+| RN-18.10 ID único autogenerado | CA-18.1, CA-18.12 | `persistencia.RepositorioEsfuerzo.GuardarRegistro` (`AUTOINCREMENT`) |
+
+Sin CA propio en la spec:
+- Orden de los errores (sección 7): `TestNuevoRegistroEsfuerzo_VariosErrores_InformaElPrimero`, `TestRegistrarEsfuerzo_ProyectoInexistente_RetornaErrorYNoGuarda` (con datos inválidos) y `TestRegistrarEsfuerzo_IntegranteAjenoYDatosInvalidos_InformaElErrorDelDominio`. El orden entre las validaciones de horas lo cubren los ejemplos -1,25 y 25,3.
+- Cuerpo mal formado, fecha con otro formato o ids inválidos, que dan 400 sin llamar al caso de uso (sección 7): `TestPostEsfuerzo_PedidoMalFormado_Devuelve400SinLlamarAlCasoDeUso`.
+- Falla interna (sección 7): `TestRegistrarEsfuerzo_FallaDelRepositorio_SePropaga`, `TestPostEsfuerzo_FallaInterna_Devuelve500SinDetalles`.
+- Horas guardadas como medias horas y fecha como `AAAA-MM-DD` (sección 5): `TestRepositorioEsfuerzo_GuardaHorasEnMediasHorasYFechaComoTexto`.
+- Búsqueda por ID de un registro inexistente (sección 7, última fila): `TestRepositorioEsfuerzo_BuscarInexistente_RetornaErrRegistroEsfuerzoNoEncontrado`.
+
+### Errores nuevos
+
+Todos están definidos en [internal/domain/registro_esfuerzo.go](../internal/domain/registro_esfuerzo.go). HU-18 también reutiliza `ErrProyectoNoEncontrado` (HU-01), `ErrNombreIntegranteVacio` y `ErrIntegranteNoEncontrado` (HU-03) y `ErrElementoNoEncontrado` (HU-05).
+
+| Error | Mensaje | Línea | Lo devuelve | HTTP |
+|---|---|---|---|---|
+| `ErrFechaEsfuerzoObligatoria` | "la fecha es obligatoria" | 15 | `domain.NuevoRegistroEsfuerzo` | 400 |
+| `ErrFechaEsfuerzoFutura` | "la fecha no puede ser futura" | 16 | `domain.NuevoRegistroEsfuerzo` | 400 |
+| `ErrActividadVacia` | "la actividad es obligatoria" | 17 | `domain.NuevoRegistroEsfuerzo` | 400 |
+| `ErrHorasInvalidas` | "las horas deben ser mayores a 0" | 18 | `domain.validarHoras` | 400 |
+| `ErrHorasNoMultiploMediaHora` | "las horas se registran en múltiplos de media hora" | 19 | `domain.validarHoras` | 400 |
+| `ErrHorasExcedenMaximo` | "un registro no puede superar las 24 horas" | 20 | `domain.validarHoras` | 400 |
+| `ErrRegistroEsfuerzoNoEncontrado` | "registro de esfuerzo no encontrado" | 23 | `persistencia.RepositorioEsfuerzo.BuscarRegistroPorID` | — (no hay endpoint de lectura en HU-18) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/registro_esfuerzo.go](../internal/domain/registro_esfuerzo.go) (`RegistroEsfuerzo`, `NuevoRegistroEsfuerzo`, `validarHoras`, `soloDia`, `diaCalendario`) | [registro_esfuerzo_test.go](../internal/domain/registro_esfuerzo_test.go) |
+| Caso de uso | [internal/app/registrar_esfuerzo.go](../internal/app/registrar_esfuerzo.go) (`RegistrarEsfuerzo`, puertos `LectorElementos` y `RepositorioEsfuerzo`; reutiliza `LectorProyectos` de HU-04) | [registrar_esfuerzo_test.go](../internal/app/registrar_esfuerzo_test.go) |
+| Persistencia | [internal/adapters/persistencia/esfuerzo_repo.go](../internal/adapters/persistencia/esfuerzo_repo.go) (`GuardarRegistro`, `BuscarRegistroPorID`), [db.go](../internal/adapters/persistencia/db.go) (tabla `registros_esfuerzo`) | [esfuerzo_repo_test.go](../internal/adapters/persistencia/esfuerzo_repo_test.go), contra SQLite real |
+| HTTP | [internal/adapters/http/esfuerzo_handler.go](../internal/adapters/http/esfuerzo_handler.go) (`RegistrarRegistrarEsfuerzo`), registrada en [router.go](../internal/adapters/http/router.go) y conectada en [cmd/server/main.go](../cmd/server/main.go) con `time.Now` como reloj | [esfuerzo_handler_test.go](../internal/adapters/http/esfuerzo_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| BDD | [test/bdd/hu18_sistema_test.go](../test/bdd/hu18_sistema_test.go), [hu18_steps_test.go](../test/bdd/hu18_steps_test.go) (reloj falso) | 28 escenarios en verde |
+
+### Commits
+
+Salen de `git log main..HEAD`, en orden.
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 18.1 Spec | `b02e049` docs(HU-18): [18.1] spec SDD de registrar esfuerzo | — |
+| 18.2 Escenarios BDD | `930b2ee` test(HU-18): [18.2] escenarios BDD de registrar esfuerzo | — |
+| 18.3 Steps godog | `58f074e` test(HU-18): [18.3][RED] steps de godog | BDD en rojo (28/28) |
+| 18.4 Entidad RegistroEsfuerzo | `c2b32b9` test: [18.4][RED] registro de esfuerzo válido | **RED** |
+| | `f60b4a3` feat: [18.4][GREEN] entidad RegistroEsfuerzo con constructor | **GREEN** |
+| | `bcbcdfd` test: [18.4][RED] integrante y actividad obligatorios y recortados | **RED** |
+| | `6a2ab52` feat: [18.4][GREEN] validar y recortar integrante y actividad | **GREEN** |
+| | `dedcbcb` test: [18.4][RED] fecha obligatoria, no futura y comparada por día | **RED** |
+| | `4422271` feat: [18.4][GREEN] validar la fecha del registro por día | **GREEN** |
+| | `dd650d8` test: [18.4][RED] horas mayores a 0, múltiplo de media hora y máximo 24 | **RED** |
+| | `034f68e` feat: [18.4][GREEN] validar las horas en el orden de la spec | **GREEN** |
+| | `a726057` refactor: [18.4][REFACTOR] extraer validarHoras, soloDia y el tope de 24 h | **REFACTOR** |
+| | `0c3dff1` test: [18.4][RED] comparar la fecha por día de calendario aunque las zonas difieran | **RED** |
+| | `4ead02e` feat: [18.4][GREEN] comparar fecha y hoy por día de calendario | **GREEN** |
+| | `c076181` test: [18.4] steps BDD comparan los errores nuevos con errors.Is | — |
+| 18.5 Caso de uso | `1dc245e` test: [18.5][RED] registrar esfuerzo válido y elemento inexistente | **RED** |
+| | `089a968` feat: [18.5][GREEN] caso de uso RegistrarEsfuerzo busca el elemento, valida y guarda | **GREEN** |
+| | `65c101e` test: [18.5][RED] proyecto inexistente y elemento de otro proyecto | **RED** |
+| | `6c66a9f` feat: [18.5][GREEN] verificar el proyecto y que el elemento sea suyo | **GREEN** |
+| | `1166a40` test: [18.5][RED] el integrante pertenece al proyecto y se guarda con su nombre | **RED** |
+| | `9671ed6` feat: [18.5][GREEN] verificar que el integrante pertenezca al proyecto | **GREEN** |
+| | `4c0285e` refactor: [18.5][REFACTOR] extraer nombreEnProyecto y documentar el caso de uso | **REFACTOR** |
+| 18.6 Persistencia | `4e30797` test: [18.6][RED] guardar y recuperar registros de esfuerzo en SQLite | **RED** |
+| | `929d265` feat: [18.6][GREEN] RepositorioEsfuerzo guarda, busca y cuenta registros en SQLite | **GREEN** |
+| | `d826626` test: [18.6][RED] elemento inexistente al guardar el registro | **RED** |
+| | `1531f8e` feat: [18.6][GREEN] traducir la clave foránea del elemento a ErrElementoNoEncontrado | **GREEN** |
+| | `7d7d40d` refactor: [18.6][REFACTOR] extraer la conversión de horas a medias horas | **REFACTOR** |
+| | `7dc1955` test: conectar los escenarios BDD con RegistrarEsfuerzo y RepositorioEsfuerzo | BDD en verde (104/104) |
+| — | `cf392b4` Merge branch 'main' into hu-18-registrar-esfuerzo | merge de `main`, no es de HU-18 |
+| 18.7 HTTP | `0cd6453` test: [18.7][RED] POST de esfuerzo: 201, 404, 400 y 500 | **RED** |
+| | `e96309f` feat: [18.7][GREEN] handler POST /proyectos/{id}/backlog/{elementoID}/esfuerzo | **GREEN** |
+| | `0019132` test: [18.7][RED] NuevoRouter registra la ruta de esfuerzo | **RED** |
+| | `a686adb` feat: [18.7][GREEN] sumar RegistrarEsfuerzo al router y conectarlo en main con time.Now | **GREEN** |
+| | `1c8c7d6` refactor: [18.7][REFACTOR] extraer elementoIDDesdeRuta, fechaDelPedido y la respuesta | **REFACTOR** |
+| 18.8 Revisión | `d49fbf2` test: [18.8][RED] fecha cero en otra zona es fecha faltante | **RED** |
+| | `3894ece` fix: [18.8][GREEN] preguntar IsZero antes de recortar la fecha al día | **GREEN** |
+| | `8cd50f6` test: [18.8][RED] NaN da ErrHorasInvalidas | **RED** |
+| | `0462911` fix: [18.8][GREEN] NaN no es mayor a 0 y da ErrHorasInvalidas | **GREEN** |
+| | `bb9f3f6` docs: [18.8] separar RN-18.8 y RN-18.9 y documentar ErrRegistroEsfuerzoNoEncontrado | — |
+| | `c4864d2` refactor: [18.8] ContarRegistros pasa de producción a helpers de test | refactor (sin etiqueta `[REFACTOR]`) |
+| | `c872259` docs: [18.8] explicar por qué la clave foránea se traduce a ErrElementoNoEncontrado | — |
+| 18.8 Trazabilidad | este commit | — |
+
+En la tabla se omite el scope `(HU-18)` de los mensajes a partir de 18.4: todos los commits lo llevan.
+
+### Huecos
+
+- La spec sigue en **Borrador**. **P-6 (la ruta HTTP) está pendiente de confirmar con Matías**: si cambia, hay que tocar `esfuerzo_handler.go`, `router_test.go`, CA-18.15 y esta matriz.
+- CA-18.15 no tiene escenario BDD a propósito: los escenarios prueban el núcleo y no pasan por HTTP. Lo cubren los tests del handler.
+- CA-18.11 no tiene test unitario propio. El dominio no suma registros porque valida uno solo, así que no hay lógica que probar aparte. La regla se verifica en el escenario BDD, que guarda 20 h + 8 h en el mismo día contra SQLite.
+- CA-18.14: el test unitario cubre la fecha anterior al inicio del proyecto, pero lo de "proyecto no Activo" solo se verifica en el BDD. El caso de uso no lee el estado, así que no hay rama que probar.
+- En 18.4, 18.5 (primer ciclo), 18.6 (primer ciclo) y 18.7 (handler), el RED es de compilación: el test usa código que todavía no existe. Los demás RED fallan al ejecutarse.
+- Hay commits sin etiqueta de etapa: `c076181`, `7dc1955`, `bb9f3f6`, `c872259` y `c4864d2`, este último un refactor sin `[REFACTOR]`. Por eso un `git log --grep="\[REFACTOR\]"` no los encuentra.
+- El mensaje de `929d265` dice "cuenta registros": `ContarRegistros` después pasó a helpers de test (`c4864d2`), así que el repositorio de producción ya no cuenta.
+- Hallazgos del go-reviewer que no se corrigieron todavía y quedan para hablar con el equipo:
+  - el cuerpo JSON acepta texto después del objeto, igual que en HU-01 y HU-05;
+  - los hooks de BDD de cada historia corren en todos los escenarios;
+  - las claves foráneas de `registros_esfuerzo` no tienen `ON DELETE`, y eso va a importar en HU-06;
+  - el nombre `RegistrarRegistrarEsfuerzo`.
