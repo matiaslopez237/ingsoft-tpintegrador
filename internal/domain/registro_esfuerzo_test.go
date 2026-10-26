@@ -65,6 +65,17 @@ func TestNuevoRegistroEsfuerzo_SinFecha_RetornaError(t *testing.T) {
 	}
 }
 
+// Traza: HU-18 CA-18.6 (la fecha cero sigue siendo "sin fecha" aunque venga en otra zona)
+func TestNuevoRegistroEsfuerzo_FechaCeroEnOtraZona_RetornaError(t *testing.T) {
+	for _, zona := range []*time.Location{time.FixedZone("UTC-5", -5*60*60), time.FixedZone("UTC+3", 3*60*60)} {
+		_, err := NuevoRegistroEsfuerzo(1, 1, "Ana", time.Time{}.In(zona), "Desarrollo", 2, hoyEsfuerzo)
+
+		if !errors.Is(err, ErrFechaEsfuerzoObligatoria) {
+			t.Errorf("fecha cero en %s: error = %v, se esperaba ErrFechaEsfuerzoObligatoria", zona, err)
+		}
+	}
+}
+
 // Traza: HU-18 CA-18.6
 func TestNuevoRegistroEsfuerzo_FechaFutura_RetornaError(t *testing.T) {
 	tests := []struct {
