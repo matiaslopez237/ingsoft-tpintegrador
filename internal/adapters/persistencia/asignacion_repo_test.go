@@ -93,6 +93,33 @@ func TestRepositorioBacklog_GuardarAsignacion_Asigna(t *testing.T) {
 	}
 }
 
+// Traza: HU-09, Tarea 9.8: ListarElementos (HU-07) tiene que reflejar el SprintID asignado, para
+// que la pantalla de detalle del sprint (y cualquier otra consulta del backlog) lo vea. Se escribió
+// antes de que existiera la columna sprint_id, así que todavía no la selecciona.
+func TestRepositorioBacklog_ListarElementos_ReflejaElSprintAsignado(t *testing.T) {
+	ctx := context.Background()
+	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
+	e := elementoDePrueba(t, ids[0], "Login", nil)
+	if err := repo.GuardarElemento(ctx, &e); err != nil {
+		t.Fatalf("guardar elemento: %v", err)
+	}
+	repoSprints := NuevoRepositorioSprints(repo.db)
+	s := guardarSprintDePrueba(t, repoSprints, sprintDePrueba(ids[0], 26, 27))
+	e.SprintID = &s.ID
+	if err := repo.GuardarAsignacion(ctx, &e); err != nil {
+		t.Fatalf("guardar asignación: %v", err)
+	}
+
+	got, err := repo.ListarElementos(ctx, ids[0])
+
+	if err != nil {
+		t.Fatalf("listar: %v", err)
+	}
+	if len(got) != 1 || got[0].SprintID == nil || *got[0].SprintID != s.ID {
+		t.Errorf("elementos = %+v, se esperaba SprintID = %d", got, s.ID)
+	}
+}
+
 // Traza: HU-09 CA-09.4
 func TestRepositorioBacklog_GuardarAsignacion_Desasigna(t *testing.T) {
 	ctx := context.Background()
