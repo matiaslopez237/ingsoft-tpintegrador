@@ -32,7 +32,7 @@ En HTTP se responde `200` con un array de elementos en el mismo formato que la r
 ## 5. Restricciones
 - El orden (RN-07.2, RN-07.3) y el filtro (RN-07.4) son reglas de negocio: viven en el dominio (`internal/domain`) y se desarrollan con TDD. La persistencia solo devuelve los elementos del proyecto.
 - La existencia del proyecto (RN-07.1) se resuelve en el caso de uso a través del puerto `LectorProyectos` (HU-04).
-- **Pantalla** (`/web/proyectos/{id}/backlog`, ADR-0003): la lista con el orden y el filtro, y un formulario para agregar elementos con el caso de uso de HU-05 (sus reglas no cambian). En el formulario los criterios de aceptación se escriben uno por línea; las líneas vacías no son criterios y se ignoran.
+- **Pantalla** (`/web/proyectos/{id}/backlog`, ADR-0003): la lista con el orden y el filtro, y un formulario para agregar elementos con el caso de uso de HU-05 (sus reglas no cambian). En el formulario los criterios de aceptación se escriben uno por línea; las líneas vacías no son criterios y se ignoran. Al agregar un elemento, la pantalla conserva el orden y el filtro que estaban elegidos.
 - Persistencia en SQLite (ADR-0002); interfaz web con `net/http` (ADR-0001).
 
 ## 6. Casos límite
@@ -74,3 +74,4 @@ Tomadas de los criterios del issue #18: orden ascendente y descendente, y filtro
 
 ## Historial
 - 2026-10-26: creada (borrador).
+- 2026-10-26: al agregar un elemento, la pantalla conserva el orden y el filtro elegidos (sección 5).
