@@ -83,6 +83,14 @@ Feature: Interfaz web base
     Then la respuesta tiene estado 400
     And veo el texto "la fecha de fin no puede ser anterior a la de inicio"
 
+  @CA-30.5 @DEF-01 @alternativo
+  Scenario: Dos ediciones simultáneas de campos distintos no se pisan
+    Given está guardado el proyecto "Alfa"
+    And dos personas abren el formulario de edición de "Alfa"
+    When la primera guarda el formulario cambiando el estado a "Finalizado"
+    And la segunda guarda el formulario cambiando la fecha de fin a "2026-12-15"
+    Then el proyecto "Alfa" queda en estado "Finalizado" con fecha de fin "2026-12-15"
+
   @CA-30.6 @normal
   Scenario: Agregar un integrante desde el detalle
     Given está guardado el proyecto "Alfa"

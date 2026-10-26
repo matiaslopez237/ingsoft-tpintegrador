@@ -118,5 +118,9 @@ func (s sistemaWebReal) BuscarProyecto(id int64) (proyectoGuardado, error) {
 	if err != nil {
 		return proyectoGuardado{}, err
 	}
-	return proyectoGuardado{Nombre: p.Nombre, Estado: string(p.Estado), TieneFin: p.FechaFin != nil}, nil
+	g := proyectoGuardado{Nombre: p.Nombre, Estado: string(p.Estado), TieneFin: p.FechaFin != nil}
+	if p.FechaFin != nil {
+		g.Fin = p.FechaFin.Format(time.DateOnly)
+	}
+	return g, nil
 }
