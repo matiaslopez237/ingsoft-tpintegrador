@@ -709,6 +709,8 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | 6.9 Revisión y trazabilidad | `a22d553` | **REFACTOR** |
 | Guardar sin cambios (alineado con DEF-01) | `b1caa63` [RED] → `d7de2cc` [GREEN] | **RED → GREEN** |
 | Editar y eliminar desde la lista del backlog (HU-07) | `01ae24f` [RED] → `72b4724` [GREEN] | **RED → GREEN** |
+| Revisión del PR #182: rutas POST de la pantalla en `router_test.go` | `f478777` | test |
+| Revisión del PR #182: sin campos `original_*` se envían todos los campos | `9384fca` [RED] → `ba3863c` [GREEN] | **RED → GREEN** |
 
 ### Huecos
 
