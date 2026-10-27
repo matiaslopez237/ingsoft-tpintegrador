@@ -2,7 +2,7 @@
 
 **Historia:** Como Developer, quiero marcar una historia como completada dentro de un Sprint, para reflejar el avance real.
 **Issue:** #21  ·  **Sprint:** 2  ·  **Story points:** 2
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada
 
 ## 1. Objetivo
 Registrar que un elemento del backlog (HU-05) asignado a un sprint (HU-09) quedó terminado, pasándolo al estado `Hecho`. Es el dato que después usan el cierre del sprint (HU-11) y las métricas de velocidad.
@@ -63,10 +63,7 @@ Si hay varios errores, se informa el primero en el orden de la tabla. Los textos
 - **CA-10.6:** Dado un pedido válido a `POST /proyectos/{id}/backlog/{elementoID}/completar`, entonces la respuesta es `204`; con proyecto o elemento inexistente, `404`; sin sprint o con el sprint Cerrado, `400`. (Sección 3)
 
 ## Decisiones tomadas
-Ninguna confirmada todavía: ver "Preguntas abiertas".
-
-## Preguntas abiertas
-Decisiones propuestas en el borrador, **pendientes de confirmar con el equipo**:
+Confirmadas por Matías López (Agile Enabler) el 2026-10-27. Eze y Nico pueden objetar en la revisión del PR.
 - **P-1:** completar = pasar a `Hecho` (RN-10.1).
 - **P-2:** el elemento tiene que estar en un sprint y el sprint tiene que estar Abierto (RN-10.2).
 - **P-3:** completar algo ya `Hecho` no da error (RN-10.3).
@@ -76,5 +73,9 @@ Decisiones propuestas en el borrador, **pendientes de confirmar con el equipo**:
 - **P-7:** pedidos simultáneos: la regla se verifica en el mismo `UPDATE` que guarda (sección 5).
 - **P-8:** elemento ya `Hecho` en un sprint Cerrado: se informa `ErrSprintCerrado` (RN-10.2 se valida antes que RN-10.3). La alternativa sería no dar error, por RN-10.3.
 
+## Preguntas abiertas
+Ninguna.
+
 ## Historial
 - 2026-10-26: creada (borrador), con las decisiones P-1 a P-8 pendientes de confirmar.
+- 2026-10-27: Decisiones P-1 a P-8 confirmadas; spec aprobada.
