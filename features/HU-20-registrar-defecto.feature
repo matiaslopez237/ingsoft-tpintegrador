@@ -76,10 +76,10 @@ Feature: Registrar un defecto
 
     Examples:
       | severidad |
-      | Crítica   |
-      | Alta      |
-      | Media     |
-      | Baja      |
+      | "Crítica" |
+      | "Alta"    |
+      | "Media"   |
+      | "Baja"    |
 
   @CA-20.5 @error
   Scenario: No se puede registrar un defecto en un proyecto que no existe

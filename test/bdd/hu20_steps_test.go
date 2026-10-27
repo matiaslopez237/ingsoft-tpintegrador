@@ -2,6 +2,7 @@ package bdd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -152,13 +153,11 @@ func (w *registrarDefectoWorld) registro(descripcion, severidad, elemento string
 	return nil
 }
 
-func (w *registrarDefectoWorld) registroEnProyectoInexistente(descripcion, severidad, elemento string) error {
-	d, err := w.datos(descripcion, severidad, elemento)
-	if err != nil {
-		return err
-	}
-	d.ProyectoID = idInexistente
-	w.ejecutar(d)
+func (w *registrarDefectoWorld) registroEnProyectoInexistente(descripcion, severidad string) error {
+	w.ejecutar(datosDefecto{
+		ProyectoID: idInexistente, ElementoID: idInexistente,
+		Descripcion: descripcion, Severidad: severidad,
+	})
 	return nil
 }
 
@@ -248,7 +247,7 @@ func (w *registrarDefectoWorld) seRechazaConError(descripcion string) error {
 	if w.ultimoErr == nil {
 		return fmt.Errorf("se esperaba el error %q, pero el defecto se registró", descripcion)
 	}
-	if !esperado.coincide(w.ultimoErr) {
+	if !errors.Is(w.ultimoErr, esperado) {
 		return fmt.Errorf("se esperaba el error %q, se obtuvo: %w", descripcion, w.ultimoErr)
 	}
 	return nil

@@ -13,51 +13,24 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errHU20SinImplementar es el rojo de la tarea 20.3: los escenarios compilan y corren, pero el
-// caso de uso todavía no existe. Se va cuando las tareas 20.4 a 20.6 conecten RegistrarDefecto.
-var errHU20SinImplementar = errors.New("HU-20 todavía no está implementada: falta conectar el caso de uso RegistrarDefecto (tareas 20.4 a 20.6)")
-
-// defectoErrorEsperado es un error de la spec de HU-20 (sección 7). Los reutilizados de otras
-// historias ya existen en el dominio y se comparan con errors.Is. Los nuevos todavía no existen,
-// así que se comparan por el mensaje de la spec, igual que hizo HU-18 en su tarea 18.3.
-// TODO(HU-20, tarea 20.4): cuando el dominio defina los errores nuevos, completar err y quitar mensaje.
-type defectoErrorEsperado struct {
-	err     error
-	mensaje string
-}
-
-// coincide recorre la cadena de errores envueltos (%w) buscando el error esperado.
-func (e defectoErrorEsperado) coincide(got error) bool {
-	if e.err != nil {
-		return errors.Is(got, e.err)
-	}
-	for ; got != nil; got = errors.Unwrap(got) {
-		if got.Error() == e.mensaje {
-			return true
-		}
-	}
-	return false
-}
-
 // erroresHU20 traduce la descripción del escenario al error definido en la spec (sección 7).
-func erroresHU20() map[string]defectoErrorEsperado {
-	return map[string]defectoErrorEsperado{
-		"proyecto no encontrado": {err: domain.ErrProyectoNoEncontrado},
-		"elemento no encontrado": {err: domain.ErrElementoNoEncontrado},
-		"descripción vacía":      {mensaje: "la descripción es obligatoria"},                     // ErrDescripcionDefectoVacia
-		"severidad inválida":     {mensaje: "la severidad debe ser Crítica, Alta, Media o Baja"}, // ErrSeveridadInvalida
+func erroresHU20() map[string]error {
+	return map[string]error{
+		"proyecto no encontrado": domain.ErrProyectoNoEncontrado,
+		"elemento no encontrado": domain.ErrElementoNoEncontrado,
+		"descripción vacía":      domain.ErrDescripcionDefectoVacia,
+		"severidad inválida":     domain.ErrSeveridadInvalida,
 	}
 }
 
-// sistemaDefectoReal prepara los proyectos y elementos con los casos de uso de HU-01 y HU-05, y
-// los sprints con los de HU-08, sobre SQLite real, en una base nueva por escenario. Registrar un
-// defecto todavía devuelve errHU20SinImplementar; reloj queda listo para cuando las tareas 20.4 a
-// 20.6 conecten RegistrarDefecto, igual que el reloj falso de HU-18.
+// sistemaDefectoReal prepara los proyectos y elementos con los casos de uso de HU-01 y HU-05, los
+// sprints con los de HU-08, y registra defectos con los de HU-20 (RegistrarDefecto y
+// RepositorioDefectos), sobre SQLite real, en una base nueva por escenario.
 type sistemaDefectoReal struct {
 	crearProyecto *app.CrearProyecto
 	crearElemento *app.CrearElementoBacklog
 	crearSprint   *app.CrearSprint
-	reloj         func() time.Time
+	registrar     *app.RegistrarDefecto
 	db            *sql.DB
 	dir           string
 }
@@ -73,11 +46,13 @@ func nuevoSistemaDefecto(reloj func() time.Time) (sistemaDefecto, error) {
 		return nil, err
 	}
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
+	elementos := persistencia.NuevoRepositorioBacklog(db)
+	sprints := persistencia.NuevoRepositorioSprints(db)
 	return sistemaDefectoReal{
 		crearProyecto: app.NuevoCrearProyecto(proyectos),
-		crearElemento: app.NuevoCrearElementoBacklog(persistencia.NuevoRepositorioBacklog(db)),
-		crearSprint:   app.NuevoCrearSprint(proyectos, persistencia.NuevoRepositorioSprints(db)),
-		reloj:         reloj,
+		crearElemento: app.NuevoCrearElementoBacklog(elementos),
+		crearSprint:   app.NuevoCrearSprint(proyectos, sprints),
+		registrar:     app.NuevoRegistrarDefecto(proyectos, elementos, sprints, persistencia.NuevoRepositorioDefectos(db), reloj),
 		db:            db,
 		dir:           dir,
 	}, nil
@@ -115,6 +90,16 @@ func (s sistemaDefectoReal) CrearSprint(proyectoID int64, inicio, fin time.Time)
 	return err
 }
 
-func (s sistemaDefectoReal) RegistrarDefecto(datosDefecto) (defectoVisto, error) {
-	return defectoVisto{}, errHU20SinImplementar
+func (s sistemaDefectoReal) RegistrarDefecto(d datosDefecto) (defectoVisto, error) {
+	r, err := s.registrar.Ejecutar(context.Background(), app.DatosDefecto{
+		ProyectoID: d.ProyectoID, ElementoID: d.ElementoID, Descripcion: d.Descripcion, Severidad: domain.Severidad(d.Severidad),
+	})
+	if err != nil {
+		return defectoVisto{}, err
+	}
+	return defectoVisto{
+		ID: r.ID, ProyectoID: r.ProyectoID, ElementoID: r.ElementoID,
+		Descripcion: r.Descripcion, Severidad: string(r.Severidad), Estado: string(r.Estado),
+		SprintDeteccionID: r.SprintDeteccionID,
+	}, nil
 }
