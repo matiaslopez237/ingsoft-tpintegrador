@@ -37,5 +37,6 @@ func InitializeScenario(ctx *godog.ScenarioContext) {
 	registrarStepsHU07(ctx)
 	registrarStepsHU08(ctx)
 	registrarStepsHU18(ctx)
+	registrarStepsHU06(ctx)
 	registrarStepsHU30(ctx)
 }
