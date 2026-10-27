@@ -26,6 +26,7 @@ var (
 	ErrObjetivoDemasiadoLargo = errors.New("el Sprint Goal no puede superar los 200 caracteres")
 	ErrSprintFueraDelProyecto = errors.New("las fechas del sprint tienen que estar dentro de las del proyecto")
 	ErrSprintSuperpuesto      = errors.New("las fechas se superponen con otro sprint del proyecto")
+	ErrSprintYaCerrado        = errors.New("el sprint ya fue cerrado")
 )
 
 // Sprint es un período de trabajo de un proyecto, con su objetivo (Sprint Goal). Implementa HU-08.
@@ -72,6 +73,14 @@ func NuevoSprint(p Proyecto, inicio, fin time.Time, objetivo string, existentes 
 		Objetivo:    objetivo,
 		Estado:      SprintAbierto,
 	}, nil
+}
+
+func (s *Sprint) Cerrar() error {
+	if s.Estado == SprintCerrado {
+		return ErrSprintYaCerrado
+	}
+	s.Estado = SprintCerrado
+	return nil
 }
 
 // dentroDelProyecto indica si el sprint cae dentro de las fechas del proyecto (RN-08.4).
