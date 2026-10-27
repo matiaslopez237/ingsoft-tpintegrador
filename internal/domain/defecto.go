@@ -3,6 +3,7 @@ package domain
 import (
 	"errors"
 	"strings"
+	"time"
 )
 
 // Severidad de un defecto. Implementa HU-20 (RN-20.3).
@@ -68,4 +69,21 @@ func severidadValida(s Severidad) bool {
 		return true
 	}
 	return false
+}
+
+// SprintVigente busca, entre los sprints dados, el que está Abierto y cuyas fechas (día completo,
+// igual que RN-08.5) incluyen hoy. Como RN-08.5 impide que los sprints de un proyecto se
+// superpongan en fechas, a lo sumo uno califica. Devuelve su ID y true, o 0 y false si ninguno
+// califica. Implementa HU-20 (RN-20.5).
+func SprintVigente(sprints []Sprint, hoy time.Time) (int64, bool) {
+	h := diaCalendario(hoy)
+	for _, s := range sprints {
+		if s.Estado != SprintAbierto {
+			continue
+		}
+		if !diaCalendario(s.FechaInicio).After(h) && !diaCalendario(s.FechaFin).Before(h) {
+			return s.ID, true
+		}
+	}
+	return 0, false
 }
