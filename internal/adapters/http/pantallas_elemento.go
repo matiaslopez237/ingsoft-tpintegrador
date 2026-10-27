@@ -62,8 +62,8 @@ func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	f, original := leerFormElemento(r)
-	cambios, err := cambiosDeFormElemento(f, original)
+	f, original, conOriginal := leerFormElemento(r)
+	cambios, err := cambiosDeFormElemento(f, original, conOriginal)
 	if err == nil && cambios == (domain.CambiosElemento{}) {
 		// Si no cambió ningún campo, se vuelve al elemento sin mensaje: no es un error del
 		// usuario (igual que el formulario de proyecto, DEF-01).
@@ -163,7 +163,8 @@ func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
 }
 
 // leerFormElemento lee el formulario y los valores originales (campos ocultos original_*).
-func leerFormElemento(r *http.Request) (formEdicionElemento, formEdicionElemento) {
+// conOriginal es false si el pedido no trae esos campos (no viene de la pantalla).
+func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOriginal bool) {
 	leer := func(prefijo string) formEdicionElemento {
 		return formEdicionElemento{
 			Titulo:      r.PostFormValue(prefijo + "titulo"),
@@ -174,26 +175,29 @@ func leerFormElemento(r *http.Request) (formEdicionElemento, formEdicionElemento
 			Estado:      r.PostFormValue(prefijo + "estado"),
 		}
 	}
-	return leer(""), leer("original_")
+	_, conOriginal = r.PostForm["original_titulo"]
+	return leer(""), leer("original_"), conOriginal
 }
 
 // cambiosDeFormElemento arma la edición con los campos que cambiaron respecto de los originales,
-// para no pisar ediciones simultáneas (HU-06, sección 5; lección de DEF-01). Story points vacío
-// quita la estimación; los criterios van uno por línea y se ignoran las líneas vacías.
-func cambiosDeFormElemento(f, original formEdicionElemento) (domain.CambiosElemento, error) {
+// para no pisar ediciones simultáneas (HU-06, sección 5; lección de DEF-01). Si el pedido no trae
+// los originales (conOriginal en false), se envían todos los campos, como cambiosDeForm en DEF-01.
+// Story points vacío quita la estimación; los criterios van uno por línea y se ignoran las vacías.
+func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (domain.CambiosElemento, error) {
+	cambio := func(nuevo, viejo string) bool { return !conOriginal || nuevo != viejo }
 	var c domain.CambiosElemento
 	// Título y descripción se comparan recortados: el dominio los recorta igual al guardar.
-	if strings.TrimSpace(f.Titulo) != strings.TrimSpace(original.Titulo) {
+	if cambio(strings.TrimSpace(f.Titulo), strings.TrimSpace(original.Titulo)) {
 		c.Titulo = &f.Titulo
 	}
-	if strings.TrimSpace(f.Descripcion) != strings.TrimSpace(original.Descripcion) {
+	if cambio(strings.TrimSpace(f.Descripcion), strings.TrimSpace(original.Descripcion)) {
 		c.Descripcion = &f.Descripcion
 	}
-	if f.Prioridad != original.Prioridad {
+	if cambio(f.Prioridad, original.Prioridad) {
 		pr := domain.Prioridad(f.Prioridad)
 		c.Prioridad = &pr
 	}
-	if strings.TrimSpace(f.StoryPoints) != strings.TrimSpace(original.StoryPoints) {
+	if cambio(strings.TrimSpace(f.StoryPoints), strings.TrimSpace(original.StoryPoints)) {
 		c.CambiarStoryPoints = true
 		if s := strings.TrimSpace(f.StoryPoints); s != "" {
 			n, err := strconv.Atoi(s)
@@ -204,10 +208,10 @@ func cambiosDeFormElemento(f, original formEdicionElemento) (domain.CambiosEleme
 		}
 	}
 	// Los criterios se comparan como lista: el navegador envía el textarea con saltos CRLF.
-	if criterios := lineas(f.Criterios); !slices.Equal(criterios, lineas(original.Criterios)) {
+	if criterios := lineas(f.Criterios); !conOriginal || !slices.Equal(criterios, lineas(original.Criterios)) {
 		c.Criterios = &criterios
 	}
-	if f.Estado != original.Estado {
+	if cambio(f.Estado, original.Estado) {
 		e := domain.EstadoElemento(f.Estado)
 		c.Estado = &e
 	}
