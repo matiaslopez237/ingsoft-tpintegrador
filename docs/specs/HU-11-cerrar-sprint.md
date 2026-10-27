@@ -24,7 +24,7 @@ No hay cuerpo. **En HTTP:** `POST /proyectos/{id}/sprints/{sprintID}/cerrar`.
 
 ## 4. Reglas de negocio
 - **RN-11.1:** Cerrar un sprint es pasarlo de `Abierto` a `Cerrado` (RN-08.8). Solo se cierra un sprint `Abierto`: cerrar uno ya `Cerrado` es un error, no una operación sin efecto (a diferencia de RN-10.3).
-- **RN-11.2:** Un sprint se puede cerrar en cualquier momento: antes, durante o después de sus fechas, y aunque tenga historias sin terminar o no tenga ninguna.
+- **RN-11.2:** Un sprint se puede cerrar en cualquier momento: antes, durante o después de sus fechas, y aunque tenga historias sin terminar o no tenga ninguna. Tampoco importa el estado del proyecto: se puede cerrar aunque no esté `Activo` (P-10).
 - **RN-11.3:** Las historias sin terminar quedan asignadas al sprint cerrado, sin cambios. Se pueden asignar a otro sprint por RN-09.2.
 - **RN-11.4:** El sprint tiene que pertenecer al proyecto de la ruta; si es de otro proyecto, se trata como inexistente (igual que RN-18.1, RN-09.7 y RN-10.4).
 - **RN-11.5:** Un sprint cerrado no se reabre.
@@ -66,7 +66,7 @@ Los errores `ErrSprintYaCerrado` (HU-11) y `ErrSprintCerrado` (HU-09) describen 
 - **CA-11.6:** Dado un sprint `Abierto` con historias asignadas, cuando lo cierro, entonces las historias siguen asignadas a ese sprint. (RN-11.3) Se verifica cuando HU-09 esté en `main` (persistencia y sistema BDD), no en los tests del dominio ni del caso de uso con fakes.
 
 ## Decisiones tomadas
-Ninguna confirmada todavía. Propuestas, pendientes de confirmar por el equipo:
+Decisiones tomadas por el autor (Lucas Orellana) el 2026-10-27; el equipo puede objetarlas en la revisión del PR.
 - **P-1:** cerrar = pasar de `Abierto` a `Cerrado` (RN-11.1).
 - **P-2:** cerrar un sprint ya `Cerrado` es un error, no una operación sin efecto (RN-11.1).
 - **P-3:** se puede cerrar en cualquier momento, aunque no haya llegado la fecha de fin y aunque queden historias sin terminar (RN-11.2).
@@ -76,10 +76,12 @@ Ninguna confirmada todavía. Propuestas, pendientes de confirmar por el equipo:
 - **P-7:** ruta JSON `POST /proyectos/{id}/sprints/{sprintID}/cerrar` (`204`) y botón "Cerrar sprint" en la lista de sprints de HU-08, para no depender del detalle de HU-09.
 - **P-8:** pedidos simultáneos: el estado se verifica en el mismo `UPDATE` (sección 5).
 - **P-9:** fuera de alcance: resumen, velocidad y métricas, y control de quién cierra (sección 5).
+- **P-10:** se puede cerrar un sprint de un proyecto que no está Activo, porque cerrar no suma trabajo nuevo (RN-08.2 solo limita crear).
 
 ## Preguntas abiertas
-- **P-10 — Estado del proyecto:** ¿se puede cerrar un sprint de un proyecto que no está `Activo` (En pausa, Finalizado, etc.)? La spec no lo restringe: se propone que sí, porque cerrar no suma trabajo nuevo (RN-08.2 solo limita crear).
+Ninguna.
 
 ## Historial
 - 2026-10-27: creada (borrador), con las decisiones P-1 a P-9 pendientes de confirmar.
 - 2026-10-27: ajustes: puerto angosto, CA-11.6.
+- 2026-10-27: decisiones P-1 a P-10 tomadas por el autor, abiertas a objeción en el PR.
