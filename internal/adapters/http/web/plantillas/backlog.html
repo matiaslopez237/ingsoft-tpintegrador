@@ -23,7 +23,7 @@
 <table>
   <caption class="oculto">Elementos del backlog</caption>
   <thead>
-    <tr><th scope="col">Título</th><th scope="col">Prioridad</th><th scope="col">Estado</th><th scope="col">Story points</th><th scope="col">Criterios de aceptación</th></tr>
+    <tr><th scope="col">Título</th><th scope="col">Prioridad</th><th scope="col">Estado</th><th scope="col">Story points</th><th scope="col">Criterios de aceptación</th><th scope="col"><span class="oculto">Acciones</span></th></tr>
   </thead>
   <tbody>
     {{range .Elementos}}
@@ -33,6 +33,16 @@
       <td><span class="estado">{{.Estado}}</span></td>
       <td>{{if .StoryPoints}}{{.StoryPoints}}{{else}}Sin estimar{{end}}</td>
       <td><ul>{{range .Criterios}}<li>{{.}}</li>{{end}}</ul></td>
+      <td>
+        {{/* HU-06: editar y eliminar el elemento. */}}
+        <a class="boton" href="/web/proyectos/{{$.Proyecto.ID}}/backlog/{{.ID}}" aria-label="Editar {{.Titulo}}">Editar</a>
+        <details class="confirmar">
+          <summary>Eliminar</summary>
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/backlog/{{.ID}}/eliminar" class="en-linea">
+            <button type="submit" class="peligro">Sí, eliminar «{{.Titulo}}»</button>
+          </form>
+        </details>
+      </td>
     </tr>
     {{end}}
   </tbody>

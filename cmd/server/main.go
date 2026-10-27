@@ -33,14 +33,17 @@ func main() {
 	repoBacklog := persistencia.NuevoRepositorioBacklog(db)
 	repoSprints := persistencia.NuevoRepositorioSprints(db)
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
-		CrearProyecto:        app.NuevoCrearProyecto(repoProyectos),
-		ModificarProyecto:    app.NuevoModificarProyecto(repoProyectos),
-		AgregarIntegrante:    app.NuevoAgregarIntegrante(repoProyectos),
-		QuitarIntegrante:     app.NuevoQuitarIntegrante(repoProyectos),
-		AgregarRol:           app.NuevoAgregarRol(repoProyectos),
-		ConsultarProyecto:    app.NuevoConsultarProyecto(repoProyectos),
-		CrearElementoBacklog: app.NuevoCrearElementoBacklog(repoBacklog),
-		ListarProyectos:      app.NuevoListarProyectos(repoProyectos), // HU-30
+		CrearProyecto:            app.NuevoCrearProyecto(repoProyectos),
+		ModificarProyecto:        app.NuevoModificarProyecto(repoProyectos),
+		AgregarIntegrante:        app.NuevoAgregarIntegrante(repoProyectos),
+		QuitarIntegrante:         app.NuevoQuitarIntegrante(repoProyectos),
+		AgregarRol:               app.NuevoAgregarRol(repoProyectos),
+		ConsultarProyecto:        app.NuevoConsultarProyecto(repoProyectos),
+		CrearElementoBacklog:     app.NuevoCrearElementoBacklog(repoBacklog),
+		EditarElementoBacklog:    app.NuevoEditarElementoBacklog(repoBacklog),    // HU-06
+		EliminarElementoBacklog:  app.NuevoEliminarElementoBacklog(repoBacklog),  // HU-06
+		ConsultarElementoBacklog: app.NuevoConsultarElementoBacklog(repoBacklog), // HU-06
+		ListarProyectos:          app.NuevoListarProyectos(repoProyectos),        // HU-30
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-18, RN-18.4).
 		RegistrarEsfuerzo: app.NuevoRegistrarEsfuerzo(repoProyectos, repoBacklog,
 			persistencia.NuevoRepositorioEsfuerzo(db), time.Now),
