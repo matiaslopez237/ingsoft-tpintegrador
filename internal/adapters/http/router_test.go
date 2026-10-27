@@ -43,13 +43,15 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/sprints", `{"fecha_inicio":"2026-10-26","fecha_fin":"2026-10-27","objetivo":"x"}`},                   // HU-08
 		{http.MethodGet, "/proyectos/1/sprints", ""},                                                                                         // HU-08
 		{http.MethodGet, "/proyectos/1/backlog", ""},                                                                                         // HU-07
-		{http.MethodGet, "/", ""},                          // HU-30
-		{http.MethodGet, "/web/proyectos", ""},             // HU-30
-		{http.MethodGet, "/static/estilos.css", ""},        // HU-30
-		{http.MethodGet, "/web/proyectos/nuevo", ""},       // HU-30
-		{http.MethodGet, "/web/proyectos/1/sprints", ""},   // HU-08
-		{http.MethodGet, "/web/proyectos/1/backlog", ""},   // HU-07
-		{http.MethodGet, "/web/proyectos/7/backlog/7", ""}, // HU-06
+		{http.MethodGet, "/", ""},                                    // HU-30
+		{http.MethodGet, "/web/proyectos", ""},                       // HU-30
+		{http.MethodGet, "/static/estilos.css", ""},                  // HU-30
+		{http.MethodGet, "/web/proyectos/nuevo", ""},                 // HU-30
+		{http.MethodGet, "/web/proyectos/1/sprints", ""},             // HU-08
+		{http.MethodGet, "/web/proyectos/1/backlog", ""},             // HU-07
+		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},           // HU-06
+		{http.MethodPost, "/web/proyectos/7/backlog/7/editar", ""},   // HU-06
+		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""}, // HU-06
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {
