@@ -230,3 +230,27 @@ func TestPantallaElemento_VuelveAlBacklog(t *testing.T) {
 	rec = pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7/backlog/7", nil)
 	contiene(t, rec, `href="/web/proyectos/7/backlog">Volver al backlog`)
 }
+
+// Traza: HU-06 CA-06.10. Un POST sin los campos ocultos original_* (que no viene de la pantalla)
+// envía todos los campos, igual que el formulario de proyecto (cambiosDeForm, DEF-01). Antes
+// los comparaba contra valores vacíos y podía guardar cero cambios sin avisar.
+func TestPantallaElemento_SinValoresOriginales_EnviaTodosLosCampos(t *testing.T) {
+	editor := &editorElementosFalso{}
+	cu := casosBacklogFalsos(editor, &eliminadorElementosFalso{})
+	cu.EditarElementoBacklog = editarQueAcepta(editor)
+	form := url.Values{
+		"titulo": {"Login"}, "descripcion": {"Ingresar"}, "prioridad": {"Alta"},
+		"story_points": {""}, "criterios": {"Con email"}, "estado": {"Pendiente"},
+	}
+
+	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", form)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
+	}
+	c := editor.recibido.Cambios
+	if c.Titulo == nil || c.Descripcion == nil || c.Prioridad == nil || !c.CambiarStoryPoints ||
+		c.Criterios == nil || c.Estado == nil {
+		t.Errorf("se esperaban todos los campos en los cambios: %+v", c)
+	}
+}
