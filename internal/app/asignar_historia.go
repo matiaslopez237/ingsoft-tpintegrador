@@ -106,13 +106,9 @@ func (uc *DesasignarHistoria) Ejecutar(ctx context.Context, d DatosDesasignacion
 		return domain.ErrElementoNoEncontrado
 	}
 
-	var sprintActualActivo bool
-	if e.SprintID != nil {
-		_, abierto, err := uc.repo.BuscarSprint(ctx, *e.SprintID)
-		if err != nil {
-			return err
-		}
-		sprintActualActivo = abierto
+	sprintActualActivo, err := sprintDelElementoAbierto(ctx, uc.repo, e)
+	if err != nil {
+		return err
 	}
 
 	if err := e.DesasignarDeSprint(sprintActualActivo); err != nil {
