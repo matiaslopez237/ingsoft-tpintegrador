@@ -90,11 +90,12 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 		e                 domain.ElementoBacklog
 		prioridad, estado string
 		sp                sql.NullInt64
+		sprintID          sql.NullInt64
 	)
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, proyecto_id, titulo, descripcion, prioridad, estado, story_points
+		`SELECT id, proyecto_id, titulo, descripcion, prioridad, estado, story_points, sprint_id
 		   FROM backlog_elementos WHERE id = ?`, id).
-		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp)
+		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.ElementoBacklog{}, domain.ErrElementoNoEncontrado
 	}
@@ -105,6 +106,9 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 	if sp.Valid {
 		n := int(sp.Int64)
 		e.StoryPoints = &n
+	}
+	if sprintID.Valid {
+		e.SprintID = &sprintID.Int64
 	}
 
 	rows, err := r.db.QueryContext(ctx,
@@ -137,13 +141,13 @@ func (r *RepositorioBacklog) ContarElementos(ctx context.Context, proyectoID int
 	return n, nil
 }
 
-// ListarElementos devuelve los elementos del proyecto con sus criterios en orden. Usa dos
-// consultas (elementos y criterios) en lugar de una por elemento. El orden de la lista lo decide
-// el dominio (HU-07, RN-07.2): acá solo se ordena por ID para que el resultado sea estable.
-// Implementa HU-07 (app.ListadorElementos, RN-07.1).
+// ListarElementos devuelve los elementos del proyecto con sus criterios en orden, incluido el
+// sprint asignado (HU-09). Usa dos consultas (elementos y criterios) en lugar de una por elemento.
+// El orden de la lista lo decide el dominio (HU-07, RN-07.2): acá solo se ordena por ID para que
+// el resultado sea estable. Implementa HU-07 (app.ListadorElementos, RN-07.1).
 func (r *RepositorioBacklog) ListarElementos(ctx context.Context, proyectoID int64) ([]domain.ElementoBacklog, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, titulo, descripcion, prioridad, estado, story_points
+		`SELECT id, titulo, descripcion, prioridad, estado, story_points, sprint_id
 		   FROM backlog_elementos WHERE proyecto_id = ? ORDER BY id`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar elementos del proyecto %d: %w", proyectoID, err)
@@ -159,14 +163,18 @@ func (r *RepositorioBacklog) ListarElementos(ctx context.Context, proyectoID int
 			e                 = domain.ElementoBacklog{ProyectoID: proyectoID}
 			prioridad, estado string
 			sp                sql.NullInt64
+			sprintID          sql.NullInt64
 		)
-		if err := rows.Scan(&e.ID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp); err != nil {
+		if err := rows.Scan(&e.ID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID); err != nil {
 			return nil, fmt.Errorf("leer elemento del proyecto %d: %w", proyectoID, err)
 		}
 		e.Prioridad, e.Estado = domain.Prioridad(prioridad), domain.EstadoElemento(estado)
 		if sp.Valid {
 			n := int(sp.Int64)
 			e.StoryPoints = &n
+		}
+		if sprintID.Valid {
+			e.SprintID = &sprintID.Int64
 		}
 		posicion[e.ID] = len(elementos)
 		elementos = append(elementos, e)
