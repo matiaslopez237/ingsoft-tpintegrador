@@ -18,6 +18,22 @@ func elementoEnSprint(t *testing.T, sprintID *int64, estado EstadoElemento) Elem
 	return e
 }
 
+// copiaProfunda copia el elemento sin compartir punteros ni slices, para que la comparación
+// detecte también cambios en *SprintID, *StoryPoints o Criterios.
+func copiaProfunda(e ElementoBacklog) ElementoBacklog {
+	c := e
+	if e.SprintID != nil {
+		id := *e.SprintID
+		c.SprintID = &id
+	}
+	if e.StoryPoints != nil {
+		sp := *e.StoryPoints
+		c.StoryPoints = &sp
+	}
+	c.Criterios = append([]string(nil), e.Criterios...)
+	return c
+}
+
 // Traza: HU-10 CA-10.1, CA-10.2 (RN-10.1 a RN-10.3)
 func TestElementoBacklog_Completar_Exito(t *testing.T) {
 	tests := []struct {
@@ -32,7 +48,7 @@ func TestElementoBacklog_Completar_Exito(t *testing.T) {
 		t.Run(tt.nombre, func(t *testing.T) {
 			sprintID := int64(10)
 			e := elementoEnSprint(t, &sprintID, tt.estado)
-			esperado := e
+			esperado := copiaProfunda(e)
 			esperado.Estado = EstadoHecho
 
 			err := e.Completar(true)
@@ -67,7 +83,7 @@ func TestElementoBacklog_Completar_Errores_NoCambiaElElemento(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
 			e := elementoEnSprint(t, tt.sprintID, tt.estado)
-			antes := e
+			antes := copiaProfunda(e)
 
 			err := e.Completar(tt.sprintAbierto)
 
