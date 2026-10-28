@@ -125,7 +125,7 @@ type pantallas struct {
 
 var paginas = []string{
 	"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html",
-	"sprints.html", "backlog.html", "sprint_detalle.html",
+	"sprints.html", "backlog.html", "sprint_detalle.html", "elemento.html",
 }
 
 // funcionesPlantillas son las funciones disponibles en las plantillas. segmento escapa un texto
@@ -175,6 +175,7 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("GET /web/proyectos/{id}/sprints/{sprintID}", p.sprintDetalle)                                  // HU-09
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/asignar", p.formulario(p.asignarElementoPantalla)) // HU-09
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/quitar", p.formulario(p.quitarElementoPantalla))   // HU-09
+	p.registrarPantallasElemento(mux)                                                                              // HU-06
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio

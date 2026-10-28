@@ -7,20 +7,23 @@ import "net/http"
 // CasosDeUso son los casos de uso que exponen las rutas HTTP. Cada historia de usuario suma
 // los suyos acá y registra sus rutas con su propia función RegistrarX, en el archivo de su handler.
 type CasosDeUso struct {
-	CrearProyecto        creadorProyectos     // HU-01
-	ModificarProyecto    modificadorProyectos // HU-02
-	AgregarIntegrante    agregadorIntegrantes // HU-03
-	QuitarIntegrante     quitadorIntegrantes  // HU-03
-	AgregarRol           agregadorRoles       // HU-03
-	ConsultarProyecto    consultorProyectos   // HU-04
-	CrearElementoBacklog creadorElementos     // HU-05
-	RegistrarEsfuerzo    registradorEsfuerzo  // HU-18
-	CrearSprint          creadorSprints       // HU-08
-	ListarSprints        listadorSprints      // HU-08
-	ListarBacklog        listadorBacklog      // HU-07
-	AsignarHistoria      agregadorAsignacion  // HU-09
-	DesasignarHistoria   quitadorAsignacion   // HU-09
-	ListarProyectos      listadorProyectos    // HU-30
+	CrearProyecto            creadorProyectos     // HU-01
+	ModificarProyecto        modificadorProyectos // HU-02
+	AgregarIntegrante        agregadorIntegrantes // HU-03
+	QuitarIntegrante         quitadorIntegrantes  // HU-03
+	AgregarRol               agregadorRoles       // HU-03
+	ConsultarProyecto        consultorProyectos   // HU-04
+	CrearElementoBacklog     creadorElementos     // HU-05
+	RegistrarEsfuerzo        registradorEsfuerzo  // HU-18
+	CrearSprint              creadorSprints       // HU-08
+	ListarSprints            listadorSprints      // HU-08
+	ListarBacklog            listadorBacklog      // HU-07
+	AsignarHistoria          agregadorAsignacion  // HU-09
+	DesasignarHistoria       quitadorAsignacion   // HU-09
+	ListarProyectos          listadorProyectos    // HU-30
+	EditarElementoBacklog    editorElementos      // HU-06
+	EliminarElementoBacklog  eliminadorElementos  // HU-06
+	ConsultarElementoBacklog consultorElementos   // HU-06
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
@@ -33,6 +36,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarIntegrantes(mux, cu.AgregarIntegrante, cu.QuitarIntegrante, cu.AgregarRol)
 	RegistrarConsultarProyecto(mux, cu.ConsultarProyecto)
 	RegistrarCrearElementoBacklog(mux, cu.CrearElementoBacklog)
+	RegistrarEditarEliminarElementoBacklog(mux, cu.EditarElementoBacklog, cu.EliminarElementoBacklog)
 	RegistrarRegistrarEsfuerzo(mux, cu.RegistrarEsfuerzo)
 	RegistrarSprints(mux, cu.CrearSprint, cu.ListarSprints)
 	RegistrarListarBacklog(mux, cu.ListarBacklog)
