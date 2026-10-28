@@ -94,7 +94,7 @@ func TestPantallaDefecto_Crear_SinSprintDeteccion_AvisaQueNoSeAsigno(t *testing.
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
 	}
-	contiene(t, rec, "no se asignó ningún Sprint")
+	contiene(t, rec, "No se asignó ningún Sprint")
 }
 
 // Traza: HU-20 CA-20.3, CA-20.4, CA-20.8

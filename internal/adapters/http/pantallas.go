@@ -118,7 +118,7 @@ type pantallas struct {
 	paginas map[string]*template.Template
 }
 
-var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html", "sprints.html", "backlog.html", "elemento.html"}
+var paginas = []string{"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html", "sprints.html", "backlog.html", "elemento.html", "defecto_form.html"}
 
 // funcionesPlantillas son las funciones disponibles en las plantillas. segmento escapa un texto
 // para usarlo como parte de una ruta: html/template no escapa "/", "?" ni "#" dentro de una URL.
@@ -165,6 +165,7 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("GET /web/proyectos/{id}/backlog", p.backlog)                      // HU-07
 	mux.HandleFunc("POST /web/proyectos/{id}/backlog", p.formulario(p.crearElemento)) // HU-07 (alta de HU-05)
 	p.registrarPantallasElemento(mux)                                                 // HU-06
+	p.registrarPantallasDefecto(mux)                                                  // HU-20
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio
