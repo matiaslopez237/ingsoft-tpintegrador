@@ -168,14 +168,15 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes", p.formulario(p.agregarIntegrante))
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/quitar", p.formulario(p.quitarIntegrante))
 	mux.HandleFunc("POST /web/proyectos/{id}/integrantes/{nombre}/roles", p.formulario(p.agregarRol))
-	mux.HandleFunc("GET /web/proyectos/{id}/sprints", p.sprints)                                                   // HU-08
-	mux.HandleFunc("POST /web/proyectos/{id}/sprints", p.formulario(p.crearSprint))                                // HU-08
-	mux.HandleFunc("GET /web/proyectos/{id}/backlog", p.backlog)                                                   // HU-07
-	mux.HandleFunc("POST /web/proyectos/{id}/backlog", p.formulario(p.crearElemento))                              // HU-07 (alta de HU-05)
-	mux.HandleFunc("GET /web/proyectos/{id}/sprints/{sprintID}", p.sprintDetalle)                                  // HU-09
-	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/asignar", p.formulario(p.asignarElementoPantalla)) // HU-09
-	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/quitar", p.formulario(p.quitarElementoPantalla))   // HU-09
-	p.registrarPantallasElemento(mux)                                                                              // HU-06
+	mux.HandleFunc("GET /web/proyectos/{id}/sprints", p.sprints)                                                       // HU-08
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints", p.formulario(p.crearSprint))                                    // HU-08
+	mux.HandleFunc("GET /web/proyectos/{id}/backlog", p.backlog)                                                       // HU-07
+	mux.HandleFunc("POST /web/proyectos/{id}/backlog", p.formulario(p.crearElemento))                                  // HU-07 (alta de HU-05)
+	mux.HandleFunc("GET /web/proyectos/{id}/sprints/{sprintID}", p.sprintDetalle)                                      // HU-09
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/asignar", p.formulario(p.asignarElementoPantalla))     // HU-09
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/quitar", p.formulario(p.quitarElementoPantalla))       // HU-09
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/completar", p.formulario(p.completarElementoPantalla)) // HU-10
+	p.registrarPantallasElemento(mux)                                                                                  // HU-06
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio

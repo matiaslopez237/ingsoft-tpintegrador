@@ -16,6 +16,10 @@ type (
 	vistaElementoBacklog struct {
 		ID     int64
 		Titulo string
+		Estado string
+		// PuedeCompletarse decide si se muestra "Marcar como hecha" (HU-10): sprint Abierto y
+		// elemento no Hecho. Es solo para la vista; la regla la vuelve a validar el dominio.
+		PuedeCompletarse bool
 	}
 	datosSprintDetalle struct {
 		Proyecto    vistaProyecto
@@ -86,6 +90,43 @@ func (p *pantallas) quitarElementoPantalla(w http.ResponseWriter, r *http.Reques
 	p.resultadoAsignacion(w, r, id, sprintID, err)
 }
 
+// completarElementoPantalla marca como Hecho el elemento del formulario, con el mismo caso de uso
+// que el endpoint JSON de HU-10, y vuelve al detalle del sprint. Implementa HU-10 (CA-10.7).
+func (p *pantallas) completarElementoPantalla(w http.ResponseWriter, r *http.Request) {
+	id, ok := p.idDeRuta(w, r)
+	if !ok {
+		return
+	}
+	sprintID, err := sprintIDDesdeRuta(r)
+	if err != nil {
+		p.renderizar(w, http.StatusBadRequest, "error.html", datosError{err.Error()})
+		return
+	}
+	elementoID, err := elementoIDDeForm(r)
+	if err != nil {
+		p.mostrarSprintDetalle(w, r, id, sprintID, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	err = p.cu.CompletarHistoria.Ejecutar(r.Context(), app.DatosCompletar{ProyectoID: id, ElementoID: elementoID})
+	if err == nil {
+		redirigirAlDetalleDelSprint(w, r, id, sprintID)
+		return
+	}
+	// Se muestra el texto del error de dominio, no el envuelto por el caso de uso.
+	for _, noEncontrado := range []error{domain.ErrProyectoNoEncontrado, domain.ErrElementoNoEncontrado} {
+		if errors.Is(err, noEncontrado) {
+			p.renderizar(w, http.StatusNotFound, "error.html", datosError{noEncontrado.Error()})
+			return
+		}
+	}
+	if mensaje, ok := mensajeDeValidacion(err); ok {
+		p.mostrarSprintDetalle(w, r, id, sprintID, http.StatusBadRequest, mensaje)
+		return
+	}
+	p.fallaInterna(w, "completar un elemento del sprint", err)
+}
+
 // resultadoAsignacion redirige al detalle del sprint si la acción salió bien, o vuelve a
 // mostrarlo con el error.
 func (p *pantallas) resultadoAsignacion(w http.ResponseWriter, r *http.Request, id, sprintID int64, err error) {
@@ -128,9 +169,11 @@ func (p *pantallas) mostrarSprintDetalle(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	abierto := sprint.Estado == domain.SprintAbierto
 	var asignados, disponibles []vistaElementoBacklog
 	for _, e := range elementos {
-		v := vistaElementoBacklog{ID: e.ID, Titulo: e.Titulo}
+		v := vistaElementoBacklog{ID: e.ID, Titulo: e.Titulo, Estado: string(e.Estado),
+			PuedeCompletarse: abierto && e.Estado != domain.EstadoHecho}
 		switch {
 		case e.SprintID != nil && *e.SprintID == sprintID:
 			asignados = append(asignados, v)
