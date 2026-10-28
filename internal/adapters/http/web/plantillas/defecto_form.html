@@ -23,7 +23,8 @@
   <textarea id="descripcion" name="descripcion" rows="3" required>{{.Form.Descripcion}}</textarea>
 
   <label for="severidad">Severidad</label>
-  <select id="severidad" name="severidad">
+  <select id="severidad" name="severidad" required>
+    <option value="">Elegí una severidad</option>
     {{range .Severidades}}<option value="{{.}}"{{if eq (print .) $.Form.Severidad}} selected{{end}}>{{.}}</option>{{end}}
   </select>
 
