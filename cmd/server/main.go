@@ -50,6 +50,9 @@ func main() {
 		CrearSprint:   app.NuevoCrearSprint(repoProyectos, repoSprints),
 		ListarSprints: app.NuevoListarSprints(repoProyectos, repoSprints),
 		ListarBacklog: app.NuevoListarBacklog(repoProyectos, repoBacklog),
+		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-20, RN-20.5).
+		RegistrarDefecto: app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints,
+			persistencia.NuevoRepositorioDefectos(db), time.Now),
 	})
 
 	puerto := os.Getenv("PORT")

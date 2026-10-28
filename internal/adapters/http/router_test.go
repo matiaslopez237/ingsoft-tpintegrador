@@ -27,6 +27,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		EditarElementoBacklog:    &editorElementosFalso{},
 		EliminarElementoBacklog:  &eliminadorElementosFalso{},
 		ConsultarElementoBacklog: casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}).ConsultarElementoBacklog,
+		RegistrarDefecto:         &registradorDefectoFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -43,6 +44,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/sprints", `{"fecha_inicio":"2026-10-26","fecha_fin":"2026-10-27","objetivo":"x"}`},                   // HU-08
 		{http.MethodGet, "/proyectos/1/sprints", ""},                                                                                         // HU-08
 		{http.MethodGet, "/proyectos/1/backlog", ""},                                                                                         // HU-07
+		{http.MethodPost, "/proyectos/1/defectos", `{"elemento_id":1,"descripcion":"Falla el login","severidad":"Alta"}`},                    // HU-20
 		{http.MethodGet, "/", ""},                                    // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                       // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                  // HU-30
