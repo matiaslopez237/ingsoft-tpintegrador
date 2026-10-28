@@ -43,6 +43,7 @@ No hay cuerpo: el sprint es el que el elemento ya tiene asignado (`SprintID`, HU
 - Elemento sin sprint (nunca asignado o quitado con HU-09) → `ErrElementoSinSprint`.
 - Elemento que existe pero en otro proyecto → `ErrElementoNoEncontrado`.
 - El sprint se cierra entre la validación y el guardado → `ErrSprintCerrado`, el elemento no cambia (sección 5).
+- El elemento estaba en el sprint S y mientras tanto S se cerró y HU-09 lo movió a otro sprint T Abierto (o lo quitó de S y lo asignó a T) → `ErrElementoSinSprint`: el elemento ya no está en el sprint que se validó. No se completa en T, para no marcar como hecho trabajo en un sprint que el pedido no tenía en cuenta; al reintentar, el pedido ve el estado actual (P-9).
 
 ## 7. Condiciones de error
 | Situación | Error (Go) | Mensaje / comportamiento |
@@ -72,6 +73,7 @@ Confirmadas por Matías López (Agile Enabler) el 2026-10-27. Eze y Nico pueden 
 - **P-6:** ruta JSON `POST /proyectos/{id}/backlog/{elementoID}/completar` (`204`) y botón "Marcar como hecha" en el detalle del sprint con `POST /web/proyectos/{id}/sprints/{sprintID}/completar`.
 - **P-7:** pedidos simultáneos: la regla se verifica en el mismo `UPDATE` que guarda (sección 5).
 - **P-8:** elemento ya `Hecho` en un sprint Cerrado: se informa `ErrSprintCerrado` (RN-10.2 se valida antes que RN-10.3). La alternativa sería no dar error, por RN-10.3.
+- **P-9:** elemento movido a otro sprint durante el pedido: si el elemento estaba en el sprint S y mientras tanto S se cerró y HU-09 lo movió a otro sprint T Abierto (o lo quitó de S y lo asignó a T), se informa `ErrElementoSinSprint`, porque el elemento ya no está en el sprint que se validó. No se completa en T, para no marcar como hecho trabajo en un sprint que el pedido no tenía en cuenta; al reintentar, el pedido ve el estado actual (sección 6). Tomada por el autor (Lucas Orellana) el 2026-10-28; el equipo puede objetarla en la revisión del PR.
 
 ## Preguntas abiertas
 Ninguna.
@@ -79,3 +81,4 @@ Ninguna.
 ## Historial
 - 2026-10-26: creada (borrador), con las decisiones P-1 a P-8 pendientes de confirmar.
 - 2026-10-27: Decisiones P-1 a P-8 confirmadas; spec aprobada.
+- 2026-10-28: P-9 (elemento movido a otro sprint durante el pedido), tomada por el autor, abierta a objeción en el PR.
