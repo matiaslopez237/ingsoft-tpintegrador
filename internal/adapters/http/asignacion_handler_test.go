@@ -76,7 +76,7 @@ func TestPostAsignacion_NoEncontrado_Devuelve404(t *testing.T) {
 		err    error
 	}{
 		{"elemento inexistente", domain.ErrElementoNoEncontrado},
-		{"sprint inexistente", app.ErrSprintNoEncontrado},
+		{"sprint inexistente", domain.ErrSprintNoEncontrado},
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {

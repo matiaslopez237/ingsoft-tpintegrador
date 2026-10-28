@@ -2,22 +2,16 @@ package app
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// ErrSprintNoEncontrado: no existe un sprint con el ID buscado. Vive en este paquete, no en
-// domain, porque HU-08 todavía no está mergeada a main; cuando lo esté, el adaptador de
-// persistencia (Tarea 9.6) lo traduce a partir de lo que devuelva el repositorio real de sprints.
-var ErrSprintNoEncontrado = errors.New("sprint no encontrado")
-
 // RepositorioAsignacion es el puerto de persistencia que necesitan AsignarHistoria y DesasignarHistoria.
 type RepositorioAsignacion interface {
 	LectorElementos // BuscarElementoPorID (de HU-18): devuelve domain.ErrElementoNoEncontrado si no existe.
 	// BuscarSprint devuelve el proyecto al que pertenece el sprint y si está Abierto, sin depender
-	// de domain.Sprint (de HU-08). Devuelve ErrSprintNoEncontrado si no existe.
+	// de domain.Sprint (de HU-08). Devuelve domain.ErrSprintNoEncontrado si no existe.
 	BuscarSprint(ctx context.Context, id int64) (proyectoID int64, abierto bool, err error)
 	// GuardarAsignacion persiste el SprintID del elemento ya existente.
 	GuardarAsignacion(ctx context.Context, e *domain.ElementoBacklog) error

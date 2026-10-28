@@ -93,7 +93,7 @@ func (p *pantallas) resultadoAsignacion(w http.ResponseWriter, r *http.Request, 
 		redirigirAlDetalleDelSprint(w, r, id, sprintID)
 		return
 	}
-	if errors.Is(err, domain.ErrElementoNoEncontrado) || errors.Is(err, app.ErrSprintNoEncontrado) {
+	if errors.Is(err, domain.ErrElementoNoEncontrado) || errors.Is(err, domain.ErrSprintNoEncontrado) {
 		p.renderizar(w, http.StatusNotFound, "error.html", datosError{err.Error()})
 		return
 	}

@@ -49,7 +49,7 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 | Situación | Error (Go) | Mensaje / comportamiento |
 |---|---|---|
 | Elemento inexistente | `domain.ErrElementoNoEncontrado` (ya definido en HU-05, se reutiliza) | 404 |
-| Sprint inexistente | `ErrSprintNoEncontrado` (nuevo; puede coincidir con el de HU-08 si ya existe cuando se implemente la persistencia) | 404 |
+| Sprint inexistente | `domain.ErrSprintNoEncontrado` | 404 |
 | Sprint de otro proyecto | `ErrSprintDeOtroProyecto` | 400 |
 | Elemento ya asignado a otro sprint activo | `ErrElementoYaAsignado` | 400 |
 | Asignar a un sprint Cerrado | `ErrSprintCerrado` | 400 |

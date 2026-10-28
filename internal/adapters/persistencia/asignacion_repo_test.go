@@ -63,8 +63,8 @@ func TestRepositorioBacklog_BuscarSprint_Inexistente_RetornaError(t *testing.T) 
 
 	_, _, err := repo.BuscarSprint(context.Background(), 999)
 
-	if !errors.Is(err, app.ErrSprintNoEncontrado) {
-		t.Errorf("error = %v, se esperaba %v", err, app.ErrSprintNoEncontrado)
+	if !errors.Is(err, domain.ErrSprintNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrSprintNoEncontrado)
 	}
 }
 

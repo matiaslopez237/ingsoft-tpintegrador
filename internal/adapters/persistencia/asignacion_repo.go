@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
@@ -16,7 +15,7 @@ func (r *RepositorioBacklog) BuscarSprint(ctx context.Context, id int64) (proyec
 	var estado string
 	err = r.db.QueryRowContext(ctx, `SELECT proyecto_id, estado FROM sprints WHERE id = ?`, id).Scan(&proyectoID, &estado)
 	if errors.Is(err, sql.ErrNoRows) {
-		return 0, false, app.ErrSprintNoEncontrado
+		return 0, false, domain.ErrSprintNoEncontrado
 	}
 	if err != nil {
 		return 0, false, fmt.Errorf("buscar sprint %d: %w", id, err)

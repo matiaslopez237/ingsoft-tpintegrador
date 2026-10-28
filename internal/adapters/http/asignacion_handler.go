@@ -72,7 +72,7 @@ func handlerAsignarHistoria(uc agregadorAsignacion) http.HandlerFunc {
 
 		err = uc.Ejecutar(r.Context(), app.DatosAsignacion{ProyectoID: proyectoID, ElementoID: elementoID, SprintID: pedido.SprintID})
 		if err != nil {
-			if errors.Is(err, domain.ErrElementoNoEncontrado) || errors.Is(err, app.ErrSprintNoEncontrado) {
+			if errors.Is(err, domain.ErrElementoNoEncontrado) || errors.Is(err, domain.ErrSprintNoEncontrado) {
 				escribirJSON(w, http.StatusNotFound, respuestaError{err.Error()})
 				return
 			}

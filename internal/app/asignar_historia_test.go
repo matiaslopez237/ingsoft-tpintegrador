@@ -45,7 +45,7 @@ func (r *repoAsignacionFalso) BuscarSprint(_ context.Context, id int64) (proyect
 	}
 	s, ok := r.sprints[id]
 	if !ok {
-		return 0, false, ErrSprintNoEncontrado
+		return 0, false, domain.ErrSprintNoEncontrado
 	}
 	return s.proyectoID, s.abierto, nil
 }
@@ -181,8 +181,8 @@ func TestAsignarHistoria_SprintInexistente_RetornaError(t *testing.T) {
 
 	err := uc.Ejecutar(context.Background(), DatosAsignacion{ProyectoID: 100, ElementoID: 1, SprintID: 99})
 
-	if !errors.Is(err, ErrSprintNoEncontrado) {
-		t.Errorf("error = %v, se esperaba %v", err, ErrSprintNoEncontrado)
+	if !errors.Is(err, domain.ErrSprintNoEncontrado) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrSprintNoEncontrado)
 	}
 	if repo.vecesGuardo != 0 {
 		t.Errorf("no se esperaba ningún guardado, hubo %d", repo.vecesGuardo)
