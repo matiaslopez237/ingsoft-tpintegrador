@@ -350,7 +350,7 @@ func (s *sistemaCompletarEnMemoria) BuscarElementoPorID(_ context.Context, id in
 func (s *sistemaCompletarEnMemoria) BuscarSprint(_ context.Context, id int64) (int64, bool, error) {
 	sp, ok := s.sprints[id]
 	if !ok {
-		return 0, false, app.ErrSprintNoEncontrado
+		return 0, false, domain.ErrSprintNoEncontrado
 	}
 	return sp.proyectoID, sp.abierto, nil
 }
