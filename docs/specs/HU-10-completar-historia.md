@@ -44,6 +44,7 @@ No hay cuerpo: el sprint es el que el elemento ya tiene asignado (`SprintID`, HU
 - Elemento que existe pero en otro proyecto → `ErrElementoNoEncontrado`.
 - El sprint se cierra entre la validación y el guardado → `ErrSprintCerrado`, el elemento no cambia (sección 5).
 - El elemento estaba en el sprint S y mientras tanto S se cerró y HU-09 lo movió a otro sprint T Abierto (o lo quitó de S y lo asignó a T) → `ErrElementoSinSprint`: el elemento ya no está en el sprint que se validó. No se completa en T, para no marcar como hecho trabajo en un sprint que el pedido no tenía en cuenta; al reintentar, el pedido ve el estado actual (P-9).
+- Limitación conocida: la pantalla no verifica que el elemento esté en el sprint de la URL (igual que 'Quitar' de HU-09); no se puede provocar desde la interfaz, solo con un POST armado a mano. Se propone resolverlo para HU-09 y HU-10 juntas, fuera de esta historia.
 
 ## 7. Condiciones de error
 | Situación | Error (Go) | Mensaje / comportamiento |
@@ -84,3 +85,4 @@ Ninguna.
 - 2026-10-27: Decisiones P-1 a P-8 confirmadas; spec aprobada.
 - 2026-10-28: P-9 (elemento movido a otro sprint durante el pedido), tomada por el autor, abierta a objeción en el PR.
 - 2026-10-28: CA-10.7 (pantalla "Marcar como hecha" en el detalle del sprint, sección 5).
+- 2026-10-28: limitación conocida de la pantalla (no verifica el sprint de la URL), en la sección 6.
