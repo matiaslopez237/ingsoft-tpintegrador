@@ -25,6 +25,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		ListarBacklog:            &listadorBacklogFalso{},
 		AsignarHistoria:          &asignarHistoriaFalso{},
 		DesasignarHistoria:       &desasignarHistoriaFalso{},
+		CompletarHistoria:        &completarHistoriaFalso{},
 		ListarProyectos:          casosFalsos().ListarProyectos,
 		EditarElementoBacklog:    &editorElementosFalso{},
 		EliminarElementoBacklog:  &eliminadorElementosFalso{},
@@ -47,6 +48,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/proyectos/1/backlog", ""},                                                                                         // HU-07
 		{http.MethodPost, "/proyectos/1/backlog/1/sprint", `{"sprint_id":1}`},                                                                // HU-09
 		{http.MethodDelete, "/proyectos/1/backlog/1/sprint", ""},                                                                             // HU-09
+		{http.MethodPost, "/proyectos/1/backlog/1/completar", ""},                                                                            // HU-10
 		{http.MethodGet, "/", ""},                                    // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                       // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                  // HU-30
