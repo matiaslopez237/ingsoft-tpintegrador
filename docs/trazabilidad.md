@@ -18,6 +18,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
 | HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
+| HU-09 Asignar historias del backlog a un Sprint | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
 
 ---
 
@@ -717,6 +718,65 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 - La spec está en **Borrador** hasta la aprobación del PR.
 - RN-06.8 (Sprint activo) depende de HU-09.
 - La lista del backlog (HU-07) enlaza a la pantalla del elemento (Editar) y permite eliminar con confirmación.
+
+---
+
+## HU-09: Asignar historias del backlog a un Sprint
+
+- **Issue:** [#20](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/20) · Sprint 2 · 5 SP
+- **Spec:** [docs/specs/HU-09-asignar-historias-sprint.md](specs/HU-09-asignar-historias-sprint.md)
+- **Feature:** [features/HU-09-asignar-historias-sprint.feature](../features/HU-09-asignar-historias-sprint.feature) (steps en [test/bdd/hu09_steps_test.go](../test/bdd/hu09_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-09.1 Asignar a un sprint abierto | RN-09.1, RN-09.3 | Asignar un elemento sin sprint a un sprint abierto `@normal` · Reasignar un elemento al mismo sprint que ya tiene no es un error `@limite` | `TestElementoBacklog_AsignarASprint_SinSprintPrevio_Asigna`, `TestElementoBacklog_AsignarASprint_MismoSprintQueYaTiene_NoEsError`, `TestAsignarHistoria_DatosValidos_GuardaElSprintID`, `TestRepositorioBacklog_GuardarAsignacion_Asigna`, `TestPostAsignacion_DatosValidos_Devuelve204`, `TestPantallaSprintDetalle_Asignar_RedirigeAlDetalle` | `domain.ElementoBacklog.AsignarASprint`, `app.AsignarHistoria`, `http.handlerAsignarHistoria`, `http.pantallas.asignarElementoPantalla` |
+| CA-09.2 Ya asignado a otro sprint activo | RN-09.2 | No se puede asignar un elemento que ya está en otro sprint abierto `@error` | `TestElementoBacklog_AsignarASprint_YaAsignadoAOtroSprintActivo_RetornaError`, `TestAsignarHistoria_YaAsignadoAOtroSprintActivo_NoGuarda`, `TestPostAsignacion_DatosInvalidos_Devuelve400`, `TestAsignacion_DosAsignacionesSimultaneas_LaSegundaFalla` | `domain.ElementoBacklog.AsignarASprint`, `persistencia.RepositorioBacklog.GuardarAsignacion` (verificado en el propio `UPDATE`) |
+| CA-09.3 Reasignar desde un sprint ya cerrado | RN-09.2 | Se puede reasignar un elemento desde un sprint ya cerrado `@alternativo` | `TestElementoBacklog_AsignarASprint_SprintPrevioYaCerrado_Reasigna`, `TestAsignarHistoria_SprintPrevioCerrado_Reasigna`, `TestRepositorioBacklog_GuardarAsignacion_ReasignaDesdeSprintCerrado` | `domain.ElementoBacklog.AsignarASprint` |
+| CA-09.4 Desasignar de un sprint abierto | RN-09.4 | Desasignar un elemento de un sprint abierto `@normal` | `TestElementoBacklog_DesasignarDeSprint_SprintActivo_Desasigna`, `TestDesasignarHistoria_SprintActivo_Desasigna`, `TestRepositorioBacklog_GuardarAsignacion_Desasigna`, `TestPostAsignacion` (DELETE), `TestPantallaSprintDetalle_Quitar_RedirigeAlDetalle` | `domain.ElementoBacklog.DesasignarDeSprint`, `app.DesasignarHistoria` |
+| CA-09.5 No desasignar de un sprint cerrado | RN-09.4 | No se puede desasignar un elemento de un sprint ya cerrado `@error` | `TestElementoBacklog_DesasignarDeSprint_SprintYaCerrado_RetornaError`, `TestDesasignarHistoria_SprintCerrado_RetornaErrorYNoGuarda`, `TestRepositorioBacklog_GuardarAsignacion_DesasignarConSprintYaCerrado_Falla` | `domain.ElementoBacklog.DesasignarDeSprint`, `persistencia.RepositorioBacklog.GuardarAsignacion` (verificado en el propio `UPDATE`) |
+| CA-09.6 No desasignar sin sprint | — (error de dominio) | No se puede desasignar un elemento que no tiene sprint `@error` | `TestElementoBacklog_DesasignarDeSprint_SinSprintAsignado_RetornaError`, `TestDesasignarHistoria_SinSprintAsignado_RetornaError` | `domain.ElementoBacklog.DesasignarDeSprint` |
+| CA-09.7 Sprint de otro proyecto | RN-09.5 | No se puede asignar un elemento a un sprint de otro proyecto `@error` | `TestElementoBacklog_AsignarASprint_SprintDeOtroProyecto_RetornaError`, `TestAsignarHistoria_SprintDeOtroProyecto_NoGuarda` | `domain.ElementoBacklog.AsignarASprint` |
+| CA-09.8 No asignar a un sprint cerrado | RN-09.6 | No se puede asignar un elemento a un sprint ya cerrado `@error` | `TestElementoBacklog_AsignarASprint_SprintDestinoCerrado_RetornaError`, `TestAsignarHistoria_SprintDestinoCerrado_NoGuarda` | `domain.ElementoBacklog.AsignarASprint` |
+
+RN-09.7 (un elemento de otro proyecto se trata como inexistente, igual que RN-18.1) no tiene CA propio: lo verifican `TestAsignarHistoria_ElementoDeOtroProyecto_RetornaError` y `TestDesasignarHistoria_ElementoDeOtroProyecto_RetornaError`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog_asignacion.go](../internal/domain/backlog_asignacion.go) (+ campo `SprintID` en [backlog.go](../internal/domain/backlog.go)) | [backlog_asignacion_test.go](../internal/domain/backlog_asignacion_test.go) |
+| Caso de uso | [internal/app/asignar_historia.go](../internal/app/asignar_historia.go) | [asignar_historia_test.go](../internal/app/asignar_historia_test.go) |
+| Persistencia | [internal/adapters/persistencia/asignacion_repo.go](../internal/adapters/persistencia/asignacion_repo.go) (`BuscarSprint`, `GuardarAsignacion` atómico), [backlog_repo.go](../internal/adapters/persistencia/backlog_repo.go) (`BuscarElementoPorID`/`ListarElementos` leen `sprint_id`), [db.go](../internal/adapters/persistencia/db.go) (columna `sprint_id`, agregada con `ALTER TABLE` si falta) | [asignacion_repo_test.go](../internal/adapters/persistencia/asignacion_repo_test.go), [asignacion_concurrencia_test.go](../internal/adapters/persistencia/asignacion_concurrencia_test.go), [db_test.go](../internal/adapters/persistencia/db_test.go) |
+| HTTP | [internal/adapters/http/asignacion_handler.go](../internal/adapters/http/asignacion_handler.go) (`POST`/`DELETE /proyectos/{id}/backlog/{elementoID}/sprint`) | [asignacion_handler_test.go](../internal/adapters/http/asignacion_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_asignacion.go](../internal/adapters/http/pantallas_asignacion.go) (`/web/proyectos/{id}/sprints/{sprintID}`), [sprint_detalle.html](../internal/adapters/http/web/plantillas/sprint_detalle.html) | [pantallas_asignacion_test.go](../internal/adapters/http/pantallas_asignacion_test.go) |
+| BDD | [test/bdd/hu09_sistema_test.go](../test/bdd/hu09_sistema_test.go), [hu09_steps_test.go](../test/bdd/hu09_steps_test.go) | 8 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 9.1 Spec | `b02fcc1` docs(HU-09): [9.1] spec | — |
+| 9.2 Escenarios BDD | `cd2050f` test(HU-09): [9.2] escenarios BDD | — |
+| 9.3 Steps godog | `f4e7cc3` test(HU-09): [9.3] steps (en rojo) | BDD en rojo |
+| 9.4 Reglas de asignación | `ef3020e` [RED] → `22f7fb6` [GREEN] | **RED → GREEN** |
+| 9.5 Caso de uso | `4b858de` [RED] → `97a836c` [GREEN] → `d704371` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| 9.5 Elemento de otro proyecto (RN-09.7) | `1b754e4` [RED] → `d997df1` [GREEN] | **RED → GREEN** |
+| 9.6 Persistencia | `333d0d0` [RED] → `cf64285` [GREEN] | **RED → GREEN** |
+| 9.7 HTTP | `86ddb06` [RED] → `616de9b` [GREEN] | **RED → GREEN** |
+| 9.8 Pantalla | `7443720` [RED] → `bcce7ea` [GREEN] | **RED → GREEN** |
+| 9.8 Fix: ListarElementos no reflejaba el sprint (hallado al verificar la pantalla en el navegador) | `135f945` [RED] → `652c214` [GREEN] | **RED → GREEN** |
+| 9.7 Fix: `sprint_id` sin validar en el endpoint JSON (hallado por go-reviewer en 9.9) | `0e974fc` [RED] → `9d3e8c6` [GREEN] | **RED → GREEN** |
+| 9.9 Revisión (reviewer humano): migración rompía bases existentes | `fcdb07a` [RED] → `ed0597e` [GREEN] | **RED → GREEN** |
+| 9.9 Revisión (reviewer humano): asignaciones simultáneas se pisaban | `e628a16` [RED] → `d974b75` [GREEN] | **RED → GREEN** |
+| 9.9 Revisión + trazabilidad | este commit | — |
+
+### Huecos
+
+- La spec está en **Borrador**: pasa a Aprobada cuando se apruebe el PR.
+- La pantalla no permite "robarle" a un elemento su sprint activo desde la UI (solo lista elementos sin sprint asignado en el `<select>`); si ese otro sprint ya está Cerrado, sí se puede reasignar por la API aunque la pantalla no lo ofrezca todavía como atajo directo.
+- Hallazgo del go-reviewer que no se corrigió todavía y queda para hablar con el equipo: `RepositorioBacklog` (`asignacion_repo.go`) consulta la tabla `sprints` directamente en vez de delegar en `RepositorioSprints` (de HU-08), acoplando el repositorio de backlog a una tabla de otro agregado. Estaba justificado cuando se escribió (HU-08 todavía no estaba mergeada), pero ahora que ya está en `main` convendría refactorizarlo para no duplicar el acceso a `sprints` en dos repositorios.
 
 ---
 

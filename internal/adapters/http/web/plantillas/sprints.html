@@ -9,7 +9,7 @@
 <table>
   <caption class="oculto">Sprints del proyecto</caption>
   <thead>
-    <tr><th scope="col">N.º</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Sprint Goal</th><th scope="col">Estado</th></tr>
+    <tr><th scope="col">N.º</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Sprint Goal</th><th scope="col">Estado</th><th scope="col"><span class="oculto">Detalle</span></th></tr>
   </thead>
   <tbody>
     {{range .Sprints}}
@@ -19,6 +19,7 @@
       <td>{{.FechaFin}}</td>
       <td>{{.Objetivo}}</td>
       <td><span class="estado">{{.Estado}}</span></td>
+      <td><a href="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{.ID}}">Ver detalle</a></td>
     </tr>
     {{end}}
   </tbody>

@@ -27,6 +27,10 @@ func AbrirDB(ruta string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrar esquema: %w", err)
 	}
+	if err := migrarSprintID(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrar columna sprint_id: %w", err)
+	}
 
 	return db, nil
 }
@@ -112,5 +116,37 @@ CREATE TABLE IF NOT EXISTS sprints (
 	estado       TEXT    NOT NULL,
 	UNIQUE (proyecto_id, numero)
 );`)
+	return err
+}
+
+// migrarSprintID agrega la columna sprint_id a backlog_elementos si todavía no existe (HU-09:
+// NULL = sin asignar a un sprint). CREATE TABLE IF NOT EXISTS no modifica una tabla que ya existe,
+// así que una base creada antes de HU-09 se queda sin la columna; esto la agrega sin tocar los
+// datos. Es seguro llamarla en cada arranque: si la columna ya está, no hace nada.
+func migrarSprintID(db *sql.DB) error {
+	rows, err := db.Query(`PRAGMA table_info(backlog_elementos)`)
+	if err != nil {
+		return fmt.Errorf("consultar columnas de backlog_elementos: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var (
+			cid, notNull, pk int
+			nombre, tipo     string
+			valorPorOmision  sql.NullString
+		)
+		if err := rows.Scan(&cid, &nombre, &tipo, &notNull, &valorPorOmision, &pk); err != nil {
+			return fmt.Errorf("leer columna de backlog_elementos: %w", err)
+		}
+		if nombre == "sprint_id" {
+			return nil // ya está: nada que hacer
+		}
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("recorrer columnas de backlog_elementos: %w", err)
+	}
+
+	_, err = db.Exec(`ALTER TABLE backlog_elementos ADD COLUMN sprint_id INTEGER REFERENCES sprints (id)`)
 	return err
 }
