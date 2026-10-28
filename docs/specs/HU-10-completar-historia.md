@@ -62,6 +62,7 @@ Si hay varios errores, se informa el primero en el orden de la tabla. Los textos
 - **CA-10.4:** Dado un elemento asignado a un sprint Cerrado, cuando lo marco como completado, entonces obtengo `ErrSprintCerrado` y su estado no cambia. (RN-10.2)
 - **CA-10.5:** Dado un ID de proyecto o de elemento que no existe, o un elemento de otro proyecto, cuando lo marco como completado, entonces obtengo `ErrProyectoNoEncontrado` o `ErrElementoNoEncontrado`. (RN-10.4)
 - **CA-10.6:** Dado un pedido válido a `POST /proyectos/{id}/backlog/{elementoID}/completar`, entonces la respuesta es `204`; con proyecto o elemento inexistente, `404`; sin sprint o con el sprint Cerrado, `400`. (Sección 3)
+- **CA-10.7:** Dado el detalle de un sprint, entonces cada elemento asignado muestra su estado, y solo los que no están `Hecho` muestran el botón "Marcar como hecha" cuando el sprint está `Abierto`; al usarlo el elemento aparece `Hecho` y sin botón. Con el sprint `Cerrado` no hay botones. Si hay un error se muestra su mensaje. (RN-10.1, RN-10.2, sección 5)
 
 ## Decisiones tomadas
 Confirmadas por Matías López (Agile Enabler) el 2026-10-27. Eze y Nico pueden objetar en la revisión del PR.
@@ -82,3 +83,4 @@ Ninguna.
 - 2026-10-26: creada (borrador), con las decisiones P-1 a P-8 pendientes de confirmar.
 - 2026-10-27: Decisiones P-1 a P-8 confirmadas; spec aprobada.
 - 2026-10-28: P-9 (elemento movido a otro sprint durante el pedido), tomada por el autor, abierta a objeción en el PR.
+- 2026-10-28: CA-10.7 (pantalla "Marcar como hecha" en el detalle del sprint, sección 5).
