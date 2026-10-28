@@ -51,8 +51,8 @@ func (uc *CompletarHistoria) Ejecutar(ctx context.Context, d DatosCompletar) err
 	}
 
 	sprintAbierto, err := sprintDelElementoAbierto(ctx, uc.repo, e)
-	if err != nil {
-		return fmt.Errorf("buscar sprint %d: %w", *e.SprintID, err)
+	if err != nil { // el repositorio ya envuelve con el id del sprint ("buscar sprint N: ...")
+		return fmt.Errorf("sprint del elemento %d: %w", d.ElementoID, err)
 	}
 
 	if err := e.Completar(sprintAbierto); err != nil {
