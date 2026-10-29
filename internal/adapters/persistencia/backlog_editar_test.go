@@ -171,7 +171,7 @@ func asignarASprint(t *testing.T, repo *RepositorioBacklog, proyectoID, elemento
 	}
 }
 
-// Traza: HU-06 CA-06.11 (RN-06.8). La base también lo garantiza: si otro pedido asignó el
+// Traza: HU-06 CA-06.12 (RN-06.8). La base también lo garantiza: si otro pedido asignó el
 // elemento a un Sprint Abierto después de que el caso de uso lo verificara, no se borra.
 func TestRepositorioBacklog_EliminarElemento_EnSprintActivo(t *testing.T) {
 	ctx := context.Background()
@@ -187,7 +187,7 @@ func TestRepositorioBacklog_EliminarElemento_EnSprintActivo(t *testing.T) {
 	}
 }
 
-// Traza: HU-06 CA-06.11 (RN-06.8)
+// Traza: HU-06 CA-06.12 (RN-06.8)
 func TestRepositorioBacklog_EliminarElemento_EnSprintCerrado(t *testing.T) {
 	ctx := context.Background()
 	repo, ids := nuevoBacklogDePrueba(t, "Alfa")

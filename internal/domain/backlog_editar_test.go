@@ -131,7 +131,7 @@ func TestEditar_NoModificaElOriginal(t *testing.T) {
 	}
 }
 
-// Traza: HU-06 CA-06.11, RN-06.8
+// Traza: HU-06 CA-06.12, RN-06.8
 func TestValidarEliminacion(t *testing.T) {
 	sprint := int64(10)
 	tests := []struct {

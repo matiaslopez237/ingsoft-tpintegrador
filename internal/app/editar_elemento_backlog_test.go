@@ -259,7 +259,7 @@ func enSprint(e domain.ElementoBacklog, sprintID int64) domain.ElementoBacklog {
 	return e
 }
 
-// Traza: HU-06 CA-06.11 (RN-06.8). El Sprint activo se informa antes que el esfuerzo.
+// Traza: HU-06 CA-06.12 (RN-06.8). El Sprint activo se informa antes que el esfuerzo.
 func TestEliminarElemento_EnSprintActivo_NoLoElimina(t *testing.T) {
 	repo := nuevaEdicionFalsa(enSprint(elementoDePrueba(t, 7, 1, "Login"), 10))
 	repo.abiertos[10] = true
@@ -272,7 +272,7 @@ func TestEliminarElemento_EnSprintActivo_NoLoElimina(t *testing.T) {
 	}
 }
 
-// Traza: HU-06 CA-06.11 (RN-06.8)
+// Traza: HU-06 CA-06.12 (RN-06.8)
 func TestEliminarElemento_EnSprintCerrado_LoElimina(t *testing.T) {
 	repo := nuevaEdicionFalsa(enSprint(elementoDePrueba(t, 7, 1, "Login"), 10))
 

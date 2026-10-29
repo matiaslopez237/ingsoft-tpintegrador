@@ -113,20 +113,20 @@ Feature: Editar o eliminar un elemento del backlog
     Then se rechaza la eliminación del elemento con el error "elemento con esfuerzo"
     And el elemento "Login" sigue existiendo
 
-  @CA-06.11 @error
+  @CA-06.12 @error
   Scenario: No se elimina un elemento asignado a un Sprint activo
     Given el elemento "Login" está asignado a un Sprint abierto
     When elimino el elemento "Login"
     Then se rechaza la eliminación del elemento con el error "elemento en sprint activo"
     And el elemento "Login" sigue existiendo
 
-  @CA-06.11 @alternativo
+  @CA-06.12 @alternativo
   Scenario: Se elimina un elemento asignado a un Sprint cerrado
     Given el elemento "Login" está asignado a un Sprint cerrado
     When elimino el elemento "Login"
     Then el elemento "Login" ya no existe
 
-  @CA-06.11 @error
+  @CA-06.12 @error
   Scenario: La pantalla no elimina un elemento asignado a un Sprint activo
     Given el elemento "Login" está asignado a un Sprint abierto
     When desde la pantalla elimino el elemento "Login"

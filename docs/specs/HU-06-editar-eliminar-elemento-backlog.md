@@ -85,7 +85,7 @@ Si hay varios errores, se informa el primero en el orden de la tabla: primero se
 - **CA-06.8:** Dado un elemento sin esfuerzo, cuando lo elimino, entonces deja de existir junto con sus criterios. (RN-06.7)
 - **CA-06.9:** Dado un elemento con esfuerzo registrado, cuando lo elimino, entonces obtengo `ErrElementoConEsfuerzo` y el elemento sigue existiendo. (RN-06.7)
 - **CA-06.10:** Desde la pantalla del elemento puedo editarlo (se guardan solo los campos que cambié) y eliminarlo, y los errores se muestran en la misma pantalla. Si guardo sin cambiar nada, vuelvo al elemento sin mensaje de error, igual que en el formulario de proyecto (DEF-01). Desde la lista del backlog (HU-07) cada elemento tiene "Editar" y "Eliminar" (con confirmación), y al eliminar vuelvo a esa lista. (Restricciones)
-- **CA-06.11:** Dado un elemento asignado a un Sprint Abierto, cuando lo elimino, entonces obtengo `ErrElementoEnSprintActivo` y el elemento sigue existiendo; si su Sprint está Cerrado, se elimina. (RN-06.8)
+- **CA-06.12:** Dado un elemento asignado a un Sprint Abierto, cuando lo elimino, entonces obtengo `ErrElementoEnSprintActivo` y el elemento sigue existiendo; si su Sprint está Cerrado, se elimina. (RN-06.8; el número CA-06.11 lo usa DEF-02)
 
 ## Decisiones tomadas
 Definidas por Nicolás Andino al refinar la historia (2026-10-26):
@@ -103,4 +103,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 - 2026-10-26: guardar la pantalla sin cambios vuelve al elemento sin error, alineado con DEF-01 (la API sigue devolviendo `ErrSinCambios`).
 - 2026-10-26: integrada con la lista del backlog de HU-07: botones Editar y Eliminar en cada elemento, y al eliminar se vuelve a la lista. `ErrEstadoElementoInvalido` es el mismo de HU-07.
 - 2026-10-26: a partir de la revisión del PR #182, un POST a la pantalla sin los campos ocultos `original_*` envía todos los campos (como DEF-01), en lugar de compararlos contra valores vacíos.
-- 2026-10-28: implementada RN-06.8 (no eliminar un elemento en un Sprint activo) ahora que HU-09 está en `main`; nuevo error `ErrElementoEnSprintActivo` (409) y CA-06.11. La spec pasa a Aprobada (PR #182 mergeado).
+- 2026-10-28: implementada RN-06.8 (no eliminar un elemento en un Sprint activo) ahora que HU-09 está en `main`; nuevo error `ErrElementoEnSprintActivo` (409) y CA-06.12. La spec pasa a Aprobada (PR #182 mergeado).
