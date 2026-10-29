@@ -12,6 +12,7 @@ import (
 type edicionFalsa struct {
 	elementos     map[int64]domain.ElementoBacklog
 	conEsfuerzo   map[int64]bool
+	abiertos      map[int64]bool // ID del sprint → si está Abierto (HU-09)
 	actualizados  []domain.CambiosElemento
 	eliminados    []int64
 	errBuscar     error
@@ -19,10 +20,11 @@ type edicionFalsa struct {
 	errActualizar error
 	errEsfuerzo   error
 	errEliminar   error
+	errSprint     error
 }
 
 func nuevaEdicionFalsa(elementos ...domain.ElementoBacklog) *edicionFalsa {
-	f := &edicionFalsa{elementos: map[int64]domain.ElementoBacklog{}, conEsfuerzo: map[int64]bool{}}
+	f := &edicionFalsa{elementos: map[int64]domain.ElementoBacklog{}, conEsfuerzo: map[int64]bool{}, abiertos: map[int64]bool{}}
 	for _, e := range elementos {
 		f.elementos[e.ID] = e
 	}
@@ -63,6 +65,13 @@ func (f *edicionFalsa) ActualizarElemento(_ context.Context, e domain.ElementoBa
 
 func (f *edicionFalsa) TieneEsfuerzo(_ context.Context, id int64) (bool, error) {
 	return f.conEsfuerzo[id], f.errEsfuerzo
+}
+
+func (f *edicionFalsa) BuscarSprint(_ context.Context, id int64) (int64, bool, error) {
+	if f.errSprint != nil {
+		return 0, false, f.errSprint
+	}
+	return 1, f.abiertos[id], nil
 }
 
 func (f *edicionFalsa) EliminarElemento(_ context.Context, id int64) error {
@@ -231,15 +240,45 @@ func TestEliminarElemento_FallaDelRepositorio_SePropaga(t *testing.T) {
 	for nombre, preparar := range map[string]func(*edicionFalsa){
 		"al buscar":             func(f *edicionFalsa) { f.errBuscar = errBase },
 		"al verificar esfuerzo": func(f *edicionFalsa) { f.errEsfuerzo = errBase },
+		"al buscar el sprint":   func(f *edicionFalsa) { f.errSprint = errBase },
 		"al eliminar":           func(f *edicionFalsa) { f.errEliminar = errBase },
 	} {
 		t.Run(nombre, func(t *testing.T) {
-			repo := nuevaEdicionFalsa(elementoDePrueba(t, 7, 1, "Login"))
+			repo := nuevaEdicionFalsa(enSprint(elementoDePrueba(t, 7, 1, "Login"), 10))
 			preparar(repo)
 			err := NuevoEliminarElementoBacklog(repo).Ejecutar(context.Background(), DatosEliminarElemento{ProyectoID: 1, ElementoID: 7})
 			if !errors.Is(err, errBase) {
 				t.Errorf("error = %v, se esperaba que envuelva %v", err, errBase)
 			}
 		})
+	}
+}
+
+func enSprint(e domain.ElementoBacklog, sprintID int64) domain.ElementoBacklog {
+	e.SprintID = &sprintID
+	return e
+}
+
+// Traza: HU-06 CA-06.11 (RN-06.8). El Sprint activo se informa antes que el esfuerzo.
+func TestEliminarElemento_EnSprintActivo_NoLoElimina(t *testing.T) {
+	repo := nuevaEdicionFalsa(enSprint(elementoDePrueba(t, 7, 1, "Login"), 10))
+	repo.abiertos[10] = true
+	repo.conEsfuerzo[7] = true
+
+	err := NuevoEliminarElementoBacklog(repo).Ejecutar(context.Background(), DatosEliminarElemento{ProyectoID: 1, ElementoID: 7})
+
+	if !errors.Is(err, domain.ErrElementoEnSprintActivo) || len(repo.eliminados) != 0 {
+		t.Errorf("err = %v, eliminados = %v", err, repo.eliminados)
+	}
+}
+
+// Traza: HU-06 CA-06.11 (RN-06.8)
+func TestEliminarElemento_EnSprintCerrado_LoElimina(t *testing.T) {
+	repo := nuevaEdicionFalsa(enSprint(elementoDePrueba(t, 7, 1, "Login"), 10))
+
+	err := NuevoEliminarElementoBacklog(repo).Ejecutar(context.Background(), DatosEliminarElemento{ProyectoID: 1, ElementoID: 7})
+
+	if err != nil || len(repo.eliminados) != 1 {
+		t.Errorf("err = %v, eliminados = %v", err, repo.eliminados)
 	}
 }
