@@ -31,6 +31,10 @@ func AbrirDB(ruta string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrar columna sprint_id: %w", err)
 	}
+	if err := migrarPuntosDeSprint(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrar columnas de puntos de sprints: %w", err)
+	}
 
 	return db, nil
 }
@@ -106,14 +110,17 @@ CREATE TABLE IF NOT EXISTS registros_esfuerzo (
 
 -- HU-08. numero: 1, 2, 3… dentro de cada proyecto (RN-08.7); lo calcula el INSERT de GuardarSprint.
 -- Fechas AAAA-MM-DD: compararlas como texto respeta el orden de las fechas (RN-08.5).
+-- HU-11. puntos_*: el resumen que registra el cierre (RN-11.6); 0 mientras el sprint está Abierto.
 CREATE TABLE IF NOT EXISTS sprints (
-	id           INTEGER PRIMARY KEY AUTOINCREMENT,
-	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
-	numero       INTEGER NOT NULL,
-	fecha_inicio TEXT    NOT NULL,
-	fecha_fin    TEXT    NOT NULL,
-	objetivo     TEXT    NOT NULL,
-	estado       TEXT    NOT NULL,
+	id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id         INTEGER NOT NULL REFERENCES proyectos (id),
+	numero              INTEGER NOT NULL,
+	fecha_inicio        TEXT    NOT NULL,
+	fecha_fin           TEXT    NOT NULL,
+	objetivo            TEXT    NOT NULL,
+	estado              TEXT    NOT NULL,
+	puntos_planificados INTEGER NOT NULL DEFAULT 0,
+	puntos_completados  INTEGER NOT NULL DEFAULT 0,
 	UNIQUE (proyecto_id, numero)
 );`)
 	return err
@@ -124,12 +131,30 @@ CREATE TABLE IF NOT EXISTS sprints (
 // así que una base creada antes de HU-09 se queda sin la columna; esto la agrega sin tocar los
 // datos. Es seguro llamarla en cada arranque: si la columna ya está, no hace nada.
 func migrarSprintID(db *sql.DB) error {
-	rows, err := db.Query(`PRAGMA table_info(backlog_elementos)`)
-	if err != nil {
-		return fmt.Errorf("consultar columnas de backlog_elementos: %w", err)
-	}
-	defer rows.Close()
+	return agregarColumnas(db, "backlog_elementos", map[string]string{
+		"sprint_id": "INTEGER REFERENCES sprints (id)",
+	})
+}
 
+// migrarPuntosDeSprint agrega a sprints las columnas del resumen de cierre de HU-11 (RN-11.6) si
+// todavía no existen, por el mismo motivo que migrarSprintID. Los sprints que ya estaban quedan con
+// 0 puntos. Es seguro llamarla en cada arranque.
+func migrarPuntosDeSprint(db *sql.DB) error {
+	return agregarColumnas(db, "sprints", map[string]string{
+		"puntos_planificados": "INTEGER NOT NULL DEFAULT 0",
+		"puntos_completados":  "INTEGER NOT NULL DEFAULT 0",
+	})
+}
+
+// agregarColumnas agrega a la tabla las columnas que le falten, con su definición, sin tocar los
+// datos; las que ya están se dejan como están. tabla y las columnas son siempre constantes del
+// código, nunca datos externos: por eso es seguro concatenarlas (PRAGMA y ALTER TABLE no admiten "?").
+func agregarColumnas(db *sql.DB, tabla string, columnas map[string]string) error {
+	rows, err := db.Query(`PRAGMA table_info(` + tabla + `)`)
+	if err != nil {
+		return fmt.Errorf("consultar columnas de %s: %w", tabla, err)
+	}
+	existentes := map[string]bool{}
 	for rows.Next() {
 		var (
 			cid, notNull, pk int
@@ -137,16 +162,23 @@ func migrarSprintID(db *sql.DB) error {
 			valorPorOmision  sql.NullString
 		)
 		if err := rows.Scan(&cid, &nombre, &tipo, &notNull, &valorPorOmision, &pk); err != nil {
-			return fmt.Errorf("leer columna de backlog_elementos: %w", err)
+			rows.Close()
+			return fmt.Errorf("leer columna de %s: %w", tabla, err)
 		}
-		if nombre == "sprint_id" {
-			return nil // ya está: nada que hacer
-		}
+		existentes[nombre] = true
 	}
+	rows.Close()
 	if err := rows.Err(); err != nil {
-		return fmt.Errorf("recorrer columnas de backlog_elementos: %w", err)
+		return fmt.Errorf("recorrer columnas de %s: %w", tabla, err)
 	}
 
-	_, err = db.Exec(`ALTER TABLE backlog_elementos ADD COLUMN sprint_id INTEGER REFERENCES sprints (id)`)
-	return err
+	for columna, definicion := range columnas {
+		if existentes[columna] {
+			continue
+		}
+		if _, err := db.Exec(`ALTER TABLE ` + tabla + ` ADD COLUMN ` + columna + ` ` + definicion); err != nil {
+			return fmt.Errorf("agregar columna %s a %s: %w", columna, tabla, err)
+		}
+	}
+	return nil
 }

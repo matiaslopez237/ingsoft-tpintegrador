@@ -1,6 +1,7 @@
 package persistencia
 
 import (
+	"context"
 	"database/sql"
 	"path/filepath"
 	"testing"
@@ -22,6 +23,54 @@ func TestAbrirDB_BaseExistenteSinSprintID_AgregaLaColumna(t *testing.T) {
 
 	if !tieneColumna(t, db, "backlog_elementos", "sprint_id") {
 		t.Error("se esperaba que backlog_elementos tuviera la columna sprint_id después de migrar")
+	}
+}
+
+// Traza: HU-11 (spec, sección 5): una base con la tabla sprints de HU-08 recibe las columnas del
+// resumen de cierre, sin perder los sprints que ya tenía (quedan en 0 puntos).
+func TestAbrirDB_BaseExistenteSinPuntosDeSprint_AgregaLasColumnas(t *testing.T) {
+	ruta := filepath.Join(t.TempDir(), "vieja.db")
+	crearEsquemaSinSprintID(t, ruta)
+	vieja, err := sql.Open("sqlite", ruta)
+	if err != nil {
+		t.Fatalf("abrir base vieja: %v", err)
+	}
+	_, err = vieja.Exec(`
+CREATE TABLE sprints (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
+	numero       INTEGER NOT NULL,
+	fecha_inicio TEXT    NOT NULL,
+	fecha_fin    TEXT    NOT NULL,
+	objetivo     TEXT    NOT NULL,
+	estado       TEXT    NOT NULL,
+	UNIQUE (proyecto_id, numero)
+);
+INSERT INTO proyectos (nombre, nombre_clave, fecha_inicio, estado) VALUES ('Alfa', 'alfa', '2026-10-01', 'Activo');
+INSERT INTO sprints (proyecto_id, numero, fecha_inicio, fecha_fin, objetivo, estado)
+VALUES (1, 1, '2026-10-12', '2026-10-25', 'Viejo', 'Cerrado');`)
+	vieja.Close()
+	if err != nil {
+		t.Fatalf("crear sprints viejos: %v", err)
+	}
+
+	db, err := AbrirDB(ruta)
+	if err != nil {
+		t.Fatalf("abrir base vieja con la migración actual: %v", err)
+	}
+	defer db.Close()
+
+	for _, col := range []string{"puntos_planificados", "puntos_completados"} {
+		if !tieneColumna(t, db, "sprints", col) {
+			t.Errorf("se esperaba que sprints tuviera la columna %s después de migrar", col)
+		}
+	}
+	s, err := NuevoRepositorioSprints(db).BuscarSprintPorID(context.Background(), 1)
+	if err != nil {
+		t.Fatalf("leer el sprint viejo: %v", err)
+	}
+	if s.Objetivo != "Viejo" || s.PuntosPlanificados != 0 || s.PuntosCompletados != 0 {
+		t.Errorf("sprint viejo = %+v, se esperaba el mismo con 0 puntos", s)
 	}
 }
 

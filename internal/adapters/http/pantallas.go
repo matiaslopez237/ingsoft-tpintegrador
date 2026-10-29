@@ -66,6 +66,8 @@ var erroresDeValidacionPantallas = []error{
 	domain.ErrElementoYaAsignado,
 	domain.ErrSprintCerrado,
 	domain.ErrElementoSinSprint,
+	// HU-11: cerrar un sprint que ya estaba cerrado.
+	domain.ErrSprintYaCerrado,
 }
 
 // estadosProyecto son las opciones del formulario de edición (RN-01.7). Validarlas es tarea
@@ -176,6 +178,7 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/asignar", p.formulario(p.asignarElementoPantalla))     // HU-09
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/quitar", p.formulario(p.quitarElementoPantalla))       // HU-09
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/completar", p.formulario(p.completarElementoPantalla)) // HU-10
+	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/cerrar", p.formulario(p.cerrarSprintPantalla))         // HU-11
 	p.registrarPantallasElemento(mux)                                                                                  // HU-06
 }
 

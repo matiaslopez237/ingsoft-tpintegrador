@@ -62,8 +62,7 @@ func (r *RepositorioSprints) GuardarSprint(ctx context.Context, s *domain.Sprint
 // ListarSprints devuelve los sprints del proyecto ordenados por número (CA-08.9).
 func (r *RepositorioSprints) ListarSprints(ctx context.Context, proyectoID int64) ([]domain.Sprint, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, numero, fecha_inicio, fecha_fin, objetivo, estado
-		   FROM sprints WHERE proyecto_id = ? ORDER BY numero`, proyectoID)
+		`SELECT `+columnasSprint+` FROM sprints WHERE proyecto_id = ? ORDER BY numero`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar sprints del proyecto %d: %w", proyectoID, err)
 	}
@@ -71,24 +70,44 @@ func (r *RepositorioSprints) ListarSprints(ctx context.Context, proyectoID int64
 
 	var sprints []domain.Sprint
 	for rows.Next() {
-		var (
-			s                   = domain.Sprint{ProyectoID: proyectoID}
-			inicio, fin, estado string
-		)
-		if err := rows.Scan(&s.ID, &s.Numero, &inicio, &fin, &s.Objetivo, &estado); err != nil {
+		s, err := escanearSprint(rows)
+		if err != nil {
 			return nil, fmt.Errorf("leer sprint del proyecto %d: %w", proyectoID, err)
 		}
-		if s.FechaInicio, err = time.Parse(time.DateOnly, inicio); err != nil {
-			return nil, fmt.Errorf("fecha de inicio guardada inválida: %w", err)
-		}
-		if s.FechaFin, err = time.Parse(time.DateOnly, fin); err != nil {
-			return nil, fmt.Errorf("fecha de fin guardada inválida: %w", err)
-		}
-		s.Estado = domain.EstadoSprint(estado)
 		sprints = append(sprints, s)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, fmt.Errorf("recorrer sprints del proyecto %d: %w", proyectoID, err)
 	}
 	return sprints, nil
+}
+
+// columnasSprint son las columnas que lee escanearSprint, en su orden.
+const columnasSprint = `id, proyecto_id, numero, fecha_inicio, fecha_fin, objetivo, estado, puntos_planificados, puntos_completados`
+
+// filaSprint es lo que tienen en común *sql.Row y *sql.Rows para escanear una fila.
+type filaSprint interface {
+	Scan(dest ...any) error
+}
+
+// escanearSprint arma un domain.Sprint a partir de una fila con columnasSprint. Devuelve el error
+// de Scan sin envolver, así quien llama puede reconocer sql.ErrNoRows.
+func escanearSprint(f filaSprint) (domain.Sprint, error) {
+	var (
+		s                   domain.Sprint
+		inicio, fin, estado string
+	)
+	if err := f.Scan(&s.ID, &s.ProyectoID, &s.Numero, &inicio, &fin, &s.Objetivo, &estado,
+		&s.PuntosPlanificados, &s.PuntosCompletados); err != nil {
+		return domain.Sprint{}, err
+	}
+	var err error
+	if s.FechaInicio, err = time.Parse(time.DateOnly, inicio); err != nil {
+		return domain.Sprint{}, fmt.Errorf("fecha de inicio guardada inválida: %w", err)
+	}
+	if s.FechaFin, err = time.Parse(time.DateOnly, fin); err != nil {
+		return domain.Sprint{}, fmt.Errorf("fecha de fin guardada inválida: %w", err)
+	}
+	s.Estado = domain.EstadoSprint(estado)
+	return s, nil
 }
