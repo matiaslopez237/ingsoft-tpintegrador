@@ -12,6 +12,7 @@ import (
 type edicionFalsa struct {
 	elementos     map[int64]domain.ElementoBacklog
 	conEsfuerzo   map[int64]bool
+	conDefectos   map[int64]bool
 	actualizados  []domain.CambiosElemento
 	eliminados    []int64
 	errBuscar     error
@@ -22,7 +23,7 @@ type edicionFalsa struct {
 }
 
 func nuevaEdicionFalsa(elementos ...domain.ElementoBacklog) *edicionFalsa {
-	f := &edicionFalsa{elementos: map[int64]domain.ElementoBacklog{}, conEsfuerzo: map[int64]bool{}}
+	f := &edicionFalsa{elementos: map[int64]domain.ElementoBacklog{}, conEsfuerzo: map[int64]bool{}, conDefectos: map[int64]bool{}}
 	for _, e := range elementos {
 		f.elementos[e.ID] = e
 	}
@@ -63,6 +64,10 @@ func (f *edicionFalsa) ActualizarElemento(_ context.Context, e domain.ElementoBa
 
 func (f *edicionFalsa) TieneEsfuerzo(_ context.Context, id int64) (bool, error) {
 	return f.conEsfuerzo[id], f.errEsfuerzo
+}
+
+func (f *edicionFalsa) TieneDefectos(_ context.Context, id int64) (bool, error) {
+	return f.conDefectos[id], nil
 }
 
 func (f *edicionFalsa) EliminarElemento(_ context.Context, id int64) error {
@@ -203,6 +208,30 @@ func TestEliminarElemento_SinEsfuerzo_LoElimina(t *testing.T) {
 func TestEliminarElemento_ConEsfuerzo_NoLoElimina(t *testing.T) {
 	repo := nuevaEdicionFalsa(elementoDePrueba(t, 7, 1, "Login"))
 	repo.conEsfuerzo[7] = true
+
+	err := NuevoEliminarElementoBacklog(repo).Ejecutar(context.Background(), DatosEliminarElemento{ProyectoID: 1, ElementoID: 7})
+
+	if !errors.Is(err, domain.ErrElementoConEsfuerzo) || len(repo.eliminados) != 0 {
+		t.Errorf("err = %v, eliminados = %v", err, repo.eliminados)
+	}
+}
+
+// Traza: DEF-02, HU-06 CA-06.11 (RN-06.10)
+func TestEliminarElemento_ConDefectos_NoLoElimina(t *testing.T) {
+	repo := nuevaEdicionFalsa(elementoDePrueba(t, 7, 1, "Login"))
+	repo.conDefectos[7] = true
+
+	err := NuevoEliminarElementoBacklog(repo).Ejecutar(context.Background(), DatosEliminarElemento{ProyectoID: 1, ElementoID: 7})
+
+	if !errors.Is(err, domain.ErrElementoConDefectos) || len(repo.eliminados) != 0 {
+		t.Errorf("err = %v, eliminados = %v", err, repo.eliminados)
+	}
+}
+
+// Traza: DEF-02, HU-06 RN-06.10: con esfuerzo y defectos se informa primero el esfuerzo.
+func TestEliminarElemento_ConEsfuerzoYDefectos_InformaElEsfuerzo(t *testing.T) {
+	repo := nuevaEdicionFalsa(elementoDePrueba(t, 7, 1, "Login"))
+	repo.conEsfuerzo[7], repo.conDefectos[7] = true, true
 
 	err := NuevoEliminarElementoBacklog(repo).Ejecutar(context.Background(), DatosEliminarElemento{ProyectoID: 1, ElementoID: 7})
 
