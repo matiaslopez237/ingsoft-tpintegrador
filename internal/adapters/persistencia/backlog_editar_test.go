@@ -152,3 +152,32 @@ func TestRepositorioBacklog_ElementoConEsfuerzo(t *testing.T) {
 		t.Errorf("el elemento debería seguir existiendo: %v", err)
 	}
 }
+
+// Traza: DEF-02, HU-06 CA-06.11 (RN-06.10, garantizada también por la clave foránea de defectos).
+// Antes, la clave foránea de defectos se informaba como ErrElementoConEsfuerzo.
+func TestRepositorioBacklog_ElementoConDefectos(t *testing.T) {
+	ctx := context.Background()
+	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
+	e := guardarElemento(t, repo, ids[0], "Login")
+	if tiene, err := repo.TieneDefectos(ctx, e.ID); err != nil || tiene {
+		t.Fatalf("TieneDefectos antes de registrar = %v, %v", tiene, err)
+	}
+
+	d, err := domain.NuevoDefecto(ids[0], e.ID, "No carga", domain.SeveridadAlta)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := NuevoRepositorioDefectos(repo.db).GuardarDefecto(ctx, &d); err != nil {
+		t.Fatal(err)
+	}
+
+	if tiene, err := repo.TieneDefectos(ctx, e.ID); err != nil || !tiene {
+		t.Errorf("TieneDefectos = %v, %v; se esperaba true", tiene, err)
+	}
+	if err := repo.EliminarElemento(ctx, e.ID); !errors.Is(err, domain.ErrElementoConDefectos) {
+		t.Errorf("eliminar con defectos: error = %v, se esperaba %v", err, domain.ErrElementoConDefectos)
+	}
+	if _, err := repo.BuscarElementoPorID(ctx, e.ID); err != nil {
+		t.Errorf("el elemento debería seguir existiendo: %v", err)
+	}
+}

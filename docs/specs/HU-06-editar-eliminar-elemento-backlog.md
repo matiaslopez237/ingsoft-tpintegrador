@@ -38,12 +38,13 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 - **RN-06.5:** Al editar debe enviarse al menos un campo. Enviar un campo con el valor que ya tiene no es un error.
 - **RN-06.6:** El elemento tiene que pertenecer al proyecto indicado; un elemento de otro proyecto se trata como inexistente (igual que RN-18.1).
 - **RN-06.7:** No se puede eliminar un elemento que tiene esfuerzo registrado (HU-18): esas horas se conservan para las métricas.
+- **RN-06.10 (DEF-02):** No se puede eliminar un elemento que tiene defectos registrados (HU-20): el defecto se conserva para su seguimiento y las métricas de la Épica 6. Si el elemento tiene esfuerzo y defectos, se informa primero el esfuerzo (RN-06.7).
 - **RN-06.8 (pendiente de HU-09):** No se podrá eliminar un elemento que esté en un Sprint activo. Hoy los sprints no existen; la regla la implementa HU-09 (asignar historias a un sprint), que tiene que sumar la verificación al caso de uso `EliminarElementoBacklog`.
 - **RN-06.9:** El `ID` del elemento no cambia.
 
 ## 5. Restricciones
 - La validación de la edición vive en el dominio (`ElementoBacklog.Editar`) y reutiliza `NuevoElementoBacklog`, sin duplicar reglas.
-- La unicidad del título y la verificación de esfuerzo se resuelven en los casos de uso (`EditarElementoBacklog`, `EliminarElementoBacklog`) a través de puertos. La base también las garantiza: `UNIQUE (proyecto_id, titulo_clave)` y la clave foránea de `registros_esfuerzo`.
+- La unicidad del título y la verificación de esfuerzo se resuelven en los casos de uso (`EditarElementoBacklog`, `EliminarElementoBacklog`) a través de puertos. La base también las garantiza: `UNIQUE (proyecto_id, titulo_clave)` y las claves foráneas de `registros_esfuerzo` y `defectos`. Si otro pedido registra esfuerzo o un defecto entre la verificación y el borrado, la clave foránea lo impide y el repositorio vuelve a mirar cuál de los dos lo bloquea para devolver el error correcto.
 - **Pedidos simultáneos:** al guardar se actualizan solo los campos enviados (lección de DEF-01), así dos ediciones de campos distintos no se pisan. Los criterios, si se envían, se reemplazan en una transacción.
 - Persistencia en SQLite (ADR-0002), API con `net/http` (ADR-0001) y pantalla con `html/template` (ADR-0003). La pantalla también envía solo los campos que el usuario cambió.
 
@@ -56,6 +57,7 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 - Pedido sin campos → error.
 - Elemento de otro proyecto (por ruta) → no encontrado.
 - Eliminar un elemento con un registro de esfuerzo → error; sin esfuerzo → se elimina con sus criterios.
+- Eliminar un elemento con un defecto registrado (y sin esfuerzo) → error de defectos, no el de esfuerzo (DEF-02).
 - Eliminar dos veces el mismo elemento → la segunda da no encontrado.
 
 ## 7. Condiciones de error
@@ -67,6 +69,7 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 | Estado que no es Pendiente, En progreso ni Hecho | `domain.ErrEstadoElementoInvalido` (el mismo de HU-07) | 400 |
 | Otro elemento del proyecto ya tiene ese título | `domain.ErrTituloDuplicado` (HU-05) | 400 |
 | Eliminar un elemento con esfuerzo registrado | `ErrElementoConEsfuerzo` | 409 |
+| Eliminar un elemento con defectos registrados | `ErrElementoConDefectos` ("no se puede eliminar un elemento con defectos registrados") | 409 |
 | Cuerpo JSON mal formado, con campos desconocidos o `story_points` que no es un entero | — (adaptador) | 400. Es un error de formato: se informa antes de buscar el elemento, como las fechas mal formadas en HU-30. |
 
 Si hay varios errores, se informa el primero en el orden de la tabla: primero se busca el elemento, después el dominio valida los campos (en el orden de HU-05 y al final el estado) y por último se verifica el título duplicado.
@@ -81,6 +84,7 @@ Si hay varios errores, se informa el primero en el orden de la tabla: primero se
 - **CA-06.7:** Dado un elemento de otro proyecto o un ID inexistente, cuando lo edito o lo elimino, entonces obtengo `ErrElementoNoEncontrado`. (RN-06.6)
 - **CA-06.8:** Dado un elemento sin esfuerzo, cuando lo elimino, entonces deja de existir junto con sus criterios. (RN-06.7)
 - **CA-06.9:** Dado un elemento con esfuerzo registrado, cuando lo elimino, entonces obtengo `ErrElementoConEsfuerzo` y el elemento sigue existiendo. (RN-06.7)
+- **CA-06.11 (DEF-02):** Dado un elemento con un defecto registrado y sin esfuerzo, cuando lo elimino, entonces obtengo `ErrElementoConDefectos` y el elemento sigue existiendo. (RN-06.10)
 - **CA-06.10:** Desde la pantalla del elemento puedo editarlo (se guardan solo los campos que cambié) y eliminarlo, y los errores se muestran en la misma pantalla. Si guardo sin cambiar nada, vuelvo al elemento sin mensaje de error, igual que en el formulario de proyecto (DEF-01). Desde la lista del backlog (HU-07) cada elemento tiene "Editar" y "Eliminar" (con confirmación), y al eliminar vuelvo a esa lista. (Restricciones)
 
 ## Decisiones tomadas
@@ -99,3 +103,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 - 2026-10-26: guardar la pantalla sin cambios vuelve al elemento sin error, alineado con DEF-01 (la API sigue devolviendo `ErrSinCambios`).
 - 2026-10-26: integrada con la lista del backlog de HU-07: botones Editar y Eliminar en cada elemento, y al eliminar se vuelve a la lista. `ErrEstadoElementoInvalido` es el mismo de HU-07.
 - 2026-10-26: a partir de la revisión del PR #182, un POST a la pantalla sin los campos ocultos `original_*` envía todos los campos (como DEF-01), en lugar de compararlos contra valores vacíos.
+- 2026-10-29: DEF-02. Con HU-20, un elemento con defectos no se podía eliminar pero se informaba "con esfuerzo registrado". Matías López decidió que no se elimina y que tiene su propio error (RN-06.10, CA-06.11).

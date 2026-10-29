@@ -98,14 +98,14 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		// Se vuelve a la lista del backlog (HU-07), desde donde se elimina.
 		http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog", pid), http.StatusSeeOther)
-	case errors.Is(err, domain.ErrElementoConEsfuerzo):
+	case errors.Is(err, domain.ErrElementoConEsfuerzo), errors.Is(err, domain.ErrElementoConDefectos): // DEF-02
 		e, errConsulta := p.cu.ConsultarElementoBacklog.Ejecutar(r.Context(), pid, eid)
 		if errConsulta != nil {
 			p.errorDeElemento(w, errConsulta)
 			return
 		}
 		f := aFormElemento(e)
-		p.mostrarElemento(w, http.StatusConflict, pid, eid, f, f, domain.ErrElementoConEsfuerzo.Error())
+		p.mostrarElemento(w, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err))
 	default:
 		p.errorDeElemento(w, err)
 	}
@@ -227,4 +227,13 @@ func lineas(texto string) []string {
 		}
 	}
 	return resultado
+}
+
+// mensajeDeEliminacion devuelve el mensaje del dominio del error que impidió eliminar el elemento,
+// sin el texto con que lo envuelve el caso de uso.
+func mensajeDeEliminacion(err error) string {
+	if errors.Is(err, domain.ErrElementoConDefectos) {
+		return domain.ErrElementoConDefectos.Error()
+	}
+	return domain.ErrElementoConEsfuerzo.Error()
 }

@@ -151,6 +151,7 @@ func TestDeleteElemento(t *testing.T) {
 	}{
 		{"sin esfuerzo", nil, http.StatusNoContent},
 		{"con esfuerzo", domain.ErrElementoConEsfuerzo, http.StatusConflict},
+		{"con defectos (DEF-02)", domain.ErrElementoConDefectos, http.StatusConflict},
 		{"inexistente", domain.ErrElementoNoEncontrado, http.StatusNotFound},
 		{"falla interna", errors.New("disco lleno"), http.StatusInternalServerError},
 	}

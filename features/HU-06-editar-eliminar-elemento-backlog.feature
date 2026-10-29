@@ -113,6 +113,14 @@ Feature: Editar o eliminar un elemento del backlog
     Then se rechaza la eliminación del elemento con el error "elemento con esfuerzo"
     And el elemento "Login" sigue existiendo
 
+  # DEF-02: antes se rechazaba con el mensaje del esfuerzo, aunque el elemento no tuviera horas.
+  @CA-06.11 @DEF-02 @error
+  Scenario: No se elimina un elemento con un defecto registrado
+    Given se registró un defecto de severidad "Alta" en el elemento "Login"
+    When elimino el elemento "Login"
+    Then se rechaza la eliminación del elemento con el error "elemento con defectos"
+    And el elemento "Login" sigue existiendo
+
   @CA-06.10 @normal
   Scenario: Editar desde la pantalla guarda solo lo que cambió
     When desde la pantalla del elemento "Login" cambio "prioridad" a "Media"

@@ -21,7 +21,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-09 Asignar historias del backlog a un Sprint | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
 | HU-10 Marcar una historia como completada en el Sprint | ✓ (Aprobada; P-9 abierta a objeción en el PR) | 5/7 (CA-10.6 y CA-10.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 9/9 escenarios |
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
-| HU-20 Registrar un defecto | ✓ (Borrador; P-1 a P-3 pendientes de confirmar) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
+| HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 
 ---
 
@@ -684,6 +684,7 @@ Además: `TestPantallas_RechazaFormulariosDeOtroSitio` (403, CSRF), `TestPantall
 | CA-06.8 Eliminar sin esfuerzo | RN-06.7 | Eliminar un elemento sin esfuerzo `@normal` | `TestEliminarElemento_SinEsfuerzo_LoElimina`, `TestRepositorioBacklog_EliminarElemento_BorraElElementoYSusCriterios`, `TestDeleteElemento` | `app.EliminarElementoBacklog`, `persistencia.RepositorioBacklog.EliminarElemento` |
 | CA-06.9 Con esfuerzo no se elimina | RN-06.7 | No se elimina un elemento con esfuerzo registrado `@error` | `TestEliminarElemento_ConEsfuerzo_NoLoElimina`, `TestRepositorioBacklog_ElementoConEsfuerzo`, `TestDeleteElemento` (409) | `app.EliminarElementoBacklog`, clave foránea de `registros_esfuerzo` |
 | CA-06.10 Pantalla | Restricciones | Editar desde la pantalla guarda solo lo que cambió `@normal` · La pantalla muestra el error `@error` · Guardar sin cambios vuelve sin error `@alternativo` · Eliminar desde la pantalla `@normal` | `TestPantallaElemento_*` (9 tests), `TestPantallaBacklog_EnlazaAEditarYEliminarCadaElemento`, `TestConsultarElemento_DelProyecto` | `pantallas_elemento.go`, `web/plantillas/elemento.html`, botones en `web/plantillas/backlog.html` (HU-07), `app.ConsultarElementoBacklog` |
+| CA-06.11 Con defectos no se elimina (DEF-02) | RN-06.10 | No se elimina un elemento con un defecto registrado `@error` `@DEF-02` | `TestEliminarElemento_ConDefectos_NoLoElimina`, `TestEliminarElemento_ConEsfuerzoYDefectos_InformaElEsfuerzo`, `TestRepositorioBacklog_ElementoConDefectos`, `TestDeleteElemento` (con defectos), `TestPantallaElemento_Errores` (eliminar con defectos) | `domain.ErrElementoConDefectos`, `app.EliminarElementoBacklog.Ejecutar`, `persistencia.RepositorioBacklog.TieneDefectos`, `persistencia.RepositorioBacklog.errorDeEliminacion` |
 
 RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implementa HU-09 en `EliminarElementoBacklog`.
 
@@ -997,7 +998,7 @@ Sin CA propio en la spec:
 
 ### Huecos
 
-- La spec está en **Borrador**: queda pendiente de aprobación en el PR, igual que el resto de las historias. P-1 (si se puede registrar un defecto en un proyecto no Activo), P-2 (error propio `ErrDescripcionDefectoVacia` en vez de reutilizar el de HU-05) y P-3 (la ruta `POST /proyectos/{id}/defectos`) son decisiones tomadas al implementar, pendientes de confirmar con el equipo.
+- ~~La spec está en Borrador y P-1 a P-3 pendientes~~: resuelto el 2026-10-29, Matías López confirmó P-1 a P-3 y la spec quedó Aprobada.
 - El enlace "Registrar defecto" sale de la lista del backlog (HU-07); no hay todavía un enlace desde el detalle del elemento (HU-06), porque la pantalla de HU-20 elige el elemento de una lista, no parte de uno puntual.
 - Fuera de alcance (spec, sección 5): editar, eliminar, listar o cambiar el estado de un defecto; vincularlo manualmente a un Sprint distinto del detectado automáticamente.
 - Revisión con el agente `go-reviewer` (tarea 20.9): sin hallazgos bloqueantes. Encontró que el `<select>` de severidad de la pantalla no tenía una opción vacía por defecto ni `required` (a diferencia del de elemento); se corrigió en el mismo commit de esta revisión.
@@ -1009,3 +1010,4 @@ Sin CA propio en la spec:
 | Defecto | Historia | Issue | Escenario BDD | Tests Go | Corrección | Commits |
 |---|---|---|---|---|---|---|
 | DEF-01 El formulario de edición de proyecto pisa cambios simultáneos | HU-30 (RN-30.3, CA-30.5) | [#179](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/179) | Dos ediciones simultáneas de campos distintos no se pisan `@DEF-01` | `TestPantallas_EditarProyecto_FormularioLlevaLosValoresOriginales`, `TestPantallas_EditarProyecto_SoloEnviaLosCamposCambiados`, `TestPantallas_EditarProyecto_SinCambios_VuelveAlDetalleSinError` | `cambiosDeForm` y `leerOriginalProyecto` en [pantallas.go](../internal/adapters/http/pantallas.go); campos ocultos `original_*` en [proyecto_form.html](../internal/adapters/http/web/plantillas/proyecto_form.html) | `1bbf72a` [RED] → `49c6303` [GREEN] → `7af3f6e` (spec y trazabilidad); sin cambios vuelve al detalle: `4a95342` [RED] → `73439b0` [GREEN] → este commit |
+| DEF-02 Eliminar un elemento con defectos informaba "con esfuerzo registrado" | HU-06 (RN-06.10, CA-06.11), al integrarse con HU-20 | [#205](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/205) | No se elimina un elemento con un defecto registrado `@DEF-02` | `TestEliminarElemento_ConDefectos_NoLoElimina`, `TestEliminarElemento_ConEsfuerzoYDefectos_InformaElEsfuerzo`, `TestRepositorioBacklog_ElementoConDefectos`, `TestDeleteElemento`, `TestPantallaElemento_Errores` | `ErrElementoConDefectos` en [backlog_editar.go](../internal/domain/backlog_editar.go); `TieneDefectos` y `errorDeEliminacion` en [backlog_editar.go](../internal/adapters/persistencia/backlog_editar.go); verificación en [editar_elemento_backlog.go](../internal/app/editar_elemento_backlog.go); 409 en el endpoint JSON y en la pantalla | `3d84b17` (spec) → `84bfe20` [RED] → `c2bd622` [GREEN] → `28664a5` (BDD) → este commit |

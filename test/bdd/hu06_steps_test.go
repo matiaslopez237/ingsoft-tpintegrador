@@ -49,6 +49,8 @@ type sistemaEdicionBacklog interface {
 	// CrearElemento crea un elemento con descripción "Necesidad de prueba" y un criterio.
 	CrearElemento(proyectoID int64, titulo, prioridad string, storyPoints int) (int64, error)
 	RegistrarEsfuerzo(proyectoID, elementoID int64, integrante string, horas float64) error
+	// RegistrarDefecto registra un defecto en el elemento con el caso de uso de HU-20 (DEF-02).
+	RegistrarDefecto(proyectoID, elementoID int64, severidad string) error
 	// EditarElemento envía solo los campos indicados. story_points "null" quita la estimación;
 	// criterios va separado por ";" y vacío es una lista vacía.
 	EditarElemento(proyectoID, elementoID int64, campos map[string]string) error
@@ -106,6 +108,7 @@ func registrarStepsHU06(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto "([^"]*)" tiene en su backlog el elemento "([^"]*)" con prioridad "([^"]*)" y (\d+) story points$`, w.tieneEnSuBacklog)
 	ctx.Step(`^el elemento "([^"]*)" está en estado "([^"]*)"$`, w.elementoEstaEnEstado)
 	ctx.Step(`^"([^"]*)" registró (\d+) horas de esfuerzo en el elemento "([^"]*)"$`, w.registroEsfuerzo)
+	ctx.Step(`^se registró un defecto de severidad "([^"]*)" en el elemento "([^"]*)"$`, w.registroDefecto)
 
 	ctx.Step(`^edito el elemento "([^"]*)" cambiando "([^"]*)" a "([^"]*)"$`, w.editoCambiando)
 	ctx.Step(`^edito el elemento "([^"]*)" con:$`, w.editoCon)
@@ -183,6 +186,14 @@ func (w *edicionBacklogWorld) registroEsfuerzo(integrante string, horas int, tit
 		return err
 	}
 	return w.sistema.RegistrarEsfuerzo(pid, eid, integrante, float64(horas))
+}
+
+func (w *edicionBacklogWorld) registroDefecto(severidad, titulo string) error {
+	pid, eid, err := w.ids("", titulo)
+	if err != nil {
+		return err
+	}
+	return w.sistema.RegistrarDefecto(pid, eid, severidad)
 }
 
 // ids devuelve el proyecto indicado (o el del elemento si proyecto es "") y el ID del elemento.
