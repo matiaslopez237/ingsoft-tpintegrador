@@ -62,6 +62,66 @@ func TestPantallaSprints_Cerrar_RedirigeALaLista(t *testing.T) {
 	}
 }
 
+// cerrarSprintFunc adapta una función a la interfaz del caso de uso de HU-11.
+type cerrarSprintFunc func(context.Context, app.DatosCerrarSprint) error
+
+func (f cerrarSprintFunc) Ejecutar(ctx context.Context, d app.DatosCerrarSprint) error {
+	return f(ctx, d)
+}
+
+// Traza: HU-11 CA-11.5: después de cerrar desde la pantalla, la lista muestra el sprint Cerrado y
+// sin botón. El doble guarda los sprints y los cierra con domain.Sprint.Cerrar, así la lista que se
+// ve tras la redirección refleja el cierre, como con la base real.
+func TestPantallaSprints_Cerrar_DePuntaAPunta_QuedaCerradoYSinBoton(t *testing.T) {
+	guardados := []domain.Sprint{sprintDeAlfa}
+	cu := casosConSprints(nil, nil)
+	cu.ListarSprints = listarSprintsFunc(func(_ context.Context, id int64) ([]domain.Sprint, error) {
+		if id != alfa.ID {
+			return nil, domain.ErrProyectoNoEncontrado
+		}
+		return append([]domain.Sprint(nil), guardados...), nil
+	})
+	cu.CerrarSprint = cerrarSprintFunc(func(_ context.Context, d app.DatosCerrarSprint) error {
+		for i := range guardados {
+			if guardados[i].ID == d.SprintID && guardados[i].ProyectoID == d.ProyectoID {
+				return guardados[i].Cerrar()
+			}
+		}
+		return domain.ErrSprintNoEncontrado
+	})
+	mux := http.NewServeMux()
+	RegistrarPantallas(mux, cu)
+	pedir := func(metodo, ruta string) *httptest.ResponseRecorder {
+		req := httptest.NewRequest(metodo, ruta, strings.NewReader(""))
+		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		rec := httptest.NewRecorder()
+		mux.ServeHTTP(rec, req)
+		return rec
+	}
+	const lista, accion = "/web/proyectos/7/sprints", `action="/web/proyectos/7/sprints/1/cerrar"`
+
+	// Punto de partida: Abierto y con botón (si no, lo que sigue podría pasar sin probar nada).
+	antes := pedir(http.MethodGet, lista)
+	contiene(t, antes, "Abierto", accion)
+	if strings.Contains(antes.Body.String(), "Cerrado") {
+		t.Fatal("antes de cerrar, la lista ya muestra un sprint Cerrado")
+	}
+
+	post := pedir(http.MethodPost, rutaCerrarSprintWeb)
+	if post.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, se esperaba 303; cuerpo: %.400s", post.Code, post.Body)
+	}
+	despues := pedir(http.MethodGet, post.Header().Get("Location"))
+
+	if despues.Code != http.StatusOK {
+		t.Fatalf("status = %d al seguir la redirección, se esperaba 200", despues.Code)
+	}
+	contiene(t, despues, "Cerrado")
+	if cuerpo := despues.Body.String(); strings.Contains(cuerpo, accion) || strings.Contains(cuerpo, "Cerrar sprint") {
+		t.Errorf("el sprint cerrado sigue mostrando el botón \"Cerrar sprint\"; cuerpo: %.600s", cuerpo)
+	}
+}
+
 // Cerrar un sprint enviado desde otro sitio se rechaza (CSRF), sin llamar al caso de uso.
 func TestPantallaSprints_Cerrar_DesdeOtroSitio_SeRechaza(t *testing.T) {
 	tests := []struct{ encabezado, valor string }{
