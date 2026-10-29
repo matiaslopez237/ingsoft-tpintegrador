@@ -124,8 +124,23 @@ func (p pedidoEditarElemento) aCambios() (domain.CambiosElemento, error) {
 	return c, nil
 }
 
+// erroresConflictoEliminacion son los motivos por los que un elemento que existe no se puede
+// eliminar (HTTP 409), en el orden en que los informa el caso de uso: RN-06.8 y RN-06.7.
+var erroresConflictoEliminacion = []error{domain.ErrElementoEnSprintActivo, domain.ErrElementoConEsfuerzo}
+
+// conflictoAlEliminar devuelve el error de erroresConflictoEliminacion que envuelve err, si hay uno.
+func conflictoAlEliminar(err error) (error, bool) {
+	for _, c := range erroresConflictoEliminacion {
+		if errors.Is(err, c) {
+			return c, true
+		}
+	}
+	return nil, false
+}
+
 // handlerEliminarElemento atiende DELETE /proyectos/{id}/backlog/{elementoID}: 204 si se eliminó,
-// 404 si no existe en el proyecto, 409 si tiene esfuerzo registrado y 500 ante una falla interna.
+// 404 si no existe en el proyecto, 409 si está en un Sprint activo o tiene esfuerzo registrado y
+// 500 ante una falla interna.
 // Implementa HU-06 (expone EliminarElementoBacklog por HTTP).
 func handlerEliminarElemento(uc eliminadorElementos) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
@@ -135,13 +150,15 @@ func handlerEliminarElemento(uc eliminadorElementos) http.HandlerFunc {
 			return
 		}
 		err = uc.Ejecutar(r.Context(), app.DatosEliminarElemento{ProyectoID: proyectoID, ElementoID: elementoID})
+		if c, ok := conflictoAlEliminar(err); ok {
+			escribirJSON(w, http.StatusConflict, respuestaError{c.Error()})
+			return
+		}
 		switch {
 		case err == nil:
 			w.WriteHeader(http.StatusNoContent)
 		case errors.Is(err, domain.ErrElementoNoEncontrado):
 			escribirJSON(w, http.StatusNotFound, respuestaError{domain.ErrElementoNoEncontrado.Error()})
-		case errors.Is(err, domain.ErrElementoConEsfuerzo):
-			escribirJSON(w, http.StatusConflict, respuestaError{domain.ErrElementoConEsfuerzo.Error()})
 		default:
 			log.Printf("eliminar elemento %d del proyecto %d: %v", elementoID, proyectoID, err)
 			escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al eliminar el elemento"})

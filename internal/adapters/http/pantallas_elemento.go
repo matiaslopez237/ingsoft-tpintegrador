@@ -94,18 +94,19 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	err := p.cu.EliminarElementoBacklog.Ejecutar(r.Context(), app.DatosEliminarElemento{ProyectoID: pid, ElementoID: eid})
+	conflicto, esConflicto := conflictoAlEliminar(err)
 	switch {
 	case err == nil:
 		// Se vuelve a la lista del backlog (HU-07), desde donde se elimina.
 		http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/backlog", pid), http.StatusSeeOther)
-	case errors.Is(err, domain.ErrElementoConEsfuerzo):
+	case esConflicto: // RN-06.7 o RN-06.8: se muestra el elemento con el motivo
 		e, errConsulta := p.cu.ConsultarElementoBacklog.Ejecutar(r.Context(), pid, eid)
 		if errConsulta != nil {
 			p.errorDeElemento(w, errConsulta)
 			return
 		}
 		f := aFormElemento(e)
-		p.mostrarElemento(w, http.StatusConflict, pid, eid, f, f, domain.ErrElementoConEsfuerzo.Error())
+		p.mostrarElemento(w, http.StatusConflict, pid, eid, f, f, conflicto.Error())
 	default:
 		p.errorDeElemento(w, err)
 	}
