@@ -54,6 +54,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/static/estilos.css", ""},                  // HU-30
 		{http.MethodGet, "/web/proyectos/nuevo", ""},                 // HU-30
 		{http.MethodGet, "/web/proyectos/1/sprints", ""},             // HU-08
+		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},   // HU-11
 		{http.MethodGet, "/web/proyectos/1/backlog", ""},             // HU-07
 		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},           // HU-06
 		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},   // HU-06 (proyecto 1: el editor falso responde 404 para otros)
