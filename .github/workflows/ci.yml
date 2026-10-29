@@ -1,10 +1,17 @@
-name: CI
+name: CI/CD
 
+# Integración continua en cada PR a main y en cada push a main.
+# Despliegue continuo: solo en push a main y si el CI pasó (ver docs/adr/0004-ci-cd.md).
 on:
   pull_request:
     branches: [main]
   push:
     branches: [main]
+
+# Si llega un push nuevo a la misma rama, se cancela la corrida anterior (no hace falta terminarla).
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build-test:
@@ -17,7 +24,7 @@ jobs:
       - name: Configurar Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.24"
+          go-version-file: go.mod # la misma versión que usa el equipo, sin repetirla acá
 
       - name: Descargar dependencias
         run: go mod download
@@ -37,11 +44,57 @@ jobs:
             exit 1
           fi
 
-      - name: go test (unitarios + BDD)
-        run: go test ./... -v
-
-      - name: Cobertura
-        run: go test ./... -coverprofile=coverage.out
+      # Una sola corrida: tests unitarios + BDD, con el detector de carreras (-race) y la cobertura.
+      # -race verifica los tests de pedidos simultáneos (HU-02, HU-08 a HU-11); en Windows no corre.
+      - name: go test (unitarios + BDD, con -race y cobertura)
+        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       - name: Resumen de cobertura
-        run: go tool cover -func=coverage.out
+        run: |
+          go tool cover -html=coverage.out -o coverage.html
+          {
+            echo "## Cobertura total"
+            echo '```'
+            go tool cover -func=coverage.out | grep -E '^total:'
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # El reporte se guarda aunque el mínimo de abajo falle, para poder ver qué bajó.
+      - name: Guardar el reporte de cobertura
+        uses: actions/upload-artifact@v4
+        with:
+          name: cobertura
+          path: |
+            coverage.out
+            coverage.html
+
+      # Mínimo de cobertura total (80%, como pide la skill tdd-workflow). Al 29/10 está en 89,6%.
+      - name: Verificar la cobertura mínima
+        env:
+          MINIMO: "80"
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          echo "Cobertura total: ${total}% (mínimo: ${MINIMO}%)"
+          if awk -v t="$total" -v m="$MINIMO" 'BEGIN { exit !(t < m) }'; then
+            echo "::error::La cobertura total (${total}%) está por debajo del mínimo (${MINIMO}%)."
+            exit 1
+          fi
+
+  deploy:
+    name: Desplegar en Render
+    needs: build-test # solo si el CI pasó
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: render # queda registrado en la pestaña Deployments del repo
+    steps:
+      # El deploy hook es una URL secreta que da Render; se guarda en Settings → Secrets → Actions.
+      - name: Disparar el despliegue
+        env:
+          HOOK: ${{ secrets.RENDER_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$HOOK" ]; then
+            echo "::warning::Falta el secret RENDER_DEPLOY_HOOK_URL: no se desplegó."
+            exit 0
+          fi
+          curl --fail --silent --show-error -X POST "$HOOK" > /dev/null
+          echo "Despliegue pedido a Render." >> "$GITHUB_STEP_SUMMARY"
