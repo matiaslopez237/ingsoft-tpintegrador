@@ -17,6 +17,7 @@ type (
 		Numero                int
 		FechaInicio, FechaFin string
 		Objetivo, Estado      string
+		PuedeCerrarse         bool // muestra el botón "Cerrar sprint" (HU-11, CA-11.5)
 	}
 	formularioSprint struct {
 		FechaInicio, FechaFin, Objetivo string
@@ -69,6 +70,40 @@ func (p *pantallas) crearSprint(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/sprints", id), http.StatusSeeOther)
 }
 
+// cerrarSprintPantalla cierra el sprint con el caso de uso de HU-11 y vuelve a la pantalla de
+// sprints. Si ya estaba cerrado, la muestra con el error; si el proyecto o el sprint no existen,
+// muestra la página 404. Implementa HU-11 (CA-11.5).
+func (p *pantallas) cerrarSprintPantalla(w http.ResponseWriter, r *http.Request) {
+	id, ok := p.idDeRuta(w, r)
+	if !ok {
+		return
+	}
+	sprintID, err := sprintIDDesdeRuta(r)
+	if err != nil {
+		p.renderizar(w, http.StatusBadRequest, "error.html", datosError{err.Error()})
+		return
+	}
+
+	err = p.cu.CerrarSprint.Ejecutar(r.Context(), app.DatosCerrarSprint{ProyectoID: id, SprintID: sprintID})
+	if err != nil {
+		if errors.Is(err, domain.ErrProyectoNoEncontrado) {
+			p.errorDeConsulta(w, err)
+			return
+		}
+		if errors.Is(err, domain.ErrSprintNoEncontrado) {
+			p.renderizar(w, http.StatusNotFound, "error.html", datosError{domain.ErrSprintNoEncontrado.Error()})
+			return
+		}
+		if mensaje, ok := mensajeDeValidacion(err); ok {
+			p.mostrarSprints(w, r, id, http.StatusBadRequest, formularioSprint{}, mensaje)
+			return
+		}
+		p.fallaInterna(w, "cerrar sprint", err)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/web/proyectos/%d/sprints", id), http.StatusSeeOther)
+}
+
 // mostrarSprints renderiza la pantalla con el proyecto y sus sprints, el formulario y el error si lo hay.
 func (p *pantallas) mostrarSprints(w http.ResponseWriter, r *http.Request, id int64, status int, form formularioSprint, mensaje string) {
 	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), id)
@@ -84,12 +119,13 @@ func (p *pantallas) mostrarSprints(w http.ResponseWriter, r *http.Request, id in
 	vistas := make([]vistaSprint, len(sprints))
 	for i, s := range sprints {
 		vistas[i] = vistaSprint{
-			ID:          s.ID,
-			Numero:      s.Numero,
-			FechaInicio: s.FechaInicio.Format(time.DateOnly),
-			FechaFin:    s.FechaFin.Format(time.DateOnly),
-			Objetivo:    s.Objetivo,
-			Estado:      string(s.Estado),
+			ID:            s.ID,
+			Numero:        s.Numero,
+			FechaInicio:   s.FechaInicio.Format(time.DateOnly),
+			FechaFin:      s.FechaFin.Format(time.DateOnly),
+			Objetivo:      s.Objetivo,
+			Estado:        string(s.Estado),
+			PuedeCerrarse: s.PuedeCerrarse(),
 		}
 	}
 	p.renderizar(w, status, "sprints.html", datosSprints{

@@ -80,6 +80,12 @@ func NuevoSprint(p Proyecto, inicio, fin time.Time, objetivo string, existentes 
 	}, nil
 }
 
+// PuedeCerrarse indica si el sprint se puede cerrar: solo uno Abierto (RN-11.1). Lo usa la pantalla
+// de sprints para mostrar el botón "Cerrar sprint" sin repetir la regla. Implementa HU-11 (CA-11.5).
+func (s Sprint) PuedeCerrarse() bool {
+	return s.Estado == SprintAbierto
+}
+
 // Cerrar pasa el sprint de Abierto a Cerrado sin tocar sus demás datos. Si ya estaba Cerrado
 // devuelve ErrSprintYaCerrado y no lo modifica: un sprint cerrado no se reabre ni se vuelve a cerrar.
 // Implementa HU-11 (RN-11.1, RN-11.5).
