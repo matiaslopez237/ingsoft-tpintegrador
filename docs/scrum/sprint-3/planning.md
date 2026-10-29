@@ -10,19 +10,32 @@ El orden es la prioridad: si al final del sprint no se llega con todo, quedan af
 
 | # | Historia | Pts | Depende de | Responsable |
 |---|---|---|---|---|
-| 1 | HU-22 Story points planificados, completados y velocidad por sprint | 5 | HU-11 ✓ | |
-| 2 | HU-14 Registrar estimaciones individuales ocultas (Planning Poker) | 5 | HU-03 ✓, HU-05 ✓ | |
-| 3 | HU-15 Mostrar las estimaciones y detectar diferencias | 3 | HU-14 | |
-| 4 | HU-16 Repetir una ronda de votación | 2 | HU-15 | |
-| 5 | HU-17 Registrar la estimación acordada | 2 | HU-16 | |
-| 6 | HU-19 Comparar esfuerzo estimado contra real | 3 | HU-18 ✓ | |
-| 7 | HU-23 Horas estimadas, reales y desviación | 3 | HU-19 | |
-| 8 | HU-21 Actualizar el estado de un defecto | 2 | HU-20 ✓ | |
-| 9 | HU-12 Consultar sprints anteriores | 2 | HU-11 ✓ | |
-| 10 | HU-13 Escala de story points (Fibonacci) | 1 | HU-05 ✓, HU-06 ✓ | |
+| 1 | HU-22 Story points planificados, completados y velocidad por sprint | 5 | HU-11 ✓ | Eze |
+| 2 | HU-14 Registrar estimaciones individuales ocultas (Planning Poker) | 5 | HU-03 ✓, HU-05 ✓ | Nico |
+| 3 | HU-15 Mostrar las estimaciones y detectar diferencias | 3 | HU-14 | Nico |
+| 4 | HU-16 Repetir una ronda de votación | 2 | HU-15 | Matías |
+| 5 | HU-17 Registrar la estimación acordada | 2 | HU-16 | Matías |
+| 6 | HU-19 Comparar esfuerzo estimado contra real | 3 | HU-18 ✓ | Lucas |
+| 7 | HU-23 Horas estimadas, reales y desviación | 3 | HU-19 | Lucas |
+| 8 | HU-21 Actualizar el estado de un defecto | 2 | HU-20 ✓ | Eze |
+| 9 | HU-12 Consultar sprints anteriores | 2 | HU-11 ✓ | Matías |
+| 10 | HU-13 Escala de story points (Fibonacci) | 1 | HU-05 ✓, HU-06 ✓ | Nico |
 | | **Total** | **28** | | |
 
 Cada historia tiene sus tareas como sub-issues en GitHub, con el mismo formato que en el Sprint 2: spec, escenarios BDD, steps, TDD del dominio, TDD del caso de uso, persistencia, HTTP, pantalla, y revisión y trazabilidad.
+
+## Reparto
+
+Reparto acordado por el equipo en la planning, siguiendo lo que hizo cada uno en los sprints anteriores:
+
+| Responsable | Historias | Pts | Por qué |
+|---|---|---|---|
+| Nico | HU-14, HU-15, HU-13 | 9 | HU-14 y HU-15 son la base del Planning Poker; HU-13 toca la validación de story points de HU-05 y HU-06, que hizo él. |
+| Eze | HU-22, HU-21 | 7 | HU-21 sigue a su HU-20 (defectos); HU-22 usa los sprints de HU-09 y el resumen de HU-11. |
+| Lucas | HU-19, HU-23 | 6 | Las dos usan el esfuerzo de su HU-18. |
+| Matías | HU-12, HU-16, HU-17 | 6 | Arranca por HU-12, que no depende de nadie, y sigue con HU-16 y HU-17 cuando HU-14 y HU-15 estén en `main`. Tiene menos puntos porque también revisa los PR (Agile Enabler). |
+
+**Cada uno se asigna en GitHub sus historias y sus tareas** (Assignees → *assign yourself*), así queda registrado que las tomó él. En Scrum los Developers se organizan solos: el reparto no lo impone nadie.
 
 ## Cómo repartir
 
