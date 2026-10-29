@@ -1,0 +1,17 @@
+# Configuración de Render (Blueprint). Ver docs/adr/0004-ci-cd.md.
+services:
+  - type: web
+    name: ingsoft-tpintegrador
+    runtime: go
+    plan: free
+    branch: main
+    buildCommand: go build -o bin/server ./cmd/server
+    startCommand: ./bin/server
+    # Render da el puerto en PORT, que main.go ya lee.
+    healthCheckPath: /web/proyectos
+    # No despliega solo con cada push: lo dispara el pipeline de GitHub Actions cuando el CI pasó.
+    autoDeploy: false
+    envVars:
+      # En el plan free el disco se borra en cada despliegue: la base arranca vacía.
+      - key: DB_PATH
+        value: metrics.db

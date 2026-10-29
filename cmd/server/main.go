@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
@@ -73,8 +74,9 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	// Apagado ordenado con Ctrl+C: termina los pedidos en curso y deja correr el defer db.Close().
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	// Apagado ordenado con Ctrl+C o SIGTERM (la señal con que Render detiene el servidor en cada
+	// despliegue): termina los pedidos en curso y deja correr el defer db.Close().
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 	go func() {
 		<-ctx.Done()
