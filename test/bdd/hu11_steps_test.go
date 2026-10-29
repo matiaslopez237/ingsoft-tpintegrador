@@ -8,14 +8,12 @@ import (
 
 	"github.com/cucumber/godog"
 
-	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// hu11Sistema es la puerta de entrada de los escenarios de HU-11 al núcleo.
-// Por ahora la implementa hu11SistemaEnMemoria, con fakes; la implementación con SQLite se suma
-// junto con la persistencia de HU-11. Todos los identificadores de paquete llevan el prefijo hu11
-// para no chocar con los de HU-09 y HU-10 al mergear.
+// hu11Sistema es la puerta de entrada de los escenarios de HU-11 al núcleo. La implementa
+// hu11SistemaReal, sobre SQLite (hu11_sistema_test.go). Todos los identificadores de paquete llevan
+// el prefijo hu11 para no chocar con los de HU-09 y HU-10 al mergear.
 type hu11Sistema interface {
 	CrearProyecto(nombre string) (int64, error)
 	// FijarEstadoProyecto deja un proyecto preparado en otro estado, sin pasar por HU-02.
@@ -49,8 +47,13 @@ type hu11World struct {
 func registrarStepsHU11(ctx *godog.ScenarioContext) {
 	w := &hu11World{}
 	ctx.Before(func(c context.Context, _ *godog.Scenario) (context.Context, error) {
+		*w = hu11World{} // si falla la base, el After no cierra el sistema del escenario anterior
+		sistema, err := hu11NuevoSistema()
+		if err != nil {
+			return c, err
+		}
 		*w = hu11World{
-			sistema:    hu11NuevoSistemaEnMemoria(),
+			sistema:    sistema,
 			proyectos:  map[string]int64{},
 			sprints:    map[string]int64{},
 			preparados: map[string]domain.Sprint{},
@@ -58,6 +61,9 @@ func registrarStepsHU11(ctx *godog.ScenarioContext) {
 		return c, nil
 	})
 	ctx.After(func(c context.Context, _ *godog.Scenario, _ error) (context.Context, error) {
+		if w.sistema == nil {
+			return c, nil
+		}
 		return c, w.sistema.Cerrar()
 	})
 
@@ -272,100 +278,4 @@ func (w *hu11World) idProyecto(nombre string) (int64, error) {
 		return 0, fmt.Errorf("el proyecto %q no se preparó en el escenario", nombre)
 	}
 	return id, nil
-}
-
-// --- Sistema en memoria ---
-
-// hu11SistemaEnMemoria conecta los escenarios al caso de uso CerrarSprint con fakes en memoria.
-// El mismo struct hace de app.LectorProyectos y de app.RepositorioCierre (spec, sección 5).
-type hu11SistemaEnMemoria struct {
-	cerrar    *app.CerrarSprint
-	proyectos map[int64]domain.Proyecto
-	sprints   map[int64]domain.Sprint
-	siguiente int64
-}
-
-func hu11NuevoSistemaEnMemoria() *hu11SistemaEnMemoria {
-	s := &hu11SistemaEnMemoria{
-		proyectos: map[int64]domain.Proyecto{},
-		sprints:   map[int64]domain.Sprint{},
-	}
-	s.cerrar = app.NuevoCerrarSprint(s, s)
-	return s
-}
-
-// nuevoID comparte la numeración entre proyectos y sprints, así un ID de un tipo nunca coincide
-// por casualidad con uno del otro.
-func (s *hu11SistemaEnMemoria) nuevoID() int64 {
-	s.siguiente++
-	return s.siguiente
-}
-
-func (s *hu11SistemaEnMemoria) CrearProyecto(nombre string) (int64, error) {
-	id := s.nuevoID()
-	s.proyectos[id] = domain.Proyecto{ID: id, Nombre: nombre, Estado: domain.EstadoActivo}
-	return id, nil
-}
-
-func (s *hu11SistemaEnMemoria) FijarEstadoProyecto(proyectoID int64, estado domain.Estado) error {
-	p, ok := s.proyectos[proyectoID]
-	if !ok {
-		return domain.ErrProyectoNoEncontrado
-	}
-	p.Estado = estado
-	s.proyectos[proyectoID] = p
-	return nil
-}
-
-func (s *hu11SistemaEnMemoria) CrearSprint(proyectoID int64, numero int, inicio, fin time.Time, estado domain.EstadoSprint) (int64, error) {
-	id := s.nuevoID()
-	s.sprints[id] = domain.Sprint{
-		ID: id, ProyectoID: proyectoID, Numero: numero, FechaInicio: inicio, FechaFin: fin,
-		Objetivo: fmt.Sprintf("Objetivo del sprint %d", numero), Estado: estado,
-	}
-	return id, nil
-}
-
-func (s *hu11SistemaEnMemoria) EjecutarCierre(proyectoID, sprintID int64) error {
-	return s.cerrar.Ejecutar(context.Background(), app.DatosCerrarSprint{ProyectoID: proyectoID, SprintID: sprintID})
-}
-
-func (s *hu11SistemaEnMemoria) Sprint(sprintID int64) (domain.Sprint, error) {
-	return s.BuscarSprintPorID(context.Background(), sprintID)
-}
-
-func (s *hu11SistemaEnMemoria) Cerrar() error { return nil }
-
-// BuscarPorID implementa app.LectorProyectos.
-func (s *hu11SistemaEnMemoria) BuscarPorID(_ context.Context, id int64) (domain.Proyecto, error) {
-	p, ok := s.proyectos[id]
-	if !ok {
-		return domain.Proyecto{}, domain.ErrProyectoNoEncontrado
-	}
-	return p, nil
-}
-
-// BuscarSprintPorID implementa app.RepositorioCierre. Devuelve una copia: el caso de uso no puede
-// cambiar el sprint guardado sin pasar por CerrarSprint.
-func (s *hu11SistemaEnMemoria) BuscarSprintPorID(_ context.Context, id int64) (domain.Sprint, error) {
-	sp, ok := s.sprints[id]
-	if !ok {
-		return domain.Sprint{}, domain.ErrSprintNoEncontrado
-	}
-	return sp, nil
-}
-
-// CerrarSprint implementa app.RepositorioCierre: guarda el estado solo si el sprint guardado sigue
-// Abierto, como el UPDATE ... WHERE estado = 'Abierto' del adaptador SQLite (spec, sección 5).
-func (s *hu11SistemaEnMemoria) CerrarSprint(_ context.Context, sp *domain.Sprint) error {
-	guardado, ok := s.sprints[sp.ID]
-	if !ok {
-		return domain.ErrSprintNoEncontrado
-	}
-	if guardado.Estado != domain.SprintAbierto {
-		return domain.ErrSprintYaCerrado
-	}
-	guardado.Estado = sp.Estado
-	s.sprints[sp.ID] = guardado
-	return nil
 }
