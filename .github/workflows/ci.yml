@@ -68,7 +68,7 @@ jobs:
             coverage.out
             coverage.html
 
-      # Mínimo de cobertura total (80%, como pide la skill tdd-workflow). Al 29/10 está en 88%.
+      # Mínimo de cobertura total (80%, como pide la skill tdd-workflow). Al 29/10 está en 89,6%.
       - name: Verificar la cobertura mínima
         env:
           MINIMO: "80"
