@@ -13,6 +13,7 @@ import (
 // Datos de la pantalla de sprints (HU-08): solo texto ya formateado, sin lógica de negocio.
 type (
 	vistaSprint struct {
+		ID                    int64
 		Numero                int
 		FechaInicio, FechaFin string
 		Objetivo, Estado      string
@@ -83,6 +84,7 @@ func (p *pantallas) mostrarSprints(w http.ResponseWriter, r *http.Request, id in
 	vistas := make([]vistaSprint, len(sprints))
 	for i, s := range sprints {
 		vistas[i] = vistaSprint{
+			ID:          s.ID,
 			Numero:      s.Numero,
 			FechaInicio: s.FechaInicio.Format(time.DateOnly),
 			FechaFin:    s.FechaFin.Format(time.DateOnly),

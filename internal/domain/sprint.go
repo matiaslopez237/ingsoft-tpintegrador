@@ -26,6 +26,9 @@ var (
 	ErrObjetivoDemasiadoLargo = errors.New("el Sprint Goal no puede superar los 200 caracteres")
 	ErrSprintFueraDelProyecto = errors.New("las fechas del sprint tienen que estar dentro de las del proyecto")
 	ErrSprintSuperpuesto      = errors.New("las fechas se superponen con otro sprint del proyecto")
+	// ErrSprintNoEncontrado: no existe un sprint con el ID buscado. No es una regla de HU-08, pero
+	// vive acá por ser del mismo agregado; la usa HU-09 al buscar el sprint destino de una asignación.
+	ErrSprintNoEncontrado = errors.New("sprint no encontrado")
 )
 
 // ErrSprintYaCerrado es el error de HU-11 al cerrar un sprint que ya estaba Cerrado (RN-11.1).

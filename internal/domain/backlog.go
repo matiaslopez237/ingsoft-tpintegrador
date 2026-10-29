@@ -52,6 +52,7 @@ type ElementoBacklog struct {
 	Estado      EstadoElemento
 	StoryPoints *int // nil: todavía sin estimar (RN-05.6)
 	Criterios   []string
+	SprintID    *int64 // nil: sin asignar a un sprint todavía (HU-09)
 }
 
 // NuevoElementoBacklog valida los datos y devuelve un elemento en estado Pendiente, todavía sin ID.

@@ -1,0 +1,54 @@
+{{define "titulo"}}Sprint {{.Sprint.Numero}} de {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Sprint {{.Sprint.Numero}} de {{.Proyecto.Nombre}}</h1>
+  <a href="/web/proyectos/{{.Proyecto.ID}}/sprints">Volver a sprints</a>
+</div>
+<dl class="datos">
+  <dt>Sprint Goal</dt><dd>{{.Sprint.Objetivo}}</dd>
+  <dt>Inicio</dt><dd>{{.Sprint.FechaInicio}}</dd>
+  <dt>Fin</dt><dd>{{.Sprint.FechaFin}}</dd>
+  <dt>Estado</dt><dd><span class="estado">{{.Sprint.Estado}}</span></dd>
+</dl>
+
+<section aria-labelledby="titulo-asignados">
+  <h2 id="titulo-asignados">Elementos del Sprint Backlog</h2>
+  {{template "error_form" .Error}}
+  {{if .Asignados}}
+  <table>
+    <caption class="oculto">Elementos asignados a este sprint</caption>
+    <thead>
+      <tr><th scope="col">Título</th><th scope="col"><span class="oculto">Quitar</span></th></tr>
+    </thead>
+    <tbody>
+      {{range .Asignados}}
+      <tr>
+        <td>{{.Titulo}}</td>
+        <td>
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{$.Sprint.ID}}/quitar" class="en-linea">
+            <input type="hidden" name="elemento_id" value="{{.ID}}">
+            <button type="submit" class="peligro" aria-label="Quitar {{.Titulo}} del sprint">Quitar</button>
+          </form>
+        </td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="vacio">Este sprint todavía no tiene elementos asignados.</p>
+  {{end}}
+
+  <h3>Sumar un elemento</h3>
+  {{if .Disponibles}}
+  <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.ID}}/asignar" class="formulario en-linea">
+    <label for="elemento_id">Elemento del backlog</label>
+    <select id="elemento_id" name="elemento_id" required>
+      {{range .Disponibles}}<option value="{{.ID}}">{{.Titulo}}</option>{{end}}
+    </select>
+    <button type="submit" class="boton">Asignar</button>
+  </form>
+  {{else}}
+  <p class="vacio">No hay elementos del backlog sin sprint asignado.</p>
+  {{end}}
+</section>
+{{end}}
