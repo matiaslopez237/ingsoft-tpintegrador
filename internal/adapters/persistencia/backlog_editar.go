@@ -99,10 +99,16 @@ func (r *RepositorioBacklog) TieneEsfuerzo(ctx context.Context, elementoID int64
 
 // EliminarElemento borra el elemento; sus criterios se borran con él (ON DELETE CASCADE). Si
 // tiene esfuerzo registrado, la clave foránea de registros_esfuerzo lo impide y se devuelve
-// domain.ErrElementoConEsfuerzo; si no existe, domain.ErrElementoNoEncontrado.
-// Implementa HU-06 (app.RepositorioEliminacionBacklog, RN-06.7).
+// domain.ErrElementoConEsfuerzo. Si está asignado a un Sprint Abierto, el propio DELETE no lo
+// borra y se devuelve domain.ErrElementoEnSprintActivo: así una asignación hecha por otro pedido
+// después de la verificación del caso de uso tampoco se pierde (como el UPDATE de HU-09). Si no
+// existe, domain.ErrElementoNoEncontrado.
+// Implementa HU-06 (app.RepositorioEliminacionBacklog, RN-06.7, RN-06.8).
 func (r *RepositorioBacklog) EliminarElemento(ctx context.Context, elementoID int64) error {
-	res, err := r.db.ExecContext(ctx, `DELETE FROM backlog_elementos WHERE id = ?`, elementoID)
+	res, err := r.db.ExecContext(ctx,
+		`DELETE FROM backlog_elementos WHERE id = ?
+		   AND (sprint_id IS NULL OR sprint_id NOT IN (SELECT id FROM sprints WHERE estado = ?))`,
+		elementoID, string(domain.SprintAbierto))
 	if esForeignKey(err) {
 		return domain.ErrElementoConEsfuerzo
 	}
@@ -114,7 +120,11 @@ func (r *RepositorioBacklog) EliminarElemento(ctx context.Context, elementoID in
 		return fmt.Errorf("verificar eliminación del elemento %d: %w", elementoID, err)
 	}
 	if n == 0 {
-		return domain.ErrElementoNoEncontrado
+		// No se borró: o no existe, o quedó en un Sprint Abierto.
+		if _, err := r.BuscarElementoPorID(ctx, elementoID); err != nil {
+			return err
+		}
+		return domain.ErrElementoEnSprintActivo
 	}
 	return nil
 }
