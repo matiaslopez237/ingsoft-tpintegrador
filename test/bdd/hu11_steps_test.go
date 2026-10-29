@@ -16,11 +16,16 @@ import (
 // el prefijo hu11 para no chocar con los de HU-09 y HU-10 al mergear.
 type hu11Sistema interface {
 	CrearProyecto(nombre string) (int64, error)
-	// FijarEstadoProyecto deja un proyecto preparado en otro estado, sin pasar por HU-02.
+	// FijarEstadoProyecto deja un proyecto preparado en otro estado (con HU-02).
 	FijarEstadoProyecto(proyectoID int64, estado domain.Estado) error
 	// CrearSprint prepara un sprint con su número, fechas y estado, sin pasar por HU-08: es
 	// preparación del escenario.
 	CrearSprint(proyectoID int64, numero int, inicio, fin time.Time, estado domain.EstadoSprint) (int64, error)
+	// CrearHistoriaAsignada prepara una historia sin terminar del proyecto, asignada al sprint
+	// (HU-05 y HU-09). Es para CA-11.6.
+	CrearHistoriaAsignada(proyectoID, sprintID int64, titulo string) (int64, error)
+	// SprintDeHistoria devuelve el sprint al que está asignada la historia, si tiene.
+	SprintDeHistoria(historiaID int64) (sprintID int64, asignada bool, err error)
 	EjecutarCierre(proyectoID, sprintID int64) error
 	Sprint(sprintID int64) (domain.Sprint, error)
 	Cerrar() error
@@ -41,6 +46,7 @@ type hu11World struct {
 	proyectos  map[string]int64
 	sprints    map[string]int64         // clave: proyecto y número (ver hu11ClaveSprint)
 	preparados map[string]domain.Sprint // el sprint tal como se preparó, para ver que no cambió
+	historias  map[string]int64         // clave: proyecto y título (ver hu11ClaveHistoria)
 	ultimoErr  error
 }
 
@@ -57,6 +63,7 @@ func registrarStepsHU11(ctx *godog.ScenarioContext) {
 			proyectos:  map[string]int64{},
 			sprints:    map[string]int64{},
 			preparados: map[string]domain.Sprint{},
+			historias:  map[string]int64{},
 		}
 		return c, nil
 	})
@@ -71,6 +78,7 @@ func registrarStepsHU11(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto "([^"]*)" con el sprint (\d+) (abierto|cerrado) del "([^"]*)" al "([^"]*)"$`, w.proyectoConSprint)
 	ctx.Step(`^cerré el sprint (\d+) de "([^"]*)"$`, w.cerreSprint)
 	ctx.Step(`^el proyecto "([^"]*)" está "([^"]*)"$`, w.proyectoEsta)
+	ctx.Step(`^la historia "([^"]*)" de "([^"]*)" está asignada al sprint (\d+)$`, w.historiaAsignada)
 
 	// When
 	ctx.Step(`^cierro el sprint (\d+) de "([^"]*)"$`, w.cierroSprint)
@@ -83,6 +91,7 @@ func registrarStepsHU11(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el sprint (\d+) de "([^"]*)" está (Abierto|Cerrado)$`, w.sprintEsta)
 	ctx.Step(`^el sprint (\d+) de "([^"]*)" conserva sus datos$`, w.sprintConservaDatos)
 	ctx.Step(`^se rechaza el cierre del sprint con el error "([^"]*)"$`, w.seRechazaCierre)
+	ctx.Step(`^la historia "([^"]*)" de "([^"]*)" sigue asignada al sprint (\d+)$`, w.historiaSigueAsignada)
 }
 
 // --- Given ---
@@ -154,6 +163,19 @@ func (w *hu11World) proyectoEsta(proyecto, estado string) error {
 	if err := w.sistema.FijarEstadoProyecto(pid, e); err != nil {
 		return fmt.Errorf("no se pudo dejar %q en estado %q: %w", proyecto, estado, err)
 	}
+	return nil
+}
+
+func (w *hu11World) historiaAsignada(titulo, proyecto string, numero int) error {
+	pid, sid, err := w.ids(numero, proyecto)
+	if err != nil {
+		return err
+	}
+	hid, err := w.sistema.CrearHistoriaAsignada(pid, sid, titulo)
+	if err != nil {
+		return fmt.Errorf("no se pudo preparar la historia %q asignada al sprint %d de %q: %w", titulo, numero, proyecto, err)
+	}
+	w.historias[hu11ClaveHistoria(proyecto, titulo)] = hid
 	return nil
 }
 
@@ -242,11 +264,36 @@ func (w *hu11World) seRechazaCierre(descripcion string) error {
 	return nil
 }
 
+func (w *hu11World) historiaSigueAsignada(titulo, proyecto string, numero int) error {
+	_, sid, err := w.ids(numero, proyecto)
+	if err != nil {
+		return err
+	}
+	hid, ok := w.historias[hu11ClaveHistoria(proyecto, titulo)]
+	if !ok {
+		return fmt.Errorf("la historia %q de %q no se preparó en el escenario", titulo, proyecto)
+	}
+	got, asignada, err := w.sistema.SprintDeHistoria(hid)
+	if err != nil {
+		return fmt.Errorf("no se pudo leer la historia %q de %q: %w", titulo, proyecto, err)
+	}
+	if !asignada || got != sid {
+		return fmt.Errorf("la historia %q de %q: se esperaba asignada al sprint %d (ID %d), está en %d (asignada: %t)",
+			titulo, proyecto, numero, sid, got, asignada)
+	}
+	return nil
+}
+
 // --- Auxiliares ---
 
 // hu11ClaveSprint identifica un sprint del escenario por su proyecto y su número.
 func hu11ClaveSprint(proyecto string, numero int) string {
 	return fmt.Sprintf("%s#%d", proyecto, numero)
+}
+
+// hu11ClaveHistoria identifica una historia del escenario por su proyecto y su título.
+func hu11ClaveHistoria(proyecto, titulo string) string {
+	return proyecto + "#" + titulo
 }
 
 func (w *hu11World) sprint(numero int, proyecto string) (domain.Sprint, error) {

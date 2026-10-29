@@ -5,8 +5,8 @@ Feature: Cerrar un Sprint
   para dar por finalizado el período de trabajo
 
   # Si no se indica otro, el sprint se cierra desde la ruta de su propio proyecto.
-  # En estos escenarios los sprints no tienen historias asignadas. Que las historias sigan
-  # asignadas al sprint cerrado (CA-11.6) se prueba cuando HU-09 esté en main.
+  # Si no se indica otro, los sprints no tienen historias asignadas; las que se asignan quedan
+  # sin terminar (Pendiente).
   # CA-11.4 (respuesta HTTP) y CA-11.5 (pantalla) se cubren con tests del adaptador.
 
   Background:
@@ -53,6 +53,17 @@ Feature: Cerrar un Sprint
       | Finalizado |
       | Postergado |
       | Cancelado  |
+
+  # RN-11.3: cerrar no toca las historias; se pueden reasignar después por RN-09.2 (HU-09).
+  @CA-11.6 @normal
+  Scenario: Las historias sin terminar siguen asignadas al sprint cerrado
+    Given la historia "Login de usuarios" de "Alfa" está asignada al sprint 1
+    And la historia "Alta de proyectos" de "Alfa" está asignada al sprint 1
+    When cierro el sprint 1 de "Alfa"
+    Then el cierre del sprint termina sin errores
+    And el sprint 1 de "Alfa" está Cerrado
+    And la historia "Login de usuarios" de "Alfa" sigue asignada al sprint 1
+    And la historia "Alta de proyectos" de "Alfa" sigue asignada al sprint 1
 
   @CA-11.2 @error
   Scenario: No se puede cerrar un sprint que ya está cerrado
