@@ -24,16 +24,17 @@ import (
 // erroresHU06 traduce la descripción del escenario al error definido en la spec.
 func erroresHU06() map[string]error {
 	return map[string]error{
-		"elemento no encontrado": domain.ErrElementoNoEncontrado,
-		"sin cambios":            domain.ErrSinCambios,
-		"título vacío":           domain.ErrTituloVacio,
-		"descripción vacía":      domain.ErrDescripcionVacia,
-		"prioridad inválida":     domain.ErrPrioridadInvalida,
-		"story points inválidos": domain.ErrStoryPointsInvalidos,
-		"sin criterios":          domain.ErrSinCriterios,
-		"estado inválido":        domain.ErrEstadoElementoInvalido,
-		"título duplicado":       domain.ErrTituloDuplicado,
-		"elemento con esfuerzo":  domain.ErrElementoConEsfuerzo,
+		"elemento no encontrado":    domain.ErrElementoNoEncontrado,
+		"sin cambios":               domain.ErrSinCambios,
+		"título vacío":              domain.ErrTituloVacio,
+		"descripción vacía":         domain.ErrDescripcionVacia,
+		"prioridad inválida":        domain.ErrPrioridadInvalida,
+		"story points inválidos":    domain.ErrStoryPointsInvalidos,
+		"sin criterios":             domain.ErrSinCriterios,
+		"estado inválido":           domain.ErrEstadoElementoInvalido,
+		"título duplicado":          domain.ErrTituloDuplicado,
+		"elemento con esfuerzo":     domain.ErrElementoConEsfuerzo,
+		"elemento en sprint activo": domain.ErrElementoEnSprintActivo,
 	}
 }
 

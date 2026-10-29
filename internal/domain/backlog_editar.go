@@ -2,9 +2,22 @@ package domain
 
 import "errors"
 
-// Error nuevo de HU-06 (spec, sección 7). Los de los campos son los de HU-05, y el de estado
+// Errores nuevos de HU-06 (spec, sección 7). Los de los campos son los de HU-05, y el de estado
 // inválido (ErrEstadoElementoInvalido) se comparte con HU-07 (backlog_listado.go).
-var ErrElementoConEsfuerzo = errors.New("no se puede eliminar un elemento con esfuerzo registrado")
+var (
+	ErrElementoConEsfuerzo    = errors.New("no se puede eliminar un elemento con esfuerzo registrado")
+	ErrElementoEnSprintActivo = errors.New("no se puede eliminar un elemento asignado a un Sprint activo")
+)
+
+// ValidarEliminacion verifica que el elemento se pueda eliminar: no puede estar asignado a un
+// Sprint activo. Como en HU-09, recibe si su Sprint está activo (Abierto), calculado por el caso
+// de uso. Implementa HU-06 (RN-06.8).
+func (e ElementoBacklog) ValidarEliminacion(sprintActivo bool) error {
+	if e.SprintID != nil && sprintActivo {
+		return ErrElementoEnSprintActivo
+	}
+	return nil
+}
 
 // CambiosElemento son los datos de una edición parcial de un elemento (HU-06, RN-06.1).
 // Un campo en nil no se envía y conserva su valor.
