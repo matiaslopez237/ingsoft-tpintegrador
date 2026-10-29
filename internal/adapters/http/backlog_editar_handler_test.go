@@ -151,6 +151,7 @@ func TestDeleteElemento(t *testing.T) {
 	}{
 		{"sin esfuerzo", nil, http.StatusNoContent},
 		{"con esfuerzo", domain.ErrElementoConEsfuerzo, http.StatusConflict},
+		{"en un sprint activo", domain.ErrElementoEnSprintActivo, http.StatusConflict}, // RN-06.8
 		{"inexistente", domain.ErrElementoNoEncontrado, http.StatusNotFound},
 		{"falla interna", errors.New("disco lleno"), http.StatusInternalServerError},
 	}

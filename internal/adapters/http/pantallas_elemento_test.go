@@ -134,6 +134,8 @@ func TestPantallaElemento_Errores(t *testing.T) {
 			&editorElementosFalso{}, &eliminadorElementosFalso{}, http.StatusBadRequest, "story_points debe ser un número entero"},
 		{"eliminar con esfuerzo", "/web/proyectos/7/backlog/7/eliminar", url.Values{},
 			&editorElementosFalso{}, &eliminadorElementosFalso{err: domain.ErrElementoConEsfuerzo}, http.StatusConflict, domain.ErrElementoConEsfuerzo.Error()},
+		{"eliminar en un sprint activo", "/web/proyectos/7/backlog/7/eliminar", url.Values{}, // RN-06.8
+			&editorElementosFalso{}, &eliminadorElementosFalso{err: domain.ErrElementoEnSprintActivo}, http.StatusConflict, domain.ErrElementoEnSprintActivo.Error()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
