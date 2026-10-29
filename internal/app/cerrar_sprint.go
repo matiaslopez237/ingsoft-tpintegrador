@@ -12,8 +12,10 @@ import (
 type RepositorioCierre interface {
 	// BuscarSprintPorID devuelve domain.ErrSprintNoEncontrado si no existe.
 	BuscarSprintPorID(ctx context.Context, id int64) (domain.Sprint, error)
-	// CerrarSprint persiste el estado del sprint solo si el guardado sigue Abierto; si otro pedido
-	// lo cerró en el medio, devuelve domain.ErrSprintYaCerrado (spec HU-11, sección 5, P-8).
+	// CerrarSprint deja el sprint guardado en Cerrado solo si sigue Abierto; si otro pedido lo
+	// cerró en el medio, devuelve domain.ErrSprintYaCerrado (spec HU-11, sección 5, P-8). Persiste
+	// siempre el estado Cerrado (RN-11.1) y del sprint usa solo el ID: no copia s.Estado ni otros
+	// campos, así no puede guardar otro estado aunque se lo llame sin pasar por domain.Sprint.Cerrar.
 	CerrarSprint(ctx context.Context, s *domain.Sprint) error
 }
 
