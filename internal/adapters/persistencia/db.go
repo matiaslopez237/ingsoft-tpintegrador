@@ -122,6 +122,17 @@ CREATE TABLE IF NOT EXISTS sprints (
 	puntos_planificados INTEGER NOT NULL DEFAULT 0,
 	puntos_completados  INTEGER NOT NULL DEFAULT 0,
 	UNIQUE (proyecto_id, numero)
+);
+
+-- HU-20. sprint_deteccion_id queda NULL cuando no hay Sprint vigente al registrarlo (RN-20.5).
+CREATE TABLE IF NOT EXISTS defectos (
+	id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id         INTEGER NOT NULL REFERENCES proyectos (id),
+	elemento_id         INTEGER NOT NULL REFERENCES backlog_elementos (id),
+	descripcion         TEXT    NOT NULL,
+	severidad           TEXT    NOT NULL,
+	estado              TEXT    NOT NULL,
+	sprint_deteccion_id INTEGER REFERENCES sprints (id)
 );`)
 	return err
 }

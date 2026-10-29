@@ -21,6 +21,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-09 Asignar historias del backlog a un Sprint | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
 | HU-10 Marcar una historia como completada en el Sprint | ✓ (Aprobada; P-9 abierta a objeción en el PR) | 5/7 (CA-10.6 y CA-10.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 9/9 escenarios |
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
+| HU-20 Registrar un defecto | ✓ (Borrador; P-1 a P-3 pendientes de confirmar) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 
 ---
 
@@ -945,6 +946,61 @@ Sin CA propio en la spec:
 - La ruta JSON `POST /proyectos/{id}/sprints/{sprintID}/cerrar` no verifica el origen del pedido (CSRF): solo las pantallas pasan por `mismoOrigen`. Es deuda técnica de todas las rutas JSON del proyecto, no solo de HU-11.
 - `ErrSprintYaCerrado` (HU-11, "el sprint ya fue cerrado") y `ErrSprintCerrado` (HU-09, "el sprint ya está cerrado") describen la misma situación; se mantuvieron separados por el orden de los merges y unificarlos es una decisión del equipo.
 - Refactors que tocaron código de otras historias: `escanearSprint` reemplazó el escaneo de `ListarSprints` (HU-08) y `aVistaSprint` (HU-09) ahora completa `PuedeCerrarse` y la usa también `mostrarSprints` (HU-08). Los tests de HU-08 y HU-09 siguen en verde, pero conviene que lo revisen sus autores en el PR.
+
+---
+
+## HU-20: Registrar un defecto
+
+- **Issue:** [#31](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/31) · Sprint 2 · 3 SP
+- **Spec:** [docs/specs/HU-20-registrar-defecto.md](specs/HU-20-registrar-defecto.md)
+- **Feature:** [features/HU-20-registrar-defecto.feature](../features/HU-20-registrar-defecto.feature) (steps en [test/bdd/hu20_steps_test.go](../test/bdd/hu20_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-20.1 Registrar con Sprint activo | RN-20.1, RN-20.4, RN-20.5, RN-20.6 | Registrar un defecto con todos los datos válidos y un Sprint activo `@normal` · La descripción se guarda sin los espacios de alrededor `@alternativo` | `TestNuevoDefecto_Valido`, `TestSprintVigente_SprintAbiertoConHoyEnRango_DevuelveSuID`, `TestRegistrarDefecto_DatosValidos_GuardaConID`, `TestRegistrarDefecto_ConSprintVigente_AsignaSuID`, `TestRepositorioDefectos_ConSprintDeteccion_LoGuarda`, `TestPostDefecto_DatosValidos_Devuelve201ConElDefecto`, `TestPostDefecto_ConSprintDeteccion_LoInformaEnLaRespuesta`, `TestPantallaDefecto_Crear_ConSprintDeteccion_MuestraConfirmacion` | `domain.NuevoDefecto`, `domain.SprintVigente`, `app.RegistrarDefecto` |
+| CA-20.2 Sin Sprint vigente | RN-20.5 | Sin ningún sprint en el proyecto, el defecto queda sin Sprint de detección `@alternativo` · Un sprint que ya terminó no se asigna `@limite` · Un sprint cuyo último día es hoy se asigna `@limite` | `TestSprintVigente_HoyEnLosLimites_DevuelveSuID`, `TestSprintVigente_SinSprints_NoHayNinguno`, `TestSprintVigente_HoyFueraDelRango_NoHayNinguno`, `TestRegistrarDefecto_SinSprintVigente_QuedaSinAsignar`, `TestRepositorioDefectos_SinSprintDeteccion_GuardaNull`, `TestPantallaDefecto_Crear_SinSprintDeteccion_AvisaQueNoSeAsigno` | `domain.SprintVigente` |
+| CA-20.3 Descripción obligatoria | RN-20.2 | La descripción es obligatoria `@error` (×2) | `TestNuevoDefecto_SinDescripcion_RetornaError`, `TestRegistrarDefecto_DatosInvalidos_NoLleganAlRepositorio`, `TestPostDefecto_DatosInvalidos_Devuelve400ConElError`, `TestPantallaDefecto_Crear_DatosInvalidos_MuestraElError` | `domain.NuevoDefecto` |
+| CA-20.4 Severidad válida | RN-20.3 | La severidad tiene que ser Crítica, Alta, Media o Baja `@error` (×3) · Las cuatro severidades válidas se aceptan `@limite` (×4) | `TestNuevoDefecto_SeveridadInvalida_RetornaError`, `TestNuevoDefecto_SeveridadesValidas` | `domain.NuevoDefecto` |
+| CA-20.5 Proyecto o elemento inexistente | RN-20.1 | No se puede registrar un defecto en un proyecto que no existe `@error` · No se puede registrar un defecto sobre un elemento que no existe `@error` · Un elemento de otro proyecto se trata como inexistente `@error` | `TestRegistrarDefecto_ElementoInexistente_RetornaErrorYNoGuarda`, `TestRegistrarDefecto_ProyectoInexistente_RetornaErrorYNoGuarda`, `TestRegistrarDefecto_ElementoDeOtroProyecto_RetornaErrorYNoGuarda`, `TestRepositorioDefectos_ElementoInexistente_RetornaErrElementoNoEncontrado`, `TestPostDefecto_ProyectoOElementoInexistente_Devuelve404` | `app.RegistrarDefecto`, clave foránea de `defectos` |
+| CA-20.6 Respuesta HTTP | — | No va acá (como CA-18.15): se cubre con los tests del adaptador | `TestPostDefecto_*` (8 tests) | `internal/adapters/http/defecto_handler.go` |
+| CA-20.7 Independencia de IDs | RN-20.6 | Dos defectos sobre el mismo elemento son independientes `@normal` | `TestRepositorioDefectos_Guardar_AsignaIDsDistintos`, `TestPostDefecto_DatosValidos_PasaLosDatosAlCasoDeUso` | `persistencia.RepositorioDefectos.GuardarDefecto` |
+| CA-20.8 Pantalla | Restricciones | No va acá (como CA-06.10): se agregó en la tarea 20.8 y se cubre con los tests de la pantalla | `TestPantallaDefecto_*` (6 tests) | `pantallas_defecto.go`, `web/plantillas/defecto_form.html`, link en `backlog.html` (HU-07) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/defecto.go](../internal/domain/defecto.go) (`Defecto`, `Severidad`, `EstadoDefecto`, `NuevoDefecto`, `SprintVigente`) | [defecto_test.go](../internal/domain/defecto_test.go) |
+| Caso de uso | [internal/app/registrar_defecto.go](../internal/app/registrar_defecto.go) | [registrar_defecto_test.go](../internal/app/registrar_defecto_test.go) |
+| Persistencia | [internal/adapters/persistencia/defecto_repo.go](../internal/adapters/persistencia/defecto_repo.go), [db.go](../internal/adapters/persistencia/db.go) (tabla `defectos`) | [defecto_repo_test.go](../internal/adapters/persistencia/defecto_repo_test.go) |
+| HTTP (JSON) | [internal/adapters/http/defecto_handler.go](../internal/adapters/http/defecto_handler.go) (`POST /proyectos/{id}/defectos`) | [defecto_handler_test.go](../internal/adapters/http/defecto_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_defecto.go](../internal/adapters/http/pantallas_defecto.go), [web/plantillas/defecto_form.html](../internal/adapters/http/web/plantillas/defecto_form.html) (`/web/proyectos/{id}/defectos/nuevo`) | [pantallas_defecto_test.go](../internal/adapters/http/pantallas_defecto_test.go) |
+| BDD | [test/bdd/hu20_sistema_test.go](../test/bdd/hu20_sistema_test.go), [hu20_steps_test.go](../test/bdd/hu20_steps_test.go) | 18 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 20.1 Spec | `7b8d3ff` docs(HU-20): [20.1] spec SDD | — |
+| 20.2 Escenarios BDD | `3e43b7d` test(HU-20): [20.2] escenarios BDD | — |
+| 20.3 Steps godog | `6356ec3` test(HU-20): [20.3][RED] steps (en rojo) | BDD en rojo |
+| 20.4 Entidad Defecto | `e47f6f9` [RED] → `b76b4aa` [GREEN] | **RED → GREEN** |
+| 20.5 SprintVigente | `0a11c53` [RED] → `f0c6af1` [GREEN] | **RED → GREEN** |
+| 20.5 Caso de uso RegistrarDefecto | `e55b04c` [RED] → `faf7446` [GREEN] | **RED → GREEN** |
+| 20.6 Persistencia | `77996f6` [RED] → `c5060fd` [GREEN] | **RED → GREEN** |
+| Conectar los escenarios BDD con el caso de uso real | `383a99d` | BDD en verde |
+| 20.7 HTTP | `17e092d` [RED] → `4dbdd36` [GREEN] | **RED → GREEN** |
+| 20.8 Pantalla | `d7b29a7` [RED] → `8bd8416` [GREEN] | **RED → GREEN** |
+| 20.9 Revisión y trazabilidad | `d76b7c9` | — |
+
+### Huecos
+
+- La spec está en **Borrador**: queda pendiente de aprobación en el PR, igual que el resto de las historias. P-1 (si se puede registrar un defecto en un proyecto no Activo), P-2 (error propio `ErrDescripcionDefectoVacia` en vez de reutilizar el de HU-05) y P-3 (la ruta `POST /proyectos/{id}/defectos`) son decisiones tomadas al implementar, pendientes de confirmar con el equipo.
+- El enlace "Registrar defecto" sale de la lista del backlog (HU-07); no hay todavía un enlace desde el detalle del elemento (HU-06), porque la pantalla de HU-20 elige el elemento de una lista, no parte de uno puntual.
+- Fuera de alcance (spec, sección 5): editar, eliminar, listar o cambiar el estado de un defecto; vincularlo manualmente a un Sprint distinto del detectado automáticamente.
+- Revisión con el agente `go-reviewer` (tarea 20.9): sin hallazgos bloqueantes. Encontró que el `<select>` de severidad de la pantalla no tenía una opción vacía por defecto ni `required` (a diferencia del de elemento); se corrigió en el mismo commit de esta revisión.
 
 ---
 

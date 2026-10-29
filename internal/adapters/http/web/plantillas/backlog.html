@@ -3,6 +3,8 @@
 <div class="cabecera">
   <h1>Backlog de {{.Proyecto.Nombre}}</h1>
   <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+  {{/* HU-20: registrar un defecto sobre un elemento de este backlog. */}}
+  <a class="boton" href="/web/proyectos/{{.Proyecto.ID}}/defectos/nuevo">Registrar defecto</a>
 </div>
 
 <form method="get" action="/web/proyectos/{{.Proyecto.ID}}/backlog" class="formulario en-linea">

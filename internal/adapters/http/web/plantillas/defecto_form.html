@@ -1,0 +1,37 @@
+{{define "titulo"}}Registrar defecto · {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<p><a href="/web/proyectos/{{.Proyecto.ID}}/backlog">Volver al backlog</a></p>
+<h1>Registrar defecto en {{.Proyecto.Nombre}}</h1>
+
+{{if .Creado}}
+<p class="exito" role="status">
+  El defecto se registró correctamente.
+  {{if .SprintID}}Sprint de detección asignado: #{{.SprintID}}.{{else}}No se asignó ningún Sprint de detección (no hay un Sprint abierto vigente hoy).{{end}}
+</p>
+<p><a href="/web/proyectos/{{.Proyecto.ID}}/defectos/nuevo">Registrar otro defecto</a></p>
+{{else}}
+{{template "error_form" .Error}}
+
+<form method="post" action="/web/proyectos/{{.Proyecto.ID}}/defectos/nuevo" class="formulario">
+  <label for="elemento_id">Elemento del backlog</label>
+  <select id="elemento_id" name="elemento_id" required>
+    <option value="">Elegí un elemento</option>
+    {{range .Elementos}}<option value="{{.ID}}"{{if eq (print .ID) $.Form.ElementoID}} selected{{end}}>{{.Titulo}}</option>{{end}}
+  </select>
+
+  <label for="descripcion">Descripción</label>
+  <textarea id="descripcion" name="descripcion" rows="3" required>{{.Form.Descripcion}}</textarea>
+
+  <label for="severidad">Severidad</label>
+  <select id="severidad" name="severidad" required>
+    <option value="">Elegí una severidad</option>
+    {{range .Severidades}}<option value="{{.}}"{{if eq (print .) $.Form.Severidad}} selected{{end}}>{{.}}</option>{{end}}
+  </select>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Registrar</button>
+    <a href="/web/proyectos/{{.Proyecto.ID}}/backlog">Cancelar</a>
+  </div>
+</form>
+{{end}}
+{{end}}
