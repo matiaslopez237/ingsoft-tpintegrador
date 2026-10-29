@@ -325,14 +325,9 @@ func (w *edicionBacklogWorld) desdePantallaElimino(titulo string) error {
 	if err != nil {
 		return err
 	}
+	// La respuesta la verifica el Then: 303 al eliminar, o el error en la misma pantalla.
 	w.pantalla, err = w.sistema.Pedir("POST", ruta+"/eliminar", url.Values{})
-	if err != nil {
-		return err
-	}
-	if w.pantalla.Estado != 303 {
-		return fmt.Errorf("eliminar desde la pantalla: estado %d; cuerpo: %.300s", w.pantalla.Estado, w.pantalla.Cuerpo)
-	}
-	return nil
+	return err
 }
 
 // --- Then ---
@@ -403,6 +398,9 @@ func (w *edicionBacklogWorld) sigueExistiendo(titulo string) error {
 }
 
 func (w *edicionBacklogWorld) yaNoExiste(titulo string) error {
+	if w.pantalla.Estado != 0 && w.pantalla.Estado != 303 {
+		return fmt.Errorf("la pantalla respondió %d; cuerpo: %.300s", w.pantalla.Estado, w.pantalla.Cuerpo)
+	}
 	_, err := w.sistema.BuscarElemento(w.elementos[titulo])
 	if !errors.Is(err, erroresHU06()["elemento no encontrado"]) {
 		return fmt.Errorf("se esperaba que el elemento no exista, se obtuvo: %v", err)
