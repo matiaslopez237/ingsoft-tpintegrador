@@ -29,12 +29,11 @@ type hu11Sistema interface {
 }
 
 // hu11Errores traduce la descripción del escenario al error definido en la spec (sección 7).
-// ErrSprintNoEncontrado es el de HU-09 (spec HU-11, sección 5): hasta que HU-09 esté en main,
-// este archivo no compila.
+// ErrSprintNoEncontrado es el que HU-09 dejó en el dominio (spec HU-11, sección 5).
 func hu11Errores() map[string]error {
 	return map[string]error{
 		"proyecto no encontrado": domain.ErrProyectoNoEncontrado,
-		"sprint no encontrado":   app.ErrSprintNoEncontrado,
+		"sprint no encontrado":   domain.ErrSprintNoEncontrado,
 		"sprint ya cerrado":      domain.ErrSprintYaCerrado,
 	}
 }
@@ -351,7 +350,7 @@ func (s *hu11SistemaEnMemoria) BuscarPorID(_ context.Context, id int64) (domain.
 func (s *hu11SistemaEnMemoria) BuscarSprintPorID(_ context.Context, id int64) (domain.Sprint, error) {
 	sp, ok := s.sprints[id]
 	if !ok {
-		return domain.Sprint{}, app.ErrSprintNoEncontrado
+		return domain.Sprint{}, domain.ErrSprintNoEncontrado
 	}
 	return sp, nil
 }
@@ -361,7 +360,7 @@ func (s *hu11SistemaEnMemoria) BuscarSprintPorID(_ context.Context, id int64) (d
 func (s *hu11SistemaEnMemoria) CerrarSprint(_ context.Context, sp *domain.Sprint) error {
 	guardado, ok := s.sprints[sp.ID]
 	if !ok {
-		return app.ErrSprintNoEncontrado
+		return domain.ErrSprintNoEncontrado
 	}
 	if guardado.Estado != domain.SprintAbierto {
 		return domain.ErrSprintYaCerrado
