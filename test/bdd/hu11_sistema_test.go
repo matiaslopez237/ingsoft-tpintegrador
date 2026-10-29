@@ -23,6 +23,7 @@ type hu11SistemaReal struct {
 	modificarProyecto *app.ModificarProyecto
 	crearElemento     *app.CrearElementoBacklog
 	asignar           *app.AsignarHistoria
+	completar         *app.CompletarHistoria
 	cerrar            *app.CerrarSprint
 	repoSprints       *persistencia.RepositorioSprints
 	repoBacklog       *persistencia.RepositorioBacklog
@@ -48,6 +49,7 @@ func hu11NuevoSistema() (hu11Sistema, error) {
 		modificarProyecto: app.NuevoModificarProyecto(repoProyectos),
 		crearElemento:     app.NuevoCrearElementoBacklog(repoBacklog),
 		asignar:           app.NuevoAsignarHistoria(repoBacklog),
+		completar:         app.NuevoCompletarHistoria(repoProyectos, repoBacklog),
 		cerrar:            app.NuevoCerrarSprint(repoProyectos, repoSprints),
 		repoSprints:       repoSprints,
 		repoBacklog:       repoBacklog,
@@ -87,13 +89,14 @@ func (s *hu11SistemaReal) CrearSprint(proyectoID int64, numero int, inicio, fin 
 
 // CrearHistoriaAsignada crea la historia en el backlog del proyecto (HU-05), Pendiente, y la asigna
 // al sprint con el caso de uso de HU-09, así que el sprint tiene que estar Abierto.
-func (s *hu11SistemaReal) CrearHistoriaAsignada(proyectoID, sprintID int64, titulo string) (int64, error) {
+func (s *hu11SistemaReal) CrearHistoriaAsignada(proyectoID, sprintID int64, titulo string, sp *int) (int64, error) {
 	ctx := context.Background()
 	e, err := s.crearElemento.Ejecutar(ctx, app.DatosNuevoElemento{
 		ProyectoID:  proyectoID,
 		Titulo:      titulo,
 		Descripcion: "Descripción de prueba",
 		Prioridad:   domain.PrioridadMedia,
+		StoryPoints: sp,
 		Criterios:   []string{"Criterio de prueba"},
 	})
 	if err != nil {
@@ -103,6 +106,19 @@ func (s *hu11SistemaReal) CrearHistoriaAsignada(proyectoID, sprintID int64, titu
 		return 0, err
 	}
 	return e.ID, nil
+}
+
+func (s *hu11SistemaReal) CompletarHistoria(proyectoID, historiaID int64) error {
+	return s.completar.Ejecutar(context.Background(), app.DatosCompletar{ProyectoID: proyectoID, ElementoID: historiaID})
+}
+
+func (s *hu11SistemaReal) AsignarHistoria(proyectoID, historiaID, sprintID int64) error {
+	return s.asignar.Ejecutar(context.Background(), app.DatosAsignacion{ProyectoID: proyectoID, ElementoID: historiaID, SprintID: sprintID})
+}
+
+func (s *hu11SistemaReal) EstadoDeHistoria(historiaID int64) (domain.EstadoElemento, error) {
+	e, err := s.repoBacklog.BuscarElementoPorID(context.Background(), historiaID)
+	return e.Estado, err
 }
 
 func (s *hu11SistemaReal) SprintDeHistoria(historiaID int64) (sprintID int64, asignada bool, err error) {

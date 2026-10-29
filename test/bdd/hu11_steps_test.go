@@ -21,9 +21,15 @@ type hu11Sistema interface {
 	// CrearSprint prepara un sprint con su número, fechas y estado, sin pasar por HU-08: es
 	// preparación del escenario.
 	CrearSprint(proyectoID int64, numero int, inicio, fin time.Time, estado domain.EstadoSprint) (int64, error)
-	// CrearHistoriaAsignada prepara una historia sin terminar del proyecto, asignada al sprint
-	// (HU-05 y HU-09). Es para CA-11.6.
-	CrearHistoriaAsignada(proyectoID, sprintID int64, titulo string) (int64, error)
+	// CrearHistoriaAsignada prepara una historia sin terminar del proyecto, con esos story points
+	// (nil: sin estimar), asignada al sprint (HU-05 y HU-09). Es para CA-11.6 y CA-11.7.
+	CrearHistoriaAsignada(proyectoID, sprintID int64, titulo string, sp *int) (int64, error)
+	// CompletarHistoria deja la historia Hecho con el caso de uso de HU-10.
+	CompletarHistoria(proyectoID, historiaID int64) error
+	// AsignarHistoria asigna la historia a otro sprint con el caso de uso de HU-09.
+	AsignarHistoria(proyectoID, historiaID, sprintID int64) error
+	// EstadoDeHistoria devuelve el estado de la historia.
+	EstadoDeHistoria(historiaID int64) (domain.EstadoElemento, error)
 	// SprintDeHistoria devuelve el sprint al que está asignada la historia, si tiene.
 	SprintDeHistoria(historiaID int64) (sprintID int64, asignada bool, err error)
 	EjecutarCierre(proyectoID, sprintID int64) error
@@ -79,12 +85,15 @@ func registrarStepsHU11(ctx *godog.ScenarioContext) {
 	ctx.Step(`^cerré el sprint (\d+) de "([^"]*)"$`, w.cerreSprint)
 	ctx.Step(`^el proyecto "([^"]*)" está "([^"]*)"$`, w.proyectoEsta)
 	ctx.Step(`^la historia "([^"]*)" de "([^"]*)" está asignada al sprint (\d+)$`, w.historiaAsignada)
+	ctx.Step(`^la historia "([^"]*)" de "([^"]*)", (de \d+ puntos|sin estimar), está asignada al sprint (\d+)$`, w.historiaConPuntosAsignada)
+	ctx.Step(`^la historia "([^"]*)" de "([^"]*)" está completada$`, w.historiaCompletada)
 
 	// When
 	ctx.Step(`^cierro el sprint (\d+) de "([^"]*)"$`, w.cierroSprint)
 	ctx.Step(`^cierro el sprint (\d+) de "([^"]*)" desde el proyecto "([^"]*)"$`, w.cierroSprintDesdeProyecto)
 	ctx.Step(`^cierro el sprint (\d+) de "([^"]*)" desde un proyecto inexistente$`, w.cierroSprintDesdeProyectoInexistente)
 	ctx.Step(`^cierro un sprint inexistente de "([^"]*)"$`, w.cierroSprintInexistente)
+	ctx.Step(`^asigno la historia "([^"]*)" de "([^"]*)" al sprint (\d+)$`, w.asignoHistoria)
 
 	// Then
 	ctx.Step(`^el cierre del sprint termina sin errores$`, w.cierreSinErrores)
@@ -92,6 +101,8 @@ func registrarStepsHU11(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el sprint (\d+) de "([^"]*)" conserva sus datos$`, w.sprintConservaDatos)
 	ctx.Step(`^se rechaza el cierre del sprint con el error "([^"]*)"$`, w.seRechazaCierre)
 	ctx.Step(`^la historia "([^"]*)" de "([^"]*)" sigue asignada al sprint (\d+)$`, w.historiaSigueAsignada)
+	ctx.Step(`^la historia "([^"]*)" de "([^"]*)" volvió al backlog sin sprint y sigue "([^"]*)"$`, w.historiaVolvioAlBacklog)
+	ctx.Step(`^el sprint (\d+) de "([^"]*)" registra (\d+) puntos planificados y (\d+) completados$`, w.sprintRegistraPuntos)
 }
 
 // --- Given ---
@@ -167,11 +178,38 @@ func (w *hu11World) proyectoEsta(proyecto, estado string) error {
 }
 
 func (w *hu11World) historiaAsignada(titulo, proyecto string, numero int) error {
+	return w.prepararHistoria(titulo, proyecto, numero, nil)
+}
+
+// historiaConPuntosAsignada recibe "de N puntos" o "sin estimar".
+func (w *hu11World) historiaConPuntosAsignada(titulo, proyecto, puntos string, numero int) error {
+	if puntos == "sin estimar" {
+		return w.prepararHistoria(titulo, proyecto, numero, nil)
+	}
+	var sp int
+	if _, err := fmt.Sscanf(puntos, "de %d puntos", &sp); err != nil {
+		return fmt.Errorf("story points mal escritos en el escenario: %q", puntos)
+	}
+	return w.prepararHistoria(titulo, proyecto, numero, &sp)
+}
+
+func (w *hu11World) historiaCompletada(titulo, proyecto string) error {
+	pid, hid, err := w.idsHistoria(titulo, proyecto)
+	if err != nil {
+		return err
+	}
+	if err := w.sistema.CompletarHistoria(pid, hid); err != nil {
+		return fmt.Errorf("no se pudo completar la historia %q de %q: %w", titulo, proyecto, err)
+	}
+	return nil
+}
+
+func (w *hu11World) prepararHistoria(titulo, proyecto string, numero int, sp *int) error {
 	pid, sid, err := w.ids(numero, proyecto)
 	if err != nil {
 		return err
 	}
-	hid, err := w.sistema.CrearHistoriaAsignada(pid, sid, titulo)
+	hid, err := w.sistema.CrearHistoriaAsignada(pid, sid, titulo, sp)
 	if err != nil {
 		return fmt.Errorf("no se pudo preparar la historia %q asignada al sprint %d de %q: %w", titulo, numero, proyecto, err)
 	}
@@ -183,6 +221,23 @@ func (w *hu11World) historiaAsignada(titulo, proyecto string, numero int) error 
 
 func (w *hu11World) cierroSprint(numero int, proyecto string) error {
 	return w.cierroSprintDesdeProyecto(numero, proyecto, proyecto)
+}
+
+// asignoHistoria replanifica con HU-09 una historia que volvió al backlog. Si falla, falla el paso:
+// lo que se verifica después es el resumen del sprint cerrado, no la asignación.
+func (w *hu11World) asignoHistoria(titulo, proyecto string, numero int) error {
+	pid, hid, err := w.idsHistoria(titulo, proyecto)
+	if err != nil {
+		return err
+	}
+	_, sid, err := w.ids(numero, proyecto)
+	if err != nil {
+		return err
+	}
+	if err := w.sistema.AsignarHistoria(pid, hid, sid); err != nil {
+		return fmt.Errorf("no se pudo asignar la historia %q al sprint %d de %q: %w", titulo, numero, proyecto, err)
+	}
+	return nil
 }
 
 func (w *hu11World) cierroSprintDesdeProyecto(numero int, proyecto, ruta string) error {
@@ -284,7 +339,53 @@ func (w *hu11World) historiaSigueAsignada(titulo, proyecto string, numero int) e
 	return nil
 }
 
+func (w *hu11World) historiaVolvioAlBacklog(titulo, proyecto, estado string) error {
+	_, hid, err := w.idsHistoria(titulo, proyecto)
+	if err != nil {
+		return err
+	}
+	got, asignada, err := w.sistema.SprintDeHistoria(hid)
+	if err != nil {
+		return fmt.Errorf("no se pudo leer la historia %q de %q: %w", titulo, proyecto, err)
+	}
+	if asignada {
+		return fmt.Errorf("la historia %q de %q: se esperaba sin sprint, sigue asignada al sprint con ID %d", titulo, proyecto, got)
+	}
+	actual, err := w.sistema.EstadoDeHistoria(hid)
+	if err != nil {
+		return fmt.Errorf("no se pudo leer la historia %q de %q: %w", titulo, proyecto, err)
+	}
+	if string(actual) != estado {
+		return fmt.Errorf("la historia %q de %q: estado %q, se esperaba %q", titulo, proyecto, actual, estado)
+	}
+	return nil
+}
+
+func (w *hu11World) sprintRegistraPuntos(numero int, proyecto string, planificados, completados int) error {
+	s, err := w.sprint(numero, proyecto)
+	if err != nil {
+		return err
+	}
+	if s.PuntosPlanificados != planificados || s.PuntosCompletados != completados {
+		return fmt.Errorf("sprint %d de %q: %d planificados y %d completados, se esperaba %d y %d",
+			numero, proyecto, s.PuntosPlanificados, s.PuntosCompletados, planificados, completados)
+	}
+	return nil
+}
+
 // --- Auxiliares ---
+
+// idsHistoria devuelve el ID del proyecto y el de una historia que preparó el escenario.
+func (w *hu11World) idsHistoria(titulo, proyecto string) (proyectoID, historiaID int64, err error) {
+	if proyectoID, err = w.idProyecto(proyecto); err != nil {
+		return 0, 0, err
+	}
+	historiaID, ok := w.historias[hu11ClaveHistoria(proyecto, titulo)]
+	if !ok {
+		return 0, 0, fmt.Errorf("la historia %q de %q no se preparó en el escenario", titulo, proyecto)
+	}
+	return proyectoID, historiaID, nil
+}
 
 // hu11ClaveSprint identifica un sprint del escenario por su proyecto y su número.
 func hu11ClaveSprint(proyecto string, numero int) string {

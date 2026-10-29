@@ -6,7 +6,7 @@ Feature: Cerrar un Sprint
 
   # Si no se indica otro, el sprint se cierra desde la ruta de su propio proyecto.
   # Si no se indica otro, los sprints no tienen historias asignadas; las que se asignan quedan
-  # sin terminar (Pendiente).
+  # sin terminar (Pendiente) y sin estimar, hasta que se completan con HU-10.
   # CA-11.4 (respuesta HTTP) y CA-11.5 (pantalla) se cubren con tests del adaptador.
 
   Background:
@@ -54,16 +54,48 @@ Feature: Cerrar un Sprint
       | Postergado |
       | Cancelado  |
 
-  # RN-11.3: cerrar no toca las historias; se pueden reasignar después por RN-09.2 (HU-09).
+  # RN-11.3 (P-4, P-13): lo no terminado vuelve al Product Backlog para planificarlo de nuevo con
+  # HU-09; lo Hecho queda en el sprint, que es donde se hizo.
   @CA-11.6 @normal
-  Scenario: Las historias sin terminar siguen asignadas al sprint cerrado
+  Scenario: Las historias sin terminar vuelven al Product Backlog y las terminadas quedan en el sprint
     Given la historia "Login de usuarios" de "Alfa" está asignada al sprint 1
     And la historia "Alta de proyectos" de "Alfa" está asignada al sprint 1
+    And la historia "Alta de proyectos" de "Alfa" está completada
     When cierro el sprint 1 de "Alfa"
     Then el cierre del sprint termina sin errores
     And el sprint 1 de "Alfa" está Cerrado
-    And la historia "Login de usuarios" de "Alfa" sigue asignada al sprint 1
+    And la historia "Login de usuarios" de "Alfa" volvió al backlog sin sprint y sigue "Pendiente"
     And la historia "Alta de proyectos" de "Alfa" sigue asignada al sprint 1
+
+  # RN-11.6 (P-11, P-12): planificados suma todas las historias asignadas al cerrar; completados,
+  # solo las Hecho; una historia sin estimar suma 0.
+  @CA-11.7 @normal
+  Scenario: Al cerrar, el sprint registra sus story points planificados y completados
+    Given la historia "Login" de "Alfa", de 5 puntos, está asignada al sprint 1
+    And la historia "Login" de "Alfa" está completada
+    And la historia "Reportes" de "Alfa", de 3 puntos, está asignada al sprint 1
+    And la historia "Ayuda" de "Alfa", sin estimar, está asignada al sprint 1
+    And la historia "Ayuda" de "Alfa" está completada
+    When cierro el sprint 1 de "Alfa"
+    Then el cierre del sprint termina sin errores
+    And el sprint 1 de "Alfa" registra 8 puntos planificados y 5 completados
+    And la historia "Reportes" de "Alfa" volvió al backlog sin sprint y sigue "Pendiente"
+
+  # RN-11.6: el resumen queda fijo aunque la historia devuelta se planifique en el sprint siguiente.
+  @CA-11.7 @alternativo
+  Scenario: Los puntos registrados no cambian si después se replanifica una historia
+    Given la historia "Reportes" de "Alfa", de 3 puntos, está asignada al sprint 1
+    And cerré el sprint 1 de "Alfa"
+    And el proyecto "Alfa" con el sprint 2 abierto del "2026-10-26" al "2026-11-08"
+    When asigno la historia "Reportes" de "Alfa" al sprint 2
+    Then el sprint 1 de "Alfa" registra 3 puntos planificados y 0 completados
+    And la historia "Reportes" de "Alfa" sigue asignada al sprint 2
+
+  @CA-11.7 @limite
+  Scenario: Un sprint sin historias se cierra con 0 puntos
+    When cierro el sprint 1 de "Alfa"
+    Then el cierre del sprint termina sin errores
+    And el sprint 1 de "Alfa" registra 0 puntos planificados y 0 completados
 
   @CA-11.2 @error
   Scenario: No se puede cerrar un sprint que ya está cerrado
