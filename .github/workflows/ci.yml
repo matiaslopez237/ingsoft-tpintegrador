@@ -51,15 +51,15 @@ jobs:
 
       - name: Resumen de cobertura
         run: |
-          go tool cover -func=coverage.out | tail -1
           go tool cover -html=coverage.out -o coverage.html
           {
-            echo "## Cobertura"
+            echo "## Cobertura total"
             echo '```'
-            go tool cover -func=coverage.out | tail -1
+            go tool cover -func=coverage.out | grep -E '^total:'
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # El reporte se guarda aunque el mínimo de abajo falle, para poder ver qué bajó.
       - name: Guardar el reporte de cobertura
         uses: actions/upload-artifact@v4
         with:
@@ -67,6 +67,18 @@ jobs:
           path: |
             coverage.out
             coverage.html
+
+      # Mínimo de cobertura total (80%, como pide la skill tdd-workflow). Al 29/10 está en 88%.
+      - name: Verificar la cobertura mínima
+        env:
+          MINIMO: "80"
+        run: |
+          total=$(go tool cover -func=coverage.out | awk '/^total:/ {sub("%", "", $3); print $3}')
+          echo "Cobertura total: ${total}% (mínimo: ${MINIMO}%)"
+          if awk -v t="$total" -v m="$MINIMO" 'BEGIN { exit !(t < m) }'; then
+            echo "::error::La cobertura total (${total}%) está por debajo del mínimo (${MINIMO}%)."
+            exit 1
+          fi
 
   deploy:
     name: Desplegar en Render
