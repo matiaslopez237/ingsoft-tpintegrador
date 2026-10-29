@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero registrar un defecto con descripción, severidad, estado, historia relacionada y Sprint de detección, para darle seguimiento.
 **Issue:** #31  ·  **Sprint:** 2  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada
 
 ## 1. Objetivo
 Dejar constancia de un defecto encontrado sobre un elemento del backlog ya existente: qué pasa, qué tan grave es y en qué Sprint se detectó. Es el dato base de la Épica 6 (gestión de defectos), que después usan el seguimiento, las métricas y el dashboard. Reutiliza los elementos de backlog de HU-05 y los sprints de HU-08. En esta historia se exponen tanto el endpoint JSON como la pantalla (a diferencia de HU-18, que dejó la pantalla para HU-30: acá la pantalla es la tarea 20.8 de esta misma historia).
@@ -94,10 +94,17 @@ Las acordó el equipo (Ezequiel) en el chat el 2026-10-26, a partir del borrador
 - **D-3 (historia relacionada):** cualquier elemento del backlog del proyecto, sin restricción de estado ni prioridad.
 - **D-4 (Sprint de detección):** el Sprint `Abierto` cuyas fechas incluyen hoy, porque hoy todos los sprints quedan en estado `Abierto` (HU-11, que los cierra, todavía no existe) y hace falta mirar el rango de fechas para saber cuál está vigente.
 
+## Decisiones confirmadas
+Las preguntas P-1 a P-3 del borrador las confirmó Matías López (Agile Enabler) el 2026-10-29, tal como estaban propuestas:
+- **P-1 (proyecto no Activo):** se puede registrar un defecto aunque el proyecto no esté Activo, igual que HU-18 (RN-18.4).
+- **P-2 (error propio):** se usa `ErrDescripcionDefectoVacia` y no el `ErrDescripcionVacia` de HU-05. Se reutiliza un error solo si se refiere a la misma entidad, como `ErrProyectoNoEncontrado` o `ErrElementoNoEncontrado`.
+- **P-3 (ruta HTTP):** `POST /proyectos/{id}/defectos`, con el elemento en el cuerpo como `elemento_id`.
+
+Nota: D-4 se escribió cuando HU-11 todavía no existía. Con HU-11 en `main` la regla sigue igual: un sprint cerrado antes de su fecha de fin deja de ser el vigente.
+
 ## Preguntas abiertas
-- **P-1 — Proyecto no Activo:** se asume que un defecto se puede registrar aunque el proyecto no esté Activo, igual que HU-18 (RN-18.4). Pendiente de confirmar con el equipo.
-- **P-2 — Reutilizar `ErrDescripcionVacia` de HU-05:** se define `ErrDescripcionDefectoVacia` en vez de reutilizar el de HU-05, porque son campos de entidades distintas (Defecto vs. ElementoBacklog) y podrían divergir de texto en el futuro. A confirmar que este criterio ("reusar solo si es la misma entidad referenciada", como `ErrProyectoNoEncontrado` o `ErrElementoNoEncontrado`, y no solo el mismo nombre de campo) está bien.
-- **P-3 — Ruta HTTP:** se propone `POST /proyectos/{id}/defectos` (el elemento va en el cuerpo como `elemento_id`, no en la URL, a diferencia de HU-18 que anida bajo `/backlog/{elementoID}`). Pendiente de confirmar con Matías.
+Ninguna.
 
 ## Historial
 - 2026-10-26: creada (borrador), con las decisiones D-1 a D-4 confirmadas en el chat; P-1 a P-3 pendientes de confirmar con el equipo.
+- 2026-10-29: P-1 a P-3 confirmadas por Matías López; spec aprobada.
