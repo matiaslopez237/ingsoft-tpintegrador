@@ -152,3 +152,52 @@ func TestRepositorioBacklog_ElementoConEsfuerzo(t *testing.T) {
 		t.Errorf("el elemento debería seguir existiendo: %v", err)
 	}
 }
+
+// asignarASprint crea un sprint del proyecto con el estado dado y le asigna el elemento,
+// directo en la base (como haría AsignarHistoria de HU-09).
+func asignarASprint(t *testing.T, repo *RepositorioBacklog, proyectoID, elementoID int64, estado domain.EstadoSprint) {
+	t.Helper()
+	res, err := repo.db.Exec(`INSERT INTO sprints (proyecto_id, numero, fecha_inicio, fecha_fin, objetivo, estado)
+		VALUES (?, 1, '2026-10-26', '2026-10-27', 'Objetivo', ?)`, proyectoID, string(estado))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sprintID, err := res.LastInsertId()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := repo.db.Exec(`UPDATE backlog_elementos SET sprint_id = ? WHERE id = ?`, sprintID, elementoID); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// Traza: HU-06 CA-06.11 (RN-06.8). La base también lo garantiza: si otro pedido asignó el
+// elemento a un Sprint Abierto después de que el caso de uso lo verificara, no se borra.
+func TestRepositorioBacklog_EliminarElemento_EnSprintActivo(t *testing.T) {
+	ctx := context.Background()
+	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
+	e := guardarElemento(t, repo, ids[0], "Login")
+	asignarASprint(t, repo, ids[0], e.ID, domain.SprintAbierto)
+
+	if err := repo.EliminarElemento(ctx, e.ID); !errors.Is(err, domain.ErrElementoEnSprintActivo) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrElementoEnSprintActivo)
+	}
+	if _, err := repo.BuscarElementoPorID(ctx, e.ID); err != nil {
+		t.Errorf("el elemento tendría que seguir existiendo: %v", err)
+	}
+}
+
+// Traza: HU-06 CA-06.11 (RN-06.8)
+func TestRepositorioBacklog_EliminarElemento_EnSprintCerrado(t *testing.T) {
+	ctx := context.Background()
+	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
+	e := guardarElemento(t, repo, ids[0], "Login")
+	asignarASprint(t, repo, ids[0], e.ID, domain.SprintCerrado)
+
+	if err := repo.EliminarElemento(ctx, e.ID); err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if _, err := repo.BuscarElementoPorID(ctx, e.ID); !errors.Is(err, domain.ErrElementoNoEncontrado) {
+		t.Errorf("el elemento tendría que haberse eliminado: %v", err)
+	}
+}
