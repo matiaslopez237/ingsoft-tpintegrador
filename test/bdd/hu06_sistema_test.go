@@ -34,6 +34,7 @@ func erroresHU06() map[string]error {
 		"estado inválido":        domain.ErrEstadoElementoInvalido,
 		"título duplicado":       domain.ErrTituloDuplicado,
 		"elemento con esfuerzo":  domain.ErrElementoConEsfuerzo,
+		"elemento con defectos":  domain.ErrElementoConDefectos,
 	}
 }
 
@@ -46,6 +47,7 @@ type sistemaEdicionReal struct {
 	editar        *app.EditarElementoBacklog
 	eliminar      *app.EliminarElementoBacklog
 	registrar     *app.RegistrarEsfuerzo
+	defectos      *app.RegistrarDefecto
 	repo          *persistencia.RepositorioBacklog
 	servidor      *httptest.Server
 	cliente       *http.Client
@@ -73,9 +75,11 @@ func nuevoSistemaEdicionBacklog() (sistemaEdicionBacklog, error) {
 		editar:        app.NuevoEditarElementoBacklog(backlog),
 		eliminar:      app.NuevoEliminarElementoBacklog(backlog),
 		registrar:     app.NuevoRegistrarEsfuerzo(proyectos, backlog, persistencia.NuevoRepositorioEsfuerzo(db), reloj),
-		repo:          backlog,
-		db:            db,
-		dir:           dir,
+		defectos: app.NuevoRegistrarDefecto(proyectos, backlog, persistencia.NuevoRepositorioSprints(db),
+			persistencia.NuevoRepositorioDefectos(db), reloj),
+		repo: backlog,
+		db:   db,
+		dir:  dir,
 	}
 	s.servidor = httptest.NewServer(adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		ConsultarProyecto:        app.NuevoConsultarProyecto(proyectos),
@@ -118,6 +122,14 @@ func (s sistemaEdicionReal) RegistrarEsfuerzo(proyectoID, elementoID int64, inte
 	_, err := s.registrar.Ejecutar(ctx, app.DatosRegistroEsfuerzo{
 		ProyectoID: proyectoID, ElementoID: elementoID, Integrante: integrante,
 		Fecha: time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC), Actividad: "Desarrollo", Horas: horas,
+	})
+	return err
+}
+
+func (s sistemaEdicionReal) RegistrarDefecto(proyectoID, elementoID int64, severidad string) error {
+	_, err := s.defectos.Ejecutar(context.Background(), app.DatosDefecto{
+		ProyectoID: proyectoID, ElementoID: elementoID, Descripcion: "Defecto de prueba",
+		Severidad: domain.Severidad(severidad),
 	})
 	return err
 }
