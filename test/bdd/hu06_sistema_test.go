@@ -46,6 +46,7 @@ type sistemaEdicionReal struct {
 	editar        *app.EditarElementoBacklog
 	eliminar      *app.EliminarElementoBacklog
 	registrar     *app.RegistrarEsfuerzo
+	crearSprint   *app.CrearSprint
 	repo          *persistencia.RepositorioBacklog
 	servidor      *httptest.Server
 	cliente       *http.Client
@@ -73,6 +74,7 @@ func nuevoSistemaEdicionBacklog() (sistemaEdicionBacklog, error) {
 		editar:        app.NuevoEditarElementoBacklog(backlog),
 		eliminar:      app.NuevoEliminarElementoBacklog(backlog),
 		registrar:     app.NuevoRegistrarEsfuerzo(proyectos, backlog, persistencia.NuevoRepositorioEsfuerzo(db), reloj),
+		crearSprint:   app.NuevoCrearSprint(proyectos, persistencia.NuevoRepositorioSprints(db)),
 		repo:          backlog,
 		db:            db,
 		dir:           dir,
@@ -119,6 +121,26 @@ func (s sistemaEdicionReal) RegistrarEsfuerzo(proyectoID, elementoID int64, inte
 		ProyectoID: proyectoID, ElementoID: elementoID, Integrante: integrante,
 		Fecha: time.Date(2026, 10, 20, 0, 0, 0, 0, time.UTC), Actividad: "Desarrollo", Horas: horas,
 	})
+	return err
+}
+
+// AsignarANuevoSprint crea el Sprint con HU-08 y, si tiene que estar cerrado, lo cierra en la base
+// (HU-11 todavía no existe). La asignación también se escribe directo en la base, como en los
+// escenarios de HU-09: en la vida real pasó antes de que el Sprint se cerrara.
+func (s sistemaEdicionReal) AsignarANuevoSprint(proyectoID, elementoID int64, abierto bool) error {
+	hoy := time.Now()
+	sp, err := s.crearSprint.Ejecutar(context.Background(), app.DatosNuevoSprint{
+		ProyectoID: proyectoID, FechaInicio: hoy, FechaFin: hoy, Objetivo: "Objetivo de prueba",
+	})
+	if err != nil {
+		return err
+	}
+	if !abierto {
+		if _, err := s.db.Exec(`UPDATE sprints SET estado = ? WHERE id = ?`, string(domain.SprintCerrado), sp.ID); err != nil {
+			return err
+		}
+	}
+	_, err = s.db.Exec(`UPDATE backlog_elementos SET sprint_id = ? WHERE id = ?`, sp.ID, elementoID)
 	return err
 }
 

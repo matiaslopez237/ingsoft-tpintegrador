@@ -49,6 +49,8 @@ type sistemaEdicionBacklog interface {
 	// CrearElemento crea un elemento con descripción "Necesidad de prueba" y un criterio.
 	CrearElemento(proyectoID int64, titulo, prioridad string, storyPoints int) (int64, error)
 	RegistrarEsfuerzo(proyectoID, elementoID int64, integrante string, horas float64) error
+	// AsignarANuevoSprint crea un Sprint del proyecto (abierto o cerrado) y le asigna el elemento.
+	AsignarANuevoSprint(proyectoID, elementoID int64, abierto bool) error
 	// EditarElemento envía solo los campos indicados. story_points "null" quita la estimación;
 	// criterios va separado por ";" y vacío es una lista vacía.
 	EditarElemento(proyectoID, elementoID int64, campos map[string]string) error
@@ -106,6 +108,7 @@ func registrarStepsHU06(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto "([^"]*)" tiene en su backlog el elemento "([^"]*)" con prioridad "([^"]*)" y (\d+) story points$`, w.tieneEnSuBacklog)
 	ctx.Step(`^el elemento "([^"]*)" está en estado "([^"]*)"$`, w.elementoEstaEnEstado)
 	ctx.Step(`^"([^"]*)" registró (\d+) horas de esfuerzo en el elemento "([^"]*)"$`, w.registroEsfuerzo)
+	ctx.Step(`^el elemento "([^"]*)" está asignado a un Sprint (abierto|cerrado)$`, w.asignadoASprint)
 
 	ctx.Step(`^edito el elemento "([^"]*)" cambiando "([^"]*)" a "([^"]*)"$`, w.editoCambiando)
 	ctx.Step(`^edito el elemento "([^"]*)" con:$`, w.editoCon)
@@ -243,6 +246,18 @@ func (w *edicionBacklogWorld) eliminar(proyecto, titulo string) error {
 		return err
 	}
 	w.ultimoErr = w.sistema.EliminarElemento(pid, eid)
+	return nil
+}
+
+// asignadoASprint deja el elemento asignado a un Sprint nuevo de su proyecto (RN-06.8).
+func (w *edicionBacklogWorld) asignadoASprint(titulo, estado string) error {
+	pid, eid, err := w.ids("", titulo)
+	if err != nil {
+		return err
+	}
+	if err := w.sistema.AsignarANuevoSprint(pid, eid, estado == "abierto"); err != nil {
+		return fmt.Errorf("asignar %q a un Sprint %s: %w", titulo, estado, err)
+	}
 	return nil
 }
 
