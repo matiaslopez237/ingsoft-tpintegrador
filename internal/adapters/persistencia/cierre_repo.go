@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
@@ -13,26 +12,13 @@ import (
 // BuscarSprintPorID devuelve el sprint con ese ID, o domain.ErrSprintNoEncontrado si no existe.
 // Implementa HU-11 (app.RepositorioCierre).
 func (r *RepositorioSprints) BuscarSprintPorID(ctx context.Context, id int64) (domain.Sprint, error) {
-	var (
-		s                   = domain.Sprint{ID: id}
-		inicio, fin, estado string
-	)
-	err := r.db.QueryRowContext(ctx,
-		`SELECT proyecto_id, numero, fecha_inicio, fecha_fin, objetivo, estado FROM sprints WHERE id = ?`, id).
-		Scan(&s.ProyectoID, &s.Numero, &inicio, &fin, &s.Objetivo, &estado)
+	s, err := escanearSprint(r.db.QueryRowContext(ctx, `SELECT `+columnasSprint+` FROM sprints WHERE id = ?`, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.Sprint{}, domain.ErrSprintNoEncontrado
 	}
 	if err != nil {
 		return domain.Sprint{}, fmt.Errorf("buscar sprint %d: %w", id, err)
 	}
-	if s.FechaInicio, err = time.Parse(time.DateOnly, inicio); err != nil {
-		return domain.Sprint{}, fmt.Errorf("fecha de inicio guardada inválida: %w", err)
-	}
-	if s.FechaFin, err = time.Parse(time.DateOnly, fin); err != nil {
-		return domain.Sprint{}, fmt.Errorf("fecha de fin guardada inválida: %w", err)
-	}
-	s.Estado = domain.EstadoSprint(estado)
 	return s, nil
 }
 
