@@ -175,7 +175,6 @@ func TestSprint_Cerrar(t *testing.T) {
 	}
 }
 
-// Traza: HU-11 RN-11.1, RN-11.5: un sprint recién cerrado no se puede volver a cerrar.
 // Traza: HU-11 RN-11.1, CA-11.5: solo un sprint Abierto se puede cerrar. La pantalla lo usa para
 // decidir si muestra el botón "Cerrar sprint", sin repetir la regla.
 func TestSprint_PuedeCerrarse(t *testing.T) {
@@ -196,6 +195,7 @@ func TestSprint_PuedeCerrarse(t *testing.T) {
 	}
 }
 
+// Traza: HU-11 RN-11.1, RN-11.5: un sprint recién cerrado no se puede volver a cerrar.
 func TestSprint_Cerrar_DosVeces_RetornaError(t *testing.T) {
 	s := sprintDel(t, 7, "2026-10-26", "2026-10-27")
 	if err := s.Cerrar(); err != nil {
