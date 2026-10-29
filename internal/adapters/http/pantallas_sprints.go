@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -118,15 +117,7 @@ func (p *pantallas) mostrarSprints(w http.ResponseWriter, r *http.Request, id in
 	}
 	vistas := make([]vistaSprint, len(sprints))
 	for i, s := range sprints {
-		vistas[i] = vistaSprint{
-			ID:            s.ID,
-			Numero:        s.Numero,
-			FechaInicio:   s.FechaInicio.Format(time.DateOnly),
-			FechaFin:      s.FechaFin.Format(time.DateOnly),
-			Objetivo:      s.Objetivo,
-			Estado:        string(s.Estado),
-			PuedeCerrarse: s.PuedeCerrarse(),
-		}
+		vistas[i] = aVistaSprint(s)
 	}
 	p.renderizar(w, status, "sprints.html", datosSprints{
 		Proyecto: aVistaProyecto(proyecto), Sprints: vistas, Form: form, Error: mensaje,

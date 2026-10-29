@@ -154,11 +154,12 @@ func buscarSprint(sprints []domain.Sprint, id int64) (domain.Sprint, bool) {
 	return domain.Sprint{}, false
 }
 
+// aVistaSprint arma los datos de un sprint para las plantillas de HU-08, HU-09 y HU-11.
 func aVistaSprint(s domain.Sprint) vistaSprint {
 	return vistaSprint{
 		ID: s.ID, Numero: s.Numero,
 		FechaInicio: s.FechaInicio.Format(time.DateOnly), FechaFin: s.FechaFin.Format(time.DateOnly),
-		Objetivo: s.Objetivo, Estado: string(s.Estado),
+		Objetivo: s.Objetivo, Estado: string(s.Estado), PuedeCerrarse: s.PuedeCerrarse(),
 	}
 }
 
