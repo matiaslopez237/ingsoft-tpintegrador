@@ -21,6 +21,8 @@ type RepositorioEdicionBacklog interface {
 // RepositorioEliminacionBacklog es el puerto de persistencia que necesita EliminarElementoBacklog.
 type RepositorioEliminacionBacklog interface {
 	BuscarElementoPorID(ctx context.Context, id int64) (domain.ElementoBacklog, error)
+	// BuscarSprint es el de HU-09 (RepositorioAsignacion): indica si el sprint está Abierto.
+	BuscarSprint(ctx context.Context, id int64) (proyectoID int64, abierto bool, err error)
 	// TieneEsfuerzo indica si el elemento tiene registros de esfuerzo (HU-18).
 	TieneEsfuerzo(ctx context.Context, elementoID int64) (bool, error)
 	// EliminarElemento borra el elemento y sus criterios. Si otro pedido le registró esfuerzo en
@@ -88,7 +90,7 @@ func (uc *EditarElementoBacklog) Ejecutar(ctx context.Context, d DatosEditarElem
 }
 
 // EliminarElementoBacklog es el caso de uso de HU-06 para eliminar un elemento.
-// Implementa HU-06 (RN-06.6, RN-06.7). RN-06.8 (Sprint activo) la suma HU-09.
+// Implementa HU-06 (RN-06.6 a RN-06.8).
 type EliminarElementoBacklog struct {
 	repo RepositorioEliminacionBacklog
 }
@@ -97,9 +99,20 @@ func NuevoEliminarElementoBacklog(repo RepositorioEliminacionBacklog) *EliminarE
 	return &EliminarElementoBacklog{repo: repo}
 }
 
-// Ejecutar busca el elemento en el proyecto, verifica que no tenga esfuerzo registrado y lo elimina.
+// Ejecutar busca el elemento en el proyecto, verifica que no esté en un Sprint activo ni tenga
+// esfuerzo registrado y lo elimina.
 func (uc *EliminarElementoBacklog) Ejecutar(ctx context.Context, d DatosEliminarElemento) error {
-	if _, err := buscarElementoDelProyecto(ctx, uc.repo, d.ProyectoID, d.ElementoID); err != nil {
+	e, err := buscarElementoDelProyecto(ctx, uc.repo, d.ProyectoID, d.ElementoID)
+	if err != nil {
+		return err
+	}
+	var sprintActivo bool
+	if e.SprintID != nil {
+		if _, sprintActivo, err = uc.repo.BuscarSprint(ctx, *e.SprintID); err != nil {
+			return fmt.Errorf("buscar sprint %d del elemento %d: %w", *e.SprintID, d.ElementoID, err)
+		}
+	}
+	if err := e.ValidarEliminacion(sprintActivo); err != nil {
 		return err
 	}
 	conEsfuerzo, err := uc.repo.TieneEsfuerzo(ctx, d.ElementoID)
