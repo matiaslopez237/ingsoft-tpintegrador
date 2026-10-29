@@ -16,6 +16,9 @@ type RepositorioCierre interface {
 	// cerró en el medio, devuelve domain.ErrSprintYaCerrado (spec HU-11, sección 5, P-8). Persiste
 	// siempre el estado Cerrado (RN-11.1) y del sprint usa solo el ID: no copia s.Estado ni otros
 	// campos, así no puede guardar otro estado aunque se lo llame sin pasar por domain.Sprint.Cerrar.
+	// En la misma operación aplica domain.ResumirCierre a las historias asignadas: guarda los puntos
+	// planificados y completados, los deja en s, y devuelve al backlog las sin terminar (RN-11.3,
+	// RN-11.6). Si falla, no guarda nada.
 	CerrarSprint(ctx context.Context, s *domain.Sprint) error
 }
 

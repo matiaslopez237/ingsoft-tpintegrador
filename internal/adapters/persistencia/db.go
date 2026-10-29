@@ -31,6 +31,10 @@ func AbrirDB(ruta string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrar columna sprint_id: %w", err)
 	}
+	if err := migrarPuntosDeSprint(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrar columnas de puntos de sprints: %w", err)
+	}
 
 	return db, nil
 }
@@ -106,14 +110,17 @@ CREATE TABLE IF NOT EXISTS registros_esfuerzo (
 
 -- HU-08. numero: 1, 2, 3… dentro de cada proyecto (RN-08.7); lo calcula el INSERT de GuardarSprint.
 -- Fechas AAAA-MM-DD: compararlas como texto respeta el orden de las fechas (RN-08.5).
+-- HU-11. puntos_*: el resumen que registra el cierre (RN-11.6); 0 mientras el sprint está Abierto.
 CREATE TABLE IF NOT EXISTS sprints (
-	id           INTEGER PRIMARY KEY AUTOINCREMENT,
-	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
-	numero       INTEGER NOT NULL,
-	fecha_inicio TEXT    NOT NULL,
-	fecha_fin    TEXT    NOT NULL,
-	objetivo     TEXT    NOT NULL,
-	estado       TEXT    NOT NULL,
+	id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id         INTEGER NOT NULL REFERENCES proyectos (id),
+	numero              INTEGER NOT NULL,
+	fecha_inicio        TEXT    NOT NULL,
+	fecha_fin           TEXT    NOT NULL,
+	objetivo            TEXT    NOT NULL,
+	estado              TEXT    NOT NULL,
+	puntos_planificados INTEGER NOT NULL DEFAULT 0,
+	puntos_completados  INTEGER NOT NULL DEFAULT 0,
 	UNIQUE (proyecto_id, numero)
 );`)
 	return err
@@ -149,4 +156,40 @@ func migrarSprintID(db *sql.DB) error {
 
 	_, err = db.Exec(`ALTER TABLE backlog_elementos ADD COLUMN sprint_id INTEGER REFERENCES sprints (id)`)
 	return err
+}
+
+// migrarPuntosDeSprint agrega a sprints las columnas del resumen de cierre de HU-11 (RN-11.6) si
+// todavía no existen, por el mismo motivo que migrarSprintID. Los sprints que ya estaban quedan con
+// 0 puntos. Es seguro llamarla en cada arranque.
+func migrarPuntosDeSprint(db *sql.DB) error {
+	existentes := map[string]bool{}
+	rows, err := db.Query(`PRAGMA table_info(sprints)`)
+	if err != nil {
+		return fmt.Errorf("consultar columnas de sprints: %w", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var (
+			cid, notNull, pk int
+			nombre, tipo     string
+			valorPorOmision  sql.NullString
+		)
+		if err := rows.Scan(&cid, &nombre, &tipo, &notNull, &valorPorOmision, &pk); err != nil {
+			return fmt.Errorf("leer columna de sprints: %w", err)
+		}
+		existentes[nombre] = true
+	}
+	if err := rows.Err(); err != nil {
+		return fmt.Errorf("recorrer columnas de sprints: %w", err)
+	}
+
+	for _, col := range []string{"puntos_planificados", "puntos_completados"} {
+		if existentes[col] {
+			continue
+		}
+		if _, err := db.Exec(`ALTER TABLE sprints ADD COLUMN ` + col + ` INTEGER NOT NULL DEFAULT 0`); err != nil {
+			return fmt.Errorf("agregar columna %s: %w", col, err)
+		}
+	}
+	return nil
 }

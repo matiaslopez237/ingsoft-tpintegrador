@@ -43,6 +43,9 @@ type Sprint struct {
 	FechaFin    time.Time
 	Objetivo    string // el Sprint Goal
 	Estado      EstadoSprint
+	// Resumen que registra el cierre (HU-11, RN-11.6); mientras el sprint está Abierto valen 0.
+	PuntosPlanificados int
+	PuntosCompletados  int
 }
 
 // NuevoSprint valida los datos contra el proyecto y sus sprints existentes, y devuelve un sprint

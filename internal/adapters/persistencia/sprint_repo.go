@@ -83,7 +83,7 @@ func (r *RepositorioSprints) ListarSprints(ctx context.Context, proyectoID int64
 }
 
 // columnasSprint son las columnas que lee escanearSprint, en su orden.
-const columnasSprint = `id, proyecto_id, numero, fecha_inicio, fecha_fin, objetivo, estado`
+const columnasSprint = `id, proyecto_id, numero, fecha_inicio, fecha_fin, objetivo, estado, puntos_planificados, puntos_completados`
 
 // filaSprint es lo que tienen en común *sql.Row y *sql.Rows para escanear una fila.
 type filaSprint interface {
@@ -97,7 +97,8 @@ func escanearSprint(f filaSprint) (domain.Sprint, error) {
 		s                   domain.Sprint
 		inicio, fin, estado string
 	)
-	if err := f.Scan(&s.ID, &s.ProyectoID, &s.Numero, &inicio, &fin, &s.Objetivo, &estado); err != nil {
+	if err := f.Scan(&s.ID, &s.ProyectoID, &s.Numero, &inicio, &fin, &s.Objetivo, &estado,
+		&s.PuntosPlanificados, &s.PuntosCompletados); err != nil {
 		return domain.Sprint{}, err
 	}
 	var err error
