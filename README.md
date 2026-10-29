@@ -1,5 +1,7 @@
 # Software Metrics & Estimation
 
+[![CI/CD](https://github.com/matiaslopez237/ingsoft-tpintegrador/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/matiaslopez237/ingsoft-tpintegrador/actions/workflows/ci.yml)
+
 Trabajo Práctico Integrador · Ingeniería y Calidad de Software 2026 · UTN FRSR.
 
 Aplicación web en **Go** para estimar, planificar, seguir y medir proyectos de software: proyectos, product backlog, sprints, planning poker, registro de esfuerzo, defectos, métricas, dashboard y reportes exportables a PDF.
@@ -31,6 +33,10 @@ go test ./...                              # tests unitarios + BDD
 go test ./... -coverprofile=coverage.out   # cobertura
 go tool cover -func=coverage.out
 ```
+
+## Integración y despliegue continuos
+
+Cada PR a `main` corre el CI (build, `go vet`, `gofmt` y los tests unitarios y BDD con `-race` y cobertura). Cuando el PR se mergea y el CI pasa en `main`, el pipeline despliega en Render. Detalle en [ADR-0004](docs/adr/0004-ci-cd.md).
 
 ## Equipo
 
