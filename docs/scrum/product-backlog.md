@@ -16,12 +16,12 @@ Todo esto está cargado en GitHub como Issues: las épicas son issues padre, y c
 |---|---|---|---|
 | 1 — MVP | hasta el 25 oct | Gestión de proyectos (Épica 1) + crear elementos de backlog + registrar esfuerzo | 19 |
 | 2 — Interfaz, backlog y sprints | 26 y 27 oct | Gestionar el backlog y armar sprints de un proyecto desde una interfaz web | 26 |
-| 3 — Estimación y métricas | 28 y 29 oct | Planning Poker, esfuerzo estimado vs. real y primeras métricas | 28 |
-| 4 — Visualización y cierre | 30 y 31 oct | Dashboard, reportes en PDF y documentación | 25 |
-| — | 1 nov | Revisión general y correcciones (sin historias nuevas) | — |
-| — | 2 nov | **Entrega** | — |
+| 3 — Estimación y métricas | 29 al 31 oct | Planning Poker, esfuerzo estimado vs. real y primeras métricas | 28 |
+| 4 — Visualización y cierre | a definir (después del 31 oct) | Dashboard, reportes en PDF y documentación | 25 |
+| — | antes de la entrega | Revisión general y correcciones (sin historias nuevas) | — |
+| — | a confirmar (postergada, ya no es el 2 nov) | **Entrega** | — |
 
-Sprints de 2 días. Al cerrar el Sprint 2 se mide la velocidad real: si quedó lejos de lo planificado, se posterga lo último de cada lista (el orden de cada sprint es su prioridad).
+Sprints de 2 días (el Sprint 3, de 3, porque la entrega se postergó). Al cerrar cada sprint se mide la velocidad real: si quedó lejos de lo planificado, se posterga lo último de cada lista (el orden de cada sprint es su prioridad).
 
 ---
 
