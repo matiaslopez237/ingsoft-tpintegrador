@@ -1,6 +1,6 @@
 # Sprint 3 — Planning
 
-**Fechas:** 29 de octubre (noche) y 30 de octubre de 2026. El Sprint 2 se terminó de mergear el 29 a la noche, un día después de lo previsto en el calendario del Product Backlog. Las fechas del Sprint 3 y del Sprint 4 se confirman en el grupo.
+**Fechas:** del 29 al 31 de octubre de 2026 (3 días). La entrega del TP se postergó (ya no es el 2 de noviembre), así que el calendario se aflojó: el Sprint 3 usa un día más y las fechas del Sprint 4 se definen cuando se confirme la entrega.
 **Sprint Goal:** estimar historias en equipo con Planning Poker y medir el trabajo: velocidad, esfuerzo estimado contra real y estado de los defectos.
 **Compromiso:** 28 story points (velocidad del Sprint 2: 26 puntos, todas las historias terminadas).
 
