@@ -783,7 +783,7 @@ RN-09.7 (un elemento de otro proyecto se trata como inexistente, igual que RN-18
 
 ## HU-11: Cerrar un Sprint
 
-- **Issue:** #22 (a confirmar, según la spec) · Sprint 2 · 3 SP
+- **Issue:** #22 · Sprint 2 · 3 SP
 - **Spec:** [docs/specs/HU-11-cerrar-sprint.md](specs/HU-11-cerrar-sprint.md)
 - **Feature:** [features/HU-11-cerrar-sprint.feature](../features/HU-11-cerrar-sprint.feature) (steps en [test/bdd/hu11_steps_test.go](../test/bdd/hu11_steps_test.go))
 
