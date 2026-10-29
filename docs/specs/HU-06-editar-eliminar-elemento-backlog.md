@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero editar o eliminar un elemento del backlog, para mantenerlo actualizado.
 **Issue:** #17  ·  **Sprint:** 2  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada (PR #182)
 
 ## 1. Objetivo
 Mantener al día el Product Backlog de un proyecto: corregir o completar los datos de un elemento creado en HU-05 (por ejemplo, estimarlo o cambiarle la prioridad) y sacar los que ya no hacen falta, sin perder información que usan otras historias (el esfuerzo de HU-18).
@@ -38,11 +38,12 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 - **RN-06.5:** Al editar debe enviarse al menos un campo. Enviar un campo con el valor que ya tiene no es un error.
 - **RN-06.6:** El elemento tiene que pertenecer al proyecto indicado; un elemento de otro proyecto se trata como inexistente (igual que RN-18.1).
 - **RN-06.7:** No se puede eliminar un elemento que tiene esfuerzo registrado (HU-18): esas horas se conservan para las métricas.
-- **RN-06.8 (pendiente de HU-09):** No se podrá eliminar un elemento que esté en un Sprint activo. Hoy los sprints no existen; la regla la implementa HU-09 (asignar historias a un sprint), que tiene que sumar la verificación al caso de uso `EliminarElementoBacklog`.
+- **RN-06.8:** No se puede eliminar un elemento asignado a un Sprint activo. "Activo" es un Sprint en estado `Abierto`, el mismo criterio que HU-09 (RN-09.2). Un elemento asignado a un Sprint `Cerrado`, o sin Sprint, se puede eliminar (si cumple RN-06.7).
 - **RN-06.9:** El `ID` del elemento no cambia.
 
 ## 5. Restricciones
 - La validación de la edición vive en el dominio (`ElementoBacklog.Editar`) y reutiliza `NuevoElementoBacklog`, sin duplicar reglas.
+- RN-06.8 vive en el dominio (`ElementoBacklog.ValidarEliminacion`), que recibe como `bool` si su Sprint está activo, igual que las reglas de HU-09; el caso de uso lo consulta con `BuscarSprint` (puerto de HU-09).
 - La unicidad del título y la verificación de esfuerzo se resuelven en los casos de uso (`EditarElementoBacklog`, `EliminarElementoBacklog`) a través de puertos. La base también las garantiza: `UNIQUE (proyecto_id, titulo_clave)` y la clave foránea de `registros_esfuerzo`.
 - **Pedidos simultáneos:** al guardar se actualizan solo los campos enviados (lección de DEF-01), así dos ediciones de campos distintos no se pisan. Los criterios, si se envían, se reemplazan en una transacción.
 - Persistencia en SQLite (ADR-0002), API con `net/http` (ADR-0001) y pantalla con `html/template` (ADR-0003). La pantalla también envía solo los campos que el usuario cambió.
@@ -57,6 +58,7 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 - Elemento de otro proyecto (por ruta) → no encontrado.
 - Eliminar un elemento con un registro de esfuerzo → error; sin esfuerzo → se elimina con sus criterios.
 - Eliminar dos veces el mismo elemento → la segunda da no encontrado.
+- Eliminar un elemento asignado a un Sprint `Abierto` → error; asignado a un Sprint `Cerrado` → se elimina.
 
 ## 7. Condiciones de error
 | Situación | Error (Go) | HTTP |
@@ -66,10 +68,11 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 | Título, descripción, prioridad, story points o criterios inválidos | los de HU-05 (`ErrTituloVacio`, `ErrTituloDemasiadoLargo`, `ErrDescripcionVacia`, `ErrPrioridadInvalida`, `ErrStoryPointsInvalidos`, `ErrSinCriterios`, `ErrCriterioVacio`) | 400 |
 | Estado que no es Pendiente, En progreso ni Hecho | `domain.ErrEstadoElementoInvalido` (el mismo de HU-07) | 400 |
 | Otro elemento del proyecto ya tiene ese título | `domain.ErrTituloDuplicado` (HU-05) | 400 |
+| Eliminar un elemento asignado a un Sprint activo | `ErrElementoEnSprintActivo` | 409 |
 | Eliminar un elemento con esfuerzo registrado | `ErrElementoConEsfuerzo` | 409 |
 | Cuerpo JSON mal formado, con campos desconocidos o `story_points` que no es un entero | — (adaptador) | 400. Es un error de formato: se informa antes de buscar el elemento, como las fechas mal formadas en HU-30. |
 
-Si hay varios errores, se informa el primero en el orden de la tabla: primero se busca el elemento, después el dominio valida los campos (en el orden de HU-05 y al final el estado) y por último se verifica el título duplicado.
+Si hay varios errores, se informa el primero en el orden de la tabla: primero se busca el elemento, después el dominio valida los campos (en el orden de HU-05 y al final el estado) y por último se verifica el título duplicado. Al eliminar: primero se busca el elemento, después se verifica el Sprint activo y por último el esfuerzo.
 
 ## 8. Criterios de aceptación
 - **CA-06.1:** Dado un elemento, cuando envío solo una nueva prioridad, entonces cambia la prioridad y el resto queda igual. (RN-06.1)
@@ -82,11 +85,12 @@ Si hay varios errores, se informa el primero en el orden de la tabla: primero se
 - **CA-06.8:** Dado un elemento sin esfuerzo, cuando lo elimino, entonces deja de existir junto con sus criterios. (RN-06.7)
 - **CA-06.9:** Dado un elemento con esfuerzo registrado, cuando lo elimino, entonces obtengo `ErrElementoConEsfuerzo` y el elemento sigue existiendo. (RN-06.7)
 - **CA-06.10:** Desde la pantalla del elemento puedo editarlo (se guardan solo los campos que cambié) y eliminarlo, y los errores se muestran en la misma pantalla. Si guardo sin cambiar nada, vuelvo al elemento sin mensaje de error, igual que en el formulario de proyecto (DEF-01). Desde la lista del backlog (HU-07) cada elemento tiene "Editar" y "Eliminar" (con confirmación), y al eliminar vuelvo a esa lista. (Restricciones)
+- **CA-06.11:** Dado un elemento asignado a un Sprint Abierto, cuando lo elimino, entonces obtengo `ErrElementoEnSprintActivo` y el elemento sigue existiendo; si su Sprint está Cerrado, se elimina. (RN-06.8)
 
 ## Decisiones tomadas
 Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 - No se elimina un elemento con esfuerzo registrado (RN-06.7).
-- La regla del Sprint activo queda para HU-09 (RN-06.8).
+- No se elimina un elemento en un Sprint activo (RN-06.8, criterio del issue #17). Se implementó después de HU-09, que define cuándo un Sprint está activo.
 - El estado se edita libremente (RN-06.4).
 - Edición parcial, como HU-02 (RN-06.1).
 
@@ -99,3 +103,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 - 2026-10-26: guardar la pantalla sin cambios vuelve al elemento sin error, alineado con DEF-01 (la API sigue devolviendo `ErrSinCambios`).
 - 2026-10-26: integrada con la lista del backlog de HU-07: botones Editar y Eliminar en cada elemento, y al eliminar se vuelve a la lista. `ErrEstadoElementoInvalido` es el mismo de HU-07.
 - 2026-10-26: a partir de la revisión del PR #182, un POST a la pantalla sin los campos ocultos `original_*` envía todos los campos (como DEF-01), en lugar de compararlos contra valores vacíos.
+- 2026-10-28: implementada RN-06.8 (no eliminar un elemento en un Sprint activo) ahora que HU-09 está en `main`; nuevo error `ErrElementoEnSprintActivo` (409) y CA-06.11. La spec pasa a Aprobada (PR #182 mergeado).
