@@ -20,6 +20,7 @@ type CasosDeUso struct {
 	ListarBacklog            listadorBacklog      // HU-07
 	AsignarHistoria          agregadorAsignacion  // HU-09
 	DesasignarHistoria       quitadorAsignacion   // HU-09
+	CompletarHistoria        completadorHistorias // HU-10
 	ListarProyectos          listadorProyectos    // HU-30
 	EditarElementoBacklog    editorElementos      // HU-06
 	EliminarElementoBacklog  eliminadorElementos  // HU-06
@@ -41,6 +42,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarSprints(mux, cu.CrearSprint, cu.ListarSprints)
 	RegistrarListarBacklog(mux, cu.ListarBacklog)
 	RegistrarAsignacion(mux, cu.AsignarHistoria, cu.DesasignarHistoria)
+	RegistrarCompletar(mux, cu.CompletarHistoria)
 	RegistrarPantallas(mux, cu)
 	return mux
 }

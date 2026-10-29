@@ -18,13 +18,20 @@
   <table>
     <caption class="oculto">Elementos asignados a este sprint</caption>
     <thead>
-      <tr><th scope="col">Título</th><th scope="col"><span class="oculto">Quitar</span></th></tr>
+      <tr><th scope="col">Título</th><th scope="col">Estado</th><th scope="col"><span class="oculto">Acciones</span></th></tr>
     </thead>
     <tbody>
       {{range .Asignados}}
       <tr>
         <td>{{.Titulo}}</td>
+        <td><span class="estado">{{.Estado}}</span></td>
         <td>
+          {{if .PuedeCompletarse}}
+          <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{$.Sprint.ID}}/completar" class="en-linea">
+            <input type="hidden" name="elemento_id" value="{{.ID}}">
+            <button type="submit" class="boton" aria-label="Marcar {{.Titulo}} como hecha">Marcar como hecha</button>
+          </form>
+          {{end}}
           <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{$.Sprint.ID}}/quitar" class="en-linea">
             <input type="hidden" name="elemento_id" value="{{.ID}}">
             <button type="submit" class="peligro" aria-label="Quitar {{.Titulo}} del sprint">Quitar</button>
