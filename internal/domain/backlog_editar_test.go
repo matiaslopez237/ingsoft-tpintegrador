@@ -130,3 +130,27 @@ func TestEditar_NoModificaElOriginal(t *testing.T) {
 		t.Errorf("se comparte memoria: original %+v, editado %+v", original, e)
 	}
 }
+
+// Traza: HU-06 CA-06.11, RN-06.8
+func TestValidarEliminacion(t *testing.T) {
+	sprint := int64(10)
+	tests := []struct {
+		nombre       string
+		sprintID     *int64
+		sprintActivo bool
+		wantErr      error
+	}{
+		{"sin sprint se puede eliminar", nil, false, nil},
+		{"en un sprint activo no se puede eliminar", &sprint, true, ErrElementoEnSprintActivo},
+		{"en un sprint cerrado se puede eliminar", &sprint, false, nil},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			e := login(t)
+			e.SprintID = tt.sprintID
+			if err := e.ValidarEliminacion(tt.sprintActivo); !errors.Is(err, tt.wantErr) {
+				t.Errorf("error = %v, se esperaba %v", err, tt.wantErr)
+			}
+		})
+	}
+}
