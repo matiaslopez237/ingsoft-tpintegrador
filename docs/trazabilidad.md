@@ -13,7 +13,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
 | HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
 | HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
-| HU-06 Editar o eliminar un elemento del backlog | ✓ (Borrador, pendiente de aprobación en el PR; RN-06.8 pendiente de HU-09) | 10/10 | 10/10 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 22/22 escenarios |
+| HU-06 Editar o eliminar un elemento del backlog | ✓ Aprobada (PR #182) | 11/11 | 11/11 | ✓ | RED → GREEN ×6 (+4 de RN-06.8), REFACTOR ✓ | ✓ 25/25 escenarios |
 | HU-07 Listar y ordenar el backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 14/14 escenarios |
 | HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
@@ -681,8 +681,7 @@ Además: `TestPantallas_RechazaFormulariosDeOtroSitio` (403, CSRF), `TestPantall
 | CA-06.8 Eliminar sin esfuerzo | RN-06.7 | Eliminar un elemento sin esfuerzo `@normal` | `TestEliminarElemento_SinEsfuerzo_LoElimina`, `TestRepositorioBacklog_EliminarElemento_BorraElElementoYSusCriterios`, `TestDeleteElemento` | `app.EliminarElementoBacklog`, `persistencia.RepositorioBacklog.EliminarElemento` |
 | CA-06.9 Con esfuerzo no se elimina | RN-06.7 | No se elimina un elemento con esfuerzo registrado `@error` | `TestEliminarElemento_ConEsfuerzo_NoLoElimina`, `TestRepositorioBacklog_ElementoConEsfuerzo`, `TestDeleteElemento` (409) | `app.EliminarElementoBacklog`, clave foránea de `registros_esfuerzo` |
 | CA-06.10 Pantalla | Restricciones | Editar desde la pantalla guarda solo lo que cambió `@normal` · La pantalla muestra el error `@error` · Guardar sin cambios vuelve sin error `@alternativo` · Eliminar desde la pantalla `@normal` | `TestPantallaElemento_*` (9 tests), `TestPantallaBacklog_EnlazaAEditarYEliminarCadaElemento`, `TestConsultarElemento_DelProyecto` | `pantallas_elemento.go`, `web/plantillas/elemento.html`, botones en `web/plantillas/backlog.html` (HU-07), `app.ConsultarElementoBacklog` |
-
-RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implementa HU-09 en `EliminarElementoBacklog`.
+| CA-06.11 Sprint activo no se elimina | RN-06.8 | No se elimina un elemento asignado a un Sprint activo `@error` · Se elimina un elemento asignado a un Sprint cerrado `@alternativo` · La pantalla no elimina un elemento asignado a un Sprint activo `@error` | `TestValidarEliminacion`, `TestEliminarElemento_EnSprintActivo_NoLoElimina`, `TestEliminarElemento_EnSprintCerrado_LoElimina`, `TestRepositorioBacklog_EliminarElemento_EnSprintActivo`, `TestRepositorioBacklog_EliminarElemento_EnSprintCerrado`, `TestDeleteElemento` (409), `TestPantallaElemento_Errores` | `domain.ElementoBacklog.ValidarEliminacion`, `app.EliminarElementoBacklog` (con `BuscarSprint` de HU-09), `DELETE` condicional en `persistencia.RepositorioBacklog.EliminarElemento`, `conflictoAlEliminar` |
 
 ### Archivos de código y tests
 
@@ -693,7 +692,7 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | Persistencia | [internal/adapters/persistencia/backlog_editar.go](../internal/adapters/persistencia/backlog_editar.go) | [backlog_editar_test.go](../internal/adapters/persistencia/backlog_editar_test.go) |
 | HTTP (JSON) | [internal/adapters/http/backlog_editar_handler.go](../internal/adapters/http/backlog_editar_handler.go) (`PATCH`/`DELETE /proyectos/{id}/backlog/{elementoID}`) | [backlog_editar_handler_test.go](../internal/adapters/http/backlog_editar_handler_test.go) |
 | Pantalla | [internal/adapters/http/pantallas_elemento.go](../internal/adapters/http/pantallas_elemento.go), [web/plantillas/elemento.html](../internal/adapters/http/web/plantillas/elemento.html) (`/web/proyectos/{id}/backlog/{elementoID}`) | [pantallas_elemento_test.go](../internal/adapters/http/pantallas_elemento_test.go) |
-| BDD | [test/bdd/hu06_sistema_test.go](../test/bdd/hu06_sistema_test.go) | 22 escenarios en verde |
+| BDD | [test/bdd/hu06_sistema_test.go](../test/bdd/hu06_sistema_test.go) | 25 escenarios en verde |
 
 ### Commits
 
@@ -712,11 +711,17 @@ RN-06.8 (no eliminar un elemento en un Sprint activo) queda pendiente: la implem
 | Editar y eliminar desde la lista del backlog (HU-07) | `01ae24f` [RED] → `72b4724` [GREEN] | **RED → GREEN** |
 | Revisión del PR #182: rutas POST de la pantalla en `router_test.go` | `f478777` | test |
 | Revisión del PR #182: sin campos `original_*` se envían todos los campos | `9384fca` [RED] → `ba3863c` [GREEN] | **RED → GREEN** |
+| RN-06.8 Sprint activo: spec | `f5fee45` | — |
+| RN-06.8 Sprint activo: escenarios BDD | `e91b488` [RED] (step de pantalla ajustado en `5e5e0e3`) | BDD en rojo |
+| RN-06.8 Sprint activo: dominio | `df8f2f8` [RED] → `bac7d7d` [GREEN] | **RED → GREEN** |
+| RN-06.8 Sprint activo: caso de uso | `f493f12` [RED] → `ebf2aa5` [GREEN] | **RED → GREEN** |
+| RN-06.8 Sprint activo: HTTP y pantalla (409) | `66777bc` [RED] → `99f92b1` [GREEN] | **RED → GREEN**, BDD en verde |
+| RN-06.8 Sprint activo: la base tampoco borra (revisión con go-reviewer) | `05e0aec` [RED] → `00a7798` [GREEN] | **RED → GREEN** |
+| RN-06.8 Sprint activo: revisión con go-reviewer | `ef9efa2` | **REFACTOR** |
 
 ### Huecos
 
-- La spec está en **Borrador** hasta la aprobación del PR.
-- RN-06.8 (Sprint activo) depende de HU-09.
+- Ninguno. La spec se aprobó en el PR #182 y RN-06.8 se implementó después de HU-09.
 - La lista del backlog (HU-07) enlaza a la pantalla del elemento (Editar) y permite eliminar con confirmación.
 
 ---

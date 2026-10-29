@@ -44,7 +44,7 @@ Se distingue "no enviado" (no cambia) de "enviado". En `story_points`, enviar `n
 ## 5. Restricciones
 - La validación de la edición vive en el dominio (`ElementoBacklog.Editar`) y reutiliza `NuevoElementoBacklog`, sin duplicar reglas.
 - RN-06.8 vive en el dominio (`ElementoBacklog.ValidarEliminacion`), que recibe como `bool` si su Sprint está activo, igual que las reglas de HU-09; el caso de uso lo consulta con `BuscarSprint` (puerto de HU-09).
-- La unicidad del título y la verificación de esfuerzo se resuelven en los casos de uso (`EditarElementoBacklog`, `EliminarElementoBacklog`) a través de puertos. La base también las garantiza: `UNIQUE (proyecto_id, titulo_clave)` y la clave foránea de `registros_esfuerzo`.
+- La unicidad del título y la verificación de esfuerzo se resuelven en los casos de uso (`EditarElementoBacklog`, `EliminarElementoBacklog`) a través de puertos. La base también las garantiza: `UNIQUE (proyecto_id, titulo_clave)` y la clave foránea de `registros_esfuerzo`. RN-06.8 también se verifica en el propio `DELETE`, que no borra un elemento asignado a un Sprint `Abierto` (como el `UPDATE` de HU-09), para que una asignación hecha en el medio por otro pedido no se pierda.
 - **Pedidos simultáneos:** al guardar se actualizan solo los campos enviados (lección de DEF-01), así dos ediciones de campos distintos no se pisan. Los criterios, si se envían, se reemplazan en una transacción.
 - Persistencia en SQLite (ADR-0002), API con `net/http` (ADR-0001) y pantalla con `html/template` (ADR-0003). La pantalla también envía solo los campos que el usuario cambió.
 
