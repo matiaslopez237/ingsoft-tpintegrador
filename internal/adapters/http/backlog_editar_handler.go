@@ -124,18 +124,16 @@ func (p pedidoEditarElemento) aCambios() (domain.CambiosElemento, error) {
 	return c, nil
 }
 
-// erroresConflictoEliminacion son los motivos por los que un elemento que existe no se puede
-// eliminar (HTTP 409), en el orden en que los informa el caso de uso: RN-06.8 y RN-06.7.
-var erroresConflictoEliminacion = []error{domain.ErrElementoEnSprintActivo, domain.ErrElementoConEsfuerzo}
-
-// conflictoAlEliminar devuelve el error de erroresConflictoEliminacion que envuelve err, si hay uno.
-func conflictoAlEliminar(err error) (error, bool) {
-	for _, c := range erroresConflictoEliminacion {
-		if errors.Is(err, c) {
-			return c, true
-		}
+// conflictoAlEliminar devuelve el motivo por el que un elemento que existe no se puede eliminar
+// (HTTP 409), si err lo envuelve: RN-06.8 (Sprint activo) o RN-06.7 (esfuerzo). Si no, nil.
+func conflictoAlEliminar(err error) error {
+	switch {
+	case errors.Is(err, domain.ErrElementoEnSprintActivo):
+		return domain.ErrElementoEnSprintActivo
+	case errors.Is(err, domain.ErrElementoConEsfuerzo):
+		return domain.ErrElementoConEsfuerzo
 	}
-	return nil, false
+	return nil
 }
 
 // handlerEliminarElemento atiende DELETE /proyectos/{id}/backlog/{elementoID}: 204 si se eliminó,
@@ -150,7 +148,7 @@ func handlerEliminarElemento(uc eliminadorElementos) http.HandlerFunc {
 			return
 		}
 		err = uc.Ejecutar(r.Context(), app.DatosEliminarElemento{ProyectoID: proyectoID, ElementoID: elementoID})
-		if c, ok := conflictoAlEliminar(err); ok {
+		if c := conflictoAlEliminar(err); c != nil {
 			escribirJSON(w, http.StatusConflict, respuestaError{c.Error()})
 			return
 		}
