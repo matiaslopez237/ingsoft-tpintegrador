@@ -16,6 +16,10 @@ type (
 	vistaElementoBacklog struct {
 		ID     int64
 		Titulo string
+		Estado string
+		// PuedeCompletarse decide si se muestra "Marcar como hecha" (HU-10): sprint Abierto y
+		// elemento no Hecho. Es solo para la vista; la regla la vuelve a validar el dominio.
+		PuedeCompletarse bool
 	}
 	datosSprintDetalle struct {
 		Proyecto    vistaProyecto
@@ -44,22 +48,11 @@ func (p *pantallas) sprintDetalle(w http.ResponseWriter, r *http.Request) {
 // asignarElementoPantalla asigna el elemento del formulario a este sprint, con el caso de uso de
 // HU-09, y vuelve al detalle del sprint. Implementa HU-09 (CA-09.1 a CA-09.3, CA-09.7, CA-09.8).
 func (p *pantallas) asignarElementoPantalla(w http.ResponseWriter, r *http.Request) {
-	id, ok := p.idDeRuta(w, r)
+	id, sprintID, elementoID, ok := p.leerAccionSprint(w, r)
 	if !ok {
 		return
 	}
-	sprintID, err := sprintIDDesdeRuta(r)
-	if err != nil {
-		p.renderizar(w, http.StatusBadRequest, "error.html", datosError{err.Error()})
-		return
-	}
-	elementoID, err := elementoIDDeForm(r)
-	if err != nil {
-		p.mostrarSprintDetalle(w, r, id, sprintID, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	err = p.cu.AsignarHistoria.Ejecutar(r.Context(),
+	err := p.cu.AsignarHistoria.Ejecutar(r.Context(),
 		app.DatosAsignacion{ProyectoID: id, ElementoID: elementoID, SprintID: sprintID})
 	p.resultadoAsignacion(w, r, id, sprintID, err)
 }
@@ -67,23 +60,59 @@ func (p *pantallas) asignarElementoPantalla(w http.ResponseWriter, r *http.Reque
 // quitarElementoPantalla desasigna el elemento del formulario de este sprint, con el caso de uso
 // de HU-09, y vuelve al detalle del sprint. Implementa HU-09 (CA-09.4 a CA-09.6).
 func (p *pantallas) quitarElementoPantalla(w http.ResponseWriter, r *http.Request) {
-	id, ok := p.idDeRuta(w, r)
+	id, sprintID, elementoID, ok := p.leerAccionSprint(w, r)
 	if !ok {
 		return
+	}
+	err := p.cu.DesasignarHistoria.Ejecutar(r.Context(), app.DatosDesasignacion{ProyectoID: id, ElementoID: elementoID})
+	p.resultadoAsignacion(w, r, id, sprintID, err)
+}
+
+// completarElementoPantalla marca como Hecho el elemento del formulario, con el mismo caso de uso
+// que el endpoint JSON de HU-10, y vuelve al detalle del sprint. Implementa HU-10 (CA-10.7).
+func (p *pantallas) completarElementoPantalla(w http.ResponseWriter, r *http.Request) {
+	id, sprintID, elementoID, ok := p.leerAccionSprint(w, r)
+	if !ok {
+		return
+	}
+	err := p.cu.CompletarHistoria.Ejecutar(r.Context(), app.DatosCompletar{ProyectoID: id, ElementoID: elementoID})
+	if err == nil {
+		redirigirAlDetalleDelSprint(w, r, id, sprintID)
+		return
+	}
+	// Se muestra el texto del error de dominio, no el envuelto por el caso de uso.
+	for _, noEncontrado := range []error{domain.ErrProyectoNoEncontrado, domain.ErrElementoNoEncontrado} {
+		if errors.Is(err, noEncontrado) {
+			p.renderizar(w, http.StatusNotFound, "error.html", datosError{noEncontrado.Error()})
+			return
+		}
+	}
+	if mensaje, ok := mensajeDeValidacion(err); ok {
+		p.mostrarSprintDetalle(w, r, id, sprintID, http.StatusBadRequest, mensaje)
+		return
+	}
+	p.fallaInterna(w, "completar un elemento del sprint", err)
+}
+
+// leerAccionSprint lee lo común a las acciones del detalle del sprint (asignar, quitar,
+// completar): {id} y {sprintID} de la ruta y elemento_id del formulario. Si algo es inválido,
+// ya respondió (página de error, o el detalle con el mensaje) y devuelve ok en false.
+func (p *pantallas) leerAccionSprint(w http.ResponseWriter, r *http.Request) (id, sprintID, elementoID int64, ok bool) {
+	id, ok = p.idDeRuta(w, r)
+	if !ok {
+		return 0, 0, 0, false
 	}
 	sprintID, err := sprintIDDesdeRuta(r)
 	if err != nil {
 		p.renderizar(w, http.StatusBadRequest, "error.html", datosError{err.Error()})
-		return
+		return 0, 0, 0, false
 	}
-	elementoID, err := elementoIDDeForm(r)
+	elementoID, err = elementoIDDeForm(r)
 	if err != nil {
 		p.mostrarSprintDetalle(w, r, id, sprintID, http.StatusBadRequest, err.Error())
-		return
+		return 0, 0, 0, false
 	}
-
-	err = p.cu.DesasignarHistoria.Ejecutar(r.Context(), app.DatosDesasignacion{ProyectoID: id, ElementoID: elementoID})
-	p.resultadoAsignacion(w, r, id, sprintID, err)
+	return id, sprintID, elementoID, true
 }
 
 // resultadoAsignacion redirige al detalle del sprint si la acción salió bien, o vuelve a
@@ -128,9 +157,11 @@ func (p *pantallas) mostrarSprintDetalle(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
+	abierto := sprint.Estado == domain.SprintAbierto
 	var asignados, disponibles []vistaElementoBacklog
 	for _, e := range elementos {
-		v := vistaElementoBacklog{ID: e.ID, Titulo: e.Titulo}
+		v := vistaElementoBacklog{ID: e.ID, Titulo: e.Titulo, Estado: string(e.Estado),
+			PuedeCompletarse: abierto && e.Estado != domain.EstadoHecho}
 		switch {
 		case e.SprintID != nil && *e.SprintID == sprintID:
 			asignados = append(asignados, v)
@@ -154,11 +185,12 @@ func buscarSprint(sprints []domain.Sprint, id int64) (domain.Sprint, bool) {
 	return domain.Sprint{}, false
 }
 
+// aVistaSprint arma los datos de un sprint para las plantillas de HU-08, HU-09 y HU-11.
 func aVistaSprint(s domain.Sprint) vistaSprint {
 	return vistaSprint{
 		ID: s.ID, Numero: s.Numero,
 		FechaInicio: s.FechaInicio.Format(time.DateOnly), FechaFin: s.FechaFin.Format(time.DateOnly),
-		Objetivo: s.Objetivo, Estado: string(s.Estado),
+		Objetivo: s.Objetivo, Estado: string(s.Estado), PuedeCerrarse: s.PuedeCerrarse(),
 	}
 }
 

@@ -145,6 +145,73 @@ func TestNuevoSprint_CasosLimiteValidos(t *testing.T) {
 	}
 }
 
+// Traza: HU-11 CA-11.1, CA-11.2, RN-11.1, RN-11.5
+func TestSprint_Cerrar(t *testing.T) {
+	tests := []struct {
+		nombre     string
+		estado     EstadoSprint
+		wantEstado EstadoSprint
+		wantErr    error
+	}{
+		{nombre: "abierto pasa a cerrado", estado: SprintAbierto, wantEstado: SprintCerrado},
+		{nombre: "ya cerrado devuelve error", estado: SprintCerrado, wantEstado: SprintCerrado, wantErr: ErrSprintYaCerrado},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			s := sprintDel(t, 7, "2026-10-26", "2026-10-27")
+			s.Estado = tt.estado
+			want := s
+			want.Estado = tt.wantEstado
+
+			err := s.Cerrar()
+
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("error = %v, se esperaba %v", err, tt.wantErr)
+			}
+			if s != want {
+				t.Errorf("sprint = %+v, se esperaba %+v (solo cambia el estado)", s, want)
+			}
+		})
+	}
+}
+
+// Traza: HU-11 RN-11.1, CA-11.5: solo un sprint Abierto se puede cerrar. La pantalla lo usa para
+// decidir si muestra el botón "Cerrar sprint", sin repetir la regla.
+func TestSprint_PuedeCerrarse(t *testing.T) {
+	tests := []struct {
+		estado EstadoSprint
+		want   bool
+	}{
+		{SprintAbierto, true},
+		{SprintCerrado, false},
+	}
+	for _, tt := range tests {
+		t.Run(string(tt.estado), func(t *testing.T) {
+			s := Sprint{Estado: tt.estado}
+			if got := s.PuedeCerrarse(); got != tt.want {
+				t.Errorf("PuedeCerrarse() con estado %q = %t, se esperaba %t", tt.estado, got, tt.want)
+			}
+		})
+	}
+}
+
+// Traza: HU-11 RN-11.1, RN-11.5: un sprint recién cerrado no se puede volver a cerrar.
+func TestSprint_Cerrar_DosVeces_RetornaError(t *testing.T) {
+	s := sprintDel(t, 7, "2026-10-26", "2026-10-27")
+	if err := s.Cerrar(); err != nil {
+		t.Fatalf("primer Cerrar: error inesperado: %v", err)
+	}
+
+	err := s.Cerrar()
+
+	if !errors.Is(err, ErrSprintYaCerrado) {
+		t.Errorf("error = %v, se esperaba %v", err, ErrSprintYaCerrado)
+	}
+	if s.Estado != SprintCerrado {
+		t.Errorf("Estado = %q, se esperaba %q", s.Estado, SprintCerrado)
+	}
+}
+
 // Traza: HU-08 RN-08.5: las fechas se comparan por día aunque vengan con hora o en otra zona.
 func TestNuevoSprint_ComparaPorDiaCalendario(t *testing.T) {
 	p := proyectoParaSprints(t)

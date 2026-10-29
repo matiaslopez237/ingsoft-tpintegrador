@@ -5,6 +5,8 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
 // Cada historia registra sus rutas con su propia función RegistrarX; este test verifica que
@@ -21,10 +23,12 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		CrearElementoBacklog:     &creadorElementosFalso{},
 		RegistrarEsfuerzo:        &registradorEsfuerzoFalso{},
 		CrearSprint:              &creadorSprintsFalso{},
-		ListarSprints:            &listadorSprintsFalso{},
+		ListarSprints:            &listadorSprintsFalso{sprints: []domain.Sprint{{ID: 1, ProyectoID: 1}}}, // para que /web/.../sprints/1 no dé 404
 		ListarBacklog:            &listadorBacklogFalso{},
 		AsignarHistoria:          &asignarHistoriaFalso{},
 		DesasignarHistoria:       &desasignarHistoriaFalso{},
+		CerrarSprint:             &cerrarSprintFalso{},
+		CompletarHistoria:        &completarHistoriaFalso{},
 		ListarProyectos:          casosFalsos().ListarProyectos,
 		EditarElementoBacklog:    &editorElementosFalso{},
 		EliminarElementoBacklog:  &eliminadorElementosFalso{},
@@ -49,15 +53,19 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/defectos", `{"elemento_id":1,"descripcion":"Falla el login","severidad":"Alta"}`},                    // HU-20
 		{http.MethodPost, "/proyectos/1/backlog/1/sprint", `{"sprint_id":1}`},                                                                // HU-09
 		{http.MethodDelete, "/proyectos/1/backlog/1/sprint", ""},                                                                             // HU-09
-		{http.MethodGet, "/", ""},                                    // HU-30
-		{http.MethodGet, "/web/proyectos", ""},                       // HU-30
-		{http.MethodGet, "/static/estilos.css", ""},                  // HU-30
-		{http.MethodGet, "/web/proyectos/nuevo", ""},                 // HU-30
-		{http.MethodGet, "/web/proyectos/1/sprints", ""},             // HU-08
-		{http.MethodGet, "/web/proyectos/1/backlog", ""},             // HU-07
-		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},           // HU-06
-		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},   // HU-06 (proyecto 1: el editor falso responde 404 para otros)
-		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""}, // HU-06
+		{http.MethodPost, "/proyectos/1/backlog/1/completar", ""},                                                                            // HU-10
+		{http.MethodPost, "/proyectos/1/sprints/1/cerrar", ""},                                                                               // HU-11
+		{http.MethodGet, "/", ""},                                     // HU-30
+		{http.MethodGet, "/web/proyectos", ""},                        // HU-30
+		{http.MethodGet, "/static/estilos.css", ""},                   // HU-30
+		{http.MethodGet, "/web/proyectos/nuevo", ""},                  // HU-30
+		{http.MethodGet, "/web/proyectos/1/sprints", ""},              // HU-08
+		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},    // HU-11
+		{http.MethodGet, "/web/proyectos/1/backlog", ""},              // HU-07
+		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},            // HU-06
+		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},    // HU-06 (proyecto 1: el editor falso responde 404 para otros)
+		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""},  // HU-06
+		{http.MethodPost, "/web/proyectos/1/sprints/1/completar", ""}, // HU-10 (sin elemento_id: 400 en el detalle del sprint)
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {

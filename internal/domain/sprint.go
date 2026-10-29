@@ -15,7 +15,7 @@ type EstadoSprint string
 
 const (
 	SprintAbierto EstadoSprint = "Abierto"
-	SprintCerrado EstadoSprint = "Cerrado" // lo usa HU-11
+	SprintCerrado EstadoSprint = "Cerrado" // se llega con Cerrar (HU-11)
 )
 
 // Errores de HU-08 (spec, sección 7). Las fechas obligatorias y en orden reutilizan los de HU-01.
@@ -31,6 +31,9 @@ var (
 	ErrSprintNoEncontrado = errors.New("sprint no encontrado")
 )
 
+// ErrSprintYaCerrado es el error de HU-11 al cerrar un sprint que ya estaba Cerrado (RN-11.1).
+var ErrSprintYaCerrado = errors.New("el sprint ya fue cerrado")
+
 // Sprint es un período de trabajo de un proyecto, con su objetivo (Sprint Goal). Implementa HU-08.
 type Sprint struct {
 	ID          int64 // lo asigna la persistencia al guardar (RN-08.9)
@@ -40,6 +43,9 @@ type Sprint struct {
 	FechaFin    time.Time
 	Objetivo    string // el Sprint Goal
 	Estado      EstadoSprint
+	// Resumen que registra el cierre (HU-11, RN-11.6); mientras el sprint está Abierto valen 0.
+	PuntosPlanificados int
+	PuntosCompletados  int
 }
 
 // NuevoSprint valida los datos contra el proyecto y sus sprints existentes, y devuelve un sprint
@@ -75,6 +81,23 @@ func NuevoSprint(p Proyecto, inicio, fin time.Time, objetivo string, existentes 
 		Objetivo:    objetivo,
 		Estado:      SprintAbierto,
 	}, nil
+}
+
+// PuedeCerrarse indica si el sprint se puede cerrar: solo uno Abierto (RN-11.1). Lo usa la pantalla
+// de sprints para mostrar el botón "Cerrar sprint" sin repetir la regla. Implementa HU-11 (CA-11.5).
+func (s Sprint) PuedeCerrarse() bool {
+	return s.Estado == SprintAbierto
+}
+
+// Cerrar pasa el sprint de Abierto a Cerrado sin tocar sus demás datos. Si ya estaba Cerrado
+// devuelve ErrSprintYaCerrado y no lo modifica: un sprint cerrado no se reabre ni se vuelve a cerrar.
+// Implementa HU-11 (RN-11.1, RN-11.5).
+func (s *Sprint) Cerrar() error {
+	if s.Estado == SprintCerrado {
+		return ErrSprintYaCerrado
+	}
+	s.Estado = SprintCerrado
+	return nil
 }
 
 // dentroDelProyecto indica si el sprint cae dentro de las fechas del proyecto (RN-08.4).

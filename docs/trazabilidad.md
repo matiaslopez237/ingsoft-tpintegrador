@@ -17,9 +17,11 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-07 Listar y ordenar el backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 14/14 escenarios |
 | HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
 | HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
-| HU-20 Registrar un defecto | ✓ (Borrador; P-1 a P-3 pendientes de confirmar) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
 | HU-09 Asignar historias del backlog a un Sprint | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
+| HU-10 Marcar una historia como completada en el Sprint | ✓ (Aprobada; P-9 abierta a objeción en el PR) | 5/7 (CA-10.6 y CA-10.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 9/9 escenarios |
+| HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
+| HU-20 Registrar un defecto | ✓ (Borrador; P-1 a P-3 pendientes de confirmar) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 
 ---
 
@@ -771,13 +773,179 @@ RN-09.7 (un elemento de otro proyecto se trata como inexistente, igual que RN-18
 | 9.7 Fix: `sprint_id` sin validar en el endpoint JSON (hallado por go-reviewer en 9.9) | `0e974fc` [RED] → `9d3e8c6` [GREEN] | **RED → GREEN** |
 | 9.9 Revisión (reviewer humano): migración rompía bases existentes | `fcdb07a` [RED] → `ed0597e` [GREEN] | **RED → GREEN** |
 | 9.9 Revisión (reviewer humano): asignaciones simultáneas se pisaban | `e628a16` [RED] → `d974b75` [GREEN] | **RED → GREEN** |
-| 9.9 Revisión + trazabilidad | `d974b75` (último commit del PR #184, ya mergeado en `main`) | — |
+| 9.9 Revisión + trazabilidad | este commit | — |
 
 ### Huecos
 
 - La spec está en **Borrador**: pasa a Aprobada cuando se apruebe el PR.
 - La pantalla no permite "robarle" a un elemento su sprint activo desde la UI (solo lista elementos sin sprint asignado en el `<select>`); si ese otro sprint ya está Cerrado, sí se puede reasignar por la API aunque la pantalla no lo ofrezca todavía como atajo directo.
 - Hallazgo del go-reviewer que no se corrigió todavía y queda para hablar con el equipo: `RepositorioBacklog` (`asignacion_repo.go`) consulta la tabla `sprints` directamente en vez de delegar en `RepositorioSprints` (de HU-08), acoplando el repositorio de backlog a una tabla de otro agregado. Estaba justificado cuando se escribió (HU-08 todavía no estaba mergeada), pero ahora que ya está en `main` convendría refactorizarlo para no duplicar el acceso a `sprints` en dos repositorios.
+
+---
+
+## HU-10: Marcar una historia como completada en el Sprint
+
+- **Issue:** [#21](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/21) · Sprint 2 · 2 SP
+- **Spec:** [docs/specs/HU-10-completar-historia.md](specs/HU-10-completar-historia.md) (Aprobada; P-9 tomada por el autor, abierta a objeción en el PR)
+- **Feature:** [features/HU-10-completar-historia.feature](../features/HU-10-completar-historia.feature) (steps en [test/bdd/hu10_steps_test.go](../test/bdd/hu10_steps_test.go); los escenarios usan el caso de uso real con SQLite)
+- **Rutas HTTP:** `POST /proyectos/{id}/backlog/{elementoID}/completar` (JSON, `204`) y `POST /web/proyectos/{id}/sprints/{sprintID}/completar` (botón "Marcar como hecha").
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-10.1 Pendiente o En progreso en sprint Abierto → Hecho, sigue en el sprint | RN-10.1, RN-10.2 | Una historia de un sprint abierto pasa a Hecho y sigue en el sprint `@normal` (Pendiente) `@alternativo` (En progreso) | `TestElementoBacklog_Completar_Exito` ("desde Pendiente", "desde En progreso"), `TestCompletarHistoria_SprintAbierto_GuardaComoHecho`, `TestRepositorioBacklog_GuardarCompletado_GuardaHecho`, `TestRepositorioBacklog_GuardarCompletado_NoCambiaOtrosCampos`, `TestPantallaSprintDetalle_Completar_RedirigeAlDetalle` | `domain.ElementoBacklog.Completar`, `app.CompletarHistoria.Ejecutar`, `persistencia.RepositorioBacklog.GuardarCompletado` |
+| CA-10.2 Ya Hecho en sprint Abierto: sin error, sigue Hecho | RN-10.3 | Completar una historia que ya está Hecho no es un error `@limite` | `TestElementoBacklog_Completar_Exito` ("ya Hecho no cambia nada"), `TestCompletarHistoria_SprintAbierto_GuardaComoHecho` ("ya Hecho, sin error"), `TestRepositorioBacklog_GuardarCompletado_YaHecho_SinError` | `domain.ElementoBacklog.Completar`, `persistencia.RepositorioBacklog.GuardarCompletado` |
+| CA-10.3 Sin sprint → `ErrElementoSinSprint`, el estado no cambia | RN-10.2 | No se puede completar una historia que no está en ningún sprint `@error` | `TestElementoBacklog_Completar_Errores_NoCambiaElElemento` ("sin sprint, …"), `TestCompletarHistoria_SinSprint_RetornaErrorYNoGuarda`, `TestRepositorioBacklog_GuardarCompletado_SinSprint_RetornaError`, `TestPostCompletar_ErroresDelCasoDeUso` ("elemento sin sprint", 400), `TestPantallaSprintDetalle_ErrorAlCompletar` ("elemento sin sprint") | `domain.ElementoBacklog.Completar`, `app.sprintDelElementoAbierto`, `persistencia.RepositorioBacklog.errorDeCompletado` |
+| CA-10.4 Sprint Cerrado → `ErrSprintCerrado`, el estado no cambia (también si ya está Hecho, P-8) | RN-10.2 | No se puede completar una historia de un sprint cerrado `@error` · Una historia ya Hecho de un sprint cerrado también se rechaza `@limite` | `TestElementoBacklog_Completar_Errores_NoCambiaElElemento` ("sprint cerrado, …", incluido "Hecho (P-8)"), `TestCompletarHistoria_SprintCerrado_RetornaErrorYNoGuarda`, `TestRepositorioBacklog_GuardarCompletado_SprintCerrado_RetornaError`, `TestCompletar_SprintCerradoEntreLecturaYGuardado_Falla`, `TestPostCompletar_ErroresDelCasoDeUso` ("sprint cerrado", 400), `TestPantallaSprintDetalle_ErrorAlCompletar` ("sprint cerrado") | `domain.ElementoBacklog.Completar`, `persistencia.RepositorioBacklog.GuardarCompletado` (verificado en el propio `UPDATE`) |
+| CA-10.5 Proyecto o elemento inexistente, o elemento de otro proyecto | RN-10.4 | No se puede completar una historia de un proyecto que no existe `@error` · … una historia que no existe `@error` · Una historia de otro proyecto se trata como inexistente `@error` | `TestCompletarHistoria_ProyectoOElementoInexistente_RetornaErrorYNoGuarda` (incluye "elemento de otro proyecto (RN-10.4)"), `TestRepositorioBacklog_GuardarCompletado_Inexistente_RetornaError`, `TestPostCompletar_ErroresDelCasoDeUso` ("proyecto inexistente", "elemento inexistente", 404), `TestPantallaSprintDetalle_ErrorAlCompletar` ("proyecto inexistente", "elemento inexistente") | `app.CompletarHistoria.Ejecutar` |
+| CA-10.6 Respuestas HTTP 204 / 404 / 400 | — (sección 3) | **No aplica, se prueba en el adaptador:** los escenarios prueban el núcleo y no pasan por HTTP. | `TestPostCompletar_PedidoValido_Devuelve204`, `TestPostCompletar_ErroresDelCasoDeUso`, `TestPostCompletar_IDsInvalidos_Devuelve400SinLlamarAlCasoDeUso`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerCompletarHistoria`, `http.RegistrarCompletar`, `http.NuevoRouter`, `cmd/server/main.go` |
+| CA-10.7 Pantalla: estado, botón "Marcar como hecha", errores | RN-10.1, RN-10.2, sección 5 | **No aplica, se prueba en el adaptador** (la pantalla no tiene escenario BDD). | `TestPantallaSprintDetalle_BotonCompletar_SprintAbiertoYNoHecho`, `TestPantallaSprintDetalle_SinBotonCompletar`, `TestPantallaSprintDetalle_Completar_RedirigeAlDetalle`, `TestPantallaSprintDetalle_Completar_ElElementoApareceHecho`, `TestPantallaSprintDetalle_ErrorAlCompletar`, `TestMensajeDeValidacion_ErroresDeCompletar`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.pantallas.completarElementoPantalla`, `PuedeCompletarse` en `pantallas_asignacion.go`, botón en `web/plantillas/sprint_detalle.html` |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-10.1 Completar = pasar a `Hecho`, desde Pendiente o En progreso | CA-10.1, CA-10.7 | `domain.ElementoBacklog.Completar`; `GuardarCompletado` cambia solo el estado (`TestRepositorioBacklog_GuardarCompletado_NoCambiaOtrosCampos`) |
+| RN-10.2 Solo en un sprint asignado y Abierto | CA-10.1, CA-10.3, CA-10.4, CA-10.7 | `domain.ElementoBacklog.Completar` (recibe `sprintAbierto bool`), `app.sprintDelElementoAbierto` (compartida con `DesasignarHistoria` de HU-09), `persistencia.RepositorioBacklog.GuardarCompletado` (en el propio `UPDATE`) |
+| RN-10.3 Ya `Hecho` no es error ni cambia nada | CA-10.2 | `domain.ElementoBacklog.Completar` |
+| RN-10.4 Elemento de otro proyecto = inexistente | CA-10.5 | `app.CompletarHistoria.Ejecutar`. Se prueba en el caso de uso y en BDD; el repositorio no distingue el proyecto. |
+
+Sin CA propio en la spec:
+- Orden de los errores (sección 7): `TestCompletarHistoria_ProyectoOElementoInexistente_RetornaErrorYNoGuarda` ("proyecto y elemento inexistentes: primero el proyecto") y, para RN-10.2 antes que RN-10.3 (P-8), el subtest "sprint cerrado, Hecho" del dominio y el escenario `@limite` de CA-10.4.
+- Pedidos simultáneos (sección 5, P-7): `TestCompletar_SprintCerradoEntreLecturaYGuardado_Falla` (el sprint se cierra en el medio → `ErrSprintCerrado`).
+- **P-9**, elemento movido a otro sprint Abierto durante el pedido (sección 6): `TestRepositorioBacklog_GuardarCompletado_MovidoAOtroSprint_RetornaError` y `TestCompletar_MovidoAOtroSprintEntreLecturaYGuardado_Falla` → `ErrElementoSinSprint`, sin completarlo en el sprint nuevo. Lo decide `persistencia.RepositorioBacklog.errorDeCompletado`. No tiene escenario BDD.
+- IDs de la ruta inválidos (sección 2): `TestPostCompletar_IDsInvalidos_Devuelve400SinLlamarAlCasoDeUso`; en la pantalla, el subtest "elemento_id inválido" de `TestPantallaSprintDetalle_ErrorAlCompletar`.
+- Falla interna: `TestCompletarHistoria_FallaDelRepositorio_SePropagaYNoGuarda`, `TestPostCompletar_FallaInterna_Devuelve500SinDetalles` y el subtest "falla interna" de `TestPantallaSprintDetalle_ErrorAlCompletar`.
+
+HU-10 no define errores nuevos: reutiliza `ErrProyectoNoEncontrado` (HU-01), `ErrElementoNoEncontrado` (HU-05), `ErrElementoSinSprint` y `ErrSprintCerrado` (HU-09).
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog_completar.go](../internal/domain/backlog_completar.go) (`ElementoBacklog.Completar`) | [backlog_completar_test.go](../internal/domain/backlog_completar_test.go) |
+| Caso de uso | [internal/app/completar_historia.go](../internal/app/completar_historia.go) (`CompletarHistoria`, puerto `RepositorioCompletar`), [sprint_del_elemento.go](../internal/app/sprint_del_elemento.go) (`sprintDelElementoAbierto`, compartida con HU-09) | [completar_historia_test.go](../internal/app/completar_historia_test.go) |
+| Persistencia | [internal/adapters/persistencia/completar_repo.go](../internal/adapters/persistencia/completar_repo.go) (`GuardarCompletado` atómico, `errorDeCompletado`) | [completar_repo_test.go](../internal/adapters/persistencia/completar_repo_test.go), [completar_concurrencia_test.go](../internal/adapters/persistencia/completar_concurrencia_test.go), contra SQLite real |
+| HTTP | [internal/adapters/http/completar_handler.go](../internal/adapters/http/completar_handler.go) (`RegistrarCompletar`), registrada en [router.go](../internal/adapters/http/router.go) y conectada en [cmd/server/main.go](../cmd/server/main.go) | [completar_handler_test.go](../internal/adapters/http/completar_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_asignacion.go](../internal/adapters/http/pantallas_asignacion.go) (`completarElementoPantalla`, `PuedeCompletarse`), ruta en [pantallas.go](../internal/adapters/http/pantallas.go), [sprint_detalle.html](../internal/adapters/http/web/plantillas/sprint_detalle.html) | [pantallas_completar_test.go](../internal/adapters/http/pantallas_completar_test.go) (`pantallas_asignacion_test.go` no tiene tests de HU-10), [router_test.go](../internal/adapters/http/router_test.go) |
+| BDD | [test/bdd/hu10_sistema_test.go](../test/bdd/hu10_sistema_test.go) (caso de uso real + SQLite), [hu10_steps_test.go](../test/bdd/hu10_steps_test.go) | 9 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| Spec | `16de21b` borrador → `a3d76dd` aprobada | — |
+| Escenarios BDD y steps | `c503bf6` feature y steps (RED) → `219b889` steps usan `domain.ErrSprintNoEncontrado` | BDD en rojo |
+| Dominio | `4417453` [RED] → `978155d` [GREEN] → `990744b` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Caso de uso | `2743291` [RED] → `3890a69` [GREEN] → `d1bf254` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Persistencia | `8e4f2b5` [RED] → `1ba612a` [GREEN] | **RED → GREEN** |
+| BDD con SQLite real | `ee6283b`, `6b587ea` | BDD en verde |
+| Spec: P-9 | `f24a37d` | — |
+| HTTP | `7599f50` [RED] → `28abcdb` [GREEN] | **RED → GREEN** |
+| Router y `main` | `ec11388` [RED] → `f045837` [GREEN] | **RED → GREEN** |
+| Spec: CA-10.7 | `1472da0` | — |
+| Pantalla | `484fe58` [RED] → `3a991c0` [GREEN] → `dfdd0ae` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Revisión | `e7863bc` [REFACTOR], `15b1cee` [REFACTOR] | **REFACTOR** |
+| Revisión: carrera con el elemento movido (P-9) | `0753a5f` | test (sin etiqueta de etapa) |
+| Spec: limitación conocida de la pantalla | `e638e60` | — |
+| Trazabilidad | este commit | — |
+
+### Huecos
+
+- **Limitación conocida de la pantalla** (spec, sección 6): `completarElementoPantalla` no verifica que el elemento esté en el sprint de la URL, igual que "Quitar" de HU-09. No se puede provocar desde la interfaz, solo con un POST armado a mano. No tiene test; se propone resolverlo para HU-09 y HU-10 juntas, fuera de esta historia.
+- **P-9** la tomó el autor y queda abierta a objeción en el PR. Tiene tests de persistencia, pero no escenario BDD.
+- CA-10.6 y CA-10.7 no tienen escenario BDD a propósito: los escenarios prueban el núcleo y no pasan por HTTP. Los cubren los tests del handler y de la pantalla.
+- RN-10.4 se prueba en el caso de uso y en BDD; en HTTP y en la pantalla solo con el error simulado. El repositorio no distingue el proyecto.
+- Los commits de spec y BDD (`16de21b`, `c503bf6`, `a3d76dd`, `219b889`, `ee6283b`, `6b587ea`, `f24a37d`, `1472da0`, `e638e60`) usan los scopes `(spec)` y `(bdd)` en vez de `(HU-10)`, así que `git log --grep="(HU-10)"` no los encuentra. `0753a5f` es un test sin etiqueta de etapa.
+- El sistema BDD cierra el sprint directamente en la base porque HU-11 (cerrar sprint) todavía no está en esta rama.
+
+---
+
+## HU-11: Cerrar un Sprint
+
+- **Issue:** #22 · Sprint 2 · 3 SP
+- **Spec:** [docs/specs/HU-11-cerrar-sprint.md](specs/HU-11-cerrar-sprint.md)
+- **Feature:** [features/HU-11-cerrar-sprint.feature](../features/HU-11-cerrar-sprint.feature) (steps en [test/bdd/hu11_steps_test.go](../test/bdd/hu11_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-11.1 Cerrar un sprint Abierto, en cualquier momento, sin cambiar sus demás datos | RN-11.1, RN-11.2 | Un sprint abierto se cierra en cualquier momento y conserva sus datos `@normal` `@limite` (3 ejemplos) · Se cierra un sprint sin historias asignadas `@limite` · Se cierra un sprint de un proyecto que no está Activo `@limite` (4 ejemplos) | `TestSprint_Cerrar`, `TestCerrarSprint_SprintAbierto_QuedaCerradoConSusDatos`, `TestRepositorioSprints_CerrarSprint_Abierto_QuedaCerradoConResumenYDevuelveLasSinTerminar` | `domain.Sprint.Cerrar`, `app.CerrarSprint.Ejecutar`, `persistencia.RepositorioSprints.CerrarSprint` |
+| CA-11.2 Un sprint ya Cerrado no se vuelve a cerrar | RN-11.1, RN-11.5 | No se puede cerrar un sprint que ya está cerrado `@error` · Un sprint que se acaba de cerrar no se puede volver a cerrar `@alternativo` | `TestSprint_Cerrar` (ya cerrado), `TestSprint_Cerrar_DosVeces_RetornaError`, `TestCerrarSprint_SprintYaCerrado_RetornaError`, `TestRepositorioSprints_CerrarSprint_YaCerrado_RetornaErrorSinCambios`, `TestRepositorioSprints_CerrarSprint_Simultaneos_SoloUnoGana` | `domain.Sprint.Cerrar`, `persistencia.RepositorioSprints.CerrarSprint` (verificado en el propio `UPDATE`), `persistencia.RepositorioSprints.errorDeCierre` |
+| CA-11.3 Proyecto o sprint inexistente, o sprint de otro proyecto | RN-11.4 | No se puede cerrar un sprint de un proyecto que no existe `@error` · No se puede cerrar un sprint que no existe `@error` · Un sprint de otro proyecto se trata como inexistente `@error` | `TestCerrarSprint_ProyectoInexistente_RetornaError`, `TestCerrarSprint_SprintInexistente_RetornaError`, `TestCerrarSprint_SprintDeOtroProyecto_RetornaErrorYSigueAbierto`, `TestCerrarSprint_ValidacionFallida_NoLlamaACerrarSprint`, `TestRepositorioSprints_BuscarSprintPorID_Inexistente`, `TestRepositorioSprints_CerrarSprint_Inexistente_RetornaError` | `app.CerrarSprint.Ejecutar` (`s.ProyectoID != d.ProyectoID`), `persistencia.RepositorioSprints.BuscarSprintPorID` |
+| CA-11.4 Respuestas HTTP 204 / 404 / 400 | — (sección 3) | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y no pasan por HTTP (comentario del feature). Se cubre con los tests del handler. | `TestPostCerrarSprint_PedidoValido_Devuelve204SinCuerpo`, `TestPostCerrarSprint_NoEncontrado_Devuelve404`, `TestPostCerrarSprint_YaCerrado_Devuelve400`, `TestPostCerrarSprint_YaCerradoEnvuelto_Devuelve400ConMensajeLimpio`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerCerrarSprint`, `http.RegistrarCerrarSprint`, `http.NuevoRouter` |
+| CA-11.5 Botón "Cerrar sprint" solo en sprints Abiertos; al usarlo queda Cerrado y sin botón | RN-11.1 (sección 3) | **Sin escenario BDD a propósito:** es la pantalla (comentario del feature). Se cubre con los tests de la pantalla. | `TestSprint_PuedeCerrarse`, `TestPantallaSprints_BotonCerrar_SoloEnSprintsAbiertos`, `TestPantallaSprints_Cerrar_RedirigeALaLista`, `TestPantallaSprints_Cerrar_DePuntaAPunta_QuedaCerradoYSinBoton`, `TestPantallaSprints_Cerrar_Errores`, `TestPantallaSprints_Cerrar_YaCerrado_SigueMostrandoLaLista`, `TestNuevoRouter_RegistraTodasLasRutas` | `domain.Sprint.PuedeCerrarse`, `http.pantallas.cerrarSprintPantalla`, `http.aVistaSprint` (campo `PuedeCerrarse`), [sprints.html](../internal/adapters/http/web/plantillas/sprints.html) |
+| CA-11.6 Las historias sin terminar vuelven al Product Backlog; las Hecho quedan en el sprint | RN-11.3 | Las historias sin terminar vuelven al Product Backlog y las terminadas quedan en el sprint `@normal` (sobre SQLite, con historias asignadas por HU-09 y completadas por HU-10) | `TestResumirCierre`, `TestResumirCierre_NoModificaLasHistorias`, `TestRepositorioSprints_CerrarSprint_Abierto_QuedaCerradoConResumenYDevuelveLasSinTerminar`, `TestRepositorioSprints_CerrarSprint_YaCerrado_RetornaErrorSinCambios` | `domain.ResumirCierre` (`DevueltasAlBacklog`), `persistencia.RepositorioSprints.CerrarSprint` (en la misma transacción) |
+| CA-11.7 El sprint registra sus story points planificados y completados, y no cambian después | RN-11.6 | Al cerrar, el sprint registra sus story points planificados y completados `@normal` · Los puntos registrados no cambian si después se replanifica una historia `@alternativo` · Un sprint sin historias se cierra con 0 puntos `@limite` | `TestResumirCierre`, `TestRepositorioSprints_CerrarSprint_Abierto_QuedaCerradoConResumenYDevuelveLasSinTerminar`, `TestRepositorioSprints_CerrarSprint_ResumenFijoAunqueSeReasigne`, `TestAbrirDB_BaseExistenteSinPuntosDeSprint_AgregaLasColumnas` | `domain.ResumirCierre`, campos `Sprint.PuntosPlanificados` y `Sprint.PuntosCompletados`, `persistencia.RepositorioSprints.CerrarSprint`, `persistencia.migrarPuntosDeSprint` |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-11.1 Cerrar es pasar de Abierto a Cerrado; cerrar uno ya Cerrado es un error | CA-11.1, CA-11.2, CA-11.5 | `domain.Sprint.Cerrar`, `domain.Sprint.PuedeCerrarse`, `domain.ErrSprintYaCerrado`; en la base, `UPDATE ... WHERE id = ? AND estado = 'Abierto'` |
+| RN-11.2 Se cierra en cualquier momento, con o sin historias, y aunque el proyecto no esté Activo (P-10) | CA-11.1 | `app.CerrarSprint.Ejecutar` no mira fechas, historias ni el estado del proyecto |
+| RN-11.3 Las historias sin terminar vuelven al Product Backlog; las Hecho quedan en el sprint (P-4, P-13) | CA-11.6 | `domain.ResumirCierre`; `persistencia.RepositorioSprints.CerrarSprint` pone `sprint_id = NULL` a las devueltas |
+| RN-11.4 Un sprint de otro proyecto se trata como inexistente | CA-11.3 | `app.CerrarSprint.Ejecutar` (`domain.ErrSprintNoEncontrado`) |
+| RN-11.5 Un sprint cerrado no se reabre | CA-11.2 | `domain.Sprint.Cerrar` (nunca vuelve a Abierto); no hay operación de reapertura |
+| RN-11.6 Al cerrar se registran los puntos planificados y completados; sin estimar suma 0; quedan fijos (P-11, P-12) | CA-11.7 | `domain.ResumirCierre`; columnas `puntos_planificados` y `puntos_completados` de `sprints` |
+
+Sin CA propio en la spec:
+- Pedidos simultáneos (sección 5, P-8): `TestRepositorioSprints_CerrarSprint_Simultaneos_SoloUnoGana` (10 goroutines, exactamente una cierra), `TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente` (un cierre contra 8 completados de HU-10: cada historia queda Hecho en el sprint o Pendiente sin sprint, y los puntos completados coinciden), `TestCerrarSprint_FallaDelRepositorio_SePropaga` (`ErrSprintYaCerrado` desde el repositorio), `TestPostCerrarSprint_YaCerradoEnvuelto_Devuelve400ConMensajeLimpio` y `TestPantallaSprints_Cerrar_Errores` (error envuelto, se muestra el mensaje del dominio).
+- Si hay un error no se modifica nada (sección 3): `TestCerrarSprint_ValidacionFallida_NoLlamaACerrarSprint`.
+- IDs inválidos en la ruta (400 sin llamar al caso de uso): `TestPostCerrarSprint_IDInvalido_Devuelve400`, `TestPantallaSprints_Cerrar_IDInvalido_Devuelve400`.
+- Falla interna (500 sin el detalle): `TestCerrarSprint_FallaDelRepositorio_SePropaga`, `TestPostCerrarSprint_FallaInterna_Devuelve500SinDetalle`, `TestPantallaSprints_Cerrar_FallaInterna_Devuelve500SinDetalle`.
+- Formulario enviado desde otro sitio (CSRF, mismo origen): `TestPantallaSprints_Cerrar_DesdeOtroSitio_SeRechaza`.
+- Lectura del sprint por ID (puerto `RepositorioCierre`): `TestRepositorioSprints_BuscarSprintPorID_Existente`, `TestRepositorioSprints_BuscarSprintPorID_Inexistente`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/sprint.go](../internal/domain/sprint.go) (`Cerrar`, `PuedeCerrarse`, `ErrSprintYaCerrado`, campos de puntos), [sprint_cierre.go](../internal/domain/sprint_cierre.go) (`ResumirCierre`, `ResumenCierre`) | [sprint_test.go](../internal/domain/sprint_test.go), [sprint_cierre_test.go](../internal/domain/sprint_cierre_test.go) |
+| Caso de uso y puerto | [internal/app/cerrar_sprint.go](../internal/app/cerrar_sprint.go) (`CerrarSprint`, puerto `RepositorioCierre`) | [cerrar_sprint_test.go](../internal/app/cerrar_sprint_test.go) |
+| Persistencia | [internal/adapters/persistencia/cierre_repo.go](../internal/adapters/persistencia/cierre_repo.go) (`BuscarSprintPorID`, `CerrarSprint` en una transacción, `historiasDelSprint`, `errorDeCierre`), [sprint_repo.go](../internal/adapters/persistencia/sprint_repo.go) (`escanearSprint`, compartido con `ListarSprints` de HU-08), [db.go](../internal/adapters/persistencia/db.go) (columnas de puntos, `migrarPuntosDeSprint`, `agregarColumnas`) | [cierre_repo_test.go](../internal/adapters/persistencia/cierre_repo_test.go), [cierre_concurrencia_test.go](../internal/adapters/persistencia/cierre_concurrencia_test.go), [db_test.go](../internal/adapters/persistencia/db_test.go) |
+| HTTP | [internal/adapters/http/cerrar_sprint_handler.go](../internal/adapters/http/cerrar_sprint_handler.go) (`POST /proyectos/{id}/sprints/{sprintID}/cerrar`, `RegistrarCerrarSprint`), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [cerrar_sprint_handler_test.go](../internal/adapters/http/cerrar_sprint_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_sprints.go](../internal/adapters/http/pantallas_sprints.go) (`cerrarSprintPantalla`), [pantallas.go](../internal/adapters/http/pantallas.go) (ruta `POST /web/proyectos/{id}/sprints/{sprintID}/cerrar`), [pantallas_asignacion.go](../internal/adapters/http/pantallas_asignacion.go) (`aVistaSprint`), [sprints.html](../internal/adapters/http/web/plantillas/sprints.html) | [pantallas_cerrar_sprint_test.go](../internal/adapters/http/pantallas_cerrar_sprint_test.go) |
+| BDD | [test/bdd/hu11_sistema_test.go](../test/bdd/hu11_sistema_test.go) (SQLite real), [hu11_steps_test.go](../test/bdd/hu11_steps_test.go) | 17 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| Spec | `fc46a3d` docs(spec): HU-11 cerrar sprint (borrador) · `6ef2057` docs(spec): HU-11 decisiones tomadas por el autor | — |
+| Escenarios BDD y steps | `5019801` test(bdd): HU-11 feature y steps (RED) | BDD en rojo |
+| Dominio (`Sprint.Cerrar`) | `6e9ad50` [RED] → `7bf464b` [GREEN] → `ef5542e` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Steps con el error de dominio de HU-09 | `4013785` test(bdd): HU-11 steps usan domain.ErrSprintNoEncontrado | — |
+| Caso de uso (`app.CerrarSprint`) | `74f5563` [RED] → `749a531` [GREEN] | **RED → GREEN** (sin REFACTOR: son cuatro pasos lineales con el mismo molde que `CrearSprint` de HU-08; no había nada que mejorar) |
+| Persistencia | `8e7f521` [RED] → `3b0948c` [GREEN] → `b48a488` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| BDD sobre SQLite real | `bff0b15` test(bdd): HU-11 sistema SQLite real | BDD en verde |
+| Endpoint JSON | `b8a6c5b` [RED] → `5fd5a86` [GREEN] | **RED → GREEN** (sin REFACTOR: sigue el patrón de los handlers de HU-09; mover los helpers de IDs, repartidos en archivos de otras historias, tocaba código ajeno a HU-11) |
+| Escenario de CA-11.6 | `b9d1c74` test(bdd): HU-11 escenario CA-11.6 | BDD en verde |
+| Pantalla | `9a4cb4e` [RED] → `6b66891` [GREEN] → `4aa5329` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Revisión (go-reviewer): `Traza` mal ubicado (B-1) | `3f609e4` test(HU-11): corregir comentarios Traza en sprint_test.go | — |
+| Revisión (go-reviewer): CA-11.5 de punta a punta (M-2) | `f9272fd` test(HU-11): CA-11.5 de punta a punta en pantalla de sprints | — (test nuevo sobre código ya en verde; se verificó que falla con `PuedeCerrarse` mutado a `true`) |
+| Revisión (go-reviewer): contrato del puerto (B-2) | `100fe21` docs(HU-11): aclarar contrato de CerrarSprint en el puerto | — |
+| Revisión (go-reviewer): spec desactualizada (M-1) | `6be321b` docs(HU-11): actualizar spec al estado real del código | — |
+| Merge de `main` (HU-10) en la rama | `15bf901` | — (conflictos de líneas agregadas por las dos historias) |
+| Revisión del PR: P-4 cambiada y resumen de puntos (spec) | `61bed0a` docs(HU-11): historias sin terminar vuelven al backlog y resumen de puntos al cerrar | — |
+| Dominio (`ResumirCierre`) | `7ef1795` [RED] → `ce33313` [GREEN] | **RED → GREEN** (sin REFACTOR: un solo recorrido) |
+| Persistencia (transacción, columnas de puntos, migración) | `37fba7b` [RED] → `e1c3b9b` [GREEN] → `8ca607e` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Escenarios de CA-11.6 y CA-11.7 | `c5d3fe7` | BDD en verde (escritos después del código; se verificó que 3 fallan con el cierre anterior) |
+| Cierre simultáneo con completados | `adc458d` | — (test nuevo sobre código ya en verde) |
+| Trazabilidad | este commit | — |
+
+### Huecos
+
+- Ramas defensivas de persistencia sin test (hallazgo B-3 del go-reviewer): falla de `ExecContext` y de `RowsAffected` en `CerrarSprint`, error genérico de `Scan` en `BuscarSprintPorID`, el "estado guardado inesperado" de `errorDeCierre` y las fechas inválidas de `escanearSprint`. `escanearSprint` también lo usa `ListarSprints` de HU-08, así que ese hueco es compartido.
+- `go test -race` no corre en el entorno de desarrollo (gcc de 32 bits, sin cgo de 64 bits): la ausencia de carreras de datos en el test de concurrencia se razonó a mano (cada goroutine escribe solo `errs[i]` y copia el sprint por valor). Conviene correrlo en CI o en Linux.
+- El resumen de puntos se guarda pero todavía no se muestra en ninguna pantalla: lo va a mostrar HU-22 (velocidad).
+- Si después del cierre se edita con HU-06 una historia `Hecho` que quedó en el sprint cerrado (por ejemplo, se le cambian los puntos), el resumen guardado no cambia: es lo que pide RN-11.6, pero conviene tenerlo en cuenta en HU-22.
+- RN-11.2 con un proyecto que no está Activo (P-10) se verifica solo en los escenarios BDD: no hay test unitario del caso de uso con un proyecto en otro estado.
+- La ruta JSON `POST /proyectos/{id}/sprints/{sprintID}/cerrar` no verifica el origen del pedido (CSRF): solo las pantallas pasan por `mismoOrigen`. Es deuda técnica de todas las rutas JSON del proyecto, no solo de HU-11.
+- `ErrSprintYaCerrado` (HU-11, "el sprint ya fue cerrado") y `ErrSprintCerrado` (HU-09, "el sprint ya está cerrado") describen la misma situación; se mantuvieron separados por el orden de los merges y unificarlos es una decisión del equipo.
+- Refactors que tocaron código de otras historias: `escanearSprint` reemplazó el escaneo de `ListarSprints` (HU-08) y `aVistaSprint` (HU-09) ahora completa `PuedeCerrarse` y la usa también `mostrarSprints` (HU-08). Los tests de HU-08 y HU-09 siguen en verde, pero conviene que lo revisen sus autores en el PR.
 
 ---
 
