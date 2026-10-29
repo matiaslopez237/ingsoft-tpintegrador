@@ -6,6 +6,9 @@ import "errors"
 // inválido (ErrEstadoElementoInvalido) se comparte con HU-07 (backlog_listado.go).
 var ErrElementoConEsfuerzo = errors.New("no se puede eliminar un elemento con esfuerzo registrado")
 
+// ErrElementoConDefectos: no se elimina un elemento con defectos registrados (HU-20). DEF-02, RN-06.10.
+var ErrElementoConDefectos = errors.New("no se puede eliminar un elemento con defectos registrados")
+
 // CambiosElemento son los datos de una edición parcial de un elemento (HU-06, RN-06.1).
 // Un campo en nil no se envía y conserva su valor.
 type CambiosElemento struct {

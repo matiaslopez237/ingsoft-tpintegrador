@@ -142,6 +142,8 @@ func handlerEliminarElemento(uc eliminadorElementos) http.HandlerFunc {
 			escribirJSON(w, http.StatusNotFound, respuestaError{domain.ErrElementoNoEncontrado.Error()})
 		case errors.Is(err, domain.ErrElementoConEsfuerzo):
 			escribirJSON(w, http.StatusConflict, respuestaError{domain.ErrElementoConEsfuerzo.Error()})
+		case errors.Is(err, domain.ErrElementoConDefectos): // DEF-02
+			escribirJSON(w, http.StatusConflict, respuestaError{domain.ErrElementoConDefectos.Error()})
 		default:
 			log.Printf("eliminar elemento %d del proyecto %d: %v", elementoID, proyectoID, err)
 			escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al eliminar el elemento"})

@@ -97,14 +97,26 @@ func (r *RepositorioBacklog) TieneEsfuerzo(ctx context.Context, elementoID int64
 	return tiene, nil
 }
 
+// TieneDefectos indica si el elemento tiene defectos registrados (HU-20).
+// Implementa HU-06 (app.RepositorioEliminacionBacklog, RN-06.10, DEF-02).
+func (r *RepositorioBacklog) TieneDefectos(ctx context.Context, elementoID int64) (bool, error) {
+	var tiene bool
+	err := r.db.QueryRowContext(ctx,
+		`SELECT EXISTS (SELECT 1 FROM defectos WHERE elemento_id = ?)`, elementoID).Scan(&tiene)
+	if err != nil {
+		return false, fmt.Errorf("consultar defectos del elemento %d: %w", elementoID, err)
+	}
+	return tiene, nil
+}
+
 // EliminarElemento borra el elemento; sus criterios se borran con él (ON DELETE CASCADE). Si
-// tiene esfuerzo registrado, la clave foránea de registros_esfuerzo lo impide y se devuelve
-// domain.ErrElementoConEsfuerzo; si no existe, domain.ErrElementoNoEncontrado.
-// Implementa HU-06 (app.RepositorioEliminacionBacklog, RN-06.7).
+// tiene esfuerzo o defectos registrados, las claves foráneas de registros_esfuerzo y defectos lo
+// impiden y errorDeEliminacion informa cuál; si no existe, domain.ErrElementoNoEncontrado.
+// Implementa HU-06 (app.RepositorioEliminacionBacklog, RN-06.7, RN-06.10).
 func (r *RepositorioBacklog) EliminarElemento(ctx context.Context, elementoID int64) error {
 	res, err := r.db.ExecContext(ctx, `DELETE FROM backlog_elementos WHERE id = ?`, elementoID)
 	if esForeignKey(err) {
-		return domain.ErrElementoConEsfuerzo
+		return r.errorDeEliminacion(ctx, elementoID)
 	}
 	if err != nil {
 		return fmt.Errorf("eliminar elemento %d: %w", elementoID, err)
@@ -117,4 +129,18 @@ func (r *RepositorioBacklog) EliminarElemento(ctx context.Context, elementoID in
 		return domain.ErrElementoNoEncontrado
 	}
 	return nil
+}
+
+// errorDeEliminacion determina, tras un DELETE rechazado por una clave foránea, qué lo bloqueó: el
+// esfuerzo (se informa primero, RN-06.7) o los defectos (RN-06.10). Antes de DEF-02 se informaba
+// siempre el esfuerzo.
+func (r *RepositorioBacklog) errorDeEliminacion(ctx context.Context, elementoID int64) error {
+	conEsfuerzo, err := r.TieneEsfuerzo(ctx, elementoID)
+	if err != nil {
+		return err
+	}
+	if conEsfuerzo {
+		return domain.ErrElementoConEsfuerzo
+	}
+	return domain.ErrElementoConDefectos
 }

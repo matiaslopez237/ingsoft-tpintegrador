@@ -23,8 +23,10 @@ type RepositorioEliminacionBacklog interface {
 	BuscarElementoPorID(ctx context.Context, id int64) (domain.ElementoBacklog, error)
 	// TieneEsfuerzo indica si el elemento tiene registros de esfuerzo (HU-18).
 	TieneEsfuerzo(ctx context.Context, elementoID int64) (bool, error)
-	// EliminarElemento borra el elemento y sus criterios. Si otro pedido le registró esfuerzo en
-	// el medio, devuelve domain.ErrElementoConEsfuerzo.
+	// TieneDefectos indica si el elemento tiene defectos registrados (HU-20, DEF-02).
+	TieneDefectos(ctx context.Context, elementoID int64) (bool, error)
+	// EliminarElemento borra el elemento y sus criterios. Si otro pedido le registró esfuerzo o un
+	// defecto en el medio, devuelve domain.ErrElementoConEsfuerzo o domain.ErrElementoConDefectos.
 	EliminarElemento(ctx context.Context, elementoID int64) error
 }
 
@@ -97,7 +99,8 @@ func NuevoEliminarElementoBacklog(repo RepositorioEliminacionBacklog) *EliminarE
 	return &EliminarElementoBacklog{repo: repo}
 }
 
-// Ejecutar busca el elemento en el proyecto, verifica que no tenga esfuerzo registrado y lo elimina.
+// Ejecutar busca el elemento en el proyecto, verifica que no tenga esfuerzo (RN-06.7) ni defectos
+// (RN-06.10) registrados, en ese orden, y lo elimina.
 func (uc *EliminarElementoBacklog) Ejecutar(ctx context.Context, d DatosEliminarElemento) error {
 	if _, err := buscarElementoDelProyecto(ctx, uc.repo, d.ProyectoID, d.ElementoID); err != nil {
 		return err
@@ -108,6 +111,13 @@ func (uc *EliminarElementoBacklog) Ejecutar(ctx context.Context, d DatosEliminar
 	}
 	if conEsfuerzo {
 		return domain.ErrElementoConEsfuerzo
+	}
+	conDefectos, err := uc.repo.TieneDefectos(ctx, d.ElementoID)
+	if err != nil {
+		return fmt.Errorf("verificar defectos del elemento %d: %w", d.ElementoID, err)
+	}
+	if conDefectos {
+		return domain.ErrElementoConDefectos
 	}
 	if err := uc.repo.EliminarElemento(ctx, d.ElementoID); err != nil {
 		return fmt.Errorf("eliminar elemento %d: %w", d.ElementoID, err)
