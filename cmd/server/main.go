@@ -52,6 +52,7 @@ func main() {
 		ListarBacklog:      app.NuevoListarBacklog(repoProyectos, repoBacklog),
 		AsignarHistoria:    app.NuevoAsignarHistoria(repoBacklog),
 		DesasignarHistoria: app.NuevoDesasignarHistoria(repoBacklog),
+		CerrarSprint:       app.NuevoCerrarSprint(repoProyectos, repoSprints), // HU-11
 	})
 
 	puerto := os.Getenv("PORT")
