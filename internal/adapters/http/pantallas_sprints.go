@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -143,4 +144,45 @@ func datosNuevoSprint(proyectoID int64, f formularioSprint) (app.DatosNuevoSprin
 		d.FechaFin = *fin
 	}
 	return d, nil
+}
+
+// vistaSprintAnterior es cada fila de la pantalla de sprints anteriores (HU-12).
+type vistaSprintAnterior struct {
+	ID                              int64
+	Numero                          int
+	FechaInicio, FechaFin, Objetivo string
+	Planificados, Completados       int
+}
+
+type datosSprintsAnteriores struct {
+	Proyecto vistaProyecto
+	Sprints  []vistaSprintAnterior
+}
+
+// sprintsAnteriores muestra el historial de sprints cerrados del proyecto, en el orden que da el
+// caso de uso. Implementa HU-12 (CA-12.7).
+func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
+	id, ok := p.idDeRuta(w, r)
+	if !ok {
+		return
+	}
+	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.errorDeConsulta(w, err)
+		return
+	}
+	sprints, err := p.cu.ListarSprintsAnteriores.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.errorDeConsulta(w, err)
+		return
+	}
+	vistas := make([]vistaSprintAnterior, len(sprints))
+	for i, s := range sprints {
+		vistas[i] = vistaSprintAnterior{
+			ID: s.ID, Numero: s.Numero,
+			FechaInicio: s.FechaInicio.Format(time.DateOnly), FechaFin: s.FechaFin.Format(time.DateOnly),
+			Objetivo: s.Objetivo, Planificados: s.PuntosPlanificados, Completados: s.PuntosCompletados,
+		}
+	}
+	p.renderizar(w, http.StatusOK, "sprints_anteriores.html", datosSprintsAnteriores{Proyecto: aVistaProyecto(proyecto), Sprints: vistas})
 }
