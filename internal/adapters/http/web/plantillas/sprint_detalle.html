@@ -14,6 +14,7 @@
 <section aria-labelledby="titulo-asignados">
   <h2 id="titulo-asignados">Elementos del Sprint Backlog</h2>
   {{template "error_form" .Error}}
+  {{if not .Abierto}}<p class="vacio">El sprint está cerrado: sus elementos ya no se pueden asignar, quitar ni completar.</p>{{end}}
   {{if .Asignados}}
   <table>
     <caption class="oculto">Elementos asignados a este sprint</caption>
@@ -32,10 +33,12 @@
             <button type="submit" class="boton" aria-label="Marcar {{.Titulo}} como hecha">Marcar como hecha</button>
           </form>
           {{end}}
+          {{if $.Abierto}}
           <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{$.Sprint.ID}}/quitar" class="en-linea">
             <input type="hidden" name="elemento_id" value="{{.ID}}">
             <button type="submit" class="peligro" aria-label="Quitar {{.Titulo}} del sprint">Quitar</button>
           </form>
+          {{end}}
         </td>
       </tr>
       {{end}}
@@ -45,6 +48,7 @@
   <p class="vacio">Este sprint todavía no tiene elementos asignados.</p>
   {{end}}
 
+  {{if .Abierto}}
   <h3>Sumar un elemento</h3>
   {{if .Disponibles}}
   <form method="post" action="/web/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.ID}}/asignar" class="formulario en-linea">
@@ -56,6 +60,7 @@
   </form>
   {{else}}
   <p class="vacio">No hay elementos del backlog sin sprint asignado.</p>
+  {{end}}
   {{end}}
 </section>
 {{end}}

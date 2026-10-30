@@ -22,8 +22,11 @@ type (
 		PuedeCompletarse bool
 	}
 	datosSprintDetalle struct {
-		Proyecto    vistaProyecto
-		Sprint      vistaSprint
+		Proyecto vistaProyecto
+		Sprint   vistaSprint
+		// Abierto decide si se muestran las acciones de asignar y quitar (DEF-03): con el sprint
+		// Cerrado el dominio las rechaza (RN-09.6, ErrSprintCerrado), así que no se ofrecen.
+		Abierto     bool
 		Asignados   []vistaElementoBacklog
 		Disponibles []vistaElementoBacklog
 		Error       string
@@ -171,7 +174,7 @@ func (p *pantallas) mostrarSprintDetalle(w http.ResponseWriter, r *http.Request,
 	}
 
 	p.renderizar(w, status, "sprint_detalle.html", datosSprintDetalle{
-		Proyecto: aVistaProyecto(proyecto), Sprint: aVistaSprint(sprint),
+		Proyecto: aVistaProyecto(proyecto), Sprint: aVistaSprint(sprint), Abierto: abierto,
 		Asignados: asignados, Disponibles: disponibles, Error: mensaje,
 	})
 }
