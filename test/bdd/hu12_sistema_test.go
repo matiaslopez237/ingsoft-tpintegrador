@@ -8,17 +8,17 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/cucumber/godog"
-
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
 // sistemaHistorialReal prepara los proyectos con el caso de uso de HU-01 y los sprints
-// directamente en la base, sobre SQLite real, en una base nueva por escenario.
+// directamente en la base, y consulta con el caso de uso de HU-12, sobre SQLite real, en una base
+// nueva por escenario.
 type sistemaHistorialReal struct {
 	crearProyecto *app.CrearProyecto
+	anteriores    *app.ListarSprintsAnteriores
 	db            *sql.DB
 	dir           string
 }
@@ -33,8 +33,10 @@ func nuevoSistemaHistorial() (sistemaHistorial, error) {
 		os.RemoveAll(dir)
 		return nil, err
 	}
+	proyectos := persistencia.NuevoRepositorioProyectos(db)
 	return sistemaHistorialReal{
-		crearProyecto: app.NuevoCrearProyecto(persistencia.NuevoRepositorioProyectos(db)),
+		crearProyecto: app.NuevoCrearProyecto(proyectos),
+		anteriores:    app.NuevoListarSprintsAnteriores(proyectos, persistencia.NuevoRepositorioSprints(db)),
 		db:            db,
 		dir:           dir,
 	}, nil
@@ -60,10 +62,19 @@ func (s sistemaHistorialReal) CrearSprint(proyectoID int64, numero int, inicio, 
 	return err
 }
 
-// ConsultarAnteriores queda pendiente hasta que exista el caso de uso ListarSprintsAnteriores
-// (tarea 12.5): mientras tanto, los escenarios quedan en rojo.
 func (s sistemaHistorialReal) ConsultarAnteriores(proyectoID int64) ([]sprintAnteriorVisto, error) {
-	return nil, godog.ErrPending
+	sprints, err := s.anteriores.Ejecutar(context.Background(), proyectoID)
+	if err != nil {
+		return nil, err
+	}
+	vistos := make([]sprintAnteriorVisto, len(sprints))
+	for i, sp := range sprints {
+		vistos[i] = sprintAnteriorVisto{
+			Numero: sp.Numero, Inicio: sp.FechaInicio.Format(time.DateOnly), Fin: sp.FechaFin.Format(time.DateOnly),
+			Objetivo: sp.Objetivo, Planificados: sp.PuntosPlanificados, Completados: sp.PuntosCompletados,
+		}
+	}
+	return vistos, nil
 }
 
 // Cerrar cierra la base del escenario y borra su carpeta temporal.

@@ -131,19 +131,11 @@ func (w *historialWorld) consultoAnteriores(proyecto string) error {
 		return err
 	}
 	w.anteriores, w.ultimoErr = w.sistema.ConsultarAnteriores(pid)
-	return w.pendiente()
+	return nil
 }
 
 func (w *historialWorld) consultoAnterioresDeInexistente() error {
 	w.anteriores, w.ultimoErr = w.sistema.ConsultarAnteriores(idProyectoInexistente)
-	return w.pendiente()
-}
-
-// pendiente hace que el escenario quede pendiente (en rojo) mientras el caso de uso no exista.
-func (w *historialWorld) pendiente() error {
-	if errors.Is(w.ultimoErr, godog.ErrPending) {
-		return godog.ErrPending
-	}
 	return nil
 }
 
