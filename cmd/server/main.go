@@ -57,6 +57,7 @@ func main() {
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-20, RN-20.5).
 		RegistrarDefecto: app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints,
 			persistencia.NuevoRepositorioDefectos(db), time.Now),
+		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints), // HU-12
 	})
 
 	puerto := os.Getenv("PORT")

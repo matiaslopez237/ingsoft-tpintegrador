@@ -22,6 +22,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-10 Marcar una historia como completada en el Sprint | ✓ (Aprobada; P-9 abierta a objeción en el PR) | 5/7 (CA-10.6 y CA-10.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 9/9 escenarios |
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
+| HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 
 ---
 
@@ -1002,6 +1003,67 @@ Sin CA propio en la spec:
 - El enlace "Registrar defecto" sale de la lista del backlog (HU-07); no hay todavía un enlace desde el detalle del elemento (HU-06), porque la pantalla de HU-20 elige el elemento de una lista, no parte de uno puntual.
 - Fuera de alcance (spec, sección 5): editar, eliminar, listar o cambiar el estado de un defecto; vincularlo manualmente a un Sprint distinto del detectado automáticamente.
 - Revisión con el agente `go-reviewer` (tarea 20.9): sin hallazgos bloqueantes. Encontró que el `<select>` de severidad de la pantalla no tenía una opción vacía por defecto ni `required` (a diferencia del de elemento); se corrigió en el mismo commit de esta revisión.
+
+---
+
+## HU-12: Consultar Sprints anteriores
+
+- **Issue:** #23 · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-12-sprints-anteriores.md](specs/HU-12-sprints-anteriores.md)
+- **Feature:** [features/HU-12-sprints-anteriores.feature](../features/HU-12-sprints-anteriores.feature) (steps en [test/bdd/hu12_steps_test.go](../test/bdd/hu12_steps_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-12.1 Los cerrados, del más reciente al más antiguo, con fechas, Sprint Goal y puntos | RN-12.1 a RN-12.3 | Se listan los sprints cerrados, del más reciente al más antiguo, sin los abiertos `@normal` · Un sprint cerrado sin historias aparece con 0 puntos `@limite` | `TestSprintsAnteriores`, `TestSprintsAnteriores_ConservaLosDatos`, `TestListarSprintsAnteriores_DevuelveLosCerradosDelProyecto` | `domain.SprintsAnteriores`, `app.ListarSprintsAnteriores.Ejecutar` |
+| CA-12.2 Sin sprints cerrados: lista vacía, sin error | RN-12.1 | Un proyecto sin sprints no tiene sprints anteriores `@limite` · Los sprints abiertos no aparecen, aunque estén vencidos `@alternativo` | `TestSprintsAnteriores` (sin sprints, abiertos vencidos), `TestListarSprintsAnteriores_SinCerrados_ListaVacia` | `domain.SprintsAnteriores` |
+| CA-12.3 El orden sigue la fecha de inicio, no el número | RN-12.3 | El orden sigue las fechas aunque el número no coincida `@alternativo` | `TestSprintsAnteriores` (CA-12.3) | `domain.SprintsAnteriores` (`slices.SortFunc` por `FechaInicio`) |
+| CA-12.4 Solo los del proyecto consultado | RN-12.1 | Solo aparecen los sprints del proyecto consultado `@alternativo` | `TestListarSprintsAnteriores_DevuelveLosCerradosDelProyecto` | `persistencia.RepositorioSprints.ListarSprints` (HU-08) |
+| CA-12.5 Proyecto inexistente | Sección 7 | No se pueden consultar los sprints anteriores de un proyecto que no existe `@error` | `TestListarSprintsAnteriores_ProyectoInexistente_RetornaError`, `TestListarSprintsAnteriores_FallaDelRepositorio_SePropaga` | `app.ListarSprintsAnteriores.Ejecutar` |
+| CA-12.6 HTTP 200 / 404 / 400 | Sección 3 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo (comentario del feature). | `TestGetSprintsAnteriores_DevuelveLosSprintsConSusPuntos`, `TestGetSprintsAnteriores_SinSprints_DevuelveArrayVacio`, `TestGetSprintsAnteriores_Errores`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerSprintsAnteriores`, `http.RegistrarSprintsAnteriores`, `http.NuevoRouter` |
+| CA-12.7 Pantalla "Sprints anteriores", enlazada desde el proyecto y los sprints | Sección 3 | **Sin escenario BDD a propósito:** es la pantalla. | `TestPantallaSprintsAnteriores_MuestraLosSprintsConSusDatos`, `TestPantallaSprintsAnteriores_SinSprints_MuestraMensaje`, `TestPantallaSprintsAnteriores_Errores`, `TestPantallaSprintsAnteriores_EnlazadaDesdeElProyectoYLosSprints` | `http.pantallas.sprintsAnteriores`, [sprints_anteriores.html](../internal/adapters/http/web/plantillas/sprints_anteriores.html) |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-12.1 Un sprint anterior es uno Cerrado | CA-12.1, CA-12.2, CA-12.4 | `domain.SprintsAnteriores` |
+| RN-12.2 Se muestran número, fechas, Sprint Goal y los puntos que registró HU-11, sin recalcular | CA-12.1 | `domain.SprintsAnteriores` (devuelve el sprint completo); `PuntosPlanificados` y `PuntosCompletados` de HU-11 |
+| RN-12.3 Del más reciente al más antiguo, por fecha de inicio | CA-12.1, CA-12.3 | `domain.SprintsAnteriores` |
+
+Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la lista que usa la pantalla de HU-08).
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/sprint_historial.go](../internal/domain/sprint_historial.go) (`SprintsAnteriores`) | [sprint_historial_test.go](../internal/domain/sprint_historial_test.go) |
+| Caso de uso | [internal/app/listar_sprints_anteriores.go](../internal/app/listar_sprints_anteriores.go) (reutiliza `LectorProyectos` y `RepositorioSprints` de HU-08) | [listar_sprints_anteriores_test.go](../internal/app/listar_sprints_anteriores_test.go) |
+| Persistencia | Sin cambios: `ListarSprints` de HU-08 ya lee los puntos de HU-11 | Escenarios BDD sobre SQLite real |
+| HTTP | [internal/adapters/http/sprints_anteriores_handler.go](../internal/adapters/http/sprints_anteriores_handler.go) (`GET /proyectos/{id}/sprints/anteriores`), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [sprints_anteriores_handler_test.go](../internal/adapters/http/sprints_anteriores_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [pantallas_sprints.go](../internal/adapters/http/pantallas_sprints.go) (`sprintsAnteriores`), [pantallas.go](../internal/adapters/http/pantallas.go) (ruta), [sprints_anteriores.html](../internal/adapters/http/web/plantillas/sprints_anteriores.html); enlaces en [proyecto_detalle.html](../internal/adapters/http/web/plantillas/proyecto_detalle.html) y [sprints.html](../internal/adapters/http/web/plantillas/sprints.html) | [pantallas_sprints_anteriores_test.go](../internal/adapters/http/pantallas_sprints_anteriores_test.go) |
+| BDD | [test/bdd/hu12_sistema_test.go](../test/bdd/hu12_sistema_test.go) (SQLite real), [hu12_steps_test.go](../test/bdd/hu12_steps_test.go) | 7 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 12.1 Spec | `e85b947` docs(HU-12): spec de consultar sprints anteriores | — |
+| 12.2 Escenarios BDD | `35328d3` | — |
+| 12.3 Steps de godog | `81b0806` [RED] (pendientes hasta el caso de uso) | BDD en rojo |
+| 12.4 Dominio | `6cfd858` [RED] → `1c65c71` [GREEN] → `eb5de8b` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| 12.5 Caso de uso | `1708835` [RED] → `ed73d9f` [GREEN] | **RED → GREEN** (sin REFACTOR: tres pasos lineales con el mismo molde que `ListarSprints` de HU-08) |
+| BDD conectado al caso de uso | `e9cef74` | BDD en verde |
+| 12.6 Persistencia | — | No hizo falta código nuevo |
+| 12.7 Endpoint JSON | `1aa8148` [RED] → `704db13` [GREEN] | **RED → GREEN** |
+| 12.8 Pantalla | `f59ce16` [RED] → `902574f` [GREEN] | **RED → GREEN** |
+| 12.9 Revisión y trazabilidad | este commit | — |
+
+### Huecos
+
+- No pasó por el agente `go-reviewer`; la revisión queda para el PR.
+- Un sprint cerrado antes de que existiera el resumen de HU-11 (base vieja) aparece con 0 y 0 puntos, que es lo que dejó la migración; está documentado como caso límite en la spec, sin test propio.
 
 ---
 
