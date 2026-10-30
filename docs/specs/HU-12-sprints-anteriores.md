@@ -2,7 +2,7 @@
 
 **Historia:** Como Scrum Master, quiero consultar Sprints anteriores de un proyecto, para revisar el historial.
 **Issue:** #23  ·  **Sprint:** 3  ·  **Story points:** 2
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Ver el historial de los sprints ya cerrados de un proyecto: qué se propuso cada uno (Sprint Goal), cuándo fue y cuántos story points planificó y completó. Sirve para revisar cómo viene el equipo antes de planificar el próximo sprint. Usa los sprints de HU-08 y el resumen de puntos que guarda HU-11 al cerrar un sprint (RN-11.6).
@@ -70,4 +70,5 @@ Confirmadas por Matías López (Agile Enabler) el 2026-10-30:
 Ninguna.
 
 ## Historial
-- 2026-10-30: creada, con P-1 a P-4 confirmadas.
+- 2026-10-30: creada, con P-1 a P-4 confirmadas. Matías aprobó la spec, incluido el orden por fecha de inicio (P-3).
+- 2026-10-30: implementada (dominio, caso de uso, endpoint JSON y pantalla).
