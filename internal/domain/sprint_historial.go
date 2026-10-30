@@ -1,6 +1,6 @@
 package domain
 
-import "sort"
+import "slices"
 
 // SprintsAnteriores devuelve, de los sprints recibidos, los Cerrados (RN-12.1), del más reciente al
 // más antiguo por fecha de inicio (RN-12.3), con todos sus datos (RN-12.2). Como los sprints de un
@@ -13,8 +13,8 @@ func SprintsAnteriores(sprints []Sprint) []Sprint {
 			anteriores = append(anteriores, s)
 		}
 	}
-	sort.Slice(anteriores, func(i, j int) bool {
-		return anteriores[i].FechaInicio.After(anteriores[j].FechaInicio)
+	slices.SortFunc(anteriores, func(a, b Sprint) int {
+		return b.FechaInicio.Compare(a.FechaInicio) // b antes que a: de la más reciente a la más antigua
 	})
 	return anteriores
 }
