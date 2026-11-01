@@ -24,6 +24,10 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 	ctx := context.Background()
 	proyectos, backlog := NuevoRepositorioProyectos(db), NuevoRepositorioBacklog(db)
 	sprints, esfuerzo, defectos := NuevoRepositorioSprints(db), NuevoRepositorioEsfuerzo(db), NuevoRepositorioDefectos(db)
+	rondas := NuevoRepositorioRondas(db)
+	cinco := 5
+	ronda := domain.Ronda{ID: 1, ProyectoID: 1, ElementoID: 1, Numero: 1, Estado: domain.RondaAbierta,
+		Votantes: []domain.Votante{{Nombre: "Ana", Voto: &cinco}}}
 	nombre, titulo, sprintID := "Beta", "Otro", int64(1)
 	dia := time.Date(2026, 10, 26, 0, 0, 0, 0, time.UTC)
 	proyecto := domain.Proyecto{ID: 1, Nombre: "Alfa", FechaInicio: dia, Estado: domain.EstadoActivo}
@@ -75,6 +79,11 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 			d := domain.Defecto{ProyectoID: 1, ElementoID: 1, Descripcion: "d", Severidad: domain.SeveridadAlta, Estado: domain.DefectoAbierto}
 			return defectos.GuardarDefecto(ctx, &d)
 		},
+		// Planning Poker (HU-14)
+		"UltimaRonda":  func() error { _, err := rondas.UltimaRonda(ctx, 1); return err },
+		"GuardarRonda": func() error { r := ronda; return rondas.GuardarRonda(ctx, &r) },
+		"BuscarRonda":  func() error { _, err := rondas.BuscarRonda(ctx, 1); return err },
+		"GuardarVoto":  func() error { return rondas.GuardarVoto(ctx, ronda, "Ana") },
 	}
 	for nombre, metodo := range metodos {
 		t.Run(nombre, func(t *testing.T) {
