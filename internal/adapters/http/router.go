@@ -27,6 +27,9 @@ type CasosDeUso struct {
 	EliminarElementoBacklog  eliminadorElementos  // HU-06
 	ConsultarElementoBacklog consultorElementos   // HU-06
 	RegistrarDefecto         registradorDefecto   // HU-20
+	IniciarRonda             iniciadorRondas      // HU-14
+	Votar                    votadorRondas        // HU-14
+	ConsultarRonda           consultorRondas      // HU-14
 	ListarSprintsAnteriores  listadorSprints      // HU-12
 }
 
@@ -48,6 +51,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarAsignacion(mux, cu.AsignarHistoria, cu.DesasignarHistoria)
 	RegistrarCerrarSprint(mux, cu.CerrarSprint)
 	RegistrarCompletar(mux, cu.CompletarHistoria)
+	RegistrarPlanningPoker(mux, cu.IniciarRonda, cu.Votar, cu.ConsultarRonda)
 	RegistrarSprintsAnteriores(mux, cu.ListarSprintsAnteriores)
 	RegistrarPantallas(mux, cu)
 	return mux

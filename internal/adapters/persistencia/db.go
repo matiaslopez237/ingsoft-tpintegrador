@@ -133,6 +133,32 @@ CREATE TABLE IF NOT EXISTS defectos (
 	severidad           TEXT    NOT NULL,
 	estado              TEXT    NOT NULL,
 	sprint_deteccion_id INTEGER REFERENCES sprints (id)
+);
+
+-- HU-14. Rondas de Planning Poker. Se borran con el elemento (ON DELETE CASCADE): una ronda no
+-- impide eliminarlo (HU-14, sección 5).
+CREATE TABLE IF NOT EXISTS rondas (
+	id          INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id INTEGER NOT NULL REFERENCES proyectos (id),
+	elemento_id INTEGER NOT NULL REFERENCES backlog_elementos (id) ON DELETE CASCADE,
+	numero      INTEGER NOT NULL,
+	estado      TEXT    NOT NULL,
+	UNIQUE (elemento_id, numero)
+);
+
+-- HU-14. RN-14.1 también en la base: a lo sumo una ronda Abierta por elemento.
+CREATE UNIQUE INDEX IF NOT EXISTS rondas_una_abierta_por_elemento ON rondas (elemento_id) WHERE estado = 'Abierta';
+
+-- HU-14. Votantes de cada ronda (RN-14.2), en orden; voto NULL mientras no votó.
+-- nombre_clave = domain.ClaveNombre(nombre), como en integrantes.
+CREATE TABLE IF NOT EXISTS ronda_votantes (
+	id           INTEGER PRIMARY KEY AUTOINCREMENT,
+	ronda_id     INTEGER NOT NULL REFERENCES rondas (id) ON DELETE CASCADE,
+	orden        INTEGER NOT NULL,
+	nombre       TEXT    NOT NULL,
+	nombre_clave TEXT    NOT NULL,
+	voto         INTEGER,
+	UNIQUE (ronda_id, nombre_clave)
 );`)
 	return err
 }

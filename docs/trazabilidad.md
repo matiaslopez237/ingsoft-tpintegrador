@@ -24,6 +24,8 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 | HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Borrador, pendiente de aprobación en el PR) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2 | ✓ 19/19 escenarios |
+| HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
+| HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
 
 ---
 
@@ -1065,6 +1067,113 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 
 - No pasó por el agente `go-reviewer`; la revisión queda para el PR.
 - Un sprint cerrado antes de que existiera el resumen de HU-11 (base vieja) aparece con 0 y 0 puntos, que es lo que dejó la migración; está documentado como caso límite en la spec, sin test propio.
+
+---
+
+## HU-14: Registrar estimaciones individuales ocultas
+
+- **Issue:** [#25](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/25) · Sprint 3 · 5 SP · tareas #197 a #206
+- **Spec:** [docs/specs/HU-14-votos-ocultos.md](specs/HU-14-votos-ocultos.md)
+- **Feature:** [features/HU-14-votos-ocultos.feature](../features/HU-14-votos-ocultos.feature) (steps en [test/bdd/hu14_steps_test.go](../test/bdd/hu14_steps_test.go); el resumen se verifica con el endpoint real y los escenarios de CA-14.9 usan la pantalla real)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-14.1 Iniciar una ronda | RN-14.1, RN-14.2 | Iniciar una ronda sobre un elemento pendiente `@normal` | `TestNuevaRonda_AbiertaConLosIntegrantesComoVotantes`, `TestIniciarRonda_GuardaLaRondaAbiertaConLosIntegrantes`, `TestRepositorioRondas_GuardarYBuscar`, `TestPostRonda_Devuelve201ConElResumen` | `domain.NuevaRonda`, `app.IniciarRonda`, `persistencia.RepositorioRondas.GuardarRonda` |
+| CA-14.2 Voto oculto | RN-14.3, RN-14.6 | Un voto no muestra su valor mientras la ronda está abierta `@normal` | `TestVotar_UnVotoNoCierraLaRondaNiMuestraElValor`, `TestVotar_GuardaElVotoYDevuelveElResumenSinValores`, `TestPostVoto_Devuelve200SinElValor` | `domain.Ronda.Votar`, `domain.Ronda.Resumen`, `app.Votar` |
+| CA-14.3 Cierre al votar todos | RN-14.6 | La ronda se cierra cuando votaron todos `@normal` · Con un solo integrante, su voto cierra la ronda `@limite` | `TestVotar_CuandoVotanTodosLaRondaSeCierra`, `TestRepositorioRondas_GuardarVoto`, `TestRepositorioRondas_VotosSimultaneos` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
+| CA-14.4 Cambiar el voto | RN-14.5, RN-14.2 | Cambiar el voto mientras la ronda está abierta `@alternativo` · El nombre del votante no distingue mayúsculas ni espacios `@alternativo` | `TestVotar_CambiarElVotoYNombreSinMayusculas`, `TestRepositorioRondas_GuardarVoto` | `domain.Ronda.Votar` (`ClaveNombre`) |
+| CA-14.5 Voto inválido, no votante, ronda cerrada | RN-14.2, RN-14.4, RN-14.6 | Un voto fuera de la escala de Fibonacci `@error` (×4) · Vota alguien que se sumó al proyecto después de abrir la ronda `@error` · No se vota en una ronda cerrada `@error` | `TestVotar_Errores` (dominio y caso de uso), `TestVotar_RondaCerrada`, `TestRepositorioRondas_GuardarVoto_RondaYaCerrada`, `TestValoresVoto` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
+| CA-14.6 No se puede iniciar | RN-14.1, RN-14.2 | No se estima un elemento terminado `@error` · Un proyecto sin integrantes no puede abrir una ronda `@error` · Un elemento tiene una sola ronda abierta a la vez `@error` · Con la ronda anterior cerrada se abre la número 2 `@limite` | `TestNuevaRonda_Errores`, `TestNuevaRonda_ConLaAnteriorCerrada_TomaElNumeroSiguiente`, `TestIniciarRonda_Errores`, `TestIniciarRonda_ConLaAnteriorCerrada_AbreLaSiguiente`, `TestRepositorioRondas_UltimaRonda`, `TestRepositorioRondas_UnaSolaAbiertaPorElemento` | `domain.NuevaRonda`, índice único `rondas_una_abierta_por_elemento` |
+| CA-14.7 Otro proyecto o inexistente | RN-14.7 | No se abre una ronda sobre un elemento de otro proyecto `@error` · No se vota en una ronda de otro proyecto `@error` | `TestIniciarRonda_Errores`, `TestVotar_Errores`, `TestConsultarRonda`, `TestConsultarRonda_UltimaDelElemento`, `TestPantallaRonda_Inexistente` | `buscarElementoDelProyecto`, `rondaDelProyecto` |
+| CA-14.8 API sin valores | Sección 3, RN-14.3 | El resumen se pide al endpoint real en los escenarios de CA-14.2 y CA-14.3 ("el resumen de la ronda no muestra ningún valor") | `TestPostRonda_Devuelve201ConElResumen`, `TestPostVoto_Devuelve200SinElValor`, `TestGetRonda_Devuelve200ConElResumen`, `TestPlanningPoker_Errores` (17 casos) | `planning_poker_handler.go` |
+| CA-14.9 Pantalla | Sección 3 | Iniciar una ronda desde la pantalla del elemento `@normal` · Votar desde la pantalla sin ver los votos `@normal` | `TestPantallaElemento_*` (4 tests de la sección Planning Poker), `TestPantallaIniciarRonda_*`, `TestPantallaRonda_*`, `TestPantallaVotar_*` | `pantallas_planning_poker.go`, `web/plantillas/ronda.html`, sección en `web/plantillas/elemento.html` (HU-06) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Ronda`, `NuevaRonda`, `Votar`, `Resumen`, `ValoresVoto`) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
+| Casos de uso | [internal/app/planning_poker.go](../internal/app/planning_poker.go) (`IniciarRonda`, `Votar`, `ConsultarRonda`) | [planning_poker_test.go](../internal/app/planning_poker_test.go) |
+| Persistencia | [internal/adapters/persistencia/ronda_repo.go](../internal/adapters/persistencia/ronda_repo.go), [db.go](../internal/adapters/persistencia/db.go) (tablas `rondas` y `ronda_votantes`) | [ronda_repo_test.go](../internal/adapters/persistencia/ronda_repo_test.go), métodos de rondas en [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| HTTP (JSON) | [internal/adapters/http/planning_poker_handler.go](../internal/adapters/http/planning_poker_handler.go) (`POST /proyectos/{id}/backlog/{elementoID}/rondas`, `GET /proyectos/{id}/rondas/{rondaID}`, `POST /proyectos/{id}/rondas/{rondaID}/votos`) | [planning_poker_handler_test.go](../internal/adapters/http/planning_poker_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_planning_poker.go](../internal/adapters/http/pantallas_planning_poker.go), [web/plantillas/ronda.html](../internal/adapters/http/web/plantillas/ronda.html) (`/web/proyectos/{id}/rondas/{rondaID}`) | [pantallas_planning_poker_test.go](../internal/adapters/http/pantallas_planning_poker_test.go) |
+| BDD | [test/bdd/hu14_sistema_test.go](../test/bdd/hu14_sistema_test.go), [hu14_steps_test.go](../test/bdd/hu14_steps_test.go) | 20 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 14.1 Spec | `504cb67` | — |
+| 14.2 Escenarios BDD | `beded52` | — |
+| 14.3 Steps godog | `f092518` | BDD en rojo (pendientes) |
+| 14.4 Ronda en el dominio | `bf87efe` [RED] → `b9b2742` [GREEN] | **RED → GREEN** |
+| 14.5 Casos de uso | `61417a0` [RED] → `d84dbdd` [GREEN] | **RED → GREEN** |
+| 14.6 Persistencia | `fc5c9ac` [RED] → `cc1b80e` [GREEN] | **RED → GREEN** |
+| Conectar los escenarios BDD con los casos de uso reales | `2274c5b` | BDD en verde salvo API y pantalla |
+| 14.7 HTTP | `516e1b0` [RED] → `b769bc6` [GREEN] | **RED → GREEN** |
+| 14.8 Pantalla | `d4d4bcd` [RED] → `f7c0ca5` [GREEN] | **RED → GREEN**, BDD en verde |
+| 14.9 Revisión con go-reviewer | `65613de` | **REFACTOR** |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- Revisión con el agente `go-reviewer` (tarea 14.9): sin hallazgos críticos ni altos. Confirmó que ningún adaptador muestra el valor de un voto, la concurrencia de `GuardarRonda` y `GuardarVoto` y el `ON DELETE CASCADE`. Se corrigió que `GuardarVoto` informaba "no es votante" cuando la ronda no traía el voto aplicado, y se documentó el choque de `UNIQUE (elemento_id, numero)`. Quedan como en el resto de las historias: las rutas de pantalla suponen que los casos de uso están cargados, y el cuerpo JSON de un voto no rechaza contenido después del primer objeto.
+- Mostrar los votos y detectar diferencias es HU-15; reiniciar la ronda, HU-16; y guardar la estimación acordada, HU-17.
+- La pantalla no sabe quién está votando (no hay autenticación): el integrante se elige de una lista.
+
+---
+
+## HU-15: Mostrar las estimaciones y detectar diferencias
+
+- **Issue:** [#26](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/26) · Sprint 3 · 3 SP · tareas #207 a #215
+- **Spec:** [docs/specs/HU-15-revelar-estimaciones.md](specs/HU-15-revelar-estimaciones.md)
+- **Feature:** [features/HU-15-revelar-estimaciones.feature](../features/HU-15-revelar-estimaciones.feature) (steps en [test/bdd/hu15_steps_test.go](../test/bdd/hu15_steps_test.go), sobre el mismo mundo de HU-14: la ronda se arma y se vota con sus pasos)
+- **Cambio en HU-14:** RN-14.3, CA-14.8 y CA-14.9 pasan a decir que los valores se ocultan *mientras la ronda está abierta*. Se ajustaron dos escenarios de HU-14 y el test `TestPantallaRonda_Cerrada_SinFormulario`.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-15.1 Revelar con diferencia | RN-15.1, RN-15.2 | Al cerrarse la ronda se revelan los votos con una diferencia significativa `@normal` | `TestRevelar_RondaCerrada_DevuelveLosVotosElMinimoYElMaximo`, `TestResumen_RondaCerrada_TraeLaRevelacion`, `TestConsultarRonda_RevelaSoloConLaRondaCerrada`, `TestRepositorioRondas_RondaCerradaSeRevelaConTodosLosVotos` | `domain.Ronda.Revelar`, `domain.Ronda.Resumen` |
+| CA-15.2 Sin diferencia | RN-15.2, RN-15.3 | Sin diferencia significativa `@alternativo` (×2) | `TestRevelar_DiferenciaSignificativa` | `domain.Ronda.Revelar` |
+| CA-15.3 Límites del umbral | RN-15.2, RN-15.3 | Los límites del umbral `@limite` (×3) · Con un solo votante no hay diferencia `@limite` | `TestRevelar_DiferenciaSignificativa` (8 casos) | `domain.Ronda.Revelar` |
+| CA-15.4 Ronda abierta sin revelación | RN-15.1 | Con la ronda abierta no se revela nada `@alternativo` | `TestRevelar_RondaAbierta_RetornaError`, `TestConsultarRonda_RevelaSoloConLaRondaCerrada`, `TestGetRonda_Abierta_SinRevelacion`, `TestPantallaRonda_Abierta_SinRevelacion` | `domain.Ronda.Revelar` (`ErrRondaAbierta`) |
+| CA-15.5 JSON | Sección 3 | La API muestra la revelación de una ronda cerrada `@normal` | `TestGetRonda_Cerrada_TraeLaRevelacion`, `TestGetRonda_Abierta_SinRevelacion` | `planning_poker_handler.go` (`revelacion`) |
+| CA-15.6 Pantalla | Sección 3 | La pantalla de una ronda cerrada muestra los votos y el aviso `@normal` | `TestPantallaRonda_Cerrada_MuestraLosVotosYLaDiferencia`, `TestPantallaRonda_Cerrada_SinDiferencia`, `TestPantallaRonda_Abierta_SinRevelacion` | `web/plantillas/ronda.html` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Revelar`, `Revelacion`, `VotoRevelado`; `Resumen` la incluye con la ronda cerrada) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
+| Caso de uso | Sin cambios: `ConsultarRonda` (HU-14) devuelve el resumen | [planning_poker_test.go](../internal/app/planning_poker_test.go) |
+| Persistencia | Sin cambios: `BuscarRonda` (HU-14) ya lee los votos | [ronda_repo_test.go](../internal/adapters/persistencia/ronda_repo_test.go) |
+| HTTP (JSON) | [internal/adapters/http/planning_poker_handler.go](../internal/adapters/http/planning_poker_handler.go) (`revelacion` en `GET /proyectos/{id}/rondas/{rondaID}`) | [planning_poker_handler_test.go](../internal/adapters/http/planning_poker_handler_test.go) |
+| Pantalla | [web/plantillas/ronda.html](../internal/adapters/http/web/plantillas/ronda.html) | [pantallas_planning_poker_test.go](../internal/adapters/http/pantallas_planning_poker_test.go) |
+| BDD | [test/bdd/hu15_steps_test.go](../test/bdd/hu15_steps_test.go) | 10 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 15.1 Spec (y ajuste de HU-14) | `3a75565` | — |
+| 15.2 Escenarios BDD (y ajuste de los de HU-14) | `c55fcad` | — |
+| 15.3 Steps godog | `72a495c` | BDD en rojo |
+| 15.4 Revelar en el dominio | `32bf063` [RED] → `c3075de` [GREEN] | **RED → GREEN** |
+| 15.5 Caso de uso | `e46a1bf` | test, sin cambios en el código (ya funcionaba por el dominio) |
+| 15.6 Persistencia | `a0f7a6b` | test, sin persistencia nueva |
+| 15.7 HTTP | `dbbe2dc` [RED] → `736daa5` [GREEN] | **RED → GREEN** |
+| 15.8 Pantalla | `329adbf` [RED] → `ecf26ca` [GREEN] | **RED → GREEN**, BDD en verde |
+| 15.9 Revisión y trazabilidad | este commit (go-reviewer sin cambios) | — |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- Las tareas 15.5 y 15.6 no tienen RED → GREEN: el caso de uso y la persistencia de HU-14 ya alcanzaban, así que sus tests pasaron desde el principio. Se dejaron como evidencia de que la revelación llega hasta la API y la base.
+- La ruta sugerida por la tarea 15.7 (`GET /proyectos/{id}/backlog/{elementoID}/rondas/{rondaID}`) no se agregó: la revelación va en el `GET /proyectos/{id}/rondas/{rondaID}` de HU-14, para no tener dos rutas para la misma ronda.
+- Revisión con el agente `go-reviewer` (tarea 15.9): sin hallazgos críticos, altos ni medios. Confirmó que con la ronda abierta ningún adaptador revela valores y que el mínimo, el máximo y el umbral son correctos. Tres observaciones bajas sin cambios: el `continue` para un votante sin voto es inalcanzable (la ronda se cierra cuando votaron todos), una ronda sin votantes no se puede crear (RN-14.2) y un comentario se reescribió.
 
 ---
 

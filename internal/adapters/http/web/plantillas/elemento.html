@@ -43,6 +43,21 @@
   </div>
 </form>
 
+{{with .Poker}}
+<section aria-labelledby="titulo-poker">
+  <h2 id="titulo-poker">Planning Poker</h2>
+  {{if .RondaAbierta}}
+  <p><a href="/web/proyectos/{{$.ProyectoID}}/rondas/{{.RondaAbierta.ID}}">Ir a la ronda {{.RondaAbierta.Numero}}, abierta</a></p>
+  {{else if .PuedeIniciar}}
+  <form method="post" action="/web/proyectos/{{$.ProyectoID}}/backlog/{{$.ElementoID}}/rondas" class="en-linea">
+    <button type="submit" class="boton">Iniciar ronda</button>
+  </form>
+  {{else}}
+  <p class="vacio">El elemento está terminado: ya no se estima.</p>
+  {{end}}
+</section>
+{{end}}
+
 <details class="confirmar">
   <summary>Eliminar elemento</summary>
   <p>Se elimina el elemento con sus criterios de aceptación. No se puede deshacer.</p>
