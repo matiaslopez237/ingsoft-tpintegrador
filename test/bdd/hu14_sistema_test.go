@@ -22,11 +22,17 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// erroresHU14 traduce la descripción del escenario al error definido en la spec. Se completa con
-// los errores del dominio de HU-14 (tarea 14.4).
+// erroresHU14 traduce la descripción del escenario al error definido en la spec.
 func erroresHU14() map[string]error {
 	return map[string]error{
 		"elemento no encontrado": domain.ErrElementoNoEncontrado,
+		"ronda no encontrada":    domain.ErrRondaNoEncontrada,
+		"elemento terminado":     domain.ErrElementoTerminado,
+		"sin votantes":           domain.ErrRondaSinVotantes,
+		"ronda ya abierta":       domain.ErrRondaYaAbierta,
+		"ronda cerrada":          domain.ErrRondaCerrada,
+		"no es votante":          domain.ErrNoEsVotante,
+		"voto inválido":          domain.ErrVotoInvalido,
 	}
 }
 
