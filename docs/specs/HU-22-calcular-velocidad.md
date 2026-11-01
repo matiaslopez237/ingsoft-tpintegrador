@@ -21,7 +21,7 @@ Es una consulta de solo lectura: no hay más entradas. En HTTP, `proyectoID` va 
 - La **cantidad de Sprints cerrados** que entraron en el promedio, para que quien lo lea sepa sobre cuántos datos se calculó.
 - Si el proyecto no tiene ningún Sprint `Cerrado`, no hay velocidad: se informa explícitamente que no hay datos todavía, nunca el valor `0` (RN-22.3).
 - Los puntos planificados y completados de un Sprint en particular **no son una salida nueva de HU-22**: ya los devuelve `GET /proyectos/{id}/sprints/anteriores` y los muestra la pantalla de HU-12 (sección 1).
-- **En HTTP** (`GET /proyectos/{id}/velocidad`): `200` con `{"velocidad": 6.0, "sprints_cerrados": 3}`, o `{"velocidad": null, "sprints_cerrados": 0}` si no hay Sprints cerrados; `400` si el ID no es un número; `404` si el proyecto no existe.
+- **En HTTP** (`GET /proyectos/{id}/velocidad`): `200` con `{"velocidad": 6, "sprints_cerrados": 3}` (Go serializa un `float64` entero sin el punto decimal), o `{"velocidad": null, "sprints_cerrados": 0}` si no hay Sprints cerrados; `400` si el ID no es un número; `404` si el proyecto no existe.
 - **En la pantalla:** se agrega un dato "Velocidad del equipo" en la pantalla ya existente de sprints anteriores (HU-12, `/web/proyectos/{id}/sprints/anteriores`), antes de la tabla. No hay pantalla nueva.
 
 ## 4. Reglas de negocio
