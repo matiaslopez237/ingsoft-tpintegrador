@@ -77,7 +77,8 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 			r := domain.RegistroEsfuerzo{ProyectoID: 1, ElementoID: 1, Integrante: "Ana", Fecha: dia, Actividad: "Dev", Horas: 1}
 			return esfuerzo.GuardarRegistro(ctx, &r)
 		},
-		"BuscarRegistroPorID": func() error { _, err := esfuerzo.BuscarRegistroPorID(ctx, 1); return err },
+		"BuscarRegistroPorID":   func() error { _, err := esfuerzo.BuscarRegistroPorID(ctx, 1); return err },
+		"HorasRealesDeElemento": func() error { _, err := esfuerzo.HorasRealesDeElemento(ctx, 1); return err }, // HU-19
 		"GuardarDefecto": func() error {
 			d := domain.Defecto{ProyectoID: 1, ElementoID: 1, Descripcion: "d", Severidad: domain.SeveridadAlta, Estado: domain.DefectoAbierto}
 			return defectos.GuardarDefecto(ctx, &d)
