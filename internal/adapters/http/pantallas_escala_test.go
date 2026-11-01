@@ -10,7 +10,7 @@ import (
 
 // opcionesEscala son las opciones de la lista de story points (HU-13, sección 3).
 var opcionesEscala = []string{
-	`<select id="story_points" name="story_points">`, `<option value="">Sin estimar</option>`,
+	`<select id="story_points" name="story_points">`,
 	`<option value="1">1</option>`, `<option value="2">2</option>`, `<option value="3">3</option>`,
 	`<option value="8">8</option>`, `<option value="13">13</option>`, `<option value="21">21</option>`,
 }
@@ -20,7 +20,7 @@ func TestPantallaBacklog_AltaConLaEscala(t *testing.T) {
 	rec := pedirPantalla(t, casosConBacklog(nil, nil, &llamadasBacklog{}), http.MethodGet, "/web/proyectos/7/backlog", nil)
 
 	contiene(t, rec, opcionesEscala...)
-	contiene(t, rec, `<option value="5">5</option>`)
+	contiene(t, rec, `<option value="5">5</option>`, `<option value="" selected>Sin estimar</option>`)
 	noContiene(t, rec.Body.String(), `name="story_points" type="number"`)
 }
 
@@ -29,7 +29,7 @@ func TestPantallaElemento_EdicionConLaEscala(t *testing.T) {
 	rec := pedirPantalla(t, casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}), http.MethodGet, "/web/proyectos/7/backlog/7", nil)
 
 	contiene(t, rec, opcionesEscala...)
-	contiene(t, rec, `<option value="5" selected>5</option>`)
+	contiene(t, rec, `<option value="5" selected>5</option>`, `<option value="">Sin estimar</option>`)
 	noContiene(t, rec.Body.String(), `type="number"`)
 }
 

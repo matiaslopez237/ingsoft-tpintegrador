@@ -33,6 +33,7 @@ type datosEdicionElemento struct {
 	Error                  string
 	Prioridades            []domain.Prioridad
 	Estados                []domain.EstadoElemento
+	OpcionesStoryPoints    []opcionStoryPoints // HU-13
 }
 
 // registrarPantallasElemento agrega la pantalla para ver, editar y eliminar un elemento.
@@ -117,6 +118,7 @@ func (p *pantallas) mostrarElemento(w http.ResponseWriter, status int, pid, eid 
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
 		Prioridades: prioridadesElemento, Estados: estadosElemento,
+		OpcionesStoryPoints: opcionesStoryPoints(f.StoryPoints),
 	})
 }
 

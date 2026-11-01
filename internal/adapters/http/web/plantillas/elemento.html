@@ -24,8 +24,10 @@
     {{range .Prioridades}}<option value="{{.}}"{{if eq (print .) $.Form.Prioridad}} selected{{end}}>{{.}}</option>{{end}}
   </select>
 
-  <label for="story_points">Story points <span class="ayuda">(vacío: sin estimar)</span></label>
-  <input id="story_points" name="story_points" type="number" min="1" step="1" value="{{.Form.StoryPoints}}">
+  <label for="story_points">Story points <span class="ayuda">(escala de Fibonacci)</span></label>
+  <select id="story_points" name="story_points">
+    {{range .OpcionesStoryPoints}}<option value="{{.Valor}}"{{if .Elegida}} selected{{end}}>{{.Etiqueta}}</option>{{end}}
+  </select>
 
   <label for="criterios">Criterios de aceptación <span class="ayuda">(uno por línea)</span></label>
   <textarea id="criterios" name="criterios" rows="4" required>{{.Form.Criterios}}</textarea>
