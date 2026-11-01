@@ -236,3 +236,37 @@ func TestPlanningPoker_Errores(t *testing.T) {
 		})
 	}
 }
+
+// Traza: HU-15 CA-15.5 (RN-15.1): con la ronda cerrada, el JSON trae la revelación.
+func TestGetRonda_Cerrada_TraeLaRevelacion(t *testing.T) {
+	f := nuevoPokerFalso()
+	pedirPoker(t, f, http.MethodPost, "/proyectos/1/backlog/7/rondas", "")
+	pedirPoker(t, f, http.MethodPost, "/proyectos/1/rondas/1/votos", `{"integrante":"Ana","valor":3}`)
+	pedirPoker(t, f, http.MethodPost, "/proyectos/1/rondas/1/votos", `{"integrante":"Beto","valor":8}`)
+
+	rec := pedirPoker(t, f, http.MethodGet, "/proyectos/1/rondas/1", "")
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d; cuerpo: %s", rec.Code, rec.Body)
+	}
+	want := map[string]any{
+		"votos":  []any{map[string]any{"nombre": "Ana", "valor": 3.0}, map[string]any{"nombre": "Beto", "valor": 8.0}},
+		"minimo": 3.0, "maximo": 8.0, "diferencia_significativa": true,
+	}
+	if got := decodificar(t, rec)["revelacion"]; !reflect.DeepEqual(got, want) {
+		t.Errorf("revelacion = %v, se esperaba %v", got, want)
+	}
+}
+
+// Traza: HU-15 CA-15.5 (RN-15.1): con la ronda abierta, el JSON no trae la revelación.
+func TestGetRonda_Abierta_SinRevelacion(t *testing.T) {
+	f := nuevoPokerFalso()
+	pedirPoker(t, f, http.MethodPost, "/proyectos/1/backlog/7/rondas", "")
+	pedirPoker(t, f, http.MethodPost, "/proyectos/1/rondas/1/votos", `{"integrante":"Ana","valor":3}`)
+
+	rec := pedirPoker(t, f, http.MethodGet, "/proyectos/1/rondas/1", "")
+
+	if _, ok := decodificar(t, rec)["revelacion"]; ok {
+		t.Errorf("una ronda abierta no tiene que traer la revelación: %s", rec.Body)
+	}
+}
