@@ -79,3 +79,24 @@ func TestOpcionesStoryPoints(t *testing.T) {
 		}
 	}
 }
+
+// Traza: HU-13 CA-13.5 (RN-13.3), de punta a punta en la pantalla: con un valor anterior a la
+// escala (4), cambiar otro campo y guardar no envía los story points, así el dominio no los valida.
+func TestPantallaElemento_GuardarConValorAnteriorALaEscala_NoEnviaLosStoryPoints(t *testing.T) {
+	editor := &editorElementosFalso{}
+	cu := casosBacklogFalsos(editor, &eliminadorElementosFalso{})
+	cu.EditarElementoBacklog = editarQueAcepta(editor)
+	form := formElementoOriginal()
+	form.Set("story_points", "4")
+	form.Set("original_story_points", "4")
+	form.Set("titulo", "Ingreso")
+
+	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/backlog/7/editar", form)
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d; cuerpo %.300s", rec.Code, rec.Body)
+	}
+	if c := editor.recibido.Cambios; c.CambiarStoryPoints || c.Titulo == nil || *c.Titulo != "Ingreso" {
+		t.Errorf("cambios = %+v; se esperaba solo el título, sin story points", c)
+	}
+}
