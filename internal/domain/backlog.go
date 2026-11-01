@@ -88,19 +88,25 @@ func NuevoElementoBacklog(proyectoID int64, titulo, descripcion string, priorida
 		}
 	}
 
-	e := ElementoBacklog{
+	return ElementoBacklog{
 		ProyectoID:  proyectoID,
 		Titulo:      titulo,
 		Descripcion: descripcion,
 		Prioridad:   prioridad,
 		Estado:      EstadoPendiente,
+		StoryPoints: copiarPuntero(storyPoints),
 		Criterios:   recortados,
+	}, nil
+}
+
+// copiarPuntero devuelve un puntero nuevo con el mismo valor (nil si p es nil), para que el elemento
+// no comparta memoria con lo que recibió. [T any] la hace genérica: sirve para *int, *int64 y *float64.
+func copiarPuntero[T any](p *T) *T {
+	if p == nil {
+		return nil
 	}
-	if storyPoints != nil {
-		sp := *storyPoints // copia: el elemento no comparte el puntero recibido
-		e.StoryPoints = &sp
-	}
-	return e, nil
+	copia := *p
+	return &copia
 }
 
 func prioridadValida(p Prioridad) bool {

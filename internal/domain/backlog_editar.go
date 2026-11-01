@@ -102,13 +102,7 @@ func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	editado.ID = e.ID
 	editado.Estado = estado
 	// NuevoElementoBacklog no recibe el sprint ni las horas estimadas: sin esto, la copia los perdería.
-	if e.SprintID != nil {
-		sprint := *e.SprintID
-		editado.SprintID = &sprint
-	}
-	if horasEstimadas != nil {
-		horas := *horasEstimadas
-		editado.HorasEstimadas = &horas
-	}
+	editado.SprintID = copiarPuntero(e.SprintID)
+	editado.HorasEstimadas = copiarPuntero(horasEstimadas)
 	return editado, nil
 }
