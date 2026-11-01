@@ -67,7 +67,13 @@ func (p *pantallas) registrarEsfuerzoPantalla(w http.ResponseWriter, r *http.Req
 
 // mostrarErrorDeEsfuerzo vuelve a la pantalla del elemento con el mensaje en la sección de esfuerzo.
 // El formulario de edición se rearma con los valores guardados (cada formulario se envía por separado).
+// El proyecto se busca primero (sección 7): un error de formato no pasó por el caso de uso, y
+// ConsultarElementoBacklog no distingue un proyecto inexistente.
 func (p *pantallas) mostrarErrorDeEsfuerzo(w http.ResponseWriter, r *http.Request, pid, eid int64, form formEsfuerzo, mensaje string) {
+	if _, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), pid); err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	e, err := p.cu.ConsultarElementoBacklog.Ejecutar(r.Context(), pid, eid)
 	if err != nil {
 		p.errorDeElemento(w, err)
