@@ -2,7 +2,7 @@
 
 **Historia:** Como equipo, quiero iniciar una nueva ronda de votación sobre la misma historia, para converger en una estimación.
 **Issue:** #27  ·  **Sprint:** 3  ·  **Story points:** 2
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Cuando una ronda de Planning Poker termina con estimaciones muy distintas (HU-15), el equipo discute y vuelve a votar. Esta historia permite abrir otra ronda sobre el mismo elemento desde la pantalla de la ronda cerrada y ver el historial de todas las rondas del elemento, con sus votos, para comparar cómo fueron convergiendo. Reutiliza las rondas y los votos de HU-14 y la revelación de HU-15.
@@ -24,7 +24,7 @@ Cuando una ronda de Planning Poker termina con estimaciones muy distintas (HU-15
 - La consulta no modifica nada.
 - **En HTTP:** `200` con un arreglo JSON (`[]` si no hay rondas), donde cada elemento tiene la forma del resumen de una ronda de HU-14 y HU-15 (`id`, `proyecto_id`, `elemento_id`, `numero`, `estado`, `votantes` y, si está cerrada, `revelacion`). `404` si no existe el proyecto o el elemento, o si el elemento es de otro proyecto; `400` si un ID de la ruta no es un número.
 - **Pantallas** (ADR-0003):
-  - **Pantalla de la ronda** (HU-14): si la ronda está cerrada, es la última del elemento y el elemento no está `Hecho`, el botón "Nueva ronda" (RN-16.4). Al usarlo se abre la ronda siguiente y se va a su pantalla (POST-redirect-GET, `303`). Si no se puede (por ejemplo, otro pedido ya la abrió), se vuelve a la pantalla de la ronda con el error.
+  - **Pantalla de la ronda** (HU-14): si la ronda está cerrada, es la última del elemento y el elemento no está `Hecho`, el botón "Nueva ronda" (RN-16.4). Al usarlo se abre la ronda siguiente y se va a su pantalla (POST-redirect-GET, `303`). Si no se puede (por ejemplo, otro pedido ya la abrió), se muestra la pantalla del elemento con el error, porque el botón usa la misma acción que "Iniciar ronda" de HU-14.
   - **Pantalla del elemento** (HU-06), sección "Planning Poker": debajo de lo que ya muestra HU-14 (el enlace a la ronda abierta o el botón "Iniciar ronda"), el historial: una fila por ronda, de la más reciente a la más antigua, con el número, el estado, el mínimo y el máximo y si hubo diferencia (en las cerradas), y un enlace a la pantalla de esa ronda, que muestra el voto de cada integrante. Sin rondas, no se muestra la lista.
 
 ## 4. Reglas de negocio
@@ -58,7 +58,7 @@ Cuando una ronda de Planning Poker termina con estimaciones muy distintas (HU-15
 |---|---|---|
 | No existe el proyecto | `domain.ErrProyectoNoEncontrado` (HU-01) | "proyecto no encontrado" (HTTP 404) |
 | No existe el elemento, o es de otro proyecto | `domain.ErrElementoNoEncontrado` (HU-05) | "elemento de backlog no encontrado" (HTTP 404) |
-| Abrir una ronda con otra abierta | `domain.ErrRondaYaAbierta` (HU-14) | "el elemento ya tiene una ronda abierta" (HTTP 400; en la pantalla, el mensaje en la ronda) |
+| Abrir una ronda con otra abierta | `domain.ErrRondaYaAbierta` (HU-14) | "el elemento ya tiene una ronda abierta" (HTTP 400; en la pantalla, el mensaje en la pantalla del elemento) |
 | Abrir una ronda sobre un elemento `Hecho` | `domain.ErrElementoTerminado` (HU-14) | "no se puede estimar un elemento terminado" (HTTP 400) |
 | Un ID de la ruta no es un número | — (adaptador HTTP) | HTTP 400; no se llama al caso de uso |
 
@@ -85,4 +85,5 @@ Confirmadas por Matías López (Agile Enabler) el 2026-11-01:
 Ninguna.
 
 ## Historial
-- 2026-11-01: creada, con P-1 a P-4 confirmadas.
+- 2026-11-01: creada, con P-1 a P-4 confirmadas. Matías aprobó la spec.
+- 2026-11-01: implementada. Ajuste: si "Nueva ronda" falla, el error se muestra en la pantalla del elemento (la acción es la de HU-14), no en la de la ronda.
