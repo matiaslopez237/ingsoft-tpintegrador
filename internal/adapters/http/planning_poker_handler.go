@@ -33,7 +33,7 @@ type pedidoVoto struct {
 }
 
 // respuestaRonda es el resumen de una ronda en JSON (HU-14, sección 3): de cada votante, solo si
-// votó, nunca el valor (RN-14.3).
+// votó (RN-14.3); con la ronda cerrada, además, la revelación de HU-15.
 type (
 	respuestaVotante struct {
 		Nombre string `json:"nombre"`
@@ -46,6 +46,17 @@ type (
 		Numero     int                `json:"numero"`
 		Estado     string             `json:"estado"`
 		Votantes   []respuestaVotante `json:"votantes"`
+		Revelacion *respuestaRevelada `json:"revelacion,omitempty"` // HU-15: solo con la ronda cerrada
+	}
+	respuestaVoto struct {
+		Nombre string `json:"nombre"`
+		Valor  int    `json:"valor"`
+	}
+	respuestaRevelada struct {
+		Votos                   []respuestaVoto `json:"votos"`
+		Minimo                  int             `json:"minimo"`
+		Maximo                  int             `json:"maximo"`
+		DiferenciaSignificativa bool            `json:"diferencia_significativa"`
 	}
 )
 
@@ -158,6 +169,14 @@ func aRespuestaRonda(r domain.ResumenRonda) respuestaRonda {
 	for i, v := range r.Votantes {
 		votantes[i] = respuestaVotante{Nombre: v.Nombre, Voto: v.YaVoto}
 	}
-	return respuestaRonda{ID: r.ID, ProyectoID: r.ProyectoID, ElementoID: r.ElementoID, Numero: r.Numero,
+	res := respuestaRonda{ID: r.ID, ProyectoID: r.ProyectoID, ElementoID: r.ElementoID, Numero: r.Numero,
 		Estado: string(r.Estado), Votantes: votantes}
+	if rev := r.Revelacion; rev != nil { // HU-15 (RN-15.1)
+		res.Revelacion = &respuestaRevelada{Votos: make([]respuestaVoto, len(rev.Votos)), Minimo: rev.Minimo,
+			Maximo: rev.Maximo, DiferenciaSignificativa: rev.DiferenciaSignificativa}
+		for i, v := range rev.Votos {
+			res.Revelacion.Votos[i] = respuestaVoto{Nombre: v.Nombre, Valor: v.Valor}
+		}
+	}
+	return res
 }
