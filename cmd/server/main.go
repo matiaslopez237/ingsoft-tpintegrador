@@ -63,6 +63,7 @@ func main() {
 		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                       // HU-14
 		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas), // HU-14
 		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),    // HU-12
+		ConsultarVelocidad:      app.NuevoConsultarVelocidad(repoProyectos, repoSprints),         // HU-22
 	})
 
 	puerto := os.Getenv("PORT")

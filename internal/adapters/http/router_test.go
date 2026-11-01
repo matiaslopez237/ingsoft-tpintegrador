@@ -41,6 +41,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		Votar:                    votadorPokerFalso{poker},
 		ConsultarRonda:           consultorPokerFalso{poker},
 		ListarSprintsAnteriores:  &listadorSprintsFalso{},
+		ConsultarVelocidad:       &consultorVelocidadFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -66,21 +67,22 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/proyectos/7/rondas/1", ""},                                                                                        // HU-14
 		{http.MethodPost, "/proyectos/7/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
 		{http.MethodGet, "/proyectos/1/sprints/anteriores", ""},                                                                              // HU-12
-		{http.MethodGet, "/", ""},                                     // HU-30
-		{http.MethodGet, "/web/proyectos", ""},                        // HU-30
-		{http.MethodGet, "/static/estilos.css", ""},                   // HU-30
-		{http.MethodGet, "/web/proyectos/nuevo", ""},                  // HU-30
-		{http.MethodGet, "/web/proyectos/1/sprints", ""},              // HU-08
-		{http.MethodGet, "/web/proyectos/1/sprints/anteriores", ""},   // HU-12
-		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},    // HU-11
-		{http.MethodGet, "/web/proyectos/1/backlog", ""},              // HU-07
-		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},            // HU-06
-		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},    // HU-06 (proyecto 1: el editor falso responde 404 para otros)
-		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""},  // HU-06
-		{http.MethodPost, "/web/proyectos/1/sprints/1/completar", ""}, // HU-10 (sin elemento_id: 400 en el detalle del sprint)
-		{http.MethodGet, "/web/proyectos/7/rondas/1", ""},             // HU-14
-		{http.MethodPost, "/web/proyectos/7/rondas/1/votar", ""},      // HU-14 (sin datos: 400 en la misma pantalla)
-		{http.MethodPost, "/web/proyectos/7/backlog/7/rondas", ""},    // HU-14 (con la ronda 1 abierta: 400)
+		{http.MethodGet, "/proyectos/1/velocidad", ""},                                                                                       // HU-22
+		{http.MethodGet, "/", ""},                                                                                                            // HU-30
+		{http.MethodGet, "/web/proyectos", ""},                                                                                               // HU-30
+		{http.MethodGet, "/static/estilos.css", ""},                                                                                          // HU-30
+		{http.MethodGet, "/web/proyectos/nuevo", ""},                                                                                         // HU-30
+		{http.MethodGet, "/web/proyectos/1/sprints", ""},                                                                                     // HU-08
+		{http.MethodGet, "/web/proyectos/1/sprints/anteriores", ""},                                                                          // HU-12
+		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},                                                                           // HU-11
+		{http.MethodGet, "/web/proyectos/1/backlog", ""},                                                                                     // HU-07
+		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},                                                                                   // HU-06
+		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},                                                                           // HU-06 (proyecto 1: el editor falso responde 404 para otros)
+		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""},                                                                         // HU-06
+		{http.MethodPost, "/web/proyectos/1/sprints/1/completar", ""},                                                                        // HU-10 (sin elemento_id: 400 en el detalle del sprint)
+		{http.MethodGet, "/web/proyectos/7/rondas/1", ""},                                                                                    // HU-14
+		{http.MethodPost, "/web/proyectos/7/rondas/1/votar", ""},                                                                             // HU-14 (sin datos: 400 en la misma pantalla)
+		{http.MethodPost, "/web/proyectos/7/backlog/7/rondas", ""},                                                                           // HU-14 (con la ronda 1 abierta: 400)
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {
