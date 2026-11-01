@@ -43,6 +43,9 @@ type sistemaPlanningPokerReal struct {
 	agregar       *app.AgregarIntegrante
 	crear         *app.CrearElementoBacklog
 	editar        *app.EditarElementoBacklog
+	iniciar       *app.IniciarRonda
+	votar         *app.Votar
+	consultar     *app.ConsultarRonda
 	servidor      *httptest.Server
 	cliente       *http.Client
 	db            *sql.DB
@@ -61,11 +64,15 @@ func nuevoSistemaPlanningPoker() (sistemaPlanningPoker, error) {
 	}
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
 	backlog := persistencia.NuevoRepositorioBacklog(db)
+	rondas := persistencia.NuevoRepositorioRondas(db)
 	s := sistemaPlanningPokerReal{
 		crearProyecto: app.NuevoCrearProyecto(proyectos),
 		agregar:       app.NuevoAgregarIntegrante(proyectos),
 		crear:         app.NuevoCrearElementoBacklog(backlog),
 		editar:        app.NuevoEditarElementoBacklog(backlog),
+		iniciar:       app.NuevoIniciarRonda(proyectos, backlog, rondas),
+		votar:         app.NuevoVotar(proyectos, rondas),
+		consultar:     app.NuevoConsultarRonda(proyectos, backlog, rondas),
 		db:            db,
 		dir:           dir,
 	}
@@ -115,20 +122,31 @@ func (s sistemaPlanningPokerReal) CrearElemento(proyectoID int64, titulo, estado
 	return e.ID, err
 }
 
-// IniciarRonda, Votar y ConsultarRonda quedan pendientes hasta que existan los casos de uso de
-// HU-14 (tarea 14.5): mientras tanto, los escenarios quedan en rojo.
+// aVista traduce el resumen del dominio a lo que observan los escenarios.
+func aVista(r domain.ResumenRonda) rondaVista {
+	v := rondaVista{ID: r.ID, ProyectoID: r.ProyectoID, Numero: r.Numero, Estado: string(r.Estado)}
+	for _, x := range r.Votantes {
+		v.Votantes = append(v.Votantes, votanteVisto{Nombre: x.Nombre, Voto: x.YaVoto})
+	}
+	return v
+}
+
 func (s sistemaPlanningPokerReal) IniciarRonda(proyectoID, elementoID int64) (rondaVista, error) {
-	return rondaVista{}, godog.ErrPending
+	r, err := s.iniciar.Ejecutar(context.Background(), app.DatosIniciarRonda{ProyectoID: proyectoID, ElementoID: elementoID})
+	return aVista(r), err
 }
 
 func (s sistemaPlanningPokerReal) Votar(proyectoID, rondaID int64, integrante string, valor int) (rondaVista, error) {
-	return rondaVista{}, godog.ErrPending
+	r, err := s.votar.Ejecutar(context.Background(), app.DatosVoto{ProyectoID: proyectoID, RondaID: rondaID, Integrante: integrante, Valor: valor})
+	return aVista(r), err
 }
 
 func (s sistemaPlanningPokerReal) ConsultarRonda(proyectoID, rondaID int64) (rondaVista, error) {
-	return rondaVista{}, godog.ErrPending
+	r, err := s.consultar.Ejecutar(context.Background(), proyectoID, rondaID)
+	return aVista(r), err
 }
 
+// ResumenJSON queda pendiente hasta el endpoint de HU-14 (tarea 14.7).
 func (s sistemaPlanningPokerReal) ResumenJSON(proyectoID, rondaID int64) (string, error) {
 	return "", godog.ErrPending
 }
