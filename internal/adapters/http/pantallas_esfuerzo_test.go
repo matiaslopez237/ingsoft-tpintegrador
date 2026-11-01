@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -606,6 +607,103 @@ func TestPantallaElemento_ErroresDeEditarYEliminar_MuestranLaSeccionDeEsfuerzo(t
 			if !strings.Contains(arriba, tt.wantMsg) {
 				t.Errorf("el mensaje %q no se muestra arriba de la sección; cuerpo: %.400s", tt.wantMsg, rec.Body)
 			}
+		})
+	}
+}
+
+var (
+	reEtiquetaEstructura = regexp.MustCompile(`<(/?)(section|details|form)\b([^>]*)>`)
+	reIDDeEtiqueta       = regexp.MustCompile(`<[a-zA-Z][^>]*?\sid="([^"]*)"`)
+)
+
+// estructuraDePantalla devuelve, en orden, las aperturas de section, details y form del HTML, cada
+// una con las que la contienen: "section esfuerzo > form /ruta". Un formulario anidado se ve en esa
+// cadena. Falla si las etiquetas no cierran bien.
+func estructuraDePantalla(t *testing.T, cuerpo string) []string {
+	t.Helper()
+	var estructura, abiertas []string
+	for _, m := range reEtiquetaEstructura.FindAllStringSubmatch(cuerpo, -1) {
+		cierre, nombre, atributos := m[1] == "/", m[2], m[3]
+		if cierre {
+			if len(abiertas) == 0 || !strings.HasPrefix(abiertas[len(abiertas)-1], nombre+" ") {
+				t.Fatalf("</%s> no cierra la última etiqueta abierta; abiertas: %v", nombre, abiertas)
+			}
+			abiertas = abiertas[:len(abiertas)-1]
+			continue
+		}
+		abiertas = append(abiertas, nombre+" "+nombreDeEstructura(atributos))
+		estructura = append(estructura, strings.Join(abiertas, " > "))
+	}
+	if len(abiertas) != 0 {
+		t.Fatalf("etiquetas sin cerrar: %v", abiertas)
+	}
+	return estructura
+}
+
+// nombreDeEstructura identifica una etiqueta por el primero de estos atributos que tenga.
+func nombreDeEstructura(atributos string) string {
+	for _, nombre := range []string{"action", "id", "aria-labelledby", "class"} {
+		re := regexp.MustCompile(`(?:^|\s)` + nombre + `="([^"]*)"`)
+		if m := re.FindStringSubmatch(atributos); m != nil {
+			return m[1]
+		}
+	}
+	return ""
+}
+
+// idsDuplicados devuelve los id que aparecen más de una vez en el HTML.
+func idsDuplicados(cuerpo string) []string {
+	vistos := map[string]int{}
+	var duplicados []string
+	for _, m := range reIDDeEtiqueta.FindAllStringSubmatch(cuerpo, -1) {
+		vistos[m[1]]++
+		if vistos[m[1]] == 2 {
+			duplicados = append(duplicados, m[1])
+		}
+	}
+	return duplicados
+}
+
+// Traza: HU-18 sección 9 y HU-14 CA-14.9: las dos secciones conviven en la pantalla del elemento, en
+// orden (edición, Planning Poker, esfuerzo, eliminar), sin ids repetidos ni formularios anidados.
+func TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos(t *testing.T) {
+	const (
+		formEditar    = "form " + rutaElementoWeb + "/editar"
+		poker         = "section titulo-poker"
+		esfuerzo      = "section esfuerzo"
+		formRegistrar = esfuerzo + " > form " + rutaEsfuerzoWeb + "#esfuerzo"
+		eliminar      = "details confirmar"
+		formEliminar  = eliminar + " > form " + rutaElementoWeb + "/eliminar"
+	)
+	tests := []struct {
+		nombre string
+		poker  *pokerFalso
+		want   []string
+	}{
+		{"sin ronda: botón para iniciar", nuevoPokerFalso(), []string{
+			formEditar, poker, poker + " > form " + rutaElementoWeb + "/rondas", esfuerzo, formRegistrar, eliminar, formEliminar,
+		}},
+		{"con ronda abierta: enlace, sin formulario", conRonda(t), []string{
+			formEditar, poker, esfuerzo, formRegistrar, eliminar, formEliminar,
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			cu := casosConEsfuerzo(&registradorEsfuerzoFalso{})
+			cu.IniciarRonda, cu.Votar, cu.ConsultarRonda = tt.poker, votadorPokerFalso{tt.poker}, consultorPokerFalso{tt.poker}
+
+			rec := pedirPantalla(t, cu, http.MethodGet, rutaElementoWeb, nil)
+
+			if rec.Code != http.StatusOK {
+				t.Fatalf("status = %d; cuerpo: %.400s", rec.Code, rec.Body)
+			}
+			if got := estructuraDePantalla(t, rec.Body.String()); !slices.Equal(got, tt.want) {
+				t.Errorf("estructura de la pantalla:\n got %q\nwant %q", got, tt.want)
+			}
+			if d := idsDuplicados(rec.Body.String()); len(d) > 0 {
+				t.Errorf("ids duplicados: %q", d)
+			}
+			contiene(t, rec, `<h2 id="titulo-poker">Planning Poker</h2>`, `<h2 id="titulo-esfuerzo">Registrar esfuerzo</h2>`)
 		})
 	}
 }
