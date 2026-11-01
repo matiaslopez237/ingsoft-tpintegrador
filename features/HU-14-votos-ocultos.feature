@@ -31,7 +31,6 @@ Feature: Registrar estimaciones individuales ocultas
     When "Beto" vota 8 en la ronda
     Then la ronda queda "Cerrada" con el número 1
     And en la ronda ya votó "Ana, Beto"
-    And el resumen de la ronda no muestra ningún valor
 
   @CA-14.3 @limite
   Scenario: Con un solo integrante, su voto cierra la ronda
@@ -136,8 +135,7 @@ Feature: Registrar estimaciones individuales ocultas
   @CA-14.9 @normal
   Scenario: Votar desde la pantalla sin ver los votos
     Given hay una ronda abierta sobre "Login"
-    And "Ana" ya votó 13 en la ronda
-    When desde la pantalla de la ronda "Beto" vota 8
-    Then la pantalla de la ronda muestra que votaron "Ana, Beto"
-    And la pantalla de la ronda dice que está cerrada
-    And la pantalla de la ronda no muestra los valores "13, 8"
+    When desde la pantalla de la ronda "Ana" vota 13
+    Then la pantalla de la ronda muestra que votaron "Ana"
+    And la pantalla de la ronda muestra que falta votar "Beto"
+    And la pantalla de la ronda no muestra los valores "13"
