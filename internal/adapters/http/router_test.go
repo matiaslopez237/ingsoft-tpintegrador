@@ -40,6 +40,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		IniciarRonda:             poker,
 		Votar:                    votadorPokerFalso{poker},
 		ConsultarRonda:           consultorPokerFalso{poker},
+		ListarSprintsAnteriores:  &listadorSprintsFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -64,11 +65,13 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/7/backlog/7/rondas", ""},                                                                               // HU-14
 		{http.MethodGet, "/proyectos/7/rondas/1", ""},                                                                                        // HU-14
 		{http.MethodPost, "/proyectos/7/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
+		{http.MethodGet, "/proyectos/1/sprints/anteriores", ""},                                                                              // HU-12
 		{http.MethodGet, "/", ""},                                     // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                        // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                   // HU-30
 		{http.MethodGet, "/web/proyectos/nuevo", ""},                  // HU-30
 		{http.MethodGet, "/web/proyectos/1/sprints", ""},              // HU-08
+		{http.MethodGet, "/web/proyectos/1/sprints/anteriores", ""},   // HU-12
 		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},    // HU-11
 		{http.MethodGet, "/web/proyectos/1/backlog", ""},              // HU-07
 		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},            // HU-06

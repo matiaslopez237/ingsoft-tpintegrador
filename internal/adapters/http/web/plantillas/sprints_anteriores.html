@@ -1,0 +1,34 @@
+{{define "titulo"}}Sprints anteriores de {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Sprints anteriores de {{.Proyecto.Nombre}}</h1>
+  <div class="botones">
+    <a href="/web/proyectos/{{.Proyecto.ID}}/sprints">Todos los sprints</a>
+    <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+  </div>
+</div>
+
+{{if .Sprints}}
+<table>
+  <caption class="oculto">Sprints cerrados, del más reciente al más antiguo</caption>
+  <thead>
+    <tr><th scope="col">N.º</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Sprint Goal</th><th scope="col">Puntos planificados</th><th scope="col">Puntos completados</th><th scope="col"><span class="oculto">Detalle</span></th></tr>
+  </thead>
+  <tbody>
+    {{range .Sprints}}
+    <tr>
+      <td>{{.Numero}}</td>
+      <td>{{.FechaInicio}}</td>
+      <td>{{.FechaFin}}</td>
+      <td>{{.Objetivo}}</td>
+      <td>{{.Planificados}}</td>
+      <td>{{.Completados}}</td>
+      <td><a href="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{.ID}}" aria-label="Ver detalle del sprint {{.Numero}}">Ver detalle</a></td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="vacio">El proyecto todavía no tiene sprints cerrados.</p>
+{{end}}
+{{end}}
