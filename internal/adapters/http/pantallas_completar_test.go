@@ -176,3 +176,21 @@ func TestMensajeDeValidacion_ErroresDeCompletar(t *testing.T) {
 		}
 	}
 }
+
+// Traza: DEF-03, HU-09 sección 3 (RN-09.6, CA-09.5, CA-09.8) y HU-10: con el sprint Cerrado se ven
+// sus elementos y sus estados, pero ninguna acción (antes se mostraban y el sistema las rechazaba),
+// y un aviso de que el sprint está cerrado.
+func TestPantallaSprintDetalle_SprintCerrado_SinAcciones(t *testing.T) {
+	cu, _ := casosConCompletar(domain.EstadoPendiente, domain.SprintCerrado, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaSprintDetalle, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, elementoAsignadoAlSprint.Titulo, "Pendiente", "El sprint está cerrado")
+	cuerpo := rec.Body.String()
+	for _, accion := range []string{"/sprints/1/quitar", "/sprints/1/asignar", "/sprints/1/completar", "Sumar un elemento"} {
+		noContiene(t, cuerpo, accion)
+	}
+}

@@ -35,9 +35,10 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 - El puerto de persistencia que necesita el caso de uso para consultar el estado del sprint es angosto a propósito (p. ej. `SprintEstaActivo(ctx, sprintID) (bool, error)`), en vez de devolver un `domain.Sprint` completo, para no acoplar con el tipo de HU-08.
 - **Pantalla** (`/web/proyectos/{id}/sprints/{sprintID}`, ADR-0003, Tarea 9.8): el detalle del sprint (número, fechas, objetivo, estado — reutiliza `ListarSprints` de HU-08), con dos secciones:
   - Los elementos ya asignados a ese sprint (reutiliza `ListarBacklog` de HU-07, filtrando por `SprintID`), cada uno con un botón "Quitar" si el sprint sigue Abierto.
-  - Un `<select>` con los elementos del proyecto que todavía no tienen sprint asignado, para sumarlos a este. Los elementos asignados a **otro** sprint no aparecen acá (no se ofrece "robarlos" desde la pantalla; sí se puede por la API si ese otro sprint ya está Cerrado, RN-09.2).
+  - Un `<select>` con los elementos del proyecto que todavía no tienen sprint asignado, para sumarlos a este, solo si el sprint está Abierto (RN-09.6). Los elementos asignados a **otro** sprint no aparecen acá (no se ofrece "robarlos" desde la pantalla; sí se puede por la API si ese otro sprint ya está Cerrado, RN-09.2).
   - Acciones: `POST /web/proyectos/{id}/sprints/{sprintID}/asignar` (campo `elemento_id`) y `POST /web/proyectos/{id}/sprints/{sprintID}/quitar` (campo `elemento_id`), mismo patrón que "quitar integrante" de HU-03.
   - La pantalla de sprints (HU-08) suma un enlace "Ver detalle" a cada fila para llegar acá.
+  - Con el sprint **Cerrado** (HU-11) se muestran sus elementos y sus estados, pero ninguna acción (ni "Quitar", ni el formulario para sumar, ni "Marcar como hecha" de HU-10), y un aviso de que el sprint está cerrado. Corregido en DEF-03: antes se mostraban las acciones y, al usarlas, el sistema las rechazaba.
 
 ## 6. Casos límite
 - Elemento nunca asignado (`SprintID` nil): se puede asignar directo, sin pasar por la validación de "ya asignado".
@@ -73,3 +74,4 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 
 ## Historial
 - 2026-10-26: creada (borrador).
+- 2026-10-30: DEF-03. Con el sprint Cerrado, la pantalla no muestra acciones y avisa que está cerrado (sección 3).
