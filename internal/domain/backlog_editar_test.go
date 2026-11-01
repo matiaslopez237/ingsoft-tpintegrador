@@ -114,6 +114,29 @@ func TestEditar_DatosInvalidos_RetornaError(t *testing.T) {
 	}
 }
 
+// Editar reconstruye el elemento con NuevoElementoBacklog, que no recibe el sprint. En producción no
+// se notaba porque el repositorio guarda solo los campos enviados y el caso de uso relee el elemento.
+// Traza: HU-19 CA-19.13 (RN-06.1: lo que no se envía conserva su valor)
+func TestEditar_ConservaElSprint(t *testing.T) {
+	original := login(t)
+	sprint := int64(3)
+	original.SprintID = &sprint
+	baja := PrioridadBaja
+
+	e, err := original.Editar(CambiosElemento{Prioridad: &baja})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if e.SprintID == nil || *e.SprintID != 3 {
+		t.Fatalf("SprintID = %v, se esperaba 3", e.SprintID)
+	}
+	*e.SprintID = 99
+	if *original.SprintID != 3 {
+		t.Errorf("se comparte memoria: SprintID del original = %d, se esperaba 3", *original.SprintID)
+	}
+}
+
 // La copia editada no comparte memoria con el original ni con los cambios.
 func TestEditar_NoModificaElOriginal(t *testing.T) {
 	original := login(t)
