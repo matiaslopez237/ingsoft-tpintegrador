@@ -115,15 +115,13 @@ func TestPantallaRonda_MuestraQuienVotoSinLosValores(t *testing.T) {
 	noContiene(t, rec.Body.String(), "selected>13")
 }
 
-// Traza: HU-14 CA-14.9 (RN-14.6): con la ronda cerrada no hay formulario ni valores.
+// Traza: HU-14 CA-14.9 (RN-14.6): con la ronda cerrada no hay formulario. Los valores sí se ven
+// (HU-15).
 func TestPantallaRonda_Cerrada_SinFormulario(t *testing.T) {
 	rec := pedirPantalla(t, casosPokerPantalla(conRonda(t, 13, 8)), http.MethodGet, rutaRonda, nil)
 
 	contiene(t, rec, "Votaron todos")
-	cuerpo := rec.Body.String()
-	for _, texto := range []string{`name="valor"`, ">13<", ">8<"} {
-		noContiene(t, cuerpo, texto)
-	}
+	noContiene(t, rec.Body.String(), `name="valor"`)
 }
 
 // Traza: HU-14 CA-14.9: votar vuelve a la pantalla de la ronda.
@@ -179,5 +177,32 @@ func TestPantallaRonda_Inexistente(t *testing.T) {
 	rec := pedirPantalla(t, cu, http.MethodPost, "/web/proyectos/7/rondas/9/votar", url.Values{"integrante": {"Ana"}, "valor": {"5"}})
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("votar en una ronda inexistente: status = %d, se esperaba 404", rec.Code)
+	}
+}
+
+// Traza: HU-15 CA-15.6 (RN-15.1, RN-15.2): cerrada, se ve el voto de cada uno, el mínimo, el
+// máximo y el aviso de diferencia.
+func TestPantallaRonda_Cerrada_MuestraLosVotosYLaDiferencia(t *testing.T) {
+	rec := pedirPantalla(t, casosPokerPantalla(conRonda(t, 3, 8)), http.MethodGet, rutaRonda, nil)
+
+	contiene(t, rec, "<td>Ana</td>", "<td>3</td>", "<td>Beto</td>", "<td>8</td>",
+		"Mínimo: 3", "Máximo: 8", "Hay diferencias significativas", "entre 3 y 8")
+}
+
+// Traza: HU-15 CA-15.6 (RN-15.2): sin diferencia significativa, la pantalla lo dice.
+func TestPantallaRonda_Cerrada_SinDiferencia(t *testing.T) {
+	rec := pedirPantalla(t, casosPokerPantalla(conRonda(t, 5, 8)), http.MethodGet, rutaRonda, nil)
+
+	contiene(t, rec, "No hay diferencias significativas")
+	noContiene(t, rec.Body.String(), "Hay diferencias significativas")
+}
+
+// Traza: HU-15 CA-15.4 (RN-15.1): con la ronda abierta no se ven los valores ni el aviso.
+func TestPantallaRonda_Abierta_SinRevelacion(t *testing.T) {
+	rec := pedirPantalla(t, casosPokerPantalla(conRonda(t, 13)), http.MethodGet, rutaRonda, nil)
+
+	cuerpo := rec.Body.String()
+	for _, texto := range []string{"<td>13</td>", "Mínimo", "diferencias significativas"} {
+		noContiene(t, cuerpo, texto)
 	}
 }
