@@ -213,3 +213,81 @@ func TestResumen_NoCompartenLosVotantes(t *testing.T) {
 		t.Error("modificar el resumen cambió la ronda")
 	}
 }
+
+// cerrada devuelve una ronda cerrada con los votos dados, uno por votante y en orden.
+func cerrada(t *testing.T, votos ...int) Ronda {
+	t.Helper()
+	nombres := []string{"Ana", "Beto", "Carla"}[:len(votos)]
+	r := rondaAbierta(t, nombres...)
+	for i, v := range votos {
+		if err := r.Votar(nombres[i], v); err != nil {
+			t.Fatal(err)
+		}
+	}
+	return r
+}
+
+// Traza: HU-15 CA-15.1 (RN-15.1, RN-15.2)
+func TestRevelar_RondaCerrada_DevuelveLosVotosElMinimoYElMaximo(t *testing.T) {
+	r := cerrada(t, 3, 8)
+
+	rev, err := r.Revelar()
+
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := Revelacion{Votos: []VotoRevelado{{Nombre: "Ana", Valor: 3}, {Nombre: "Beto", Valor: 8}}, Minimo: 3, Maximo: 8, DiferenciaSignificativa: true}
+	if !slices.Equal(rev.Votos, want.Votos) || rev.Minimo != want.Minimo || rev.Maximo != want.Maximo || !rev.DiferenciaSignificativa {
+		t.Errorf("revelación = %+v, se esperaba %+v", rev, want)
+	}
+}
+
+// Traza: HU-15 CA-15.2, CA-15.3 (RN-15.2, RN-15.3): el mayor tiene que ser más del doble del menor.
+func TestRevelar_DiferenciaSignificativa(t *testing.T) {
+	tests := []struct {
+		votos []int
+		want  bool
+	}{
+		{[]int{3, 8}, true},
+		{[]int{5, 8}, false},
+		{[]int{1, 2}, false}, // justo el doble no alcanza
+		{[]int{1, 3}, true},
+		{[]int{21, 8}, true}, // el orden de los votos no importa
+		{[]int{5, 5, 5}, false},
+		{[]int{13}, false}, // un solo votante
+		{[]int{2, 3, 5}, true},
+	}
+	for _, tt := range tests {
+		rev, err := cerrada(t, tt.votos...).Revelar()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if rev.DiferenciaSignificativa != tt.want {
+			t.Errorf("votos %v: diferencia = %v, se esperaba %v (mínimo %d, máximo %d)", tt.votos, rev.DiferenciaSignificativa, tt.want, rev.Minimo, rev.Maximo)
+		}
+	}
+}
+
+// Traza: HU-15 CA-15.4 (RN-15.1): con la ronda abierta no se revela nada.
+func TestRevelar_RondaAbierta_RetornaError(t *testing.T) {
+	r := rondaAbierta(t, "Ana", "Beto")
+	if err := r.Votar("Ana", 5); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := r.Revelar(); !errors.Is(err, ErrRondaAbierta) {
+		t.Errorf("error = %v, se esperaba %v", err, ErrRondaAbierta)
+	}
+	if res := r.Resumen(); res.Revelacion != nil {
+		t.Errorf("el resumen de una ronda abierta revela los votos: %+v", res.Revelacion)
+	}
+}
+
+// Traza: HU-15 CA-15.1 (RN-15.1): el resumen de una ronda cerrada trae la revelación.
+func TestResumen_RondaCerrada_TraeLaRevelacion(t *testing.T) {
+	res := cerrada(t, 3, 8).Resumen()
+
+	if res.Revelacion == nil || res.Revelacion.Minimo != 3 || res.Revelacion.Maximo != 8 || !res.Revelacion.DiferenciaSignificativa {
+		t.Errorf("revelación del resumen = %+v", res.Revelacion)
+	}
+}
