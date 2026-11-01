@@ -130,6 +130,12 @@ func aVista(r domain.ResumenRonda) rondaVista {
 	for _, x := range r.Votantes {
 		v.Votantes = append(v.Votantes, votanteVisto{Nombre: x.Nombre, Voto: x.YaVoto})
 	}
+	if rev := r.Revelacion; rev != nil { // HU-15
+		v.Revelacion = &revelacionVista{Minimo: rev.Minimo, Maximo: rev.Maximo, Diferencia: rev.DiferenciaSignificativa}
+		for _, x := range rev.Votos {
+			v.Revelacion.Votos = append(v.Revelacion.Votos, votoVisto{Nombre: x.Nombre, Valor: x.Valor})
+		}
+	}
 	return v
 }
 

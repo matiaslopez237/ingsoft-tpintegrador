@@ -14,6 +14,7 @@ var (
 	ErrRondaCerrada      = errors.New("la ronda ya está cerrada")
 	ErrNoEsVotante       = errors.New("el integrante no participa de esta ronda")
 	ErrVotoInvalido      = errors.New("el voto debe ser 1, 2, 3, 5, 8, 13 o 21")
+	ErrRondaAbierta      = errors.New("los votos se ven cuando votaron todos") // HU-15
 )
 
 // EstadoRonda es el estado de una ronda de Planning Poker. Implementa HU-14 (RN-14.6).
@@ -98,7 +99,8 @@ type VotanteResumen struct {
 	YaVoto bool
 }
 
-// ResumenRonda es lo que se puede mostrar de una ronda: sin los valores de los votos (RN-14.3).
+// ResumenRonda es lo que se puede mostrar de una ronda: sin los valores de los votos mientras está
+// abierta (RN-14.3); cerrada, con la revelación (RN-15.1).
 type ResumenRonda struct {
 	ID         int64
 	ProyectoID int64
@@ -106,14 +108,57 @@ type ResumenRonda struct {
 	Numero     int
 	Estado     EstadoRonda
 	Votantes   []VotanteResumen
+	Revelacion *Revelacion // nil mientras la ronda está abierta (HU-15)
 }
 
-// Resumen devuelve los datos de la ronda que se pueden mostrar. Implementa HU-14 (RN-14.3).
+// Resumen devuelve los datos de la ronda que se pueden mostrar: los votos, solo si está cerrada.
+// Implementa HU-14 (RN-14.3) y HU-15 (RN-15.1).
 func (r Ronda) Resumen() ResumenRonda {
 	votantes := make([]VotanteResumen, len(r.Votantes))
 	for i, v := range r.Votantes {
 		votantes[i] = VotanteResumen{Nombre: v.Nombre, YaVoto: v.Voto != nil}
 	}
-	return ResumenRonda{ID: r.ID, ProyectoID: r.ProyectoID, ElementoID: r.ElementoID, Numero: r.Numero,
+	res := ResumenRonda{ID: r.ID, ProyectoID: r.ProyectoID, ElementoID: r.ElementoID, Numero: r.Numero,
 		Estado: r.Estado, Votantes: votantes}
+	if rev, err := r.Revelar(); err == nil {
+		res.Revelacion = &rev
+	}
+	return res
+}
+
+// VotoRevelado es el voto de un integrante, visible con la ronda cerrada (HU-15).
+type VotoRevelado struct {
+	Nombre string
+	Valor  int
+}
+
+// Revelacion es lo que se muestra de una ronda cerrada (HU-15): los votos, el menor y el mayor, y
+// si la diferencia entre esos dos es significativa.
+type Revelacion struct {
+	Votos                   []VotoRevelado
+	Minimo, Maximo          int
+	DiferenciaSignificativa bool
+}
+
+// Revelar devuelve los votos de la ronda en el orden de los votantes, el mínimo, el máximo y si el
+// máximo es más del doble del mínimo. Con la ronda abierta, devuelve ErrRondaAbierta.
+// Implementa HU-15 (RN-15.1 a RN-15.3).
+func (r Ronda) Revelar() (Revelacion, error) {
+	if r.Estado != RondaCerrada {
+		return Revelacion{}, ErrRondaAbierta
+	}
+	rev := Revelacion{Votos: make([]VotoRevelado, 0, len(r.Votantes))}
+	for _, v := range r.Votantes {
+		if v.Voto == nil { // no pasa: la ronda se cierra cuando votaron todos (RN-14.6)
+			continue
+		}
+		valor := *v.Voto
+		rev.Votos = append(rev.Votos, VotoRevelado{Nombre: v.Nombre, Valor: valor})
+		if len(rev.Votos) == 1 || valor < rev.Minimo {
+			rev.Minimo = valor
+		}
+		rev.Maximo = max(rev.Maximo, valor)
+	}
+	rev.DiferenciaSignificativa = rev.Maximo > 2*rev.Minimo
+	return rev, nil
 }

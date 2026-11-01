@@ -234,3 +234,29 @@ func TestRepositorioRondas_GuardarVoto_SinVotoAplicado(t *testing.T) {
 		t.Errorf("votante desconocido: error = %v, se esperaba %v", err, domain.ErrNoEsVotante)
 	}
 }
+
+// Traza: HU-15 CA-15.1 (RN-15.4): BuscarRonda lee todos los votos guardados, que alcanzan para
+// revelar la ronda cerrada. No hizo falta persistencia nueva.
+func TestRepositorioRondas_RondaCerradaSeRevelaConTodosLosVotos(t *testing.T) {
+	b := nuevaBasePoker(t)
+	r := b.abrir(t, nil, "Ana", "Beto", "Carla")
+	for n, v := range map[string]int{"Ana": 3, "Beto": 8, "Carla": 5} {
+		if err := b.votar(t, &r, n, v); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	guardada, err := b.repo.BuscarRonda(context.Background(), r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rev, err := guardada.Revelar()
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := []domain.VotoRevelado{{Nombre: "Ana", Valor: 3}, {Nombre: "Beto", Valor: 8}, {Nombre: "Carla", Valor: 5}}
+	if len(rev.Votos) != 3 || rev.Votos[0] != want[0] || rev.Votos[1] != want[1] || rev.Votos[2] != want[2] ||
+		rev.Minimo != 3 || rev.Maximo != 8 || !rev.DiferenciaSignificativa {
+		t.Errorf("revelación = %+v, se esperaba %+v, 3, 8 y diferencia", rev, want)
+	}
+}
