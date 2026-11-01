@@ -31,6 +31,7 @@ type CasosDeUso struct {
 	Votar                    votadorRondas        // HU-14
 	ConsultarRonda           consultorRondas      // HU-14
 	ListarSprintsAnteriores  listadorSprints      // HU-12
+	CompararEsfuerzo         comparadorEsfuerzo   // HU-19
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
@@ -53,6 +54,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarCompletar(mux, cu.CompletarHistoria)
 	RegistrarPlanningPoker(mux, cu.IniciarRonda, cu.Votar, cu.ConsultarRonda)
 	RegistrarSprintsAnteriores(mux, cu.ListarSprintsAnteriores)
+	RegistrarCompararEsfuerzo(mux, cu.CompararEsfuerzo)
 	RegistrarPantallas(mux, cu)
 	return mux
 }
