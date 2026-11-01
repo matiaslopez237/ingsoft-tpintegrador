@@ -24,6 +24,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
+| HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
 
 ---
 
@@ -1120,6 +1121,58 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 - Revisión con el agente `go-reviewer` (tarea 14.9): sin hallazgos críticos ni altos. Confirmó que ningún adaptador muestra el valor de un voto, la concurrencia de `GuardarRonda` y `GuardarVoto` y el `ON DELETE CASCADE`. Se corrigió que `GuardarVoto` informaba "no es votante" cuando la ronda no traía el voto aplicado, y se documentó el choque de `UNIQUE (elemento_id, numero)`. Quedan como en el resto de las historias: las rutas de pantalla suponen que los casos de uso están cargados, y el cuerpo JSON de un voto no rechaza contenido después del primer objeto.
 - Mostrar los votos y detectar diferencias es HU-15; reiniciar la ronda, HU-16; y guardar la estimación acordada, HU-17.
 - La pantalla no sabe quién está votando (no hay autenticación): el integrante se elige de una lista.
+
+---
+
+## HU-15: Mostrar las estimaciones y detectar diferencias
+
+- **Issue:** [#26](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/26) · Sprint 3 · 3 SP · tareas #207 a #215
+- **Spec:** [docs/specs/HU-15-revelar-estimaciones.md](specs/HU-15-revelar-estimaciones.md)
+- **Feature:** [features/HU-15-revelar-estimaciones.feature](../features/HU-15-revelar-estimaciones.feature) (steps en [test/bdd/hu15_steps_test.go](../test/bdd/hu15_steps_test.go), sobre el mismo mundo de HU-14: la ronda se arma y se vota con sus pasos)
+- **Cambio en HU-14:** RN-14.3, CA-14.8 y CA-14.9 pasan a decir que los valores se ocultan *mientras la ronda está abierta*. Se ajustaron dos escenarios de HU-14 y el test `TestPantallaRonda_Cerrada_SinFormulario`.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-15.1 Revelar con diferencia | RN-15.1, RN-15.2 | Al cerrarse la ronda se revelan los votos con una diferencia significativa `@normal` | `TestRevelar_RondaCerrada_DevuelveLosVotosElMinimoYElMaximo`, `TestResumen_RondaCerrada_TraeLaRevelacion`, `TestConsultarRonda_RevelaSoloConLaRondaCerrada`, `TestRepositorioRondas_RondaCerradaSeRevelaConTodosLosVotos` | `domain.Ronda.Revelar`, `domain.Ronda.Resumen` |
+| CA-15.2 Sin diferencia | RN-15.2, RN-15.3 | Sin diferencia significativa `@alternativo` (×2) | `TestRevelar_DiferenciaSignificativa` | `domain.Ronda.Revelar` |
+| CA-15.3 Límites del umbral | RN-15.2, RN-15.3 | Los límites del umbral `@limite` (×3) · Con un solo votante no hay diferencia `@limite` | `TestRevelar_DiferenciaSignificativa` (8 casos) | `domain.Ronda.Revelar` |
+| CA-15.4 Ronda abierta sin revelación | RN-15.1 | Con la ronda abierta no se revela nada `@alternativo` | `TestRevelar_RondaAbierta_RetornaError`, `TestConsultarRonda_RevelaSoloConLaRondaCerrada`, `TestGetRonda_Abierta_SinRevelacion`, `TestPantallaRonda_Abierta_SinRevelacion` | `domain.Ronda.Revelar` (`ErrRondaAbierta`) |
+| CA-15.5 JSON | Sección 3 | La API muestra la revelación de una ronda cerrada `@normal` | `TestGetRonda_Cerrada_TraeLaRevelacion`, `TestGetRonda_Abierta_SinRevelacion` | `planning_poker_handler.go` (`revelacion`) |
+| CA-15.6 Pantalla | Sección 3 | La pantalla de una ronda cerrada muestra los votos y el aviso `@normal` | `TestPantallaRonda_Cerrada_MuestraLosVotosYLaDiferencia`, `TestPantallaRonda_Cerrada_SinDiferencia`, `TestPantallaRonda_Abierta_SinRevelacion` | `web/plantillas/ronda.html` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Revelar`, `Revelacion`, `VotoRevelado`; `Resumen` la incluye con la ronda cerrada) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
+| Caso de uso | Sin cambios: `ConsultarRonda` (HU-14) devuelve el resumen | [planning_poker_test.go](../internal/app/planning_poker_test.go) |
+| Persistencia | Sin cambios: `BuscarRonda` (HU-14) ya lee los votos | [ronda_repo_test.go](../internal/adapters/persistencia/ronda_repo_test.go) |
+| HTTP (JSON) | [internal/adapters/http/planning_poker_handler.go](../internal/adapters/http/planning_poker_handler.go) (`revelacion` en `GET /proyectos/{id}/rondas/{rondaID}`) | [planning_poker_handler_test.go](../internal/adapters/http/planning_poker_handler_test.go) |
+| Pantalla | [web/plantillas/ronda.html](../internal/adapters/http/web/plantillas/ronda.html) | [pantallas_planning_poker_test.go](../internal/adapters/http/pantallas_planning_poker_test.go) |
+| BDD | [test/bdd/hu15_steps_test.go](../test/bdd/hu15_steps_test.go) | 10 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 15.1 Spec (y ajuste de HU-14) | `3a75565` | — |
+| 15.2 Escenarios BDD (y ajuste de los de HU-14) | `c55fcad` | — |
+| 15.3 Steps godog | `72a495c` | BDD en rojo |
+| 15.4 Revelar en el dominio | `32bf063` [RED] → `c3075de` [GREEN] | **RED → GREEN** |
+| 15.5 Caso de uso | `e46a1bf` | test, sin cambios en el código (ya funcionaba por el dominio) |
+| 15.6 Persistencia | `a0f7a6b` | test, sin persistencia nueva |
+| 15.7 HTTP | `dbbe2dc` [RED] → `736daa5` [GREEN] | **RED → GREEN** |
+| 15.8 Pantalla | `329adbf` [RED] → `ecf26ca` [GREEN] | **RED → GREEN**, BDD en verde |
+| 15.9 Revisión y trazabilidad | este commit (go-reviewer sin cambios) | — |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- Las tareas 15.5 y 15.6 no tienen RED → GREEN: el caso de uso y la persistencia de HU-14 ya alcanzaban, así que sus tests pasaron desde el principio. Se dejaron como evidencia de que la revelación llega hasta la API y la base.
+- La ruta sugerida por la tarea 15.7 (`GET /proyectos/{id}/backlog/{elementoID}/rondas/{rondaID}`) no se agregó: la revelación va en el `GET /proyectos/{id}/rondas/{rondaID}` de HU-14, para no tener dos rutas para la misma ronda.
+- Revisión con el agente `go-reviewer` (tarea 15.9): sin hallazgos críticos, altos ni medios. Confirmó que con la ronda abierta ningún adaptador revela valores y que el mínimo, el máximo y el umbral son correctos. Tres observaciones bajas sin cambios: el `continue` para un votante sin voto es inalcanzable (la ronda se cierra cuando votaron todos), una ronda sin votantes no se puede crear (RN-14.2) y un comentario se reescribió.
 
 ---
 

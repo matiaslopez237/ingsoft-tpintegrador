@@ -132,8 +132,8 @@ type VotoRevelado struct {
 	Valor  int
 }
 
-// Revelacion son los votos de una ronda cerrada, el menor, el mayor y si la diferencia entre ellos
-// es significativa (HU-15).
+// Revelacion es lo que se muestra de una ronda cerrada (HU-15): los votos, el menor y el mayor, y
+// si la diferencia entre esos dos es significativa.
 type Revelacion struct {
 	Votos                   []VotoRevelado
 	Minimo, Maximo          int
