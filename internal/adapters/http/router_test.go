@@ -13,7 +13,9 @@ import (
 // NuevoRouter (lo que usa main.go) las registra todas. Si una historia agrega una ruta y se
 // olvida de sumarla a NuevoRouter, el pedido da 404 o 405 y el test falla.
 func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
-	poker := nuevoPokerFalso() // las rutas de HU-14 de abajo abren la ronda 1 y después la usan
+	// Las rutas de HU-14 de abajo abren la ronda 1 sobre el elemento 7 del proyecto 7 (el que conoce
+	// la pantalla del elemento) y después la usan: van en ese orden.
+	poker := nuevoPokerFalso()
 	mux := NuevoRouter(CasosDeUso{
 		CrearProyecto:            &creadorFalso{},
 		ModificarProyecto:        &modificadorFalso{},
@@ -59,9 +61,9 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodDelete, "/proyectos/1/backlog/1/sprint", ""},                                                                             // HU-09
 		{http.MethodPost, "/proyectos/1/backlog/1/completar", ""},                                                                            // HU-10
 		{http.MethodPost, "/proyectos/1/sprints/1/cerrar", ""},                                                                               // HU-11
-		{http.MethodPost, "/proyectos/1/backlog/7/rondas", ""},                                                                               // HU-14
-		{http.MethodGet, "/proyectos/1/rondas/1", ""},                                                                                        // HU-14
-		{http.MethodPost, "/proyectos/1/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
+		{http.MethodPost, "/proyectos/7/backlog/7/rondas", ""},                                                                               // HU-14
+		{http.MethodGet, "/proyectos/7/rondas/1", ""},                                                                                        // HU-14
+		{http.MethodPost, "/proyectos/7/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
 		{http.MethodGet, "/", ""},                                     // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                        // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                   // HU-30
@@ -73,6 +75,9 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},    // HU-06 (proyecto 1: el editor falso responde 404 para otros)
 		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""},  // HU-06
 		{http.MethodPost, "/web/proyectos/1/sprints/1/completar", ""}, // HU-10 (sin elemento_id: 400 en el detalle del sprint)
+		{http.MethodGet, "/web/proyectos/7/rondas/1", ""},             // HU-14
+		{http.MethodPost, "/web/proyectos/7/rondas/1/votar", ""},      // HU-14 (sin datos: 400 en la misma pantalla)
+		{http.MethodPost, "/web/proyectos/7/backlog/7/rondas", ""},    // HU-14 (con la ronda 1 abierta: 400)
 	}
 	for _, r := range rutas {
 		t.Run(r.metodo+" "+r.ruta, func(t *testing.T) {
