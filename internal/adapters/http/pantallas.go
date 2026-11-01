@@ -139,7 +139,7 @@ var funcionesPlantillas = template.FuncMap{"segmento": url.PathEscape}
 const tamanoMaximoFormulario = 64 << 10
 
 func nuevasPantallas(cu CasosDeUso) *pantallas {
-	p := &pantallas{cu: cu, paginas: map[string]*template.Template{}}
+	p := &pantallas{cu: cu, paginas: map[string]*template.Template{}, reloj: time.Now}
 	for _, nombre := range paginas {
 		// Must: las plantillas están embebidas, así que un error acá es de programación y lo
 		// detecta cualquier test que registre las pantallas.
@@ -183,6 +183,7 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/cerrar", p.formulario(p.cerrarSprintPantalla))         // HU-11
 	p.registrarPantallasElemento(mux)                                                                                  // HU-06
 	p.registrarPantallasDefecto(mux)                                                                                   // HU-20
+	p.registrarPantallasEsfuerzo(mux)                                                                                  // HU-18
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio
