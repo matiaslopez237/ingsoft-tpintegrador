@@ -11,11 +11,13 @@ import (
 )
 
 // datosPokerElemento es la sección "Planning Poker" de la pantalla del elemento (HU-14): un enlace
-// a la ronda abierta, si tiene, o el botón para iniciar una.
+// a la ronda abierta, si tiene, o el botón para iniciar una. Historial son sus rondas, de la más
+// reciente a la más antigua (HU-16).
 type datosPokerElemento struct {
 	RondaAbierta  *domain.ResumenRonda
 	PuedeIniciar  bool
 	ElementoHecho bool
+	Historial     []domain.ResumenRonda
 }
 
 // datosRonda es la pantalla de una ronda: quién votó y quién falta, nunca los valores (RN-14.3).
@@ -24,9 +26,11 @@ type datosRonda struct {
 	Titulo     string // del elemento
 	Ronda      domain.ResumenRonda
 	Abierta    bool
-	Valores    []int // la escala, para el formulario (RN-14.4)
-	Integrante string
-	Error      string
+	// PuedeRepetirse decide si se ofrece "Nueva ronda" (HU-16, RN-16.4): la regla es del dominio.
+	PuedeRepetirse bool
+	Valores        []int // la escala, para el formulario (RN-14.4)
+	Integrante     string
+	Error          string
 }
 
 // erroresDeVotoPantalla son los errores de HU-14 que la pantalla de la ronda muestra en la misma
@@ -59,6 +63,11 @@ func (p *pantallas) pokerDelElemento(r *http.Request, pid, eid int64, estado str
 		d.RondaAbierta = ultima
 	}
 	d.PuedeIniciar = d.RondaAbierta == nil && !d.ElementoHecho
+	if p.cu.ListarRondas != nil { // HU-16; nil en los tests de otras historias
+		if d.Historial, err = p.cu.ListarRondas.Ejecutar(r.Context(), pid, eid); err != nil {
+			return nil, err
+		}
+	}
 	return d, nil
 }
 
@@ -137,9 +146,15 @@ func (p *pantallas) mostrarRonda(w http.ResponseWriter, r *http.Request, status 
 		p.errorDeElemento(w, err)
 		return
 	}
+	ultima, err := p.cu.ConsultarRonda.UltimaDelElemento(r.Context(), pid, res.ElementoID)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	p.renderizar(w, status, "ronda.html", datosRonda{
 		ProyectoID: pid, Titulo: e.Titulo, Ronda: res, Abierta: res.Estado == domain.RondaAbierta,
-		Valores: domain.ValoresVoto(), Integrante: integrante, Error: mensaje,
+		PuedeRepetirse: domain.PuedeRepetirse(res, ultima, e),
+		Valores:        domain.ValoresVoto(), Integrante: integrante, Error: mensaje,
 	})
 }
 
