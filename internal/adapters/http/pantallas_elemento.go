@@ -154,16 +154,7 @@ func (p *pantallas) errorDeElemento(w http.ResponseWriter, err error) {
 }
 
 func mensajeDeValidacionElemento(err error) (string, bool) {
-	var ef errFormulario
-	if errors.As(err, &ef) {
-		return ef.mensaje, true
-	}
-	for _, e := range erroresDeValidacionEdicion {
-		if errors.Is(err, e) {
-			return e.Error(), true
-		}
-	}
-	return "", false
+	return mensajeDeErrorConocido(err, erroresDeValidacionEdicion)
 }
 
 func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {

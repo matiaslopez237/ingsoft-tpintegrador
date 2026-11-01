@@ -115,14 +115,5 @@ func horasDeForm(valor string) (float64, error) {
 }
 
 func mensajeDeValidacionEsfuerzo(err error) (string, bool) {
-	var ef errFormulario
-	if errors.As(err, &ef) {
-		return ef.mensaje, true
-	}
-	for _, e := range erroresDeValidacionEsfuerzo {
-		if errors.Is(err, e) {
-			return e.Error(), true
-		}
-	}
-	return "", false
+	return mensajeDeErrorConocido(err, erroresDeValidacionEsfuerzo)
 }

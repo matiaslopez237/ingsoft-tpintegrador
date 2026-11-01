@@ -468,11 +468,17 @@ func (p *pantallas) fallaInterna(w http.ResponseWriter, accion string, err error
 
 // mensajeDeValidacion devuelve el mensaje a mostrar si err es un error de validación conocido.
 func mensajeDeValidacion(err error) (string, bool) {
+	return mensajeDeErrorConocido(err, erroresDeValidacionPantallas)
+}
+
+// mensajeDeErrorConocido devuelve el mensaje a mostrar si err es un error de formato del formulario
+// o uno de los errores conocidos. Cada pantalla pasa su propia lista.
+func mensajeDeErrorConocido(err error, conocidos []error) (string, bool) {
 	var ef errFormulario
 	if errors.As(err, &ef) {
 		return ef.mensaje, true
 	}
-	for _, e := range erroresDeValidacionPantallas {
+	for _, e := range conocidos {
 		if errors.Is(err, e) {
 			return e.Error(), true // el texto del error de dominio, no el envuelto por el caso de uso
 		}

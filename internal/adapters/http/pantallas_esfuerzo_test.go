@@ -61,16 +61,7 @@ func pedirConReloj(t *testing.T, cu CasosDeUso, metodo, ruta string, form url.Va
 	p.reloj = func() time.Time { return hoyPantalla }
 	mux := http.NewServeMux()
 	p.registrarPantallasElemento(mux)
-	var req *http.Request
-	if form == nil {
-		req = httptest.NewRequest(metodo, ruta, nil)
-	} else {
-		req = httptest.NewRequest(metodo, ruta, strings.NewReader(form.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	}
-	rec := httptest.NewRecorder()
-	mux.ServeHTTP(rec, req)
-	return rec
+	return pedirAlMux(t, mux, metodo, ruta, form)
 }
 
 func formEsfuerzoValido() url.Values {
