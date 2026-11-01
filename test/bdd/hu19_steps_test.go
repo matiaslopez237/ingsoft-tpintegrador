@@ -1,17 +1,5 @@
 package bdd
 
-// RED de HU-19: este archivo y hu19_sistema_test.go no compilan hasta que existan, en producción:
-//
-//	domain.ComparacionEsfuerzo: HorasEstimadas, HorasReales, DesviacionHoras, DesviacionPorcentaje y SinEstimar()
-//	domain.CompararEsfuerzo(estimadas *float64, reales float64) domain.ComparacionEsfuerzo
-//	domain.ErrHorasEstimadasExcedenMaximo
-//	domain.ElementoBacklog.HorasEstimadas
-//	domain.CambiosElemento.CambiarHorasEstimadas y domain.CambiosElemento.HorasEstimadas
-//	app.LectorHorasReales: HorasRealesDeElemento(ctx, elementoID) (float64, error)
-//	app.CompararEsfuerzo y app.NuevoCompararEsfuerzo(LectorProyectos, LectorElementos, LectorHorasReales)
-//
-// Mientras tanto, todo el paquete test/bdd queda sin compilar en esta rama: es el rojo aceptado.
-
 import (
 	"context"
 	"errors"
@@ -25,8 +13,8 @@ import (
 )
 
 // hu19Sistema es la puerta de entrada de los escenarios de HU-19 al núcleo. La implementa
-// hu19SistemaMemoria (hu19_sistema_test.go); más adelante pasa a SQLite, como en HU-11. Todos los
-// identificadores de paquete llevan el prefijo hu19 para no chocar con los de otras historias.
+// hu19SistemaReal, sobre SQLite (hu19_sistema_test.go). Todos los identificadores de paquete llevan
+// el prefijo hu19 para no chocar con los de otras historias.
 type hu19Sistema interface {
 	CrearProyecto(nombre string) (int64, error)
 	AgregarIntegrante(proyectoID int64, nombre string) error
