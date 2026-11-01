@@ -99,7 +99,7 @@ func (f *pokerFalso) copia(r domain.Ronda) domain.Ronda {
 }
 
 func casosPoker(f *pokerFalso) (*IniciarRonda, *Votar, *ConsultarRonda) {
-	return NuevoIniciarRonda(f, f, f), NuevoVotar(f, f), NuevoConsultarRonda(f, f)
+	return NuevoIniciarRonda(f, f, f), NuevoVotar(f, f), NuevoConsultarRonda(f, f, f)
 }
 
 // Traza: HU-14 CA-14.1 (RN-14.1, RN-14.2)
