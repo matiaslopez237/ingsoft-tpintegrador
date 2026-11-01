@@ -1,0 +1,46 @@
+{{define "titulo"}}Ronda {{.Ronda.Numero}} · {{.Titulo}}{{end}}
+{{define "contenido"}}
+<p><a href="/web/proyectos/{{.ProyectoID}}/backlog/{{.Ronda.ElementoID}}">Volver al elemento</a></p>
+<h1>Planning Poker: {{.Titulo}}</h1>
+<p>Ronda {{.Ronda.Numero}} · {{.Ronda.Estado}}</p>
+{{template "error_form" .Error}}
+
+{{/* HU-14: se ve quién votó y quién falta, nunca el valor de un voto (RN-14.3). */}}
+<table>
+  <caption class="oculto">Votantes de la ronda</caption>
+  <thead>
+    <tr><th scope="col">Integrante</th><th scope="col">Voto</th></tr>
+  </thead>
+  <tbody>
+    {{range .Ronda.Votantes}}
+    <tr>
+      <td>{{.Nombre}}</td>
+      <td>{{if .YaVoto}}Votó{{else}}Falta votar{{end}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+
+{{if .Abierta}}
+<p class="ayuda">Los votos quedan ocultos hasta que voten todos. Mientras la ronda siga abierta, se puede volver a votar.</p>
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/rondas/{{.Ronda.ID}}/votar" class="formulario">
+  <label for="integrante">Integrante</label>
+  <select id="integrante" name="integrante" required>
+    <option value="">Elegí quién vota</option>
+    {{range .Ronda.Votantes}}<option value="{{.Nombre}}"{{if eq .Nombre $.Integrante}} selected{{end}}>{{.Nombre}}</option>{{end}}
+  </select>
+
+  <label for="valor">Estimación <span class="ayuda">(story points)</span></label>
+  <select id="valor" name="valor" required>
+    <option value="">Elegí un valor</option>
+    {{range .Valores}}<option value="{{.}}">{{.}}</option>{{end}}
+  </select>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Votar</button>
+  </div>
+</form>
+{{else}}
+<p class="vacio" role="status">Votaron todos: la ronda está cerrada.</p>
+{{end}}
+{{end}}

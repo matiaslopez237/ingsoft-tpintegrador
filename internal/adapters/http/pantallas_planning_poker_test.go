@@ -93,7 +93,7 @@ func TestPantallaIniciarRonda_RedirigeALaRonda(t *testing.T) {
 // Traza: HU-14 CA-14.9 (CA-14.6): el error se muestra en la pantalla del elemento.
 func TestPantallaIniciarRonda_Error_SeMuestraEnElElemento(t *testing.T) {
 	f := nuevoPokerFalso()
-	f.err = domain.ErrRondaSinVotantes
+	f.errIniciar = domain.ErrRondaSinVotantes
 
 	rec := pedirPantalla(t, casosPokerPantalla(f), http.MethodPost, "/web/proyectos/7/backlog/7/rondas", url.Values{})
 

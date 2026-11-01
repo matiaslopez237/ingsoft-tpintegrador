@@ -33,6 +33,7 @@ type datosEdicionElemento struct {
 	Error                  string
 	Prioridades            []domain.Prioridad
 	Estados                []domain.EstadoElemento
+	Poker                  *datosPokerElemento // nil si la aplicación no tiene Planning Poker (HU-14)
 }
 
 // registrarPantallasElemento agrega la pantalla para ver, editar y eliminar un elemento.
@@ -54,7 +55,7 @@ func (p *pantallas) elemento(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := aFormElemento(e)
-	p.mostrarElemento(w, http.StatusOK, pid, eid, f, f, "")
+	p.mostrarElemento(w, r, http.StatusOK, pid, eid, f, f, "")
 }
 
 func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
@@ -79,7 +80,7 @@ func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if mensaje, ok := mensajeDeValidacionElemento(err); ok {
-			p.mostrarElemento(w, http.StatusBadRequest, pid, eid, f, original, mensaje)
+			p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, original, mensaje)
 			return
 		}
 		p.fallaInterna(w, "editar elemento", err)
@@ -105,7 +106,7 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		f := aFormElemento(e)
-		p.mostrarElemento(w, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err))
+		p.mostrarElemento(w, r, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err))
 	default:
 		p.errorDeElemento(w, err)
 	}
@@ -113,10 +114,15 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 
 // --- Ayudantes ---
 
-func (p *pantallas) mostrarElemento(w http.ResponseWriter, status int, pid, eid int64, f, original formEdicionElemento, mensaje string) {
+func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64, f, original formEdicionElemento, mensaje string) {
+	poker, err := p.pokerDelElemento(r, pid, eid, original.Estado)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
-		Prioridades: prioridadesElemento, Estados: estadosElemento,
+		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker,
 	})
 }
 

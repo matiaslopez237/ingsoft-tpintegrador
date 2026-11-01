@@ -18,11 +18,12 @@ import (
 // memoria (ID 1, elemento 7, votantes Ana y Beto). El proyecto 404, el elemento 404 y la ronda 404
 // no existen. Con err, todas las operaciones fallan con ese error.
 type pokerFalso struct {
-	ronda     *domain.Ronda
-	err       error
-	votos     int
-	sinUltima bool // UltimaDelElemento no encuentra rondas
-	iniciadas int
+	ronda      *domain.Ronda
+	err        error
+	errIniciar error // solo al iniciar una ronda
+	votos      int
+	sinUltima  bool // UltimaDelElemento no encuentra rondas
+	iniciadas  int
 }
 
 func nuevoPokerFalso() *pokerFalso { return &pokerFalso{} }
@@ -38,6 +39,9 @@ func (f *pokerFalso) fallo(proyectoID int64) error {
 }
 
 func (f *pokerFalso) Ejecutar(_ context.Context, d app.DatosIniciarRonda) (domain.ResumenRonda, error) {
+	if f.errIniciar != nil {
+		return domain.ResumenRonda{}, f.errIniciar
+	}
 	if err := f.fallo(d.ProyectoID); err != nil {
 		return domain.ResumenRonda{}, err
 	}
