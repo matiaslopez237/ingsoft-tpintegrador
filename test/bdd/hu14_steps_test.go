@@ -25,6 +25,7 @@ type (
 		Numero         int
 		Estado         string
 		Votantes       []votanteVisto
+		Revelacion     *revelacionVista // HU-15: solo con la ronda cerrada
 	}
 )
 
@@ -96,6 +97,8 @@ func registrarStepsHU14(ctx *godog.ScenarioContext) {
 	ctx.Step(`^la pantalla de la ronda muestra que votaron "([^"]*)"$`, w.pantallaVotaron)
 	ctx.Step(`^la pantalla de la ronda dice que está cerrada$`, w.pantallaCerrada)
 	ctx.Step(`^la pantalla de la ronda no muestra los valores "([^"]*)"$`, w.pantallaSinValores)
+
+	registrarStepsHU15(ctx, w)
 }
 
 // nombres separa una lista del escenario como "Ana, Beto".
@@ -325,10 +328,14 @@ func (w *planningPokerWorld) resumenSinValores() error {
 		return err
 	}
 	var resumen struct {
-		Votantes []map[string]any `json:"votantes"`
+		Votantes   []map[string]any `json:"votantes"`
+		Revelacion any              `json:"revelacion"` // HU-15: solo con la ronda cerrada
 	}
 	if err := json.Unmarshal([]byte(cuerpo), &resumen); err != nil {
 		return fmt.Errorf("leer el resumen %q: %w", cuerpo, err)
+	}
+	if resumen.Revelacion != nil {
+		return fmt.Errorf("el resumen revela los votos: %s", cuerpo)
 	}
 	if len(resumen.Votantes) == 0 {
 		return fmt.Errorf("el resumen no trae votantes: %s", cuerpo)
