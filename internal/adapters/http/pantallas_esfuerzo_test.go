@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -100,6 +101,19 @@ func seccionNoContiene(t *testing.T, seccion string, textos ...string) {
 	}
 }
 
+// cantidadDeHoras reconoce una cantidad de horas mostrada en la página, como "3,5 h" o "2 horas".
+var cantidadDeHoras = regexp.MustCompile(`(?i)\d[\d.,]*\s*(h|hs|horas?)\b`)
+
+// sinListadoNiTotal verifica que la sección no muestre registros ni totales (sección 5, P-8), por la
+// estructura del HTML y no por las palabras con que se los nombre.
+func sinListadoNiTotal(t *testing.T, seccion string) {
+	t.Helper()
+	seccionNoContiene(t, seccion, "<table", "<ul", "<ol", "<dl")
+	if m := cantidadDeHoras.FindString(seccion); m != "" {
+		t.Errorf("la sección muestra una cantidad de horas (%q); sección: %s", m, seccion)
+	}
+}
+
 // esPaginaDeError verifica que se respondió con error.html y no con la pantalla del elemento.
 func esPaginaDeError(t *testing.T, rec *httptest.ResponseRecorder, mensaje string) {
 	t.Helper()
@@ -120,7 +134,8 @@ func TestPantallaEsfuerzo_FormularioInicial(t *testing.T) {
 	seccionContiene(t, s, "Registrar esfuerzo", `action="/web/proyectos/7/backlog/7/esfuerzo#esfuerzo"`,
 		`<option value="">Elegí un integrante</option>`, `<option value="Ana">Ana</option>`, `<option value="Caro">Caro</option>`,
 		valorHoyPantalla, `name="actividad" type="text" value=""`, `name="horas" type="number" step="0.5" value=""`)
-	seccionNoContiene(t, s, " selected", "<table", "total", "registros", "Esfuerzo registrado.", "no tiene integrantes")
+	seccionNoContiene(t, s, " selected", "Esfuerzo registrado.", "no tiene integrantes")
+	sinListadoNiTotal(t, s)
 	// Los límites quedan solo en el dominio (P-12).
 	seccionNoContiene(t, s, ` min=`, ` max=`)
 }
