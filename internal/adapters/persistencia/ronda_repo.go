@@ -50,6 +50,8 @@ func (r *RepositorioRondas) GuardarRonda(ctx context.Context, ronda *domain.Rond
 		`INSERT INTO rondas (proyecto_id, elemento_id, numero, estado) VALUES (?, ?, ?, ?)`,
 		ronda.ProyectoID, ronda.ElementoID, ronda.Numero, string(ronda.Estado))
 	switch {
+	// Choca con el índice de rondas abiertas, o con UNIQUE (elemento_id, numero) cuando otro pedido
+	// abrió la misma ronda siguiente en el medio: en los dos casos, otra ronda le ganó.
 	case esUnique(err):
 		return domain.ErrRondaYaAbierta
 	case esForeignKey(err):
@@ -121,8 +123,11 @@ func (r *RepositorioRondas) BuscarRonda(ctx context.Context, id int64) (domain.R
 func (r *RepositorioRondas) GuardarVoto(ctx context.Context, ronda domain.Ronda, votante string) error {
 	clave := domain.ClaveNombre(votante)
 	i := slices.IndexFunc(ronda.Votantes, func(v domain.Votante) bool { return domain.ClaveNombre(v.Nombre) == clave })
-	if i < 0 || ronda.Votantes[i].Voto == nil {
+	switch {
+	case i < 0:
 		return fmt.Errorf("guardar voto de %q: %w", votante, domain.ErrNoEsVotante)
+	case ronda.Votantes[i].Voto == nil: // el caso de uso siempre aplica el voto antes de guardarlo
+		return fmt.Errorf("guardar voto de %q en la ronda %d: la ronda no tiene su voto", votante, ronda.ID)
 	}
 
 	tx, err := r.db.BeginTx(ctx, nil)

@@ -218,3 +218,19 @@ func TestRepositorioRondas_SeBorranConElElemento(t *testing.T) {
 		t.Errorf("la ronda tendría que haberse borrado: %v", err)
 	}
 }
+
+// Traza: HU-14 RN-14.5: guardar exige que la ronda traiga el voto del votante (lo aplica el dominio
+// antes); si no, es un error interno y no "no es votante".
+func TestRepositorioRondas_GuardarVoto_SinVotoAplicado(t *testing.T) {
+	b := nuevaBasePoker(t)
+	r := b.abrir(t, nil, "Ana")
+
+	err := b.repo.GuardarVoto(context.Background(), r, "Ana")
+
+	if err == nil || errors.Is(err, domain.ErrNoEsVotante) || errors.Is(err, domain.ErrRondaCerrada) {
+		t.Errorf("error = %v, se esperaba un error interno", err)
+	}
+	if err := b.repo.GuardarVoto(context.Background(), r, "Dani"); !errors.Is(err, domain.ErrNoEsVotante) {
+		t.Errorf("votante desconocido: error = %v, se esperaba %v", err, domain.ErrNoEsVotante)
+	}
+}
