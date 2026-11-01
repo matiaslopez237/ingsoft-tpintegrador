@@ -112,7 +112,7 @@ func TestPantallaSprintsAnteriores_SinSprintsCerrados_AvisaSinVelocidad(t *testi
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, se esperaba 200", rec.Code)
 	}
-	contiene(t, rec, "todavía no hay datos de velocidad")
+	contiene(t, rec, "Todavía no hay datos de velocidad")
 }
 
 // Traza: HU-12 sección 7: proyecto inexistente (404), ID inválido (400) y falla interna (500, sin

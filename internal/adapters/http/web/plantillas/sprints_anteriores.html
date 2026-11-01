@@ -8,6 +8,13 @@
   </div>
 </div>
 
+{{/* HU-22: velocidad del equipo (promedio de puntos completados de los sprints cerrados). */}}
+{{if .HayVelocidad}}
+<p class="metrica">Velocidad del equipo: <strong>{{.Velocidad}}</strong> puntos por Sprint</p>
+{{else}}
+<p class="vacio">Todavía no hay datos de velocidad (hace falta al menos un Sprint cerrado).</p>
+{{end}}
+
 {{if .Sprints}}
 <table>
   <caption class="oculto">Sprints cerrados, del más reciente al más antiguo</caption>
