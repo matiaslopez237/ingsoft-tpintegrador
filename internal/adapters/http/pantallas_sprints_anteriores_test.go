@@ -9,13 +9,21 @@ import (
 	"testing"
 	"time"
 
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
 const rutaAnterioresDeAlfa = "/web/proyectos/7/sprints/anteriores"
 
-// casosConAnteriores suma a casosConSprints el caso de uso de HU-12, que devuelve los sprints
-// indicados para alfa (ID 7) y ErrProyectoNoEncontrado para cualquier otro proyecto.
+type consultarVelocidadFunc func(context.Context, int64) (app.VelocidadProyecto, error)
+
+func (f consultarVelocidadFunc) Ejecutar(ctx context.Context, id int64) (app.VelocidadProyecto, error) {
+	return f(ctx, id)
+}
+
+// casosConAnteriores suma a casosConSprints los casos de uso de HU-12 y HU-22, que devuelven los
+// sprints indicados (y la velocidad que les corresponde, calculada con el dominio real, igual que
+// el caso de uso de producción) para alfa (ID 7), y ErrProyectoNoEncontrado para cualquier otro.
 func casosConAnteriores(sprints []domain.Sprint, err error) CasosDeUso {
 	cu := casosConSprints(nil, nil)
 	cu.ListarSprintsAnteriores = listarSprintsFunc(func(_ context.Context, id int64) ([]domain.Sprint, error) {
@@ -23,6 +31,17 @@ func casosConAnteriores(sprints []domain.Sprint, err error) CasosDeUso {
 			return nil, fmt.Errorf("buscar proyecto %d: %w", id, domain.ErrProyectoNoEncontrado)
 		}
 		return sprints, err
+	})
+	cu.ConsultarVelocidad = consultarVelocidadFunc(func(_ context.Context, id int64) (app.VelocidadProyecto, error) {
+		if id != alfa.ID {
+			return app.VelocidadProyecto{}, fmt.Errorf("buscar proyecto %d: %w", id, domain.ErrProyectoNoEncontrado)
+		}
+		if err != nil {
+			return app.VelocidadProyecto{}, err
+		}
+		cerrados := domain.SprintsAnteriores(sprints)
+		velocidad, hayDatos := domain.Velocidad(cerrados)
+		return app.VelocidadProyecto{Velocidad: velocidad, HayDatos: hayDatos, SprintsCerrados: len(cerrados)}, nil
 	})
 	return cu
 }
@@ -69,6 +88,31 @@ func TestPantallaSprintsAnteriores_SinSprints_MuestraMensaje(t *testing.T) {
 	}
 	contiene(t, rec, "todavía no tiene sprints cerrados")
 	noContiene(t, rec.Body.String(), "<table")
+}
+
+// Traza: HU-22 CA-22.8: con sprints cerrados, se muestra la velocidad del equipo.
+func TestPantallaSprintsAnteriores_ConSprintsCerrados_MuestraLaVelocidad(t *testing.T) {
+	cu := casosConAnteriores([]domain.Sprint{
+		sprintAnteriorDeAlfa(2, 2, 13, "Interfaz web", 8, 5),
+		sprintAnteriorDeAlfa(1, 1, 1, "Armar el MVP", 13, 10),
+	}, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaAnterioresDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "Velocidad del equipo", "7,5") // promedio de 5 y 10 completados
+}
+
+// Traza: HU-22 CA-22.8 (RN-22.3): sin sprints cerrados, se avisa que no hay datos, no un 0.
+func TestPantallaSprintsAnteriores_SinSprintsCerrados_AvisaSinVelocidad(t *testing.T) {
+	rec := pedirPantalla(t, casosConAnteriores(nil, nil), http.MethodGet, rutaAnterioresDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200", rec.Code)
+	}
+	contiene(t, rec, "todavía no hay datos de velocidad")
 }
 
 // Traza: HU-12 sección 7: proyecto inexistente (404), ID inválido (400) y falla interna (500, sin
