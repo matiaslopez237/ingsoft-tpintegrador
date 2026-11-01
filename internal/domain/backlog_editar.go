@@ -1,9 +1,6 @@
 package domain
 
-import (
-	"errors"
-	"math"
-)
+import "errors"
 
 // Error nuevo de HU-06 (spec, sección 7). Los de los campos son los de HU-05, y el de estado
 // inválido (ErrEstadoElementoInvalido) se comparte con HU-07 (backlog_listado.go).
@@ -21,12 +18,10 @@ var ErrHorasEstimadasExcedenMaximo = errors.New("las horas estimadas no pueden s
 
 // validarHorasEstimadas aplica RN-19.2 en este orden: > 0, múltiplo de 0,5 y máximo 1000.
 func validarHorasEstimadas(horas float64) error {
-	switch {
-	case !(horas > 0): // así también NaN, que no es mayor ni menor que 0, cae acá
-		return ErrHorasInvalidas
-	case horas*2 != math.Trunc(horas*2): // en medias horas tiene que dar un número entero
-		return ErrHorasNoMultiploMediaHora
-	case horas > HorasEstimadasMaximas: // también +Inf, que sí pasa la comprobación del múltiplo
+	if err := validarMediasHoras(horas); err != nil {
+		return err
+	}
+	if horas > HorasEstimadasMaximas { // también +Inf, que sí pasa la comprobación del múltiplo
 		return ErrHorasEstimadasExcedenMaximo
 	}
 	return nil
