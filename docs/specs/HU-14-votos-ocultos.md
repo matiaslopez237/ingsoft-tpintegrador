@@ -52,7 +52,7 @@ Arrancar el Planning Poker (Épica 4): abrir una ronda de estimación sobre un e
 - **RN-14.1:** Una ronda se abre sobre un elemento del backlog que no está `Hecho`. Un elemento tiene a lo sumo una ronda `Abierta` a la vez; cuando se cierra, se puede abrir otra (HU-16), con el número siguiente.
 - **RN-14.2:** Los votantes son los integrantes del proyecto en el momento de abrir la ronda. Si después se agrega o se quita un integrante del proyecto, la ronda no cambia. Un proyecto sin integrantes no puede abrir una ronda.
 - **RN-14.3:** Mientras la ronda está abierta, nadie ve el valor de los votos: solo quién votó y quién falta. Revelarlos al cerrarse la ronda es HU-15 (RN-15.1).
-- **RN-14.4:** Un voto es uno de 1, 2, 3, 5, 8, 13 o 21 (escala de Fibonacci del Planning Poker).
+- **RN-14.4:** Un voto es uno de 1, 2, 3, 5, 8, 13 o 21 (escala de Fibonacci del Planning Poker). Es la misma escala de los story points de HU-13 (`EscalaStoryPoints()`, RN-13.4).
 - **RN-14.5:** Cada votante tiene un solo voto por ronda. Mientras la ronda está abierta, puede volver a votar y queda el último valor.
 - **RN-14.6:** La ronda se cierra sola cuando votaron todos sus votantes. Una ronda cerrada no acepta más votos y no se reabre.
 - **RN-14.7:** El elemento y la ronda tienen que pertenecer al proyecto de la ruta; si son de otro proyecto, se tratan como inexistentes (igual que RN-06.6 y RN-18.1).
@@ -117,3 +117,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 ## Historial
 - 2026-11-01: creada (borrador).
 - 2026-11-01: con HU-15, el resumen oculta los valores mientras la ronda está abierta y los revela al cerrarse (RN-14.3, CA-14.8 y CA-14.9 ajustados).
+- 2026-11-01: la escala de los votos es la de los story points de HU-13 (`EscalaStoryPoints()`); se quitó `ValoresVoto`.

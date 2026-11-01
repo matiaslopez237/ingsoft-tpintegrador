@@ -30,7 +30,7 @@ No hay entradas nuevas: son los story points de HU-05 (`POST /proyectos/{id}/bac
 - Se reutiliza `ErrStoryPointsInvalidos` de HU-05 con el mensaje nuevo, "los story points deben ser 1, 2, 3, 5, 8, 13 o 21", en vez de crear otro error: es la misma regla con otros valores, y así los adaptadores de HU-05 y HU-06 ya la responden con 400 sin cambios.
 - Casos de uso y persistencia: sin cambios. Crear y editar ya pasan por el dominio, y la base guarda un entero.
 - **Datos existentes:** no se migran ni se redondean (RN-13.3).
-- **HU-14 y HU-17:** HU-14 (Planning Poker) define la misma escala para los votos (RN-14.4) en una rama que todavía no está en `main`. Cuando estén las dos, la escala de los votos pasa a usar `EscalaStoryPoints()` (RN-13.4). HU-17 guarda la estimación acordada como story points, así que siempre será un valor de la escala.
+- **HU-14 y HU-17:** los votos del Planning Poker (HU-14, RN-14.4) usan la misma `EscalaStoryPoints()`: hay una sola escala en el dominio (RN-13.4). HU-17 guarda la estimación acordada como story points, así que siempre será un valor de la escala.
 - Fuera de alcance: otras escalas (talles de remera, potencias de 2) y cambiar la escala por proyecto.
 
 ## 6. Casos límite
@@ -68,3 +68,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 
 ## Historial
 - 2026-11-01: creada (borrador).
+- 2026-11-01: con HU-14 en `main`, los votos usan `EscalaStoryPoints()` y se quitó la escala propia de HU-14 (RN-13.4), a pedido de la revisión del PR #288.
