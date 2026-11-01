@@ -364,6 +364,32 @@ func TestPantallaEsfuerzo_ErrorDeFormatoConElementoInexistente_Devuelve404(t *te
 	esPaginaDeError(t, rec, domain.ErrElementoNoEncontrado.Error())
 }
 
+// Traza: HU-18 CA-18.22 (sección 7: primero el proyecto): un error de formato no llega al caso de
+// uso, pero con un proyecto inexistente se informa el proyecto, no el elemento.
+func TestPantallaEsfuerzo_ErrorDeFormatoConProyectoInexistente_Devuelve404(t *testing.T) {
+	tests := []struct{ nombre, campo, valor string }{
+		{"horas no numéricas", "horas", "muchas"},
+		{"fecha con otro formato", "fecha", "20/10/2026"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			uc := &registradorEsfuerzoFalso{}
+			form := formEsfuerzoValido()
+			form.Set(tt.campo, tt.valor)
+
+			rec := pedirPantalla(t, casosConEsfuerzo(uc), http.MethodPost, "/web/proyectos/999/backlog/1/esfuerzo", form)
+
+			if rec.Code != http.StatusNotFound {
+				t.Fatalf("status = %d, se esperaba 404; cuerpo: %.400s", rec.Code, rec.Body)
+			}
+			esPaginaDeError(t, rec, domain.ErrProyectoNoEncontrado.Error())
+			if uc.llamadas != 0 {
+				t.Errorf("llamadas al caso de uso = %d, se esperaba 0", uc.llamadas)
+			}
+		})
+	}
+}
+
 // Traza: HU-18 CA-18.22, sección 9: errorDeElemento reconoce ErrProyectoNoEncontrado. La pantalla
 // del elemento ahora consulta el proyecto; sin esto respondería 500.
 func TestPantallaElemento_ProyectoInexistente_Devuelve404(t *testing.T) {
