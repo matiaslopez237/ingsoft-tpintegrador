@@ -53,6 +53,9 @@ type ElementoBacklog struct {
 	StoryPoints *int // nil: todavía sin estimar (RN-05.6)
 	Criterios   []string
 	SprintID    *int64 // nil: sin asignar a un sprint todavía (HU-09)
+	// HorasEstimadas es un dato propio, no se deriva de los story points. nil: sin estimar en horas
+	// (RN-19.1). Se carga con la edición (HU-06): NuevoElementoBacklog no la recibe (RN-19.3).
+	HorasEstimadas *float64
 }
 
 // NuevoElementoBacklog valida los datos y devuelve un elemento en estado Pendiente, todavía sin ID.

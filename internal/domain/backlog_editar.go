@@ -40,17 +40,21 @@ type CambiosElemento struct {
 	// Criterios, si se envía, reemplaza la lista completa.
 	Criterios *[]string
 	Estado    *EstadoElemento
+	// CambiarHorasEstimadas indica que se envían las horas estimadas. Con HorasEstimadas en nil, el
+	// elemento queda sin estimar en horas (RN-19.3).
+	CambiarHorasEstimadas bool
+	HorasEstimadas        *float64
 }
 
 func (c CambiosElemento) vacios() bool {
 	return c.Titulo == nil && c.Descripcion == nil && c.Prioridad == nil && !c.CambiarStoryPoints &&
-		c.Criterios == nil && c.Estado == nil
+		c.Criterios == nil && c.Estado == nil && !c.CambiarHorasEstimadas
 }
 
 // Editar devuelve una copia del elemento con los cambios aplicados; el original no cambia.
-// Valida el resultado con las mismas reglas que al crear (NuevoElementoBacklog) y después el
-// estado. La unicidad del título se verifica en el caso de uso, como en HU-05.
-// Implementa HU-06 (RN-06.1 a RN-06.5, RN-06.9).
+// Valida el resultado con las mismas reglas que al crear (NuevoElementoBacklog), después el estado y
+// por último las horas estimadas, si se enviaron. La unicidad del título se verifica en el caso de
+// uso, como en HU-05. Implementa HU-06 (RN-06.1 a RN-06.5, RN-06.9) y HU-19 (RN-19.2, RN-19.3).
 func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	if c.vacios() {
 		return ElementoBacklog{}, ErrSinCambios
@@ -86,12 +90,25 @@ func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	if !estadoElementoValido(estado) {
 		return ElementoBacklog{}, ErrEstadoElementoInvalido
 	}
+	horasEstimadas := e.HorasEstimadas
+	if c.CambiarHorasEstimadas {
+		horasEstimadas = c.HorasEstimadas
+		if horasEstimadas != nil {
+			if err := validarHorasEstimadas(*horasEstimadas); err != nil {
+				return ElementoBacklog{}, err
+			}
+		}
+	}
 	editado.ID = e.ID
 	editado.Estado = estado
-	// NuevoElementoBacklog no recibe el sprint: sin esto, la copia lo perdería.
+	// NuevoElementoBacklog no recibe el sprint ni las horas estimadas: sin esto, la copia los perdería.
 	if e.SprintID != nil {
 		sprint := *e.SprintID
 		editado.SprintID = &sprint
+	}
+	if horasEstimadas != nil {
+		horas := *horasEstimadas
+		editado.HorasEstimadas = &horas
 	}
 	return editado, nil
 }
