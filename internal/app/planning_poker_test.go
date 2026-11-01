@@ -313,3 +313,30 @@ func TestPlanningPoker_FallaDelRepositorio_SePropaga(t *testing.T) {
 		t.Errorf("votar con falla al buscar el proyecto: error = %v", err)
 	}
 }
+
+// Traza: HU-15 CA-15.1, CA-15.4 (RN-15.1): ConsultarRonda devuelve la revelación solo con la ronda
+// cerrada. No hizo falta cambiar el caso de uso: la decide Ronda.Resumen.
+func TestConsultarRonda_RevelaSoloConLaRondaCerrada(t *testing.T) {
+	f := iniciada(t, "Ana", "Beto")
+	_, votar, consultar := casosPoker(f)
+	if _, err := votar.Ejecutar(context.Background(), DatosVoto{ProyectoID: 1, RondaID: 1, Integrante: "Ana", Valor: 3}); err != nil {
+		t.Fatal(err)
+	}
+	if res, err := consultar.Ejecutar(context.Background(), 1, 1); err != nil || res.Revelacion != nil {
+		t.Fatalf("ronda abierta: revelación = %+v, err = %v; se esperaba nil", res.Revelacion, err)
+	}
+
+	cerrada, err := votar.Ejecutar(context.Background(), DatosVoto{ProyectoID: 1, RondaID: 1, Integrante: "Beto", Valor: 8})
+	if err != nil {
+		t.Fatal(err)
+	}
+	res, err := consultar.Ejecutar(context.Background(), 1, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, r := range []domain.ResumenRonda{cerrada, res} {
+		if r.Revelacion == nil || r.Revelacion.Minimo != 3 || r.Revelacion.Maximo != 8 || !r.Revelacion.DiferenciaSignificativa {
+			t.Errorf("revelación = %+v, se esperaba mínimo 3, máximo 8 y diferencia", r.Revelacion)
+		}
+	}
+}
