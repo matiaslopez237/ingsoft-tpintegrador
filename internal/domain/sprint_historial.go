@@ -18,3 +18,19 @@ func SprintsAnteriores(sprints []Sprint) []Sprint {
 	})
 	return anteriores
 }
+
+// Velocidad calcula el promedio de PuntosCompletados de los sprints recibidos: quien llama le pasa
+// los ya filtrados por SprintsAnteriores (Velocidad no vuelve a filtrar por estado). Si la lista
+// está vacía, hayDatos es false y velocidad no significa nada (RN-22.3): no hay Sprints cerrados
+// de los que promediar, que es distinto de un promedio real de 0 puntos.
+// Implementa HU-22 (RN-22.2 a RN-22.4).
+func Velocidad(cerrados []Sprint) (velocidad float64, hayDatos bool) {
+	if len(cerrados) == 0 {
+		return 0, false
+	}
+	total := 0
+	for _, s := range cerrados {
+		total += s.PuntosCompletados
+	}
+	return float64(total) / float64(len(cerrados)), true
+}
