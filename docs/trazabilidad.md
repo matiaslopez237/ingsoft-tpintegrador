@@ -512,6 +512,8 @@ Pedidos simultáneos (sección 5 de la spec; sin CA propio porque no se puede ex
 
 CA-18.16 a CA-18.25 no tienen escenario BDD, como dice la spec: se cubren con tests del adaptador (`httptest`), igual que las pantallas de HU-10 y HU-11. Los tests están en [pantallas_esfuerzo_test.go](../internal/adapters/http/pantallas_esfuerzo_test.go), salvo `TestNuevoRouter_RegistraTodasLasRutas`, que está en [router_test.go](../internal/adapters/http/router_test.go).
 
+**Test de integración entre dos historias, sin criterio propio:** `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` (`067e249`), en el mismo archivo, se traza a la sección 9 de HU-18 y a CA-14.9 de HU-14. Verifica que las dos secciones convivan en la pantalla del elemento, en orden (edición, Planning Poker, esfuerzo, eliminar), sin ids duplicados ni formularios anidados, sin ronda y con una ronda abierta. Ningún CA pide esto, así que no suma a los contadores de la tabla de resumen.
+
 ### Reglas de negocio
 
 | RN | CA que la cubren | Código |
@@ -627,7 +629,10 @@ En la tabla se omite el scope `(HU-18)` de los mensajes a partir de 18.4: todos 
 | Revisión (go-reviewer): error de formato con proyecto inexistente | `33efaf2` [RED] → `790481b` [GREEN] | **RED → GREEN** (sin REFACTOR: el cambio son unas pocas líneas al principio de `mostrarErrorDeEsfuerzo`) |
 | Revisión (go-reviewer): escape de HTML | `851ec94` test(HU-18): proteger el escape de HTML en el formulario de esfuerzo | — (tests nuevos sobre código ya en verde; se verificaron con las mutaciones A a D) |
 | Revisión (go-reviewer): aserciones menos frágiles | `2eea25c` test(HU-18): aserciones menos frágiles de la pantalla de esfuerzo | — (se verificaron con las mutaciones E a I) |
-| Trazabilidad de la pantalla | este commit | — |
+| Trazabilidad de la pantalla | `071011d` docs(trazabilidad): ampliar HU-18 con la pantalla | — |
+| Merge con `main` (HU-14 y HU-15) | `cc1a242` Merge remote-tracking branch 'origin/main' into hu-18-pantalla-esfuerzo | merge de `main`, con dos choques que git no detectó (ver Huecos) |
+| Convivencia con Planning Poker | `067e249` test(HU-18): la pantalla del elemento muestra Planning Poker y Registrar esfuerzo juntos | — (sin RED real; se verificó con mutaciones, ver Huecos) |
+| Trazabilidad de la convivencia | este commit | — |
 
 ### Evidencia de la pantalla: mutaciones manuales
 
@@ -662,6 +667,15 @@ La mutación A falla solo por el `value` esperado: `html/template` quita las eti
 - `sinListadoNiTotal` no detecta un total sin unidades, como "Total: 3,5", y solo se aplica al formulario inicial (CA-18.16).
 - Refactors que tocaron código de otras historias: `formMensajeDeErrorConocido` reemplazó el cuerpo de `mensajeDeValidacion` (HU-30), `mensajeDeValidacionElemento` (HU-06) y `mensajeDeValidacionDefecto` (HU-20), y `mostrarElemento` y `errorDeElemento` (HU-06) cambiaron para la pantalla. Conviene que lo revisen sus autores en el PR.
 - `mostrarErrorDeEsfuerzo` consulta el proyecto y `mostrarElemento` lo vuelve a consultar: es una lectura de más, solo cuando el formulario vuelve con un error.
+- El merge `cc1a242` con `main` (HU-14 y HU-15) tuvo conflictos en `elemento.html`, `pantallas_elemento.go` y `pantallas.go`, y además dos choques que git no detectó, porque no había líneas en conflicto:
+  - `mensajeDeErrorConocido` quedó definida dos veces y con distinto comportamiento: la de HU-18 también reconoce `errFormulario`; la de HU-14 solo mira su lista. La de HU-18 se renombró a `formMensajeDeErrorConocido` y la de HU-14 no cambió. Conviven dos nombres muy parecidos, que se podrían unificar en otro cambio.
+  - `iniciarRondaPantalla` (HU-14) llamaba a `mostrarElemento` con la firma anterior, sin el parámetro de esfuerzo. Se le agregó `p.seccionEsfuerzoInicial()`: el `400` de HU-14 sigue igual, y ahora esa pantalla también muestra la sección de esfuerzo.
+- `067e249` no tuvo RED real: `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` se escribió con el código ya funcionando. La evidencia son 5 mutaciones manuales sobre `elemento.html`, que no quedaron en ningún commit. Con cada una el test falla, y sin ellas pasa:
+  - quitar la sección de Planning Poker: falla porque falta `section titulo-poker` y su `<h2>`;
+  - quitar la sección de esfuerzo: falla porque falta `section esfuerzo` y su `<h2>`;
+  - invertir el orden (esfuerzo antes que Planning Poker): falla la estructura esperada;
+  - duplicar un id (`id="horas"` también en la actividad): falla con `ids duplicados: ["horas"]`;
+  - anidar un formulario dentro del de esfuerzo: falla porque aparece `form …/esfuerzo#esfuerzo > form /x`.
 - CA-18.15 no tiene escenario BDD a propósito: los escenarios prueban el núcleo y no pasan por HTTP. Lo cubren los tests del handler.
 - CA-18.11 no tiene test unitario propio. El dominio no suma registros porque valida uno solo, así que no hay lógica que probar aparte. La regla se verifica en el escenario BDD, que guarda 20 h + 8 h en el mismo día contra SQLite.
 - CA-18.14: el test unitario cubre la fecha anterior al inicio del proyecto, pero lo de "proyecto no Activo" solo se verifica en el BDD. El caso de uso no lee el estado, así que no hay rama que probar.
