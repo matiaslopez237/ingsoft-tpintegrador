@@ -54,9 +54,10 @@ func (r *RepositorioBacklog) GuardarElemento(ctx context.Context, e *domain.Elem
 		sp = sql.NullInt64{Int64: int64(*e.StoryPoints), Valid: true}
 	}
 	res, err := tx.ExecContext(ctx,
-		`INSERT INTO backlog_elementos (proyecto_id, titulo, titulo_clave, descripcion, prioridad, estado, story_points)
-		 VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		e.ProyectoID, e.Titulo, domain.ClaveNombre(e.Titulo), e.Descripcion, string(e.Prioridad), string(e.Estado), sp)
+		`INSERT INTO backlog_elementos (proyecto_id, titulo, titulo_clave, descripcion, prioridad, estado, story_points, medias_horas_estimadas)
+		 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		e.ProyectoID, e.Titulo, domain.ClaveNombre(e.Titulo), e.Descripcion, string(e.Prioridad), string(e.Estado), sp,
+		aMediasHorasEstimadas(e.HorasEstimadas))
 	switch {
 	case esUnique(err): // la única restricción UNIQUE de la tabla es (proyecto_id, titulo_clave)
 		return domain.ErrTituloDuplicado
@@ -91,11 +92,12 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 		prioridad, estado string
 		sp                sql.NullInt64
 		sprintID          sql.NullInt64
+		medias            sql.NullInt64
 	)
 	err := r.db.QueryRowContext(ctx,
-		`SELECT id, proyecto_id, titulo, descripcion, prioridad, estado, story_points, sprint_id
+		`SELECT id, proyecto_id, titulo, descripcion, prioridad, estado, story_points, sprint_id, medias_horas_estimadas
 		   FROM backlog_elementos WHERE id = ?`, id).
-		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID)
+		Scan(&e.ID, &e.ProyectoID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID, &medias)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.ElementoBacklog{}, domain.ErrElementoNoEncontrado
 	}
@@ -110,6 +112,7 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 	if sprintID.Valid {
 		e.SprintID = &sprintID.Int64
 	}
+	e.HorasEstimadas = desdeMediasHorasEstimadas(medias)
 
 	rows, err := r.db.QueryContext(ctx,
 		`SELECT texto FROM backlog_criterios WHERE elemento_id = ? ORDER BY orden`, id)
@@ -130,6 +133,23 @@ func (r *RepositorioBacklog) BuscarElementoPorID(ctx context.Context, id int64) 
 	return e, nil
 }
 
+// aMediasHorasEstimadas convierte las horas estimadas a la columna: sin estimar es NULL (RN-19.1).
+func aMediasHorasEstimadas(horas *float64) sql.NullInt64 {
+	if horas == nil {
+		return sql.NullInt64{}
+	}
+	return sql.NullInt64{Int64: int64(aMediasHoras(*horas)), Valid: true}
+}
+
+// desdeMediasHorasEstimadas es la conversión inversa: NULL es sin estimar (RN-19.1).
+func desdeMediasHorasEstimadas(medias sql.NullInt64) *float64 {
+	if !medias.Valid {
+		return nil
+	}
+	horas := desdeMediasHoras(int(medias.Int64))
+	return &horas
+}
+
 // ContarElementos devuelve la cantidad de elementos del backlog del proyecto (lo usan los tests y el BDD).
 func (r *RepositorioBacklog) ContarElementos(ctx context.Context, proyectoID int64) (int, error) {
 	var n int
@@ -147,7 +167,7 @@ func (r *RepositorioBacklog) ContarElementos(ctx context.Context, proyectoID int
 // el resultado sea estable. Implementa HU-07 (app.ListadorElementos, RN-07.1).
 func (r *RepositorioBacklog) ListarElementos(ctx context.Context, proyectoID int64) ([]domain.ElementoBacklog, error) {
 	rows, err := r.db.QueryContext(ctx,
-		`SELECT id, titulo, descripcion, prioridad, estado, story_points, sprint_id
+		`SELECT id, titulo, descripcion, prioridad, estado, story_points, sprint_id, medias_horas_estimadas
 		   FROM backlog_elementos WHERE proyecto_id = ? ORDER BY id`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar elementos del proyecto %d: %w", proyectoID, err)
@@ -164,8 +184,9 @@ func (r *RepositorioBacklog) ListarElementos(ctx context.Context, proyectoID int
 			prioridad, estado string
 			sp                sql.NullInt64
 			sprintID          sql.NullInt64
+			medias            sql.NullInt64
 		)
-		if err := rows.Scan(&e.ID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID); err != nil {
+		if err := rows.Scan(&e.ID, &e.Titulo, &e.Descripcion, &prioridad, &estado, &sp, &sprintID, &medias); err != nil {
 			return nil, fmt.Errorf("leer elemento del proyecto %d: %w", proyectoID, err)
 		}
 		e.Prioridad, e.Estado = domain.Prioridad(prioridad), domain.EstadoElemento(estado)
@@ -176,6 +197,7 @@ func (r *RepositorioBacklog) ListarElementos(ctx context.Context, proyectoID int
 		if sprintID.Valid {
 			e.SprintID = &sprintID.Int64
 		}
+		e.HorasEstimadas = desdeMediasHorasEstimadas(medias)
 		posicion[e.ID] = len(elementos)
 		elementos = append(elementos, e)
 	}
