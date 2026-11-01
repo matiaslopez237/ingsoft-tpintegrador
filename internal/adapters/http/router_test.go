@@ -13,6 +13,7 @@ import (
 // NuevoRouter (lo que usa main.go) las registra todas. Si una historia agrega una ruta y se
 // olvida de sumarla a NuevoRouter, el pedido da 404 o 405 y el test falla.
 func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
+	poker := nuevoPokerFalso() // las rutas de HU-14 de abajo abren la ronda 1 y después la usan
 	mux := NuevoRouter(CasosDeUso{
 		CrearProyecto:            &creadorFalso{},
 		ModificarProyecto:        &modificadorFalso{},
@@ -34,6 +35,9 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		EliminarElementoBacklog:  &eliminadorElementosFalso{},
 		ConsultarElementoBacklog: casosBacklogFalsos(&editorElementosFalso{}, &eliminadorElementosFalso{}).ConsultarElementoBacklog,
 		RegistrarDefecto:         &registradorDefectoFalso{},
+		IniciarRonda:             poker,
+		Votar:                    votadorPokerFalso{poker},
+		ConsultarRonda:           consultorPokerFalso{poker},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -55,6 +59,9 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodDelete, "/proyectos/1/backlog/1/sprint", ""},                                                                             // HU-09
 		{http.MethodPost, "/proyectos/1/backlog/1/completar", ""},                                                                            // HU-10
 		{http.MethodPost, "/proyectos/1/sprints/1/cerrar", ""},                                                                               // HU-11
+		{http.MethodPost, "/proyectos/1/backlog/7/rondas", ""},                                                                               // HU-14
+		{http.MethodGet, "/proyectos/1/rondas/1", ""},                                                                                        // HU-14
+		{http.MethodPost, "/proyectos/1/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
 		{http.MethodGet, "/", ""},                                     // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                        // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                   // HU-30
