@@ -23,6 +23,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
+| HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Borrador, pendiente de aprobación en el PR) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2 | ✓ 19/19 escenarios |
 
 ---
 
@@ -1064,6 +1065,60 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 
 - No pasó por el agente `go-reviewer`; la revisión queda para el PR.
 - Un sprint cerrado antes de que existiera el resumen de HU-11 (base vieja) aparece con 0 y 0 puntos, que es lo que dejó la migración; está documentado como caso límite en la spec, sin test propio.
+
+---
+
+## HU-13: Estimar una historia con story points de la escala Fibonacci
+
+- **Issue:** [#24](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/24) · Sprint 3 · 1 SP · tareas #272 a #280
+- **Spec:** [docs/specs/HU-13-escala-story-points.md](specs/HU-13-escala-story-points.md)
+- **Feature:** [features/HU-13-escala-story-points.feature](../features/HU-13-escala-story-points.feature) (steps en [test/bdd/hu13_steps_test.go](../test/bdd/hu13_steps_test.go), sobre SQLite real; el escenario de CA-13.6 usa el endpoint real)
+- **Cambio en HU-05:** RN-05.6, CA-05.7 y el mensaje de `ErrStoryPointsInvalidos` pasan a la escala.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-13.1 Valores de la escala | RN-13.1 | Los valores de la escala se aceptan `@normal` (×7) | `TestNuevoElementoBacklog_ValoresDeLaEscala` | `domain.NuevoElementoBacklog` |
+| CA-13.2 Fuera de la escala al crear | RN-13.1 | Un valor fuera de la escala se rechaza `@error` (×4) | `TestNuevoElementoBacklog_FueraDeLaEscala`, `TestCrearElemento_StoryPointsFueraDeLaEscala_NoSeGuarda` | `domain.NuevoElementoBacklog` |
+| CA-13.3 Editar los story points | RN-13.1 | Editar los story points a otro valor de la escala `@normal` · a un valor fuera de la escala `@error` | `TestEditar_StoryPointsFueraDeLaEscala` | `domain.ElementoBacklog.Editar` |
+| CA-13.4 Sin estimar | RN-13.2 | Un elemento puede quedar sin estimar `@alternativo` · Quitarle la estimación `@alternativo` | `TestEditar_StoryPointsNil_QuedaSinEstimar` (HU-06), `TestEditar_ValorAnteriorALaEscala` | `domain.NuevoElementoBacklog`, `domain.ElementoBacklog.Editar` |
+| CA-13.5 Valores anteriores a la escala | RN-13.3 | Un valor guardado antes de la escala se respeta al editar otro campo `@limite` · no se puede volver a enviar `@error` · se puede corregir `@limite` | `TestEditar_ValorAnteriorALaEscala`, `TestEditarElemento_ValorAnteriorALaEscala`, `TestRepositorioBacklog_ValorAnteriorALaEscala` | `domain.ElementoBacklog.Editar` |
+| CA-13.6 API | Sección 3 | La API rechaza un valor fuera de la escala `@error` | `TestPostBacklog_DatosInvalidos_Devuelve400` y `TestPatchElemento_Errores` (casos HU-13) | sin cambios en los handlers |
+| CA-13.7 Pantallas | Sección 3, RN-13.3, RN-13.4 | No va acá (como CA-20.8): se cubre con los tests de la pantalla | `TestPantallaBacklog_AltaConLaEscala`, `TestPantallaElemento_EdicionConLaEscala`, `TestPantallaElemento_ValorAnteriorALaEscala`, `TestOpcionesStoryPoints` | `pantallas_escala.go`, `web/plantillas/backlog.html`, `web/plantillas/elemento.html` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog.go](../internal/domain/backlog.go) (`EscalaStoryPoints`, validación en `NuevoElementoBacklog`), [backlog_editar.go](../internal/domain/backlog_editar.go) (`Editar` valida los story points solo si se envían) | [backlog_escala_test.go](../internal/domain/backlog_escala_test.go) |
+| Casos de uso | Sin cambios | [escala_story_points_test.go](../internal/app/escala_story_points_test.go) |
+| Persistencia | Sin cambios ni migración | [escala_story_points_test.go](../internal/adapters/persistencia/escala_story_points_test.go) |
+| HTTP (JSON) | Sin cambios: `ErrStoryPointsInvalidos` ya se respondía con 400 | [backlog_handler_test.go](../internal/adapters/http/backlog_handler_test.go), [backlog_editar_handler_test.go](../internal/adapters/http/backlog_editar_handler_test.go) |
+| Pantallas | [internal/adapters/http/pantallas_escala.go](../internal/adapters/http/pantallas_escala.go) (`opcionesStoryPoints`), listas en [backlog.html](../internal/adapters/http/web/plantillas/backlog.html) y [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_escala_test.go](../internal/adapters/http/pantallas_escala_test.go) |
+| BDD | [test/bdd/hu13_steps_test.go](../test/bdd/hu13_steps_test.go) | 19 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 13.1 Spec (y ajuste de HU-05) | `5fa677d` | — |
+| 13.2 Escenarios BDD | `711ca5b` | — |
+| 13.3 Steps godog | `d7dbeaa` | BDD en rojo |
+| 13.4 Escala en el dominio | `a785cf8` [RED] → `f246c79` [GREEN] | **RED → GREEN**, BDD en verde |
+| 13.5 Casos de uso | `c679dcf` | test, sin cambios en el código |
+| 13.6 Persistencia | `43024a2` | test, sin persistencia nueva |
+| 13.7 HTTP | `816bdd7` | test, sin cambios en los handlers |
+| 13.8 Pantallas | `5a6432b` [RED] → `ddb9e08` [GREEN] | **RED → GREEN** |
+| 13.9 Revisión y trazabilidad | `e5fcbd3` (test de la revisión), este commit | — |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- Las tareas 13.5 a 13.7 no tienen RED → GREEN: crear y editar ya pasaban por el dominio, la base guarda un entero y los handlers ya respondían `ErrStoryPointsInvalidos` con 400. Se dejaron tests como evidencia, como sugerían las tareas.
+- `TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente` (HU-11) creaba historias con 1 a 8 story points; ahora usa valores de la escala.
+- **Pendiente con HU-14:** HU-14 define la misma escala para los votos (RN-14.4) en su rama. Cuando las dos estén en `main`, `ValoresVoto` tiene que devolver `EscalaStoryPoints()` (RN-13.4).
+- Revisión con el agente `go-reviewer` (tarea 13.9): sin hallazgos críticos ni altos; confirmó que `Editar` no comparte el puntero de los story points y que un valor anterior a la escala no se valida si no se envía, pero sí si se envía. Se agregó el test de punta a punta que sugirió (`TestPantallaElemento_GuardarConValorAnteriorALaEscala_NoEnviaLosStoryPoints`, `e5fcbd3`). Dos observaciones bajas sin cambios: en el alta, un POST armado a mano con un valor fuera de la escala se vuelve a mostrar marcado (el dominio igual lo rechaza), y si una edición de 4 a 5 falla por otro error, la lista ya no ofrece el 4.
 
 ---
 
