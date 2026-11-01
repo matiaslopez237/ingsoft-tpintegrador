@@ -58,6 +58,9 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 		"ActualizarElemento": func() error {
 			return backlog.ActualizarElemento(ctx, elemento, domain.CambiosElemento{Titulo: &titulo})
 		},
+		"ActualizarElemento solo horas estimadas": func() error { // HU-19
+			return backlog.ActualizarElemento(ctx, elemento, domain.CambiosElemento{CambiarHorasEstimadas: true})
+		},
 		"TieneEsfuerzo":     func() error { _, err := backlog.TieneEsfuerzo(ctx, 1); return err },
 		"TieneDefectos":     func() error { _, err := backlog.TieneDefectos(ctx, 1); return err },
 		"EliminarElemento":  func() error { return backlog.EliminarElemento(ctx, 1) },
