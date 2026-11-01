@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"math"
 	"reflect"
 	"testing"
 )
@@ -151,5 +152,197 @@ func TestEditar_NoModificaElOriginal(t *testing.T) {
 
 	if original.Criterios[0] != "Con email" || *original.StoryPoints != 5 || e.Criterios[0] != "Nuevo" {
 		t.Errorf("se comparte memoria: original %+v, editado %+v", original, e)
+	}
+}
+
+// loginConHoras es un elemento con sprint y horas estimadas, ya guardado.
+func loginConHoras(t *testing.T, horas float64) ElementoBacklog {
+	t.Helper()
+	e := login(t)
+	sprint := int64(3)
+	e.SprintID = &sprint
+	e.HorasEstimadas = &horas
+	return e
+}
+
+// Traza: HU-19 CA-19.15 (RN-19.3)
+func TestNuevoElementoBacklog_NaceSinHorasEstimadas(t *testing.T) {
+	if e := login(t); e.HorasEstimadas != nil {
+		t.Errorf("HorasEstimadas = %v, se esperaba nil", *e.HorasEstimadas)
+	}
+}
+
+// Traza: HU-19 CA-19.13 (RN-19.3)
+func TestEditar_CargarHorasEstimadas(t *testing.T) {
+	original := login(t)
+
+	e, err := original.Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: pHoras(8)})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	want := original
+	want.HorasEstimadas = pHoras(8)
+	if !reflect.DeepEqual(e, want) {
+		t.Errorf("se obtuvo %+v, se esperaba %+v", e, want)
+	}
+}
+
+// Traza: HU-19 CA-19.13 (RN-19.3)
+func TestEditar_CambiarHorasEstimadas(t *testing.T) {
+	e, err := loginConHoras(t, 8).Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: pHoras(10)})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if !mismasHoras(e.HorasEstimadas, pHoras(10)) {
+		t.Errorf("HorasEstimadas = %v, se esperaba 10", verHoras(e.HorasEstimadas))
+	}
+}
+
+// Enviarlas en nil es quitarlas, no "sin cambios": es la única forma de volver a sin estimar.
+// Traza: HU-19 CA-19.13 (RN-19.3)
+func TestEditar_QuitarHorasEstimadas(t *testing.T) {
+	e, err := loginConHoras(t, 8).Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: nil})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if e.HorasEstimadas != nil {
+		t.Errorf("HorasEstimadas = %v, se esperaba nil", *e.HorasEstimadas)
+	}
+}
+
+// Traza: HU-19 CA-19.13, CA-19.15 (RN-06.1, RN-19.1, RN-19.3)
+func TestEditar_OtrosCampos_ConservanHorasEstimadasYSprint(t *testing.T) {
+	baja := PrioridadBaja
+	tests := []struct {
+		nombre string
+		c      CambiosElemento
+	}{
+		{"prioridad", CambiosElemento{Prioridad: &baja}},
+		{"cambiar story points", CambiosElemento{CambiarStoryPoints: true, StoryPoints: puntos(13)}},
+		{"quitar story points", CambiosElemento{CambiarStoryPoints: true, StoryPoints: nil}},
+		// Como los story points: sin CambiarHorasEstimadas, el valor no se envió.
+		{"horas sin indicar que se envían", CambiosElemento{Prioridad: &baja, HorasEstimadas: pHoras(99)}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			e, err := loginConHoras(t, 8).Editar(tt.c)
+
+			if err != nil {
+				t.Fatalf("error inesperado: %v", err)
+			}
+			if !mismasHoras(e.HorasEstimadas, pHoras(8)) {
+				t.Errorf("HorasEstimadas = %v, se esperaba 8", verHoras(e.HorasEstimadas))
+			}
+			if e.SprintID == nil || *e.SprintID != 3 {
+				t.Errorf("SprintID = %v, se esperaba 3", e.SprintID)
+			}
+		})
+	}
+}
+
+// Traza: HU-19 CA-19.15 (RN-19.1): las horas tampoco cambian los story points.
+func TestEditar_HorasEstimadas_ConservanStoryPoints(t *testing.T) {
+	e, err := login(t).Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: pHoras(8)})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if e.StoryPoints == nil || *e.StoryPoints != 5 {
+		t.Errorf("StoryPoints = %v, se esperaba 5", e.StoryPoints)
+	}
+}
+
+// Traza: HU-19 CA-19.14 (RN-19.2)
+func TestEditar_HorasEstimadasEnLosExtremos(t *testing.T) {
+	for _, horas := range []float64{0.5, 1000} {
+		e, err := login(t).Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: pHoras(horas)})
+		if err != nil {
+			t.Errorf("%v: error inesperado: %v", horas, err)
+			continue
+		}
+		if !mismasHoras(e.HorasEstimadas, pHoras(horas)) {
+			t.Errorf("HorasEstimadas = %v, se esperaba %v", verHoras(e.HorasEstimadas), horas)
+		}
+	}
+}
+
+// Si hay error, el elemento no cambia.
+// Traza: HU-19 CA-19.14 (RN-19.2)
+func TestEditar_HorasEstimadasInvalidas_RetornaError(t *testing.T) {
+	tests := []struct {
+		horas   float64
+		wantErr error
+	}{
+		{0, ErrHorasInvalidas},
+		{-1, ErrHorasInvalidas},
+		{math.NaN(), ErrHorasInvalidas},
+		{1.25, ErrHorasNoMultiploMediaHora},
+		{1000.5, ErrHorasEstimadasExcedenMaximo},
+		{math.Inf(1), ErrHorasEstimadasExcedenMaximo},
+	}
+	for _, tt := range tests {
+		original := loginConHoras(t, 8)
+
+		e, err := original.Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: pHoras(tt.horas)})
+
+		if !errors.Is(err, tt.wantErr) {
+			t.Errorf("%v: error = %v, se esperaba %v", tt.horas, err, tt.wantErr)
+		}
+		if !reflect.DeepEqual(e, ElementoBacklog{}) {
+			t.Errorf("%v: con error se devolvió %+v, se esperaba un elemento vacío", tt.horas, e)
+		}
+		if !mismasHoras(original.HorasEstimadas, pHoras(8)) {
+			t.Errorf("%v: el original cambió: HorasEstimadas = %v", tt.horas, verHoras(original.HorasEstimadas))
+		}
+	}
+}
+
+// Los errores de HU-05 y HU-06 se informan antes que el de las horas, que es el último en sumarse.
+// Traza: HU-19 CA-19.14 (spec HU-06, sección 7)
+func TestEditar_HorasEstimadasInvalidas_SeInformanAlFinal(t *testing.T) {
+	cerrado := EstadoElemento("Cerrado")
+	tests := []struct {
+		nombre  string
+		c       CambiosElemento
+		wantErr error
+	}{
+		{"título", CambiosElemento{Titulo: texto(""), CambiarHorasEstimadas: true, HorasEstimadas: pHoras(0)}, ErrTituloVacio},
+		{"estado", CambiosElemento{Estado: &cerrado, CambiarHorasEstimadas: true, HorasEstimadas: pHoras(0)}, ErrEstadoElementoInvalido},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			if _, err := login(t).Editar(tt.c); !errors.Is(err, tt.wantErr) {
+				t.Errorf("error = %v, se esperaba %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+// La copia editada no comparte las horas con el original ni con los cambios.
+// Traza: HU-19 CA-19.13
+func TestEditar_HorasEstimadas_NoCompartenMemoria(t *testing.T) {
+	enviadas := pHoras(10)
+	original := loginConHoras(t, 8)
+
+	e, err := original.Editar(CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: enviadas})
+	if err != nil {
+		t.Fatal(err)
+	}
+	*enviadas = 99
+	if !mismasHoras(e.HorasEstimadas, pHoras(10)) {
+		t.Errorf("se comparte memoria con los cambios: HorasEstimadas = %v, se esperaba 10", verHoras(e.HorasEstimadas))
+	}
+
+	baja := PrioridadBaja
+	sinTocar, err := original.Editar(CambiosElemento{Prioridad: &baja})
+	if err != nil {
+		t.Fatal(err)
+	}
+	*sinTocar.HorasEstimadas = 99
+	if !mismasHoras(original.HorasEstimadas, pHoras(8)) {
+		t.Errorf("se comparte memoria con el original: HorasEstimadas = %v, se esperaba 8", verHoras(original.HorasEstimadas))
 	}
 }
