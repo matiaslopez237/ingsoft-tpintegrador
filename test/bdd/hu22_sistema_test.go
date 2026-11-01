@@ -13,15 +13,12 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// errHU22SinImplementar es el rojo de la tarea 22.3: los escenarios compilan y corren, pero el
-// caso de uso todavía no existe. Se va cuando las tareas 22.4 y 22.5 conecten ConsultarVelocidad.
-var errHU22SinImplementar = errors.New("HU-22 todavía no está implementada: falta conectar el caso de uso ConsultarVelocidad (tareas 22.4 y 22.5)")
-
 // sistemaVelocidadReal prepara los proyectos con el caso de uso de HU-01 y los sprints
-// directamente en la base (igual que HU-12), sobre SQLite real, en una base nueva por escenario.
-// Consultar la velocidad todavía devuelve errHU22SinImplementar.
+// directamente en la base (igual que HU-12), y consulta la velocidad con el caso de uso de HU-22,
+// sobre SQLite real, en una base nueva por escenario.
 type sistemaVelocidadReal struct {
 	crearProyecto *app.CrearProyecto
+	consultar     *app.ConsultarVelocidad
 	db            *sql.DB
 	dir           string
 	siguiente     map[int64]int // próximo número de sprint de cada proyecto
@@ -40,6 +37,7 @@ func nuevoSistemaVelocidad() (sistemaVelocidad, error) {
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
 	return &sistemaVelocidadReal{
 		crearProyecto: app.NuevoCrearProyecto(proyectos),
+		consultar:     app.NuevoConsultarVelocidad(proyectos, persistencia.NuevoRepositorioSprints(db)),
 		db:            db,
 		dir:           dir,
 		siguiente:     map[int64]int{},
@@ -69,8 +67,12 @@ func (s *sistemaVelocidadReal) CrearSprint(proyectoID int64, estado domain.Estad
 	return err
 }
 
-func (s *sistemaVelocidadReal) ConsultarVelocidad(int64) (velocidadVista, error) {
-	return velocidadVista{}, errHU22SinImplementar
+func (s *sistemaVelocidadReal) ConsultarVelocidad(proyectoID int64) (velocidadVista, error) {
+	v, err := s.consultar.Ejecutar(context.Background(), proyectoID)
+	if err != nil {
+		return velocidadVista{}, err
+	}
+	return velocidadVista{Velocidad: v.Velocidad, HayDatos: v.HayDatos, SprintsCerrados: v.SprintsCerrados}, nil
 }
 
 // Cerrar cierra la base del escenario y borra su carpeta temporal.
