@@ -66,8 +66,10 @@ func TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente
 	repo := NuevoRepositorioSprints(backlog.db)
 	s := guardarSprintDePrueba(t, repo, sprintDePrueba(ids[0], 26, 27))
 	hids := make([]int64, historias)
+	escala := domain.EscalaStoryPoints() // HU-13: los story points tienen que ser de la escala
+	puntosDe := func(i int) int { return escala[i%len(escala)] }
 	for i := range historias {
-		hids[i] = historiaEnSprintDePrueba(t, backlog, ids[0], s.ID, fmt.Sprintf("Historia %d", i), puntosDePrueba(i+1), false)
+		hids[i] = historiaEnSprintDePrueba(t, backlog, ids[0], s.ID, fmt.Sprintf("Historia %d", i), puntosDePrueba(puntosDe(i)), false)
 	}
 
 	var (
@@ -102,10 +104,10 @@ func TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente
 	planificados, completados := 0, 0
 	for i, id := range hids {
 		e := buscarElementoDePrueba(t, backlog, id)
-		planificados += i + 1
+		planificados += puntosDe(i)
 		switch {
 		case e.Estado == domain.EstadoHecho && e.SprintID != nil && *e.SprintID == s.ID:
-			completados += i + 1
+			completados += puntosDe(i)
 		case e.Estado == domain.EstadoPendiente && e.SprintID == nil:
 		default:
 			t.Errorf("%q: Estado = %q, SprintID = %v; se esperaba Hecho en el sprint o Pendiente sin sprint", e.Titulo, e.Estado, e.SprintID)

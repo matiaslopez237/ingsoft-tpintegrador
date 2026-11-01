@@ -60,10 +60,19 @@ func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	}
 
 	// NuevoElementoBacklog valida y copia los story points y los criterios, así la copia
-	// editada no comparte memoria con el original ni con c.
-	editado, err := NuevoElementoBacklog(e.ProyectoID, titulo, descripcion, prioridad, storyPoints, criterios)
+	// editada no comparte memoria con el original ni con c. Los story points se validan solo si se
+	// envían: un valor guardado antes de la escala de HU-13 se respeta (RN-13.3).
+	aValidar := storyPoints
+	if !c.CambiarStoryPoints {
+		aValidar = nil
+	}
+	editado, err := NuevoElementoBacklog(e.ProyectoID, titulo, descripcion, prioridad, aValidar, criterios)
 	if err != nil {
 		return ElementoBacklog{}, err
+	}
+	if !c.CambiarStoryPoints && storyPoints != nil {
+		sp := *storyPoints
+		editado.StoryPoints = &sp
 	}
 	if !estadoElementoValido(estado) {
 		return ElementoBacklog{}, ErrEstadoElementoInvalido
