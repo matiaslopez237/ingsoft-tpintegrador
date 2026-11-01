@@ -68,6 +68,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},            // HU-06
 		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},    // HU-06 (proyecto 1: el editor falso responde 404 para otros)
 		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""},  // HU-06
+		{http.MethodPost, "/web/proyectos/7/backlog/7/esfuerzo", ""},  // HU-18 (sin datos: 400 en la pantalla del elemento)
 		{http.MethodPost, "/web/proyectos/1/sprints/1/completar", ""}, // HU-10 (sin elemento_id: 400 en el detalle del sprint)
 	}
 	for _, r := range rutas {

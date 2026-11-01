@@ -123,6 +123,7 @@ type (
 type pantallas struct {
 	cu      CasosDeUso
 	paginas map[string]*template.Template
+	reloj   func() time.Time // HU-18: solo para el valor inicial de la fecha; la regla sigue en el caso de uso
 }
 
 var paginas = []string{
