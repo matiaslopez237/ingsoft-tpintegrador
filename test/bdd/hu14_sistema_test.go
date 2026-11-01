@@ -5,6 +5,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -13,8 +14,6 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
-
-	"github.com/cucumber/godog"
 
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
@@ -82,6 +81,9 @@ func nuevoSistemaPlanningPoker() (sistemaPlanningPoker, error) {
 		EditarElementoBacklog:    s.editar,
 		EliminarElementoBacklog:  app.NuevoEliminarElementoBacklog(backlog),
 		ConsultarElementoBacklog: app.NuevoConsultarElementoBacklog(backlog),
+		IniciarRonda:             s.iniciar,
+		Votar:                    s.votar,
+		ConsultarRonda:           s.consultar,
 	}))
 	s.cliente = s.servidor.Client()
 	s.cliente.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
@@ -146,9 +148,16 @@ func (s sistemaPlanningPokerReal) ConsultarRonda(proyectoID, rondaID int64) (ron
 	return aVista(r), err
 }
 
-// ResumenJSON queda pendiente hasta el endpoint de HU-14 (tarea 14.7).
+// ResumenJSON pide el resumen al endpoint real de HU-14.
 func (s sistemaPlanningPokerReal) ResumenJSON(proyectoID, rondaID int64) (string, error) {
-	return "", godog.ErrPending
+	r, err := s.Pedir("GET", fmt.Sprintf("/proyectos/%d/rondas/%d", proyectoID, rondaID), nil)
+	if err != nil {
+		return "", err
+	}
+	if r.Estado != http.StatusOK {
+		return "", fmt.Errorf("GET de la ronda: estado %d; cuerpo: %s", r.Estado, r.Cuerpo)
+	}
+	return r.Cuerpo, nil
 }
 
 func (s sistemaPlanningPokerReal) Pedir(metodo, ruta string, form url.Values) (respuestaWeb, error) {
