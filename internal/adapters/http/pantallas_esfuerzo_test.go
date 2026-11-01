@@ -256,6 +256,38 @@ func TestPantallaEsfuerzo_ConError_ConservaLoTipeado(t *testing.T) {
 		`name="horas" type="number" step="0.5" value="1.25"`)
 }
 
+// Traza: HU-18 CA-18.19, ADR-0003: lo tipeado vuelve al formulario escapado, sin inyectar HTML.
+func TestPantallaEsfuerzo_LoTipeado_SeEscapa(t *testing.T) {
+	form := formEsfuerzoValido()
+	form.Set("actividad", `"><script>alert(1)</script>`)
+	form.Set("horas", "1.25")
+
+	rec := pedirPantalla(t, casosConEsfuerzo(&registradorEsfuerzoFalso{}), http.MethodPost, rutaEsfuerzoWeb, form)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, se esperaba 400; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	seccionContiene(t, seccionEsfuerzo(t, rec), `name="actividad" type="text" value="&#34;&gt;&lt;script&gt;alert(1)&lt;/script&gt;"`)
+	if strings.Contains(rec.Body.String(), "<script>") {
+		t.Errorf("la página contiene <script> sin escapar; cuerpo: %s", rec.Body)
+	}
+}
+
+// Traza: HU-18 CA-18.18, ADR-0003: el parámetro de la confirmación se compara y nunca se muestra.
+func TestPantallaEsfuerzo_ParametroDeConfirmacion_NoInyecta(t *testing.T) {
+	ruta := rutaElementoWeb + "?esfuerzo=" + url.QueryEscape("<script>alert(1)</script>")
+
+	rec := pedirPantalla(t, casosConEsfuerzo(&registradorEsfuerzoFalso{}), http.MethodGet, ruta, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	if cuerpo := rec.Body.String(); strings.Contains(cuerpo, "<script>") || strings.Contains(cuerpo, "alert(1)") {
+		t.Errorf("la página refleja el parámetro; cuerpo: %s", cuerpo)
+	}
+	seccionNoContiene(t, seccionEsfuerzo(t, rec), "Esfuerzo registrado.")
+}
+
 // Traza: HU-18 CA-18.20: errores de lectura del formulario, sin llamar al caso de uso. Si fallan la
 // fecha y las horas, se informa la fecha.
 func TestPantallaEsfuerzo_ErroresDeFormato_NoLlamanAlCasoDeUso(t *testing.T) {
