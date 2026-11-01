@@ -41,6 +41,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		Votar:                    votadorPokerFalso{poker},
 		ConsultarRonda:           consultorPokerFalso{poker},
 		ListarSprintsAnteriores:  &listadorSprintsFalso{},
+		CompararEsfuerzo:         &comparadorEsfuerzoFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -66,6 +67,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/proyectos/7/rondas/1", ""},                                                                                        // HU-14
 		{http.MethodPost, "/proyectos/7/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
 		{http.MethodGet, "/proyectos/1/sprints/anteriores", ""},                                                                              // HU-12
+		{http.MethodGet, "/proyectos/1/backlog/1/esfuerzo/comparacion", ""},                                                                  // HU-19
 		{http.MethodGet, "/", ""},                                     // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                        // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                   // HU-30
