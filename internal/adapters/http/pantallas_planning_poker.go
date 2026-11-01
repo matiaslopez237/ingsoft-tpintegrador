@@ -139,7 +139,7 @@ func (p *pantallas) mostrarRonda(w http.ResponseWriter, r *http.Request, status 
 	}
 	p.renderizar(w, status, "ronda.html", datosRonda{
 		ProyectoID: pid, Titulo: e.Titulo, Ronda: res, Abierta: res.Estado == domain.RondaAbierta,
-		Valores: domain.ValoresVoto(), Integrante: integrante, Error: mensaje,
+		Valores: domain.EscalaStoryPoints(), Integrante: integrante, Error: mensaje,
 	})
 }
 

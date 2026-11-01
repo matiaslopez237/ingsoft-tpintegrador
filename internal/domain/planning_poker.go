@@ -25,12 +25,6 @@ const (
 	RondaCerrada EstadoRonda = "Cerrada"
 )
 
-// valoresVoto es la escala de Fibonacci del Planning Poker (RN-14.4).
-var valoresVoto = []int{1, 2, 3, 5, 8, 13, 21}
-
-// ValoresVoto devuelve una copia de la escala, en orden, para las opciones de la pantalla.
-func ValoresVoto() []int { return slices.Clone(valoresVoto) }
-
 // Votante es un integrante convocado a la ronda. Voto queda en nil hasta que vota.
 type Votante struct {
 	Nombre string
@@ -83,7 +77,7 @@ func (r *Ronda) Votar(integrante string, valor int) error {
 	switch {
 	case i < 0:
 		return ErrNoEsVotante
-	case !slices.Contains(valoresVoto, valor):
+	case !slices.Contains(escalaStoryPoints, valor): // la escala de los story points (RN-14.4, RN-13.4)
 		return ErrVotoInvalido
 	}
 	r.Votantes[i].Voto = &valor
