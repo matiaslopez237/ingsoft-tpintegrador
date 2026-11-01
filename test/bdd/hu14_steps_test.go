@@ -414,12 +414,11 @@ func (w *planningPokerWorld) pantallaCerrada() error {
 	return nil
 }
 
-// pantallaSinValores verifica que ningún valor votado aparezca como texto de una celda o de un
-// elemento de la pantalla (los números de la ronda o del proyecto pueden coincidir, por eso se
-// buscan entre etiquetas).
+// pantallaSinValores verifica que ningún valor votado aparezca en una celda de la tabla (las
+// opciones del formulario sí muestran la escala completa, pero no dicen quién votó qué).
 func (w *planningPokerWorld) pantallaSinValores(lista string) error {
 	for _, v := range nombres(lista) {
-		if strings.Contains(w.pantalla.Cuerpo, ">"+v+"<") {
+		if strings.Contains(w.pantalla.Cuerpo, "<td>"+v+"</td>") {
 			return fmt.Errorf("la pantalla muestra el valor %s", v)
 		}
 	}

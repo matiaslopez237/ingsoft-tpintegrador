@@ -5,7 +5,30 @@
 <p>Ronda {{.Ronda.Numero}} · {{.Ronda.Estado}}</p>
 {{template "error_form" .Error}}
 
-{{/* HU-14: se ve quién votó y quién falta, nunca el valor de un voto (RN-14.3). */}}
+{{with .Ronda.Revelacion}}
+{{/* HU-15: con la ronda cerrada se revelan los votos (RN-15.1) y se avisa si hay diferencias (RN-15.2). */}}
+<table>
+  <caption class="oculto">Votos de la ronda</caption>
+  <thead>
+    <tr><th scope="col">Integrante</th><th scope="col">Voto</th></tr>
+  </thead>
+  <tbody>
+    {{range .Votos}}
+    <tr>
+      <td>{{.Nombre}}</td>
+      <td>{{.Valor}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+<p>Mínimo: {{.Minimo}} · Máximo: {{.Maximo}}</p>
+{{if .DiferenciaSignificativa}}
+<p class="alerta" role="alert">Hay diferencias significativas: los votos van entre {{.Minimo}} y {{.Maximo}} (el mayor es más del doble del menor). Conviene discutir antes de acordar la estimación.</p>
+{{else}}
+<p role="status">No hay diferencias significativas: los votos van entre {{.Minimo}} y {{.Maximo}}.</p>
+{{end}}
+{{else}}
+{{/* HU-14: mientras la ronda está abierta se ve quién votó y quién falta, nunca el valor (RN-14.3). */}}
 <table>
   <caption class="oculto">Votantes de la ronda</caption>
   <thead>
@@ -20,6 +43,7 @@
     {{end}}
   </tbody>
 </table>
+{{end}}
 
 {{if .Abierta}}
 <p class="ayuda">Los votos quedan ocultos hasta que voten todos. Mientras la ronda siga abierta, se puede volver a votar.</p>
