@@ -1,0 +1,70 @@
+{{define "titulo"}}Ronda {{.Ronda.Numero}} · {{.Titulo}}{{end}}
+{{define "contenido"}}
+<p><a href="/web/proyectos/{{.ProyectoID}}/backlog/{{.Ronda.ElementoID}}">Volver al elemento</a></p>
+<h1>Planning Poker: {{.Titulo}}</h1>
+<p>Ronda {{.Ronda.Numero}} · {{.Ronda.Estado}}</p>
+{{template "error_form" .Error}}
+
+{{with .Ronda.Revelacion}}
+{{/* HU-15: con la ronda cerrada se revelan los votos (RN-15.1) y se avisa si hay diferencias (RN-15.2). */}}
+<table>
+  <caption class="oculto">Votos de la ronda</caption>
+  <thead>
+    <tr><th scope="col">Integrante</th><th scope="col">Voto</th></tr>
+  </thead>
+  <tbody>
+    {{range .Votos}}
+    <tr>
+      <td>{{.Nombre}}</td>
+      <td>{{.Valor}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+<p>Mínimo: {{.Minimo}} · Máximo: {{.Maximo}}</p>
+{{if .DiferenciaSignificativa}}
+<p class="alerta" role="alert">Hay diferencias significativas: los votos van entre {{.Minimo}} y {{.Maximo}} (el mayor es más del doble del menor). Conviene discutir antes de acordar la estimación.</p>
+{{else}}
+<p role="status">No hay diferencias significativas: los votos van entre {{.Minimo}} y {{.Maximo}}.</p>
+{{end}}
+{{else}}
+{{/* HU-14: mientras la ronda está abierta se ve quién votó y quién falta, nunca el valor (RN-14.3). */}}
+<table>
+  <caption class="oculto">Votantes de la ronda</caption>
+  <thead>
+    <tr><th scope="col">Integrante</th><th scope="col">Voto</th></tr>
+  </thead>
+  <tbody>
+    {{range .Ronda.Votantes}}
+    <tr>
+      <td>{{.Nombre}}</td>
+      <td>{{if .YaVoto}}Votó{{else}}Falta votar{{end}}</td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{end}}
+
+{{if .Abierta}}
+<p class="ayuda">Los votos quedan ocultos hasta que voten todos. Mientras la ronda siga abierta, se puede volver a votar.</p>
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/rondas/{{.Ronda.ID}}/votar" class="formulario">
+  <label for="integrante">Integrante</label>
+  <select id="integrante" name="integrante" required>
+    <option value="">Elegí quién vota</option>
+    {{range .Ronda.Votantes}}<option value="{{.Nombre}}"{{if eq .Nombre $.Integrante}} selected{{end}}>{{.Nombre}}</option>{{end}}
+  </select>
+
+  <label for="valor">Estimación <span class="ayuda">(story points)</span></label>
+  <select id="valor" name="valor" required>
+    <option value="">Elegí un valor</option>
+    {{range .Valores}}<option value="{{.}}">{{.}}</option>{{end}}
+  </select>
+
+  <div class="acciones">
+    <button type="submit" class="boton">Votar</button>
+  </div>
+</form>
+{{else}}
+<p class="vacio" role="status">Votaron todos: la ronda está cerrada.</p>
+{{end}}
+{{end}}

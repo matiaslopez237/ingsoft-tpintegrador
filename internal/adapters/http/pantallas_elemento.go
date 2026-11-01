@@ -33,6 +33,7 @@ type datosEdicionElemento struct {
 	Error                  string
 	Prioridades            []domain.Prioridad
 	Estados                []domain.EstadoElemento
+	Poker                  *datosPokerElemento  // nil si la aplicación no tiene Planning Poker (HU-14)
 	Esfuerzo               datosSeccionEsfuerzo // HU-18: tiene su propio formulario y su propio error
 }
 
@@ -117,7 +118,8 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 // --- Ayudantes ---
 
 // mostrarElemento renderiza la pantalla. Consulta el proyecto por los integrantes del desplegable
-// de esfuerzo (HU-18), también cuando vuelve con un error de editar o eliminar.
+// de esfuerzo (HU-18), también cuando vuelve con un error de editar o eliminar, y la última ronda
+// para la sección de Planning Poker (HU-14).
 func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64,
 	f, original formEdicionElemento, mensaje string, esfuerzo datosSeccionEsfuerzo) {
 	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), pid)
@@ -125,10 +127,15 @@ func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, stat
 		p.errorDeElemento(w, err)
 		return
 	}
+	poker, err := p.pokerDelElemento(r, pid, eid, original.Estado)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	esfuerzo.Integrantes = proyecto.Integrantes
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
-		Prioridades: prioridadesElemento, Estados: estadosElemento, Esfuerzo: esfuerzo,
+		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker, Esfuerzo: esfuerzo,
 	})
 }
 
@@ -154,7 +161,7 @@ func (p *pantallas) errorDeElemento(w http.ResponseWriter, err error) {
 }
 
 func mensajeDeValidacionElemento(err error) (string, bool) {
-	return mensajeDeErrorConocido(err, erroresDeValidacionEdicion)
+	return formMensajeDeErrorConocido(err, erroresDeValidacionEdicion)
 }
 
 func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {

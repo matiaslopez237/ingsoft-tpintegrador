@@ -121,5 +121,5 @@ func horasDeForm(valor string) (float64, error) {
 }
 
 func mensajeDeValidacionEsfuerzo(err error) (string, bool) {
-	return mensajeDeErrorConocido(err, erroresDeValidacionEsfuerzo)
+	return formMensajeDeErrorConocido(err, erroresDeValidacionEsfuerzo)
 }

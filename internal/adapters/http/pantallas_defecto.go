@@ -129,5 +129,5 @@ func (p *pantallas) mostrarFormDefecto(w http.ResponseWriter, r *http.Request, i
 }
 
 func mensajeDeValidacionDefecto(err error) (string, bool) {
-	return mensajeDeErrorConocido(err, erroresDeValidacionDefectoPantalla)
+	return formMensajeDeErrorConocido(err, erroresDeValidacionDefectoPantalla)
 }
