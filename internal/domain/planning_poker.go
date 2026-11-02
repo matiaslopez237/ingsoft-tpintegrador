@@ -46,6 +46,8 @@ type Ronda struct {
 	Numero     int // 1, 2, 3… por elemento (RN-14.1)
 	Estado     EstadoRonda
 	Votantes   []Votante
+	// EstimacionAcordada es lo que el equipo acordó en esta ronda (HU-17); nil si no se registró.
+	EstimacionAcordada *int
 }
 
 // NuevaRonda abre una ronda sobre el elemento, con los integrantes del proyecto como votantes.
@@ -109,6 +111,8 @@ type ResumenRonda struct {
 	Estado     EstadoRonda
 	Votantes   []VotanteResumen
 	Revelacion *Revelacion // nil mientras la ronda está abierta (HU-15)
+	// EstimacionAcordada es lo que se acordó en esta ronda (HU-17); nil si no se registró.
+	EstimacionAcordada *int
 }
 
 // Resumen devuelve los datos de la ronda que se pueden mostrar: los votos, solo si está cerrada.
@@ -122,6 +126,10 @@ func (r Ronda) Resumen() ResumenRonda {
 		Estado: r.Estado, Votantes: votantes}
 	if rev, err := r.Revelar(); err == nil {
 		res.Revelacion = &rev
+	}
+	if r.EstimacionAcordada != nil { // una copia: el resumen no comparte memoria con la ronda
+		v := *r.EstimacionAcordada
+		res.EstimacionAcordada = &v
 	}
 	return res
 }

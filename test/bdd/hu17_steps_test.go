@@ -14,13 +14,16 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// erroresHU17 traduce la descripción del escenario al error de la spec (sección 7). Los errores
-// nuevos de HU-17 se suman cuando existan en el dominio (tarea 17.4).
+// erroresHU17 traduce la descripción del escenario al error de la spec (sección 7).
 func erroresHU17() map[string]error {
 	return map[string]error{
-		"proyecto no encontrado": domain.ErrProyectoNoEncontrado,
-		"ronda no encontrada":    domain.ErrRondaNoEncontrada,
-		"elemento terminado":     domain.ErrElementoTerminado,
+		"proyecto no encontrado":   domain.ErrProyectoNoEncontrado,
+		"ronda no encontrada":      domain.ErrRondaNoEncontrada,
+		"elemento terminado":       domain.ErrElementoTerminado,
+		"ronda abierta":            domain.ErrEstimacionRondaAbierta,
+		"no es la última":          domain.ErrRondaNoEsLaUltima,
+		"estimación ya registrada": domain.ErrEstimacionYaRegistrada,
+		"estimación inválida":      domain.ErrEstimacionInvalida,
 	}
 }
 
@@ -224,7 +227,7 @@ func (w *estimacionWorld) sinErrores() error {
 func (w *estimacionWorld) seRechaza(descripcion string) error {
 	esperado, ok := erroresHU17()[descripcion]
 	if !ok {
-		return godog.ErrPending // los errores nuevos de HU-17 se suman al mapa con el dominio
+		return fmt.Errorf("error desconocido en el escenario: %q", descripcion)
 	}
 	if w.err == nil {
 		return fmt.Errorf("se esperaba el error %q, pero la estimación se registró", descripcion)
