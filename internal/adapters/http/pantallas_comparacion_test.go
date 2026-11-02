@@ -391,6 +391,108 @@ func TestPantallaElemento_SinOriginales_EnviaLasHoras(t *testing.T) {
 	}
 }
 
+// editarSobreGuardado aplica los cambios con el dominio real a Login con 5 story points y 8 h
+// estimadas, y deja el resultado en guardado.
+func editarSobreGuardado(guardado *domain.ElementoBacklog) editorElementos {
+	return editarElementoFunc(func(_ context.Context, d app.DatosEditarElemento) (domain.ElementoBacklog, error) {
+		e := elementoLogin()
+		e.HorasEstimadas = pHoras(8)
+		editado, err := e.Editar(d.Cambios)
+		if err != nil {
+			return domain.ElementoBacklog{}, err
+		}
+		*guardado = editado
+		return editado, nil
+	})
+}
+
+// formSinEstimaciones es un POST que no viene de la pantalla: sin original_*, sin story_points y sin
+// horas_estimadas.
+func formSinEstimaciones() url.Values {
+	return url.Values{"titulo": {"Login"}, "descripcion": {"Ingresar"}, "prioridad": {"Alta"}, "criterios": {"Con email"}, "estado": {"Pendiente"}}
+}
+
+// Un campo horas_estimadas ausente significa "no se envió": no cambia las horas, aunque falten los
+// ocultos. Presente y vacío las quita si difiere del original; presente con valor las cambia.
+// Traza: HU-19 CA-19.13, CA-19.18 (RN-19.3)
+func TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran(t *testing.T) {
+	conOriginales := func(modificar func(url.Values)) url.Values {
+		form := formElementoOriginal()
+		form.Set("prioridad", "Media") // para que siempre haya algún cambio que guardar
+		modificar(form)
+		return form
+	}
+	tests := []struct {
+		nombre string
+		form   url.Values
+		want   *float64
+	}{
+		{"sin original_* y sin el campo: se conservan", formSinEstimaciones(), pHoras(8)},
+		{"con original_* y sin el campo ni su oculto: se conservan", conOriginales(func(url.Values) {}), pHoras(8)},
+		{"con su oculto y sin el campo: se conservan", conOriginales(func(f url.Values) { f.Set("original_horas_estimadas", "8") }), pHoras(8)},
+		{"sin original_* y vacío: se quitan", func() url.Values {
+			f := formSinEstimaciones()
+			f.Set("horas_estimadas", "")
+			return f
+		}(), nil},
+		{"con su oculto y vacío: se quitan", conOriginales(func(f url.Values) {
+			f.Set("original_horas_estimadas", "8")
+			f.Set("horas_estimadas", "")
+		}), nil},
+		{"con su oculto vacío y vacío: no difieren, se conservan", conOriginales(func(f url.Values) {
+			f.Set("original_horas_estimadas", "")
+			f.Set("horas_estimadas", "")
+		}), pHoras(8)},
+		{"sin original_* y con valor: se cambian", func() url.Values {
+			f := formSinEstimaciones()
+			f.Set("horas_estimadas", "10")
+			return f
+		}(), pHoras(10)},
+		{"con su oculto y con valor: se cambian", conOriginales(func(f url.Values) {
+			f.Set("original_horas_estimadas", "8")
+			f.Set("horas_estimadas", "10")
+		}), pHoras(10)},
+		{"sin su oculto y con valor: se cambian", conOriginales(func(f url.Values) { f.Set("horas_estimadas", "10") }), pHoras(10)},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			var guardado domain.ElementoBacklog
+			cu := casosConComparacion(comparacionFija(nil, 0))
+			cu.EditarElementoBacklog = editarSobreGuardado(&guardado)
+
+			rec := pedirPantalla(t, cu, http.MethodPost, rutaEditarWeb, tt.form)
+
+			if rec.Code != http.StatusSeeOther {
+				t.Fatalf("status = %d, se esperaba 303; cuerpo: %.400s", rec.Code, rec.Body)
+			}
+			switch {
+			case tt.want == nil && guardado.HorasEstimadas != nil:
+				t.Errorf("horas guardadas = %v, se esperaba sin estimar", *guardado.HorasEstimadas)
+			case tt.want != nil && (guardado.HorasEstimadas == nil || *guardado.HorasEstimadas != *tt.want):
+				t.Errorf("horas guardadas = %v, se esperaba %v", guardado.HorasEstimadas, *tt.want)
+			}
+		})
+	}
+}
+
+// La corrección es solo para las horas: story_points mantiene el comportamiento de HU-06 y DEF-01.
+// Un POST sin original_* y sin el campo sigue quitándolos.
+// Traza: HU-06 CA-06.10, HU-19 CA-19.15 (RN-19.1)
+func TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06(t *testing.T) {
+	var guardado domain.ElementoBacklog
+	cu := casosConComparacion(comparacionFija(nil, 0))
+	cu.EditarElementoBacklog = editarSobreGuardado(&guardado)
+
+	rec := pedirPantalla(t, cu, http.MethodPost, rutaEditarWeb, formSinEstimaciones())
+
+	if rec.Code != http.StatusSeeOther {
+		t.Fatalf("status = %d, se esperaba 303; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	if guardado.StoryPoints != nil {
+		t.Errorf("story points = %d, se esperaba que siguieran quitándose", *guardado.StoryPoints)
+	}
+}
+
 // Traza: HU-19 CA-19.9, CA-19.10, CA-19.18 (RN-19.10; sección 7)
 func TestPantallaComparacion_NoEncontrados_Devuelven404(t *testing.T) {
 	tests := []struct {
