@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Owner, quiero registrar la estimación final acordada por el equipo, para dejarla asociada a la historia.
 **Issue:** #28  ·  **Sprint:** 3  ·  **Story points:** 2
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada
 
 ## 1. Objetivo
 Cerrar el ciclo del Planning Poker (HU-14 a HU-16): cuando el equipo termina de votar y discutir, registrar el valor acordado. Ese valor pasa a ser los story points del elemento del backlog, y la ronda conserva lo que se acordó en ella, así queda trazable de qué ronda salió la estimación.
@@ -90,12 +90,10 @@ Confirmadas por Matías López (Agile Enabler) el 2026-11-02:
 - **P-2:** solo sobre la última ronda, cerrada (RN-17.3).
 - **P-3:** una estimación por ronda; para cambiarla se vota otra ronda (RN-17.4).
 - **P-4:** la edición manual (HU-06) no se bloquea, y la ronda conserva lo acordado (RN-17.5).
-
-Derivada de una regla existente, a confirmar al aprobar la spec:
 - **P-5:** un elemento `Hecho` no recibe estimación, como RN-14.1, que no permite estimarlo.
 
 ## Preguntas abiertas
 Ninguna.
 
 ## Historial
-- 2026-11-02: creada (borrador), con P-1 a P-4 confirmadas.
+- 2026-11-02: creada, con P-1 a P-5 confirmadas. Matías aprobó la spec.
