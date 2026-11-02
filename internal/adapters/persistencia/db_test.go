@@ -76,7 +76,7 @@ VALUES (1, 1, '2026-10-12', '2026-10-25', 'Viejo', 'Cerrado');`)
 	}
 }
 
-// Traza: HU-19 CA-19.16: una base con elementos, creada antes de HU-19, recibe la columna al abrirla.
+// Traza: HU-19 CA-19.16 (RN-19.1): una base con elementos, creada antes de HU-19, recibe la columna al abrirla.
 // Sus elementos se leen sin estimar y se les pueden cargar horas, que siguen ahí al volver a abrirla.
 func TestAbrirDB_BaseExistenteSinHorasEstimadas_AgregaLaColumna(t *testing.T) {
 	ctx := context.Background()
@@ -146,7 +146,7 @@ INSERT INTO backlog_criterios (elemento_id, orden, texto) VALUES (1, 0, 'Con ema
 	}
 }
 
-// Traza: HU-19 CA-19.16: una base nueva nace con la columna, sin pasar por la migración.
+// Traza: HU-19 CA-19.16 (RN-19.1): una base nueva nace con la columna, sin pasar por la migración.
 func TestAbrirDB_BaseNueva_TieneLaColumnaDeHorasEstimadas(t *testing.T) {
 	db, err := AbrirDB(filepath.Join(t.TempDir(), "nueva.db"))
 	if err != nil {

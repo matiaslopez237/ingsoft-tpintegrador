@@ -117,7 +117,7 @@ func TestEditar_DatosInvalidos_RetornaError(t *testing.T) {
 
 // Editar reconstruye el elemento con NuevoElementoBacklog, que no recibe el sprint. En producción no
 // se notaba porque el repositorio guarda solo los campos enviados y el caso de uso relee el elemento.
-// Traza: HU-19 CA-19.13 (RN-06.1: lo que no se envía conserva su valor)
+// Traza: HU-19 CA-19.13 (RN-19.3, RN-06.1: lo que no se envía conserva su valor)
 func TestEditar_ConservaElSprint(t *testing.T) {
 	original := login(t)
 	sprint := int64(3)
@@ -301,7 +301,7 @@ func TestEditar_HorasEstimadasInvalidas_RetornaError(t *testing.T) {
 }
 
 // Los errores de HU-05 y HU-06 se informan antes que el de las horas, que es el último en sumarse.
-// Traza: HU-19 CA-19.14 (spec HU-06, sección 7)
+// Traza: HU-19 CA-19.14 (RN-19.2; spec HU-06, sección 7)
 func TestEditar_HorasEstimadasInvalidas_SeInformanAlFinal(t *testing.T) {
 	cerrado := EstadoElemento("Cerrado")
 	tests := []struct {
@@ -322,7 +322,7 @@ func TestEditar_HorasEstimadasInvalidas_SeInformanAlFinal(t *testing.T) {
 }
 
 // La copia editada no comparte las horas con el original ni con los cambios.
-// Traza: HU-19 CA-19.13
+// Traza: HU-19 CA-19.13 (RN-19.3)
 func TestEditar_HorasEstimadas_NoCompartenMemoria(t *testing.T) {
 	enviadas := pHoras(10)
 	original := loginConHoras(t, 8)

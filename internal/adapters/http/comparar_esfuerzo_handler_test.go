@@ -58,7 +58,7 @@ func camposJSON(t *testing.T, rec *httptest.ResponseRecorder) map[string]string 
 
 // Cada caso usa la función real del dominio, para probar el JSON de lo que el caso de uso devuelve de
 // verdad. Los valores esperados son el JSON literal: 25,0 sale como el número 25.
-// Traza: HU-19 CA-19.17 (spec, tabla de la sección 3)
+// Traza: HU-19 CA-19.17 (RN-19.5, RN-19.6, RN-19.7, RN-19.8, RN-19.9; spec, tabla de la sección 3)
 func TestGetCompararEsfuerzo_Devuelve200ConLaComparacion(t *testing.T) {
 	tests := []struct {
 		nombre     string
@@ -110,7 +110,7 @@ func TestGetCompararEsfuerzo_Devuelve200ConLaComparacion(t *testing.T) {
 	}
 }
 
-// Traza: HU-19 sección 3: el porcentaje es un número en JSON; el formato con coma es de la pantalla.
+// Traza: HU-19 CA-19.17 (RN-19.6; sección 3): el porcentaje es un número en JSON; el formato con coma es de la pantalla.
 func TestGetCompararEsfuerzo_ElPorcentajeEsUnNumero(t *testing.T) {
 	uc := &comparadorEsfuerzoFalso{comparacion: domain.CompararEsfuerzo(pHoras(3), 4)}
 
@@ -160,7 +160,7 @@ func TestGetCompararEsfuerzo_NuncaEscribeCeroNegativo(t *testing.T) {
 }
 
 // El mensaje es el del dominio, aunque el error llegue envuelto: se reconoce con errors.Is.
-// Traza: HU-19 CA-19.9, CA-19.10, CA-19.17 (sección 7)
+// Traza: HU-19 CA-19.9, CA-19.10, CA-19.17 (RN-19.10; sección 7)
 func TestGetCompararEsfuerzo_NoEncontrado_Devuelve404(t *testing.T) {
 	tests := []struct {
 		nombre  string
@@ -220,7 +220,7 @@ func TestGetCompararEsfuerzo_IDInvalido_Devuelve400(t *testing.T) {
 
 // Cualquier otro error es una falla interna: 500, sin mostrar el detalle. El texto no se mira: uno
 // que solo se parece a "proyecto no encontrado" sigue siendo una falla interna.
-// Traza: HU-19 sección 7
+// Traza: HU-19 CA-19.17 (sección 7)
 func TestGetCompararEsfuerzo_FallaInterna_Devuelve500SinDetalle(t *testing.T) {
 	for _, err := range []error{
 		errors.New("consultar horas reales: database is locked"),

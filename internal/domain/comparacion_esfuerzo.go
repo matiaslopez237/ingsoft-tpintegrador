@@ -3,7 +3,7 @@ package domain
 import "math"
 
 // ComparacionEsfuerzo es el resultado de comparar las horas estimadas con las reales.
-// Implementa HU-19 (RN-19.5 a RN-19.9).
+// Implementa HU-19 (RN-19.5, RN-19.6, RN-19.7, RN-19.8, RN-19.9).
 type ComparacionEsfuerzo struct {
 	HorasEstimadas       *float64 // nil: sin estimar (RN-19.7)
 	HorasReales          float64
@@ -19,7 +19,7 @@ func (c ComparacionEsfuerzo) SinEstimar() bool {
 
 // CompararEsfuerzo calcula la desviación entre las horas estimadas y las reales. Recibe números y no
 // entidades para que HU-23 la use con totales (spec, sección 5). Los valores llegan ya validados, así
-// que no devuelve error. Implementa HU-19 (RN-19.5 a RN-19.9).
+// que no devuelve error. Implementa HU-19 (RN-19.5, RN-19.6, RN-19.7, RN-19.8, RN-19.9).
 func CompararEsfuerzo(estimadas *float64, reales float64) ComparacionEsfuerzo {
 	c := ComparacionEsfuerzo{HorasReales: reales}
 	if estimadas == nil {

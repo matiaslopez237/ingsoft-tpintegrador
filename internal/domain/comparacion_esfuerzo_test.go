@@ -22,7 +22,7 @@ func mismasHoras(a, b *float64) bool {
 	return *a == *b
 }
 
-// Traza: HU-19 CA-19.1 a CA-19.8 (RN-19.4 a RN-19.9; spec, tabla de la sección 3 y casos de la sección 6)
+// Traza: HU-19 CA-19.1, CA-19.2, CA-19.3, CA-19.4, CA-19.5, CA-19.6, CA-19.7, CA-19.8 (RN-19.5, RN-19.6, RN-19.7, RN-19.8, RN-19.9; spec, tabla de la sección 3 y casos de la sección 6)
 func TestCompararEsfuerzo(t *testing.T) {
 	tests := []struct {
 		nombre     string
@@ -121,7 +121,7 @@ func TestCompararEsfuerzo_NuncaDevuelveCeroNegativo(t *testing.T) {
 }
 
 // El resultado no comparte el puntero recibido, igual que los story points en NuevoElementoBacklog.
-// Traza: HU-19 (spec, sección 5: función del dominio reutilizable)
+// Traza: HU-19 CA-19.1 (RN-19.5; spec, sección 5: función del dominio reutilizable)
 func TestCompararEsfuerzo_NoCompartePunteroRecibido(t *testing.T) {
 	estimadas := 8.0
 

@@ -59,7 +59,7 @@ func TestPatchElemento_HorasEstimadas(t *testing.T) {
 }
 
 // Las horas no se mezclan con los story points: cada uno tiene su marca (RN-19.1).
-// Traza: HU-19 CA-19.15
+// Traza: HU-19 CA-19.15 (RN-19.1)
 func TestPatchElemento_HorasEstimadasYStoryPoints_SonIndependientes(t *testing.T) {
 	editor := &editorElementosFalso{}
 
@@ -74,7 +74,7 @@ func TestPatchElemento_HorasEstimadasYStoryPoints_SonIndependientes(t *testing.T
 }
 
 // Un valor que no es un número da 400 sin llamar al caso de uso.
-// Traza: HU-19 sección 7
+// Traza: HU-19 CA-19.14 (RN-19.2; sección 7)
 func TestPatchElemento_HorasEstimadasQueNoSonNumero_Devuelve400SinLlamarAlCasoDeUso(t *testing.T) {
 	for _, valor := range []string{`"ocho"`, `"8"`, `true`, `[8]`, `{"horas":8}`, `1e999`} {
 		t.Run(valor, func(t *testing.T) {
@@ -96,7 +96,7 @@ func TestPatchElemento_HorasEstimadasQueNoSonNumero_Devuelve400SinLlamarAlCasoDe
 }
 
 // El falso usa el dominio real, así que estos errores salen de la validación verdadera (RN-19.2).
-// Traza: HU-19 CA-19.14
+// Traza: HU-19 CA-19.14 (RN-19.2)
 func TestPatchElemento_HorasEstimadasInvalidas_Devuelve400ConElMensajeDelDominio(t *testing.T) {
 	tests := []struct {
 		cuerpo  string
@@ -123,7 +123,7 @@ func TestPatchElemento_HorasEstimadasInvalidas_Devuelve400ConElMensajeDelDominio
 
 // Sin estos errores en erroresDeValidacionEdicion responderían 500. Si llegan envueltos, el mensaje
 // sigue siendo el del dominio.
-// Traza: HU-19 CA-19.14 (sección 7)
+// Traza: HU-19 CA-19.14 (RN-19.2; sección 7)
 func TestPatchElemento_ErrorDeHorasEnvuelto_Devuelve400ConMensajeLimpio(t *testing.T) {
 	for _, err := range []error{domain.ErrHorasInvalidas, domain.ErrHorasNoMultiploMediaHora, domain.ErrHorasEstimadasExcedenMaximo} {
 		t.Run(err.Error(), func(t *testing.T) {
@@ -141,7 +141,7 @@ func TestPatchElemento_ErrorDeHorasEnvuelto_Devuelve400ConMensajeLimpio(t *testi
 	}
 }
 
-// Traza: HU-19 sección 3 (RN-19.3): la respuesta de crear suma el campo, siempre null porque un
+// Traza: HU-19 CA-19.15 (RN-19.3; sección 3): la respuesta de crear suma el campo, siempre null porque un
 // elemento nace sin estimar.
 func TestPostBacklog_RespuestaConHorasEstimadasEnNull(t *testing.T) {
 	rec := postBacklog(t, &creadorElementosFalso{}, "/proyectos/1/backlog",
@@ -156,7 +156,7 @@ func TestPostBacklog_RespuestaConHorasEstimadasEnNull(t *testing.T) {
 	}
 }
 
-// Traza: HU-19 sección 5 (fuera de alcance): las horas no se cargan al crear, sino editando.
+// Traza: HU-19 CA-19.15 (RN-19.3; sección 5, fuera de alcance): las horas no se cargan al crear, sino editando.
 func TestPostBacklog_ConHorasEstimadas_Devuelve400(t *testing.T) {
 	rec := postBacklog(t, &creadorElementosFalso{}, "/proyectos/1/backlog",
 		`{"titulo":"Login","descripcion":"Ingresar","prioridad":"Alta","criterios":["Con email"],"horas_estimadas":8}`)
@@ -166,7 +166,7 @@ func TestPostBacklog_ConHorasEstimadas_Devuelve400(t *testing.T) {
 	}
 }
 
-// Traza: HU-19 sección 3: el listado trae el campo en cada elemento, con valor o null.
+// Traza: HU-19 CA-19.13 (RN-19.3; sección 3): el listado trae el campo en cada elemento, con valor o null.
 func TestGetBacklog_RespuestaConHorasEstimadas(t *testing.T) {
 	uc := &listadorBacklogFalso{elementos: []domain.ElementoBacklog{
 		{ID: 1, ProyectoID: 1, Titulo: "Login", HorasEstimadas: pHoras(7.5)},

@@ -249,7 +249,7 @@ func TestRepositorioEsfuerzo_HorasReales_SumaIntegrantesYFechasDistintos(t *test
 	}
 }
 
-// Traza: HU-19 sección 5: se suman enteros, y una suma impar de medias horas conserva el 0,5.
+// Traza: HU-19 CA-19.1 (RN-19.4; sección 5): se suman enteros, y una suma impar de medias horas conserva el 0,5.
 func TestRepositorioEsfuerzo_HorasReales_ConservaLaMediaHora(t *testing.T) {
 	b := nuevaBaseEsfuerzo(t)
 	b.registrarHoras(t, b.elementoID, "Ana", 20, 0.5)
@@ -310,7 +310,7 @@ func TestRepositorioEsfuerzo_HorasReales_IntegranteQuitado_SigueSumando(t *testi
 }
 
 // El caso de uso ya verificó el elemento; si no existe, la consulta da 0 y no un error (spec, sección 5).
-// Traza: HU-19 sección 5: consulta de horas reales
+// Traza: HU-19 CA-19.5 (RN-19.4; sección 5: consulta de horas reales)
 func TestRepositorioEsfuerzo_HorasReales_ElementoInexistente_DaCero(t *testing.T) {
 	b := nuevaBaseEsfuerzo(t)
 

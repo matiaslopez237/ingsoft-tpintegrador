@@ -66,7 +66,7 @@ func TestRepositorioBacklog_HorasEstimadas_IdaYVuelta(t *testing.T) {
 	}
 }
 
-// Traza: HU-19 sección 5: en medias horas, como registros_esfuerzo.
+// Traza: HU-19 CA-19.13 (RN-19.3; sección 5: en medias horas, como registros_esfuerzo)
 func TestRepositorioBacklog_HorasEstimadas_SeGuardanEnMediasHoras(t *testing.T) {
 	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
 	e := guardarElemento(t, repo, ids[0], "Login")
@@ -155,7 +155,7 @@ func TestRepositorioBacklog_EditarHorasEstimadas_NoTocaLosDemasCampos(t *testing
 
 // Dos personas parten del mismo elemento: una carga las horas y la otra, que todavía lo ve sin
 // estimar, cambia la prioridad. No se pisan, en ninguno de los dos órdenes.
-// Traza: HU-19 sección 5, como HU-06 sección 5.
+// Traza: HU-19 CA-19.13 (RN-19.3; sección 5, como HU-06 sección 5)
 func TestRepositorioBacklog_HorasEstimadas_EdicionesSimultaneasNoSePisan(t *testing.T) {
 	ctx := context.Background()
 	baja := domain.PrioridadBaja
@@ -191,7 +191,7 @@ func TestRepositorioBacklog_HorasEstimadas_EdicionesSimultaneasNoSePisan(t *test
 	}
 }
 
-// Traza: HU-19 sección 3: el listado del backlog también trae las horas estimadas.
+// Traza: HU-19 CA-19.13 (RN-19.3; sección 3: el listado del backlog también trae las horas estimadas)
 func TestRepositorioBacklog_ListarElementos_TraeLasHorasEstimadas(t *testing.T) {
 	ctx := context.Background()
 	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
@@ -218,7 +218,7 @@ func TestRepositorioBacklog_ListarElementos_TraeLasHorasEstimadas(t *testing.T) 
 }
 
 // El dominio crea los elementos sin estimar, pero el repositorio guarda lo que recibe.
-// Traza: HU-19 sección 3 y CA-19.15 (RN-19.3)
+// Traza: HU-19 CA-19.15 (RN-19.3; sección 3)
 func TestRepositorioBacklog_GuardarElemento_GuardaLasHorasEstimadas(t *testing.T) {
 	ctx := context.Background()
 	for _, tt := range []struct {
@@ -249,7 +249,7 @@ func TestRepositorioBacklog_GuardarElemento_GuardaLasHorasEstimadas(t *testing.T
 }
 
 // Con el elemento asignado a un sprint (HU-09), editar conserva el sprint y las horas.
-// Traza: HU-19 CA-19.13 (RN-06.1)
+// Traza: HU-19 CA-19.13 (RN-19.3, RN-06.1)
 func TestRepositorioBacklog_HorasEstimadas_SobrevivenAlEditarConSprint(t *testing.T) {
 	ctx := context.Background()
 	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
@@ -277,7 +277,7 @@ func TestRepositorioBacklog_HorasEstimadas_SobrevivenAlEditarConSprint(t *testin
 }
 
 // Un cambio solo de horas también informa que el elemento no existe.
-// Traza: HU-19 CA-19.13 (RN-06.6)
+// Traza: HU-19 CA-19.13 (RN-19.3, RN-06.6)
 func TestRepositorioBacklog_HorasEstimadas_ElementoInexistente(t *testing.T) {
 	repo, ids := nuevoBacklogDePrueba(t, "Alfa")
 	e := elementoDePrueba(t, ids[0], "Login", nil)

@@ -75,7 +75,7 @@ func comparar(f *comparacionFalsa, proyectoID, elementoID int64) (domain.Compara
 	return NuevoCompararEsfuerzo(f, f, f).Ejecutar(context.Background(), proyectoID, elementoID)
 }
 
-// Traza: HU-19 CA-19.1, CA-19.2, CA-19.3, CA-19.4, CA-19.5, CA-19.6 (RN-19.4 a RN-19.7, RN-19.9)
+// Traza: HU-19 CA-19.1, CA-19.2, CA-19.3, CA-19.4, CA-19.5, CA-19.6 (RN-19.4, RN-19.5, RN-19.6, RN-19.7, RN-19.9)
 func TestCompararEsfuerzo_DevuelveLaComparacionDelElemento(t *testing.T) {
 	tests := []struct {
 		nombre     string
@@ -201,7 +201,7 @@ func TestCompararEsfuerzo_ValidacionFallida_RetornaErrorYNoConsultaHoras(t *test
 	}
 }
 
-// Traza: HU-19 sección 7: primero se busca el proyecto y después el elemento.
+// Traza: HU-19 CA-19.9 (RN-19.10; sección 7: primero se busca el proyecto y después el elemento)
 func TestCompararEsfuerzo_ProyectoInexistente_NoBuscaElElemento(t *testing.T) {
 	f := nuevaComparacionFalsa()
 
@@ -215,7 +215,7 @@ func TestCompararEsfuerzo_ProyectoInexistente_NoBuscaElElemento(t *testing.T) {
 
 // Las fallas de infraestructura se propagan y no se confunden con "no encontrado". Al buscar, salen
 // como vienen; al leer las horas, envueltas con %w.
-// Traza: HU-19 sección 7: falla interna al consultar
+// Traza: HU-19 CA-19.9 (RN-19.10; sección 7: falla interna al consultar)
 func TestCompararEsfuerzo_FallaDeInfraestructura_SePropaga(t *testing.T) {
 	errBase := errors.New("base caída")
 	tests := []struct {

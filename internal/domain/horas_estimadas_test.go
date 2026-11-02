@@ -42,7 +42,7 @@ func TestValidarHorasEstimadas_Invalidas(t *testing.T) {
 	}
 }
 
-// Traza: HU-19 (spec, sección 7: mensaje del error nuevo)
+// Traza: HU-19 CA-19.14 (RN-19.2; spec, sección 7: mensaje del error nuevo)
 func TestErrHorasEstimadasExcedenMaximo_Mensaje(t *testing.T) {
 	want := "las horas estimadas no pueden superar las 1000 horas"
 	if got := ErrHorasEstimadasExcedenMaximo.Error(); got != want {
@@ -52,7 +52,7 @@ func TestErrHorasEstimadasExcedenMaximo_Mensaje(t *testing.T) {
 
 // El tope de 24 h de HU-18 no se aplica a las estimaciones (RN-19.2), y el de 1000 h de HU-19 no se
 // aplica a los registros: separar las comprobaciones comunes no tiene que cruzarlos.
-// Traza: HU-19 CA-19.14, HU-18 CA-18.10 (RN-18.8)
+// Traza: HU-19 CA-19.14 (RN-19.2), HU-18 CA-18.10 (RN-18.8)
 func TestValidarHoras_CadaUnaConSuTope(t *testing.T) {
 	if err := validarHorasEstimadas(24.5); err != nil {
 		t.Errorf("estimadas 24,5: error inesperado: %v", err)

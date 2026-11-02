@@ -211,7 +211,7 @@ func abrirBaseAnteriorAHU19(t *testing.T) (db *sql.DB, ruta string, sumasAntes m
 	return db, ruta, sumasAntes
 }
 
-// Traza: HU-19 CA-19.16: los elementos se leen sin estimar y conservan todo lo demás, también en el listado.
+// Traza: HU-19 CA-19.16 (RN-19.1): los elementos se leen sin estimar y conservan todo lo demás, también en el listado.
 func TestMigracionHU19_ElementosSinEstimarYConSusDatos(t *testing.T) {
 	ctx := context.Background()
 	db, _, _ := abrirBaseAnteriorAHU19(t)
