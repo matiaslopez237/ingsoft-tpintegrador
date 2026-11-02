@@ -25,6 +25,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
+| HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 abiertas a objeción del equipo en la PR) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (311/311 en el BDD completo) |
 
 ---
 
@@ -1250,6 +1251,224 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 - Las tareas 15.5 y 15.6 no tienen RED → GREEN: el caso de uso y la persistencia de HU-14 ya alcanzaban, así que sus tests pasaron desde el principio. Se dejaron como evidencia de que la revelación llega hasta la API y la base.
 - La ruta sugerida por la tarea 15.7 (`GET /proyectos/{id}/backlog/{elementoID}/rondas/{rondaID}`) no se agregó: la revelación va en el `GET /proyectos/{id}/rondas/{rondaID}` de HU-14, para no tener dos rutas para la misma ronda.
 - Revisión con el agente `go-reviewer` (tarea 15.9): sin hallazgos críticos, altos ni medios. Confirmó que con la ronda abierta ningún adaptador revela valores y que el mínimo, el máximo y el umbral son correctos. Tres observaciones bajas sin cambios: el `continue` para un votante sin voto es inalcanzable (la ronda se cierra cuando votaron todos), una ronda sin votantes no se puede crear (RN-14.2) y un comentario se reescribió.
+
+---
+
+## HU-19: Comparar esfuerzo estimado contra real
+
+- **Issue:** #30 · Sprint 3 · 3 SP
+- **Spec:** [docs/specs/HU-19-comparar-esfuerzo.md](specs/HU-19-comparar-esfuerzo.md)
+- **Feature:** [features/HU-19-comparar-esfuerzo.feature](../features/HU-19-comparar-esfuerzo.feature) (steps en [test/bdd/hu19_steps_test.go](../test/bdd/hu19_steps_test.go), sobre SQLite real en [hu19_sistema_test.go](../test/bdd/hu19_sistema_test.go))
+- **Ruta HTTP:** `GET /proyectos/{id}/backlog/{elementoID}/esfuerzo/comparacion`, y el campo `horas_estimadas` en `PATCH /proyectos/{id}/backlog/{elementoID}`.
+- **Pantalla:** bloque "Esfuerzo estimado y real" y campo "Horas estimadas" en `GET /web/proyectos/{id}/backlog/{elementoID}` (HU-06).
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-19.1 Desviación positiva | RN-19.4, RN-19.5, RN-19.6 | La desviación se calcula en horas y en porcentaje `@normal` (8/10) · Las horas reales suman todos los registros del elemento `@normal` | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_NoCompartePunteroRecibido`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento`, `TestRepositorioEsfuerzo_HorasReales_SumaIntegrantesYFechasDistintos`, `TestRepositorioEsfuerzo_HorasReales_ConservaLaMediaHora` | `comparacion_esfuerzo.go` (`domain.CompararEsfuerzo`), `comparar_esfuerzo.go` (`app.CompararEsfuerzo.Ejecutar`), `esfuerzo_repo.go` (`HorasRealesDeElemento`) |
+| CA-19.2 Desviación negativa | RN-19.5, RN-19.6 | Outline de desviación `@normal` (8/6) | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento` | `comparacion_esfuerzo.go` |
+| CA-19.3 Sin desviación | RN-19.5, RN-19.6 | Outline de desviación `@limite` (8/8) | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento` | `comparacion_esfuerzo.go` |
+| CA-19.4 Sin estimar, con esfuerzo | RN-19.1, RN-19.7 | Un elemento sin estimar y con esfuerzo informa solo sus horas reales `@alternativo` | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento` | `comparacion_esfuerzo.go` (`SinEstimar`) |
+| CA-19.5 Sin esfuerzo | RN-19.4, RN-19.9 | Outline de desviación `@limite` (8/0) | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento`, `TestRepositorioEsfuerzo_HorasReales_SinRegistros_DaCero`, `TestRepositorioEsfuerzo_HorasReales_ElementoInexistente_DaCero` | `comparacion_esfuerzo.go`, `esfuerzo_repo.go` (`COALESCE`) |
+| CA-19.6 Sin estimar y sin esfuerzo | RN-19.4, RN-19.7 | Un elemento sin estimar y sin esfuerzo informa 0 horas reales `@limite` | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento`, `TestRepositorioEsfuerzo_HorasReales_SinRegistros_DaCero` | `comparacion_esfuerzo.go`, `esfuerzo_repo.go` |
+| CA-19.7 Estimado 0 | RN-19.8 | Con estimado 0 hay desviación en horas y no hay porcentaje `@limite` | `TestCompararEsfuerzo` | `comparacion_esfuerzo.go` |
+| CA-19.8 Redondeo | RN-19.6 | Outline de desviación `@limite` (3/4, 40/40,5 y 40/39,5) | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_MultiplicaAntesDeDividir`, `TestCompararEsfuerzo_NuncaDevuelveCeroNegativo` | `comparacion_esfuerzo.go` (`redondearUnDecimal`) |
+| CA-19.9 Proyecto o elemento inexistente | RN-19.10 | No se puede comparar en un proyecto que no existe `@error` · No se puede comparar un elemento que no existe `@error` | `TestCompararEsfuerzo_ValidacionFallida_RetornaErrorYNoConsultaHoras`, `TestCompararEsfuerzo_ProyectoInexistente_NoBuscaElElemento`, `TestCompararEsfuerzo_FallaDeInfraestructura_SePropaga`, `TestGetCompararEsfuerzo_NoEncontrado_Devuelve404`, `TestPantallaComparacion_NoEncontrados_Devuelven404` | `comparar_esfuerzo.go`, `comparar_esfuerzo_handler.go`, `pantallas_elemento.go` (`errorDeElemento`) |
+| CA-19.10 Elemento de otro proyecto | RN-19.10 | Un elemento de otro proyecto se trata como inexistente `@error` | `TestCompararEsfuerzo_ValidacionFallida_RetornaErrorYNoConsultaHoras`, `TestGetCompararEsfuerzo_NoEncontrado_Devuelve404`, `TestPantallaComparacion_NoEncontrados_Devuelven404` | `comparar_esfuerzo.go` (`e.ProyectoID != proyectoID`) |
+| CA-19.11 Qué suma | RN-19.4 | Suman los registros de un integrante quitado y no los de otro elemento `@alternativo` · La suma de las horas reales no tiene tope `@limite` | `TestCompararEsfuerzo_UsaLasHorasDelElementoPedido`, `TestRepositorioEsfuerzo_HorasReales_LaSumaPuedeSuperar24`, `TestRepositorioEsfuerzo_HorasReales_NoSumaOtroElemento`, `TestRepositorioEsfuerzo_HorasReales_IntegranteQuitado_SigueSumando` | `esfuerzo_repo.go` (`HorasRealesDeElemento`) |
+| CA-19.12 Cualquier estado | RN-19.11 | Se compara un elemento Pendiente y sin sprint de un proyecto que no está Activo `@alternativo` (4 ejemplos) | `TestCompararEsfuerzo_CualquierEstadoDeElementoYProyecto` | `comparar_esfuerzo.go` (no mira estados) |
+| CA-19.13 Cargar la estimación | RN-19.3 | Se cargan las horas estimadas editando el elemento `@normal` · Editar otro campo no cambia las horas estimadas `@alternativo` · Se quitan las horas estimadas de un elemento `@alternativo` · Se cambia la estimación de un elemento con esfuerzo y la comparación usa el valor nuevo `@alternativo` · Se quita la estimación de un elemento con esfuerzo y conserva sus horas reales `@alternativo` | `TestEditar_ConservaElSprint`, `TestEditar_CargarHorasEstimadas`, `TestEditar_CambiarHorasEstimadas`, `TestEditar_QuitarHorasEstimadas`, `TestEditar_OtrosCampos_ConservanHorasEstimadasYSprint`, `TestEditar_HorasEstimadas_NoCompartenMemoria`, `TestRepositorioBacklog_HorasEstimadas_IdaYVuelta`, `TestRepositorioBacklog_HorasEstimadas_SeGuardanEnMediasHoras`, `TestRepositorioBacklog_HorasEstimadas_CambiarYQuitar`, `TestRepositorioBacklog_EditarOtrosCampos_NoTocaLasHorasEstimadas`, `TestRepositorioBacklog_HorasEstimadas_EdicionesSimultaneasNoSePisan`, `TestRepositorioBacklog_ListarElementos_TraeLasHorasEstimadas`, `TestRepositorioBacklog_HorasEstimadas_SobrevivenAlEditarConSprint`, `TestRepositorioBacklog_HorasEstimadas_ElementoInexistente`, `TestPatchElemento_HorasEstimadas`, `TestGetBacklog_RespuestaConHorasEstimadas`, `TestPantallaElemento_CargarYQuitarHorasEstimadas`, `TestPantallaElemento_HorasSinCambios_NoSeEnvian`, `TestPantallaElemento_SinOriginales_EnviaLasHoras`, `TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran` | `backlog_editar.go` del dominio (`Editar`) y de persistencia (`ActualizarElemento`), `backlog_repo.go`, `backlog_editar_handler.go`, `pantallas_elemento.go` |
+| CA-19.14 Validar la estimación | RN-19.2 | Se aceptan las horas estimadas en los extremos válidos `@limite` (0,5 y 1000) · Se rechazan las horas estimadas inválidas `@error` (0, -1, 1,25 y 1000,5) | `TestValidarHorasEstimadas_Validas`, `TestValidarHorasEstimadas_Invalidas`, `TestErrHorasEstimadasExcedenMaximo_Mensaje`, `TestValidarHoras_CadaUnaConSuTope`, `TestEditar_HorasEstimadasEnLosExtremos`, `TestEditar_HorasEstimadasInvalidas_RetornaError`, `TestEditar_HorasEstimadasInvalidas_SeInformanAlFinal`, `TestRepositorioBacklog_HorasEstimadas_IdaYVuelta`, `TestPatchElemento_HorasEstimadasQueNoSonNumero_Devuelve400SinLlamarAlCasoDeUso`, `TestPatchElemento_HorasEstimadasInvalidas_Devuelve400ConElMensajeDelDominio`, `TestPatchElemento_ErrorDeHorasEnvuelto_Devuelve400ConMensajeLimpio`, `TestPantallaElemento_HorasInvalidas_VuelvenAlFormularioCon400`, `TestPantallaElemento_HorasQueNoSonNumero_NoLlamanAlCasoDeUso` | `backlog_editar.go` (`validarHorasEstimadas`), `registro_esfuerzo.go` (`validarMediasHoras`), `backlog_editar_handler.go` (`erroresDeValidacionEdicion`) |
+| CA-19.15 Independiente de los story points | RN-19.1, RN-19.3 | Un elemento con story points y sin horas estimadas está sin estimar `@alternativo` · Cambiar los story points no cambia las horas estimadas `@alternativo` · Un elemento recién creado nace sin horas estimadas `@normal` | `TestNuevoElementoBacklog_NaceSinHorasEstimadas`, `TestEditar_OtrosCampos_ConservanHorasEstimadasYSprint`, `TestEditar_HorasEstimadas_ConservanStoryPoints`, `TestRepositorioBacklog_EditarOtrosCampos_NoTocaLasHorasEstimadas`, `TestRepositorioBacklog_EditarHorasEstimadas_NoTocaLosDemasCampos`, `TestRepositorioBacklog_GuardarElemento_GuardaLasHorasEstimadas`, `TestPatchElemento_HorasEstimadasYStoryPoints_SonIndependientes`, `TestPostBacklog_RespuestaConHorasEstimadasEnNull`, `TestPostBacklog_ConHorasEstimadas_Devuelve400`, `TestPantallaElemento_HorasYStoryPoints_NoSePisan`, `TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06` | `backlog.go` (`ElementoBacklog.HorasEstimadas`), `backlog_editar.go` (`CambiosElemento`) |
+| CA-19.16 Base existente | Sección 5 | **Sin escenario BDD a propósito:** se cubre con tests de persistencia. | `TestAbrirDB_BaseExistenteSinHorasEstimadas_AgregaLaColumna`, `TestAbrirDB_BaseNueva_TieneLaColumnaDeHorasEstimadas`, `TestMigracionHU19_ElementosSinEstimarYConSusDatos`, `TestMigracionHU19_SeCarganHorasYSeComparan`, `TestMigracionHU19_LaSumaDeHorasRealesNoCambia` (los tres últimos, con el esquema exacto de `origin/main`) | `db.go` (`migrarHorasEstimadas`, columna `medias_horas_estimadas`) |
+| CA-19.17 Respuestas HTTP | Sección 3 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y no pasan por HTTP. Se cubre con los tests del handler. | `TestGetCompararEsfuerzo_Devuelve200ConLaComparacion`, `TestGetCompararEsfuerzo_ElPorcentajeEsUnNumero`, `TestGetCompararEsfuerzo_NuncaEscribeCeroNegativo`, `TestGetCompararEsfuerzo_NoEncontrado_Devuelve404`, `TestGetCompararEsfuerzo_IDInvalido_Devuelve400`, `TestGetCompararEsfuerzo_FallaInterna_Devuelve500SinDetalle` | `comparar_esfuerzo_handler.go`, `router.go`, `cmd/server/main.go` |
+| CA-19.18 Pantalla | Sección 3 | **Sin escenario BDD a propósito:** es la pantalla. Se cubre con tests del adaptador (`httptest`). | `TestPantallaComparacion_MuestraLasCuatroCifras`, `TestPantallaComparacion_AlVolverConError_MuestraLoGuardado`, `TestPantallaElemento_CampoHorasEstimadas`, `TestPantallaElemento_CargarYQuitarHorasEstimadas`, `TestPantallaElemento_HorasInvalidas_VuelvenAlFormularioCon400`, `TestPantallaElemento_HorasQueNoSonNumero_NoLlamanAlCasoDeUso`, `TestPantallaElemento_HorasTipeadas_SeEscapan`, `TestPantallaElemento_TodosLosCampos_SeEscapan`, `TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran`, `TestPantallaComparacion_NoEncontrados_Devuelven404`, `TestPantallaComparacion_FallaInterna_Devuelve500SinDetalle`, `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` (orden de las secciones) | `pantallas_comparacion.go` (`vistaComparacion`), `pantallas_elemento.go` (`mostrarElemento`), `elemento.html` |
+| CA-19.19 Campo ausente en el formulario | RN-19.12 | **Sin escenario BDD a propósito:** es la pantalla. Se cubre con tests del adaptador (`httptest`). | `TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran`, `TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06` | `pantallas_elemento.go` (`HorasEnviadas`, `cambiosDeFormElemento`) |
+
+Los tests de las pantallas están en [pantallas_comparacion_test.go](../internal/adapters/http/pantallas_comparacion_test.go), salvo `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos`, que está en [pantallas_esfuerzo_test.go](../internal/adapters/http/pantallas_esfuerzo_test.go).
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Tests con la etiqueta (ejemplos) | Código |
+|---|---|---|---|
+| RN-19.1 Horas estimadas: dato propio y opcional | CA-19.4, CA-19.15 | `TestEditar_HorasEstimadas_ConservanStoryPoints`, `TestPantallaElemento_HorasYStoryPoints_NoSePisan`, `TestMigracionHU19_ElementosSinEstimarYConSusDatos` | `backlog.go` |
+| RN-19.2 Mayor a 0, múltiplo de 0,5 y máximo 1000 | CA-19.14 | `TestValidarHorasEstimadas_Invalidas`, `TestEditar_HorasEstimadasInvalidas_RetornaError`, `TestPatchElemento_HorasEstimadasInvalidas_Devuelve400ConElMensajeDelDominio` | `backlog_editar.go` (`validarHorasEstimadas`) |
+| RN-19.3 Se cargan, cambian o quitan editando; nacen sin estimar; sin historial | CA-19.13, CA-19.15 | `TestEditar_QuitarHorasEstimadas`, `TestNuevoElementoBacklog_NaceSinHorasEstimadas`, `TestRepositorioBacklog_HorasEstimadas_CambiarYQuitar` | `backlog_editar.go`, `NuevoElementoBacklog` no las recibe |
+| RN-19.4 Horas reales: suma de los registros, sin tope, 0 sin registros | CA-19.1, CA-19.5, CA-19.6, CA-19.11 | `TestRepositorioEsfuerzo_HorasReales_LaSumaPuedeSuperar24`, `TestRepositorioEsfuerzo_HorasReales_SinRegistros_DaCero`, `TestMigracionHU19_LaSumaDeHorasRealesNoCambia` | `esfuerzo_repo.go` (`COALESCE(SUM(medias_horas), 0)`) |
+| RN-19.5 Desviación absoluta: reales − estimadas | CA-19.1, CA-19.2, CA-19.3 | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_NoCompartePunteroRecibido`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento` | `comparacion_esfuerzo.go` |
+| RN-19.6 Desviación porcentual: un decimal, medios alejándose de cero, nunca −0 | CA-19.1, CA-19.2, CA-19.3, CA-19.8 | `TestCompararEsfuerzo_MultiplicaAntesDeDividir`, `TestCompararEsfuerzo_NuncaDevuelveCeroNegativo`, `TestGetCompararEsfuerzo_NuncaEscribeCeroNegativo` | `comparacion_esfuerzo.go` (`redondearUnDecimal`) |
+| RN-19.7 Sin estimar no es un error y no hay desviaciones | CA-19.4, CA-19.6 | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento`, `TestPantallaComparacion_MuestraLasCuatroCifras` | `comparacion_esfuerzo.go` (`SinEstimar`) |
+| RN-19.8 Estimado 0: desviación en horas, sin porcentaje | CA-19.7 | `TestCompararEsfuerzo`, `TestGetCompararEsfuerzo_Devuelve200ConLaComparacion`, `TestPantallaComparacion_MuestraLasCuatroCifras` | `comparacion_esfuerzo.go` |
+| RN-19.9 Con estimación y sin esfuerzo: −100 % | CA-19.5 | `TestCompararEsfuerzo`, `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento`, `TestPantallaComparacion_MuestraLasCuatroCifras` | `comparacion_esfuerzo.go` |
+| RN-19.10 El proyecto existe y el elemento es suyo | CA-19.9, CA-19.10 | `TestCompararEsfuerzo_ValidacionFallida_RetornaErrorYNoConsultaHoras`, `TestGetCompararEsfuerzo_NoEncontrado_Devuelve404`, `TestPantallaComparacion_NoEncontrados_Devuelven404` | `comparar_esfuerzo.go` |
+| RN-19.11 Se compara en cualquier estado | CA-19.12 | `TestCompararEsfuerzo_CualquierEstadoDeElementoYProyecto` | `comparar_esfuerzo.go` (no mira estados) |
+| RN-19.12 `horas_estimadas` ausente del formulario no cambia las horas | CA-19.19 | `TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran`, `TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06` | `pantallas_elemento.go` (`HorasEnviadas`) |
+
+Sin CA propio en la spec. Algunos llevan en su `Traza` el CA más cercano y la sección:
+- Falla interna con 500 genérico (sección 7): `TestCompararEsfuerzo_FallaDeInfraestructura_SePropaga`, `TestGetCompararEsfuerzo_FallaInterna_Devuelve500SinDetalle`, `TestPantallaComparacion_FallaInterna_Devuelve500SinDetalle`. CA-19.17 no menciona el 500.
+- Una base cerrada da error y no pánico: `TestRepositorios_BaseCerrada_DevuelvenElError` (suma dos casos de HU-19).
+- La ruta está registrada: `TestNuevoRouter_RegistraTodasLasRutas`.
+- El JSON esperado del listado de HU-07 suma el campo: `TestGetBacklog_DevuelveLosElementos`.
+
+### Errores nuevos
+
+HU-19 suma un solo error, en [internal/domain/backlog_editar.go](../internal/domain/backlog_editar.go). También reutiliza `ErrProyectoNoEncontrado` (HU-01), `ErrElementoNoEncontrado` (HU-05), `ErrHorasInvalidas` y `ErrHorasNoMultiploMediaHora` (HU-18).
+
+| Error | Mensaje | Lo devuelve | HTTP |
+|---|---|---|---|
+| `ErrHorasEstimadasExcedenMaximo` | "las horas estimadas no pueden superar las 1000 horas" | `domain.validarHorasEstimadas` | 400 |
+
+Los mensajes nuevos de formato viven en el adaptador: "horas_estimadas debe ser un número o null" (PATCH) y "las horas estimadas deben ser un número" (formulario).
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/comparacion_esfuerzo.go](../internal/domain/comparacion_esfuerzo.go) (`ComparacionEsfuerzo`, `CompararEsfuerzo`, `redondearUnDecimal`), [backlog.go](../internal/domain/backlog.go) (`HorasEstimadas`, `copiarPuntero`), [backlog_editar.go](../internal/domain/backlog_editar.go) (`CambiarHorasEstimadas`, `validarHorasEstimadas`, `Editar`), [registro_esfuerzo.go](../internal/domain/registro_esfuerzo.go) (`validarMediasHoras`, compartida con HU-18) | [comparacion_esfuerzo_test.go](../internal/domain/comparacion_esfuerzo_test.go), [horas_estimadas_test.go](../internal/domain/horas_estimadas_test.go), [backlog_editar_test.go](../internal/domain/backlog_editar_test.go) |
+| Caso de uso y puerto | [internal/app/comparar_esfuerzo.go](../internal/app/comparar_esfuerzo.go) (`CompararEsfuerzo`, puerto `LectorHorasReales`; reutiliza `LectorProyectos` de HU-04 y `LectorElementos` de HU-18) | [comparar_esfuerzo_test.go](../internal/app/comparar_esfuerzo_test.go) |
+| Persistencia | [internal/adapters/persistencia/esfuerzo_repo.go](../internal/adapters/persistencia/esfuerzo_repo.go) (`HorasRealesDeElemento`), [backlog_repo.go](../internal/adapters/persistencia/backlog_repo.go) (crear, buscar y listar con horas; `aMediasHorasEstimadas`), [backlog_editar.go](../internal/adapters/persistencia/backlog_editar.go) (`ActualizarElemento`), [db.go](../internal/adapters/persistencia/db.go) (`migrarHorasEstimadas`) | [horas_estimadas_repo_test.go](../internal/adapters/persistencia/horas_estimadas_repo_test.go), [esfuerzo_repo_test.go](../internal/adapters/persistencia/esfuerzo_repo_test.go), [migracion_hu19_test.go](../internal/adapters/persistencia/migracion_hu19_test.go), [db_test.go](../internal/adapters/persistencia/db_test.go), [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| Endpoint JSON | [internal/adapters/http/comparar_esfuerzo_handler.go](../internal/adapters/http/comparar_esfuerzo_handler.go) (`RegistrarCompararEsfuerzo`), [backlog_editar_handler.go](../internal/adapters/http/backlog_editar_handler.go) (PATCH), [backlog_handler.go](../internal/adapters/http/backlog_handler.go) y [listar_backlog_handler.go](../internal/adapters/http/listar_backlog_handler.go) (respuestas), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [comparar_esfuerzo_handler_test.go](../internal/adapters/http/comparar_esfuerzo_handler_test.go), [horas_estimadas_handler_test.go](../internal/adapters/http/horas_estimadas_handler_test.go), [listar_backlog_handler_test.go](../internal/adapters/http/listar_backlog_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla y plantilla | [internal/adapters/http/pantallas_comparacion.go](../internal/adapters/http/pantallas_comparacion.go) (`vistaComparacion`), [pantallas_elemento.go](../internal/adapters/http/pantallas_elemento.go) (`mostrarElemento`, `leerFormElemento`, `cambiosDeFormElemento`), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_comparacion_test.go](../internal/adapters/http/pantallas_comparacion_test.go), [pantallas_esfuerzo_test.go](../internal/adapters/http/pantallas_esfuerzo_test.go), [pantallas_test.go](../internal/adapters/http/pantallas_test.go) |
+| BDD | [features/HU-19-comparar-esfuerzo.feature](../features/HU-19-comparar-esfuerzo.feature), [test/bdd/hu19_steps_test.go](../test/bdd/hu19_steps_test.go), [hu19_sistema_test.go](../test/bdd/hu19_sistema_test.go) (SQLite real), [bdd_test.go](../test/bdd/bdd_test.go); cableado de `CompararEsfuerzo` en [hu06_sistema_test.go](../test/bdd/hu06_sistema_test.go) y [hu14_sistema_test.go](../test/bdd/hu14_sistema_test.go) | 34 escenarios en verde |
+
+### Commits
+
+Salen de `git log origin/hu-18-pantalla-esfuerzo..HEAD --no-merges`, en orden. Excluye los commits de HU-18 que trajo el merge.
+
+| Ciclo | Commit | Etapa |
+|---|---|---|
+| Spec | `714b8fa` docs(HU-19): spec de comparar esfuerzo estimado contra real | — |
+| BDD en rojo: feature | `4fae233` test(HU-19): [RED] escenarios BDD del feature | BDD en rojo (34 escenarios y 213 pasos indefinidos) |
+| BDD en rojo: steps | `19eb4be` test(bdd): [RED] steps y sistema en memoria de HU-19 | BDD en rojo, por compilación |
+| Dominio: cálculo | `3147f82` [RED] → `49ca557` [GREEN] | **RED → GREEN** (sin REFACTOR: no había nada real para mejorar) |
+| Dominio: validación | `1a81795` [RED] → `0a68699` [GREEN] → `f4f5dbb` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Dominio: `SprintID` en la edición | `adf99b4` [RED] → `1d701ab` [GREEN] | **RED → GREEN** |
+| Dominio: horas en la edición | `3574f61` [RED] → `22f3352` [GREEN] → `ca96df0` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Caso de uso | `147f99f` [RED] → `8c829ae` [GREEN] | **RED → GREEN**; los 34 escenarios pasan con el sistema en memoria |
+| Persistencia: horas estimadas | `7fe13b7` [RED] → `2425d80` [GREEN] | **RED → GREEN** |
+| Persistencia: horas reales | `5019bea` [RED] → `0b6d3ae` [GREEN] | **RED → GREEN** |
+| BDD sobre SQLite | `4d25796` test(bdd): HU-19 sistema SQLite real | BDD en verde |
+| Migración | `a271b8e` test(HU-19): migración desde el esquema anterior a HU-19 | — (sin RED real, ver abajo) |
+| Comentarios de los steps | `c4b3c8a` test(bdd): actualizar comentarios de los steps de HU-19 | — |
+| Endpoint JSON: GET | `42cdbf3` [RED] → `7827bb8` [GREEN] | **RED → GREEN** |
+| Endpoint JSON: `horas_estimadas` | `62e9bde` [RED] → `00b5fb9` [GREEN] | **RED → GREEN** (GREEN unificado, ver abajo) |
+| Spec: contrato JSON | `2f9d244` docs(HU-19): ajustar la spec al contrato JSON real | — |
+| Spec: falla interna | `fe05f12` docs(HU-19): corregir la fila de falla interna de la spec | — |
+| Etiquetas | `a3010c1` test(HU-19): etiquetas de trazabilidad literales | — (solo comentarios) |
+| Pantalla | `f156b55` [RED] → `0174918` [GREEN] | **RED → GREEN** (GREEN unificado, ver abajo) |
+| Spec: pantalla, P-11 y P-13 | `83d39dd` docs(HU-19): cerrar las preguntas P-11 y P-13 y ajustar la pantalla en la spec | — |
+| POST sin horas | `374e629` [RED] → `6b2649a` [GREEN] | **RED → GREEN** |
+| Escape de HTML | `4292c51` test(HU-19): proteger el escape de HTML en todos los campos de la pantalla del elemento | — (sin RED real, ver abajo) |
+| Spec: RN-19.12 y CA-19.19 | `159981b` docs(HU-19): regla del campo horas_estimadas ausente en el formulario | — |
+| Etiqueta de CA-19.19 | `9e64052` test(HU-19): etiqueta de trazabilidad de CA-19.19 | — (solo comentarios) |
+| Trazabilidad | este commit | — |
+
+**Commits que el filtro `git log --grep="(HU-19)"` no encuentra**, porque usan el prefijo `test(bdd):`: `19eb4be` (RED de los steps), `4d25796` (sistema SQLite) y `c4b3c8a` (comentarios).
+
+**Merges de la rama, que no son de HU-19:** `29991ac` (trae `main`: HU-14 y HU-15) y `a106188` (trae `hu-18-pantalla-esfuerzo`).
+
+**Dos unificaciones de commits GREEN**, hechas con `git reset --soft` antes de subir, porque cada GREEN había dejado tests en rojo. Los hashes de la tabla son los del historial real; los anteriores solo quedan en el reflog local. En las dos, el hash de árbol fue el mismo antes y después.
+
+| Commit final | Unifica | Motivo | Árbol |
+|---|---|---|---|
+| `00b5fb9` | `bce9940` + `e5a3ebf` | El GREEN del PATCH dejó en rojo `TestGetBacklog_DevuelveLosElementos` de HU-07, que compara el JSON exacto | `06b30303` |
+| `0174918` | `edbc4d8` + `c2a979b` | El GREEN de la pantalla dejó en rojo 4 escenarios de HU-06 y HU-14, cuyos sistemas BDD no cableaban `CompararEsfuerzo` | `a9e08442` |
+
+### Evidencia: mutaciones manuales
+
+Ninguna quedó en un commit. Se aplicaron con `go test -overlay` o en una copia descartable del repo.
+
+**Cálculo**
+
+| Mutación | Resultado |
+|---|---|
+| Sin la protección del `-0` | Falla `TestCompararEsfuerzo_NuncaDevuelveCeroNegativo`: `DesviacionPorcentaje = -0` |
+| Dividir antes de multiplicar | Falla `TestCompararEsfuerzo_MultiplicaAntesDeDividir`: 51,5 sobre 40 da 28,7 en vez de 28,8 |
+| Compartir el puntero recibido | Falla `TestCompararEsfuerzo_NoCompartePunteroRecibido` |
+
+Sobre todos los empates exactos hasta 1000 h, dividir primero redondea mal 451 de 11.088, y multiplicar primero no falla ninguno.
+
+**BDD sobre SQLite**
+
+| Persistencia rota | Escenarios que fallan (de 34) |
+|---|---|
+| `ActualizarElemento` no guarda las horas | 24 |
+| No se leen las horas del elemento | 24 |
+| La suma incluye registros de otros elementos | 1 |
+
+**Migración:** sin `migrarHorasEstimadas`, fallan los tres tests de [migracion_hu19_test.go](../internal/adapters/persistencia/migracion_hu19_test.go) con `no such column: medias_horas_estimadas`.
+
+**Pantalla (nueve mutaciones)**
+
+| # | Mutación | Fallan |
+|---|---|---|
+| 1 | La plantilla no muestra el bloque | `TestPantallaComparacion_MuestraLasCuatroCifras`, `TestPantallaComparacion_AlVolverConError_MuestraLoGuardado`, `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` |
+| 2 | Falta el oculto `original_horas_estimadas` | `TestPantallaElemento_CampoHorasEstimadas`, `TestPantallaElemento_HorasInvalidas_VuelvenAlFormularioCon400` |
+| 3 | Sin signo | `TestPantallaComparacion_MuestraLasCuatroCifras`, `TestPantallaComparacion_AlVolverConError_MuestraLoGuardado` |
+| 4 | Signo también en el cero | `TestPantallaComparacion_MuestraLasCuatroCifras` |
+| 5 | Punto en vez de coma | `TestPantallaComparacion_MuestraLasCuatroCifras`, `TestPantallaComparacion_AlVolverConError_MuestraLoGuardado` |
+| 6 | Porcentaje sin decimal fijo | `TestPantallaComparacion_MuestraLasCuatroCifras`, `TestPantallaComparacion_AlVolverConError_MuestraLoGuardado` |
+| 7 | El formulario siempre envía el campo | `TestPantallaElemento_HorasSinCambios_NoSeEnvian`, `TestPantallaElemento_HorasYStoryPoints_NoSePisan`, `TestPantallaElemento_SinCambios_VuelveSinError` |
+| 8 | Vacío no quita la estimación | `TestPantallaElemento_CargarYQuitarHorasEstimadas` |
+| 9 | Se ignoran los errores de la comparación | `TestPantallaComparacion_NoEncontrados_Devuelven404`, `TestPantallaComparacion_FallaInterna_Devuelve500SinDetalle` |
+
+**Orden de las secciones:** mover el bloque antes de "Registrar esfuerzo" hace fallar `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos`.
+
+**POST sin horas**
+
+| Mutación | Fallan |
+|---|---|
+| Se ignora `HorasEnviadas` (vuelve el bug) | `TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran` |
+| `HorasEnviadas` siempre falso | `TestPantallaElemento_CargarYQuitarHorasEstimadas` y otros |
+| La corrección también se aplica a `story_points` | `TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06` y otros |
+
+**Escape de HTML** (`TestPantallaElemento_TodosLosCampos_SeEscapan`, con `template.HTML` en cada lugar)
+
+| Mutación | Resultado |
+|---|---|
+| Cada uno de los 7 campos ocultos `original_*` | Detectada, las 7 |
+| `input` de título y de horas estimadas (tipeados) | Detectada |
+| `<h1>` | Detectada |
+| Plantilla sin el oculto de horas | Detectada |
+| `<textarea>` de criterios | **Sobrevive: mutante equivalente** |
+| `<title>` | **Sobrevive: mutante equivalente** |
+
+Los dos que sobreviven no son un hueco del test: `<textarea>` y `<title>` son contextos RCDATA, y un programa aparte comprobó que `html/template` produce exactamente la misma salida con `string` que con `template.HTML`, ya escapada. En esos dos contextos no hay diferencia que detectar.
+
+**Bug que salió a la luz en el dominio:** `ElementoBacklog.Editar` reconstruye el elemento con `NuevoElementoBacklog` y perdía `SprintID`. En producción no se notaba, porque el repositorio guarda solo los campos enviados y el caso de uso relee el elemento. Se corrigió con su propio ciclo: `adf99b4` [RED], que falla con `SprintID = <nil>, se esperaba 3`, y `1d701ab` [GREEN]. Toca código de HU-06.
+
+### Etapas sin RED real
+
+- **Migración (`a271b8e`):** los tres tests de [migracion_hu19_test.go](../internal/adapters/persistencia/migracion_hu19_test.go) pasaron a la primera, porque la migración ya existía. Su valor es la mutación de arriba.
+- **Escape de todos los campos (`4292c51`):** `TestPantallaElemento_TodosLosCampos_SeEscapan` pasó a la primera, porque el código ya escapaba bien. Su valor son las mutaciones.
+- **RED por compilación:** `3147f82`, `1a81795`, `3574f61`, `147f99f`, `5019bea` y `42cdbf3`. Para ver fallar las aserciones se usó después un stub temporal, sin commitear. Con ese stub pasaban:
+  - `1a81795`: `TestValidarHorasEstimadas_Validas`, `TestErrHorasEstimadasExcedenMaximo_Mensaje`, `TestValidarHoras_CadaUnaConSuTope`
+  - `3574f61`: `TestNuevoElementoBacklog_NaceSinHorasEstimadas`, `TestEditar_HorasEstimadasInvalidas_SeInformanAlFinal`
+  - `147f99f`: el subcaso "sin estimar y sin esfuerzo" de `TestCompararEsfuerzo_DevuelveLaComparacionDelElemento`
+  - `5019bea`: `TestRepositorioEsfuerzo_HorasReales_SinRegistros_DaCero`, `TestRepositorioEsfuerzo_HorasReales_ElementoInexistente_DaCero`
+- **RED por comportamiento:** en estos commits, los siguientes tests nuevos ya pasaban, medido volviendo a correr cada commit:
+  - `7fe13b7`: `TestRepositorioBacklog_HorasEstimadas_ElementoInexistente` y el subcaso "recién creado, sin estimar" de `TestRepositorioBacklog_GuardarElemento_GuardaLasHorasEstimadas`
+  - `62e9bde`: `TestPatchElemento_HorasEstimadasYStoryPoints_SonIndependientes`, `TestPostBacklog_ConHorasEstimadas_Devuelve400`
+  - `f156b55`: `TestPantallaElemento_HorasSinCambios_NoSeEnvian`
+  - `374e629`: `TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06` y 7 de los 9 subcasos de `TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran`; fijan lo que no debía cambiar
+
+### Huecos
+
+- La spec sigue en **Borrador**.
+- **P-10 (campo nuevo de horas estimadas, toca HU-05 y HU-06)** y **P-12 (tope de 1000 h, arbitrario)** están implementadas según la propuesta y abiertas a objeción del equipo en la PR.
+- **Carrera de `agregarColumnas` en las migraciones:** issue a crear. Es preexistente (también `sprint_id` y `puntos_*`, por lectura del código) y compartida. Con 4 `AbrirDB` simultáneos sobre el esquema anterior a HU-19, hubo fallas en 30 de 30 rondas (89 de 120 aperturas, `duplicate column name`), con conexiones en un mismo proceso. Según ADR-0004, en el plan gratuito de Render el disco se borra en cada despliegue, así que hoy esas bases nacen con la columna.
+- El mensaje "las horas se registran en múltiplos de media hora" al estimar viene de HU-18 y la sección 7 de la spec lo fija. Se entiende, pero habla de registrar.
+- **Asimetría conocida, para decisión del equipo:** un POST del formulario sin campos ocultos conserva las horas estimadas (RN-19.12), pero sigue quitando los story points (comportamiento de HU-06, DEF-01). Comprobado contra el servidor real.
+- Si el formulario vuelve con otro error en un pedido sin el campo de horas, las muestra vacías aunque haya guardadas. Reenviarlo no las borra, y desde el navegador el campo siempre viene.
+- Si la comparación falla al volver de un error de edición, se responde 500 y se pierde lo tipeado. Es intencional y está probado, pero la spec no lo menciona.
+- La pantalla **no se probó en un navegador** ni con un lector de pantalla: se probó con tests y con curl contra el servidor.
+- La duración del BDD completo subió a unos 224 s: cada escenario de cualquier historia crea una base más, porque los hooks de todas las historias corren siempre.
+- Si HU-13 (que toca `story_points` en los mismos archivos) entra antes, habrá que traer `main` de nuevo.
+- Etiquetas: los tests atados solo a una sección de la spec llevan el CA más cercano. El 500 usa CA-19.17, aunque ese CA no menciona el 500.
+- El comentario de cabecera del feature nombra CA-19.16 a CA-19.18, pero no CA-19.19, que se agregó después. `cambiosDeFormElemento` explica la regla, pero no nombra RN-19.12.
+- `mostrarElemento` consulta el proyecto y `CompararEsfuerzo` lo vuelve a consultar, igual que el elemento: son lecturas de más, sin consecuencias prácticas.
+- Refactors que tocaron código de otras historias: `validarMediasHoras` en `validarHoras` (HU-18), `copiarPuntero` en `NuevoElementoBacklog` (HU-05), `Editar` y `ActualizarElemento` (HU-06), y `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` (HU-18), que suma la sección nueva. La descripción de ese test en HU-18 todavía enumera las secciones anteriores. Conviene que lo revisen sus autores en la PR.
 
 ---
 
