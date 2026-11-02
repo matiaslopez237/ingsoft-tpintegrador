@@ -16,7 +16,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-06 Editar o eliminar un elemento del backlog | ✓ (Borrador, pendiente de aprobación en el PR; RN-06.8 pendiente de HU-09) | 10/10 | 10/10 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 22/22 escenarios |
 | HU-07 Listar y ordenar el backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 14/14 escenarios |
 | HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
-| HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta, pendiente de confirmar) | 14/15 (CA-18.15 se cubre con tests del handler) | 14/15 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×14, REFACTOR ×4 | ✓ 28/28 escenarios |
+| HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta JSON, pendiente de confirmar; P-14 y P-15, de la pantalla, abiertas) | 14/25 (CA-18.15 se cubre con tests del handler; CA-18.16 a CA-18.25, con tests del adaptador) | 24/25 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×16, REFACTOR ×5 | ✓ 28/28 escenarios |
 | HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
 | HU-09 Asignar historias del backlog a un Sprint | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
 | HU-10 Marcar una historia como completada en el Sprint | ✓ (Aprobada; P-9 abierta a objeción en el PR) | 5/7 (CA-10.6 y CA-10.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 9/9 escenarios |
@@ -25,7 +25,8 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
-| HU-22 Calcular story points y velocidad del equipo | ✓ (Borrador; P-1, la ventana del promedio, pendiente de confirmar) | 5/8 (CA-22.1 ya la cubre HU-12; CA-22.7 y CA-22.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
+| HU-22 Calcular story points y velocidad del equipo | ✓ (Aprobada) | 6/9 (CA-22.1 ya la cubre HU-12; CA-22.7 y CA-22.8 se cubren con tests del handler y de la pantalla) | 9/9 | ✓ | RED → GREEN ×6 | ✓ 9/9 escenarios |
+| HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 
 ---
 
@@ -475,10 +476,11 @@ Pedidos simultáneos (sección 5 de la spec; sin CA propio porque no se puede ex
 
 ## HU-18: Registrar esfuerzo en una historia o tarea
 
-- **Issue:** #29 · Sprint 1 · 3 SP
+- **Issue:** #29 · Sprint 1 · 3 SP · pantalla: #289
 - **Spec:** [docs/specs/HU-18-registrar-esfuerzo.md](specs/HU-18-registrar-esfuerzo.md)
 - **Feature:** [features/HU-18-registrar-esfuerzo.feature](../features/HU-18-registrar-esfuerzo.feature) (steps en [test/bdd/hu18_steps_test.go](../test/bdd/hu18_steps_test.go))
 - **Ruta HTTP:** `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`. **Pendiente de confirmar (P-6):** reemplaza el `POST /esfuerzo` de la tarea 18.7 y falta el OK de Matías.
+- **Pantalla:** sección "Registrar esfuerzo" de `GET /web/proyectos/{id}/backlog/{elementoID}` (HU-06), con la acción `POST /web/proyectos/{id}/backlog/{elementoID}/esfuerzo`.
 
 ### Criterios de aceptación
 
@@ -499,6 +501,20 @@ Pedidos simultáneos (sección 5 de la spec; sin CA propio porque no se puede ex
 | CA-18.13 Los registros se conservan al quitar al integrante | RN-18.3 | Los registros se conservan al quitar al integrante del proyecto `@alternativo` · Un integrante quitado del proyecto ya no puede registrar esfuerzo nuevo `@error` | `TestRepositorioEsfuerzo_QuitarAlIntegrante_ConservaSusRegistros` | Tabla `registros_esfuerzo` en `db.go` (sin clave foránea a `integrantes`) |
 | CA-18.14 Proyecto no Activo y fecha anterior al inicio | RN-18.4 | Se registra esfuerzo en un proyecto no Activo y con fecha anterior a su inicio `@alternativo` | `TestNuevoRegistroEsfuerzo_FechaHoyOPasada_EsValidaYGuardaSoloElDia` (fecha de hace meses) | `domain.NuevoRegistroEsfuerzo` y `app.RegistrarEsfuerzo` no miran las fechas ni el estado del proyecto |
 | CA-18.15 Respuestas HTTP 201 / 400 / 404 | — (secciones 3 y 7) | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y no pasan por HTTP. Se cubre con los tests del handler (tarea 18.7). | `TestPostEsfuerzo_DatosValidos_Devuelve201ConElRegistro`, `_ProyectoOElementoInexistente_Devuelve404`, `_DatosInvalidos_Devuelve400ConElError`, `_PedidoMalFormado_Devuelve400SinLlamarAlCasoDeUso`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerRegistrarEsfuerzo`, `http.RegistrarRegistrarEsfuerzo`, `http.NuevoRouter` |
+| CA-18.16 Formulario inicial, sin registros ni totales | Sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_FormularioInicial` | `elemento.html`, `http.pantallas.seccionEsfuerzoInicial`, `http.pantallas.mostrarElemento` |
+| CA-18.17 Enlace "Registrar esfuerzo" en cada fila del backlog | Sección 9 | — (test del adaptador) | `TestPantallaBacklog_EnlazaARegistrarEsfuerzoEnCadaElemento` | `backlog.html` |
+| CA-18.18 Envío válido: 303, confirmación y sin registrar otro al recargar | Sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_EnvioValido_RedirigeYConfirma`, `TestPantallaEsfuerzo_OtroValorDelParametro_NoConfirma`, `TestPantallaEsfuerzo_ParametroDeConfirmacion_NoInyecta`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.pantallas.registrarPantallasEsfuerzo`, `http.pantallas.registrarEsfuerzoPantalla`, `http.pantallas.elemento`, `elemento.html` |
+| CA-18.19 Errores del dominio: 400, mensaje sin envolver y lo tipeado conservado | RN-18.2, RN-18.4 a RN-18.8, sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_ErroresDelDominio_VuelvenAlFormulario`, `TestPantallaEsfuerzo_ConError_ConservaLoTipeado`, `TestPantallaEsfuerzo_LoTipeado_SeEscapa` | `http.mensajeDeValidacionEsfuerzo`, `http.formMensajeDeErrorConocido`, `http.pantallas.mostrarErrorDeEsfuerzo` |
+| CA-18.20 Fecha u horas ilegibles, sin llamar al caso de uso; horas vacías | Sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_ErroresDeFormato_NoLlamanAlCasoDeUso`, `TestPantallaEsfuerzo_HorasVacias_MensajeDeHorasInvalidas` | `http.datosRegistroDeForm`, `http.horasDeForm`, `http.fechaDelPedido` |
+| CA-18.21 Integrante quitado después de abrir la pantalla | RN-18.3, sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_IntegranteQuitado_400SinElDesplegable` | `http.pantallas.mostrarElemento`, `elemento.html` |
+| CA-18.22 Proyecto o elemento inexistente, de otro proyecto o ID inválido | RN-18.1, sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_NoEncontrados_Devuelven404ConLaPaginaDeError`, `TestPantallaEsfuerzo_ErrorDeFormatoConElementoInexistente_Devuelve404`, `TestPantallaEsfuerzo_ErrorDeFormatoConProyectoInexistente_Devuelve404`, `TestPantallaElemento_ProyectoInexistente_Devuelve404`, `TestPantallaEsfuerzo_IDInvalido_Devuelve400` | `http.pantallas.errorDeElemento`, `http.pantallas.mostrarErrorDeEsfuerzo`, `http.pantallas.idsElemento` |
+| CA-18.23 Otro sitio: 403; falla interna: 500 sin el detalle | Sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_DesdeOtroSitio_SeRechaza`, `TestPantallaEsfuerzo_FallaInterna_Devuelve500SinDetalle` | `http.pantallas.formulario`, `http.mismoOrigen`, `http.pantallas.fallaInterna` |
+| CA-18.24 Proyecto sin integrantes: aviso y enlace al detalle | Sección 9 | — (test del adaptador) | `TestPantallaEsfuerzo_ProyectoSinIntegrantes_AvisaYEnlaza` | `elemento.html` |
+| CA-18.25 Los errores de editar y eliminar conservan la sección de esfuerzo | Sección 9 | — (test del adaptador) | `TestPantallaElemento_ErroresDeEditarYEliminar_MuestranLaSeccionDeEsfuerzo` | `http.pantallas.mostrarElemento`, `http.pantallas.editarElemento`, `http.pantallas.eliminarElemento` |
+
+CA-18.16 a CA-18.25 no tienen escenario BDD, como dice la spec: se cubren con tests del adaptador (`httptest`), igual que las pantallas de HU-10 y HU-11. Los tests están en [pantallas_esfuerzo_test.go](../internal/adapters/http/pantallas_esfuerzo_test.go), salvo `TestNuevoRouter_RegistraTodasLasRutas`, que está en [router_test.go](../internal/adapters/http/router_test.go).
+
+**Test de integración entre dos historias, sin criterio propio:** `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` (`067e249`), en el mismo archivo, se traza a la sección 9 de HU-18 y a CA-14.9 de HU-14. Verifica que las dos secciones convivan en la pantalla del elemento, en orden (edición, Planning Poker, esfuerzo, eliminar), sin ids duplicados ni formularios anidados, sin ronda y con una ronda abierta. Ningún CA pide esto, así que no suma a los contadores de la tabla de resumen.
 
 ### Reglas de negocio
 
@@ -521,6 +537,10 @@ Sin CA propio en la spec:
 - Falla interna (sección 7): `TestRegistrarEsfuerzo_FallaDelRepositorio_SePropaga`, `TestPostEsfuerzo_FallaInterna_Devuelve500SinDetalles`.
 - Horas guardadas como medias horas y fecha como `AAAA-MM-DD` (sección 5): `TestRepositorioEsfuerzo_GuardaHorasEnMediasHorasYFechaComoTexto`.
 - Búsqueda por ID de un registro inexistente (sección 7, última fila): `TestRepositorioEsfuerzo_BuscarInexistente_RetornaErrRegistroEsfuerzoNoEncontrado`.
+- Pantalla, fecha en la zona del servidor (RN-18.4, sección 5): `TestPantallaEsfuerzo_FechaEnLaZonaDelServidor`.
+- Pantalla, horas leídas sin los espacios de alrededor (sección 9): `TestPantallaEsfuerzo_HorasConEspacios_SeLeen`.
+- Pantalla, falla interna al consultar los integrantes (sección 9): `TestPantallaElemento_FallaAlConsultarElProyecto_Devuelve500SinDetalle`.
+- Pantalla, formulario de más de 64 KiB, que da 413 (sección 9): `TestPantallaEsfuerzo_FormularioGrande_Devuelve413`.
 
 ### Errores nuevos
 
@@ -536,6 +556,8 @@ Todos están definidos en [internal/domain/registro_esfuerzo.go](../internal/dom
 | `ErrHorasExcedenMaximo` | "un registro no puede superar las 24 horas" | 20 | `domain.validarHoras` | 400 |
 | `ErrRegistroEsfuerzoNoEncontrado` | "registro de esfuerzo no encontrado" | 23 | `persistencia.RepositorioEsfuerzo.BuscarRegistroPorID` | — (no hay endpoint de lectura en HU-18) |
 
+La pantalla no agrega errores de dominio. El único mensaje nuevo es de formato y vive en el adaptador: "las horas deben ser un número" (`errFormulario` en `http.horasDeForm`).
+
 ### Archivos de código y tests
 
 | Capa | Código | Tests |
@@ -544,6 +566,8 @@ Todos están definidos en [internal/domain/registro_esfuerzo.go](../internal/dom
 | Caso de uso | [internal/app/registrar_esfuerzo.go](../internal/app/registrar_esfuerzo.go) (`RegistrarEsfuerzo`, puertos `LectorElementos` y `RepositorioEsfuerzo`; reutiliza `LectorProyectos` de HU-04) | [registrar_esfuerzo_test.go](../internal/app/registrar_esfuerzo_test.go) |
 | Persistencia | [internal/adapters/persistencia/esfuerzo_repo.go](../internal/adapters/persistencia/esfuerzo_repo.go) (`GuardarRegistro`, `BuscarRegistroPorID`), [db.go](../internal/adapters/persistencia/db.go) (tabla `registros_esfuerzo`) | [esfuerzo_repo_test.go](../internal/adapters/persistencia/esfuerzo_repo_test.go), contra SQLite real |
 | HTTP | [internal/adapters/http/esfuerzo_handler.go](../internal/adapters/http/esfuerzo_handler.go) (`RegistrarRegistrarEsfuerzo`), registrada en [router.go](../internal/adapters/http/router.go) y conectada en [cmd/server/main.go](../cmd/server/main.go) con `time.Now` como reloj | [esfuerzo_handler_test.go](../internal/adapters/http/esfuerzo_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla (archivo nuevo) | [internal/adapters/http/pantallas_esfuerzo.go](../internal/adapters/http/pantallas_esfuerzo.go) (`registrarPantallasEsfuerzo`, `registrarEsfuerzoPantalla`, `mostrarErrorDeEsfuerzo`, `seccionEsfuerzoInicial`, `datosRegistroDeForm`, `horasDeForm`, `mensajeDeValidacionEsfuerzo`) | [pantallas_esfuerzo_test.go](../internal/adapters/http/pantallas_esfuerzo_test.go) (nuevo), [router_test.go](../internal/adapters/http/router_test.go) (ruta nueva), [pantallas_test.go](../internal/adapters/http/pantallas_test.go) (`pedirAlMux`) |
+| Pantalla (archivos tocados) | [pantallas.go](../internal/adapters/http/pantallas.go) (campo `reloj`, registro de la ruta, `formMensajeDeErrorConocido`), [pantallas_elemento.go](../internal/adapters/http/pantallas_elemento.go) (`datosEdicionElemento`, `mostrarElemento`, `errorDeElemento`), [pantallas_defecto.go](../internal/adapters/http/pantallas_defecto.go) (solo por el refactor), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html), [backlog.html](../internal/adapters/http/web/plantillas/backlog.html), [estilos.css](../internal/adapters/http/web/static/estilos.css) (`.exito`) | Los mismos de la fila anterior |
 | BDD | [test/bdd/hu18_sistema_test.go](../test/bdd/hu18_sistema_test.go), [hu18_steps_test.go](../test/bdd/hu18_steps_test.go) (reloj falso) | 28 escenarios en verde |
 
 ### Commits
@@ -597,9 +621,63 @@ Salen de `git log main..HEAD`, en orden.
 
 En la tabla se omite el scope `(HU-18)` de los mensajes a partir de 18.4: todos los commits lo llevan.
 
+**Ampliación con la pantalla (issue #289).** Salen de `git log origin/main..HEAD`, en la rama `hu-18-pantalla-esfuerzo`.
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| Spec de la pantalla | `df4922e` docs(HU-18): spec de la pantalla de registrar esfuerzo | — |
+| Pantalla | `198394e` [RED] → `0ade8e9` [GREEN] → `c6b1694` [REFACTOR] | **RED → GREEN → REFACTOR**. El RED incluye el campo `reloj` en `pantallas.go`: es código de producción mínimo para que los tests compilen y fallen por aserciones, no por compilación. |
+| Estilo de la confirmación | `72bb594` style(HU-18): estilo de la confirmación .exito | — |
+| Revisión (go-reviewer): error de formato con proyecto inexistente | `33efaf2` [RED] → `790481b` [GREEN] | **RED → GREEN** (sin REFACTOR: el cambio son unas pocas líneas al principio de `mostrarErrorDeEsfuerzo`) |
+| Revisión (go-reviewer): escape de HTML | `851ec94` test(HU-18): proteger el escape de HTML en el formulario de esfuerzo | — (tests nuevos sobre código ya en verde; se verificaron con las mutaciones A a D) |
+| Revisión (go-reviewer): aserciones menos frágiles | `2eea25c` test(HU-18): aserciones menos frágiles de la pantalla de esfuerzo | — (se verificaron con las mutaciones E a I) |
+| Trazabilidad de la pantalla | `071011d` docs(trazabilidad): ampliar HU-18 con la pantalla | — |
+| Merge con `main` (HU-14 y HU-15) | `cc1a242` Merge remote-tracking branch 'origin/main' into hu-18-pantalla-esfuerzo | merge de `main`, con dos choques que git no detectó (ver Huecos) |
+| Convivencia con Planning Poker | `067e249` test(HU-18): la pantalla del elemento muestra Planning Poker y Registrar esfuerzo juntos | — (sin RED real; se verificó con mutaciones, ver Huecos) |
+| Trazabilidad de la convivencia | este commit | — |
+
+### Evidencia de la pantalla: mutaciones manuales
+
+Cada mutación se aplicó sobre el código, se corrieron los tests y se revirtió con `git checkout`. Ninguna quedó en un commit.
+
+| # | Mutación | Resultado |
+|---|---|---|
+| 1 | `mensajeDeValidacion` en lugar de la lista de HU-18 | Fallan `TestPantallaEsfuerzo_ErroresDelDominio_VuelvenAlFormulario`, `TestPantallaEsfuerzo_ConError_ConservaLoTipeado` y `TestPantallaEsfuerzo_HorasVacias_MensajeDeHorasInvalidas` |
+| 2 | `fechaDeForm` (UTC) en lugar de `fechaDelPedido` | Fallan `TestPantallaEsfuerzo_FechaEnLaZonaDelServidor` y `TestPantallaEsfuerzo_ErroresDeFormato_NoLlamanAlCasoDeUso` |
+| 3 | `errorDeElemento` sin `ErrProyectoNoEncontrado` | Fallan `TestPantallaEsfuerzo_NoEncontrados_Devuelven404ConLaPaginaDeError` y `TestPantallaElemento_ProyectoInexistente_Devuelve404` |
+| 4 | Fecha inicial en UTC en lugar de la zona del reloj | Fallan `TestPantallaEsfuerzo_FormularioInicial`, `TestPantallaEsfuerzo_EnvioValido_RedirigeYConfirma` y `TestPantallaElemento_ErroresDeEditarYEliminar_MuestranLaSeccionDeEsfuerzo` |
+| A | `template.HTML` en el atributo `value` | Falla `TestPantallaEsfuerzo_LoTipeado_SeEscapa` |
+| B | `template.HTMLAttr` con el valor crudo | Falla `TestPantallaEsfuerzo_LoTipeado_SeEscapa` |
+| C | `template.HTML` impreso como texto | Falla `TestPantallaEsfuerzo_LoTipeado_SeEscapa` |
+| D | Reflejar `?esfuerzo=` con `template.HTML` | Falla `TestPantallaEsfuerzo_ParametroDeConfirmacion_NoInyecta` |
+| E | Tabla de registros en la sección | Falla `TestPantallaEsfuerzo_FormularioInicial` |
+| F | Lista de registros en la sección | Falla `TestPantallaEsfuerzo_FormularioInicial` |
+| G | Texto "Horas acumuladas: 3,5 h" | Falla `TestPantallaEsfuerzo_FormularioInicial` |
+| H | Texto "Llevás 2 horas" | Falla `TestPantallaEsfuerzo_FormularioInicial` |
+| I | Texto "Los registros suman al total del elemento." | Pasa, como se buscaba: no es un listado ni un total |
+
+La mutación A falla solo por el `value` esperado: `html/template` quita las etiquetas en ese atributo y no llega a salir un `<script>`. Las mutaciones B, C y D son las que inyectan HTML.
+
 ### Huecos
 
 - La spec sigue en **Borrador**. **P-6 (la ruta HTTP) está pendiente de confirmar con Matías**: si cambia, hay que tocar `esfuerzo_handler.go`, `router_test.go`, CA-18.15 y esta matriz.
+- **P-14:** como la pantalla no muestra el total, un doble registro no se detecta desde la interfaz, y tampoco se corrige, porque no se pueden editar ni eliminar registros.
+- **P-15** sigue abierta en la spec, aunque el código ya hace lo que propone: `errorDeElemento` reconoce `ErrProyectoNoEncontrado`.
+- Accesibilidad: `role="status"` y `role="alert"` vienen en el HTML inicial de la página, y esas regiones no siempre se anuncian. `error_form` está en `layout.html`, compartido con HU-30, y no se tocó.
+- La pantalla no se probó en un navegador ni con un lector de pantalla: se probó con tests y con curl contra el servidor. Falta ver el salto a `#esfuerzo` y cómo se ven la sección y `.exito`.
+- Los tests de zona horaria solo corrieron en UTC-3, porque Go ignora `TZ` en Windows. La independencia real de la zona se verá en el CI.
+- `sinListadoNiTotal` no detecta un total sin unidades, como "Total: 3,5", y solo se aplica al formulario inicial (CA-18.16).
+- Refactors que tocaron código de otras historias: `formMensajeDeErrorConocido` reemplazó el cuerpo de `mensajeDeValidacion` (HU-30), `mensajeDeValidacionElemento` (HU-06) y `mensajeDeValidacionDefecto` (HU-20), y `mostrarElemento` y `errorDeElemento` (HU-06) cambiaron para la pantalla. Conviene que lo revisen sus autores en el PR.
+- `mostrarErrorDeEsfuerzo` consulta el proyecto y `mostrarElemento` lo vuelve a consultar: es una lectura de más, solo cuando el formulario vuelve con un error.
+- El merge `cc1a242` con `main` (HU-14 y HU-15) tuvo conflictos en `elemento.html`, `pantallas_elemento.go` y `pantallas.go`, y además dos choques que git no detectó, porque no había líneas en conflicto:
+  - `mensajeDeErrorConocido` quedó definida dos veces y con distinto comportamiento: la de HU-18 también reconoce `errFormulario`; la de HU-14 solo mira su lista. La de HU-18 se renombró a `formMensajeDeErrorConocido` y la de HU-14 no cambió. Conviven dos nombres muy parecidos, que se podrían unificar en otro cambio.
+  - `iniciarRondaPantalla` (HU-14) llamaba a `mostrarElemento` con la firma anterior, sin el parámetro de esfuerzo. Se le agregó `p.seccionEsfuerzoInicial()`: el `400` de HU-14 sigue igual, y ahora esa pantalla también muestra la sección de esfuerzo.
+- `067e249` no tuvo RED real: `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` se escribió con el código ya funcionando. La evidencia son 5 mutaciones manuales sobre `elemento.html`, que no quedaron en ningún commit. Con cada una el test falla, y sin ellas pasa:
+  - quitar la sección de Planning Poker: falla porque falta `section titulo-poker` y su `<h2>`;
+  - quitar la sección de esfuerzo: falla porque falta `section esfuerzo` y su `<h2>`;
+  - invertir el orden (esfuerzo antes que Planning Poker): falla la estructura esperada;
+  - duplicar un id (`id="horas"` también en la actividad): falla con `ids duplicados: ["horas"]`;
+  - anidar un formulario dentro del de esfuerzo: falla porque aparece `form …/esfuerzo#esfuerzo > form /x`.
 - CA-18.15 no tiene escenario BDD a propósito: los escenarios prueban el núcleo y no pasan por HTTP. Lo cubren los tests del handler.
 - CA-18.11 no tiene test unitario propio. El dominio no suma registros porque valida uno solo, así que no hay lógica que probar aparte. La regla se verifica en el escenario BDD, que guarda 20 h + 8 h en el mismo día contra SQLite.
 - CA-18.14: el test unitario cubre la fecha anterior al inicio del proyecto, pero lo de "proyecto no Activo" solo se verifica en el BDD. El caso de uso no lee el estado, así que no hay rama que probar.
@@ -1182,7 +1260,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 - **Issue:** [#33](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/33) · Sprint 3 · 5 SP
 - **Spec:** [docs/specs/HU-22-calcular-velocidad.md](specs/HU-22-calcular-velocidad.md)
 - **Feature:** [features/HU-22-calcular-velocidad.feature](../features/HU-22-calcular-velocidad.feature) (steps en [test/bdd/hu22_steps_test.go](../test/bdd/hu22_steps_test.go))
-- **Alcance real:** HU-11 ya calcula y guarda los puntos planificados y completados de cada Sprint al cerrarlo (RN-11.6), y HU-12 ya los muestra (pantalla y JSON). HU-22 agrega solo la **velocidad** (el promedio de puntos completados entre los Sprints cerrados); no agrega persistencia nueva.
+- **Alcance real:** HU-11 ya calcula y guarda los puntos planificados y completados de cada Sprint al cerrarlo (RN-11.6), y HU-12 ya los muestra (pantalla y JSON). HU-22 agrega solo la **velocidad** (el promedio de puntos completados entre los últimos 3 Sprints cerrados); no agrega persistencia nueva.
 
 ### Criterios de aceptación
 
@@ -1196,16 +1274,17 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 | CA-22.6 Proyecto inexistente | — (error reutilizado) | No se puede consultar la velocidad de un proyecto que no existe `@error` | `TestConsultarVelocidad_ProyectoInexistente_RetornaError` | `app.ConsultarVelocidad` |
 | CA-22.7 Respuesta HTTP | — | No va acá (como CA-18.15): se cubre con tests del adaptador | `TestGetVelocidad_*` (5 tests) | `internal/adapters/http/velocidad_handler.go` |
 | CA-22.8 Pantalla | Restricciones | No va acá (como CA-06.10): se cubre con tests de la pantalla | `TestPantallaSprintsAnteriores_ConSprintsCerrados_MuestraLaVelocidad`, `TestPantallaSprintsAnteriores_SinSprintsCerrados_AvisaSinVelocidad` | `pantallas_sprints.go` (`sprintsAnteriores`, `formatearVelocidad`), `web/plantillas/sprints_anteriores.html` |
+| CA-22.9 Solo los últimos 3 sprints cerrados entran en el promedio | RN-22.2 | Con más de 3 sprints cerrados, solo se promedian los 3 más recientes `@limite` | `TestVelocidad` (caso ventana) | `domain.Velocidad` (`VentanaVelocidad`) |
 
 ### Archivos de código y tests
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | [internal/domain/sprint_historial.go](../internal/domain/sprint_historial.go) (`Velocidad`, junto a `SprintsAnteriores` de HU-12) | [sprint_historial_test.go](../internal/domain/sprint_historial_test.go) |
+| Dominio | [internal/domain/sprint_historial.go](../internal/domain/sprint_historial.go) (`Velocidad`, `VentanaVelocidad`, junto a `SprintsAnteriores` de HU-12) | [sprint_historial_test.go](../internal/domain/sprint_historial_test.go) |
 | Caso de uso | [internal/app/consultar_velocidad.go](../internal/app/consultar_velocidad.go) | [consultar_velocidad_test.go](../internal/app/consultar_velocidad_test.go) |
 | HTTP (JSON) | [internal/adapters/http/velocidad_handler.go](../internal/adapters/http/velocidad_handler.go) (`GET /proyectos/{id}/velocidad`) | [velocidad_handler_test.go](../internal/adapters/http/velocidad_handler_test.go) |
 | Pantalla | [internal/adapters/http/pantallas_sprints.go](../internal/adapters/http/pantallas_sprints.go) (reutiliza la pantalla de HU-12), [web/plantillas/sprints_anteriores.html](../internal/adapters/http/web/plantillas/sprints_anteriores.html) | [pantallas_sprints_anteriores_test.go](../internal/adapters/http/pantallas_sprints_anteriores_test.go) |
-| BDD | [test/bdd/hu22_sistema_test.go](../test/bdd/hu22_sistema_test.go), [hu22_steps_test.go](../test/bdd/hu22_steps_test.go) | 8 escenarios en verde |
+| BDD | [test/bdd/hu22_sistema_test.go](../test/bdd/hu22_sistema_test.go), [hu22_steps_test.go](../test/bdd/hu22_steps_test.go) | 9 escenarios en verde |
 
 ### Commits
 
@@ -1219,13 +1298,78 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 | Conectar los escenarios BDD con el caso de uso real | `9370946` | BDD en verde |
 | 22.7 HTTP | `56dfdb1` [RED] → `9dedf2a` [GREEN] | **RED → GREEN** |
 | 22.8 Pantalla (sumada a la de HU-12) | `372945a` [RED] → `203fb56` [GREEN] | **RED → GREEN** |
-| 22.9 Revisión y trazabilidad | este commit | — |
+| 22.9 Revisión y trazabilidad | `83f6053` | — |
+| 22.10 Corrección de la revisión del PR (ventana de 3) | `a107acb` (spec) → `b1c51c1` (BDD) → `c4a7558` [RED] → `3514f64` [GREEN] | **RED → GREEN** |
 
 ### Huecos
 
-- La spec está en **Borrador**: queda pendiente de aprobación en el PR. P-1 (la velocidad promedia *todos* los sprints cerrados, sin ventana de "últimos N") está pendiente de confirmar con el resto del equipo.
+- ~~La spec está en Borrador, P-1 pendiente de confirmar~~: resuelto el 2026-11-02. Matías López (Agile Enabler) pidió en la revisión del PR que la velocidad promedie solo los últimos 3 Sprints cerrados (ventana móvil), no todos; se corrigió la spec (RN-22.2, CA-22.9 nuevo) y el código (tarea 22.10). Spec Aprobada.
 - No hay pantalla nueva: la velocidad se agregó a la pantalla ya existente de HU-12 (`/web/proyectos/{id}/sprints/anteriores`), como se acordó al refinar la historia.
-- Revisión con el agente `go-reviewer` (tarea 22.9): sin hallazgos bloqueantes. Confirmó la lógica del promedio, la distinción `null` vs. `0` (RN-22.3) y que no hay lógica de negocio en los adaptadores. Notas menores sin cambios: el handler de la pantalla repite la consulta del proyecto y de los sprints por usar dos casos de uso separados (`ListarSprintsAnteriores` y `ConsultarVelocidad`), que es la separación que pide la propia spec; y el ejemplo de la spec (`6.0` en vez de `6`) se corrigió en este mismo commit.
+- Revisión con el agente `go-reviewer` (tarea 22.9): sin hallazgos bloqueantes. Confirmó la lógica del promedio, la distinción `null` vs. `0` (RN-22.3) y que no hay lógica de negocio en los adaptadores. Notas menores sin cambios: el handler de la pantalla repite la consulta del proyecto y de los sprints por usar dos casos de uso separados (`ListarSprintsAnteriores` y `ConsultarVelocidad`), que es la separación que pide la propia spec; y el ejemplo de la spec (`6.0` en vez de `6`) se corrigió en ese commit.
+- `sprints_cerrados` en la respuesta JSON y en `VelocidadProyecto.SprintsCerrados` es cuántos Sprints entraron en el promedio (hasta 3), no el total de Sprints cerrados del proyecto: se aclaró explícitamente en la spec (sección 3) y en el comentario del campo, porque con la ventana podían confundirse los dos números (tarea 22.10).
+
+---
+
+## HU-16: Repetir una ronda de votación
+
+- **Issue:** #27 · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-16-nueva-ronda.md](specs/HU-16-nueva-ronda.md)
+- **Feature:** [features/HU-16-nueva-ronda.feature](../features/HU-16-nueva-ronda.feature) (steps en [test/bdd/hu16_steps_test.go](../test/bdd/hu16_steps_test.go), sobre el mundo de HU-14)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-16.1 Con la ronda cerrada se abre la siguiente; la anterior conserva sus votos | RN-16.1, RN-16.2 | Después de una ronda cerrada se abre la siguiente y la anterior conserva sus votos `@normal` | `TestListarRondas_DevuelveElHistorialDelElemento`, `TestRepositorioRondas_ListarRondas` | `domain.NuevaRonda` (HU-14), `app.ListarRondas`, `persistencia.RepositorioRondas.ListarRondas` |
+| CA-16.2 Se repite aunque no haya habido diferencias | RN-16.4 | Se puede repetir la ronda aunque no haya habido diferencias `@alternativo` | `TestPuedeRepetirse` (sin diferencia), `TestPantallaRonda_NuevaRonda` (sin diferencia) | `domain.PuedeRepetirse` |
+| CA-16.3 Con una ronda abierta no se abre otra | RN-16.1 | No se puede abrir otra ronda mientras hay una abierta `@error` | Los de HU-14 (`ErrRondaYaAbierta`) | `domain.NuevaRonda` (HU-14) |
+| CA-16.4 Historial de la más reciente a la más antigua, con votos de las cerradas y sin valores de la abierta | RN-16.3 | El historial muestra todas las rondas, de la más reciente a la más antigua `@normal` | `TestHistorialRondas_OrdenYRevelacion`, `TestHistorialRondas_NoModificaLasRondas`, `TestListarRondas_DevuelveElHistorialDelElemento` | `domain.HistorialRondas` (usa `Ronda.Resumen` de HU-14 y HU-15) |
+| CA-16.5 Sin rondas, historial vacío | RN-16.3 | Un elemento sin rondas tiene el historial vacío `@limite` | `TestHistorialRondas_SinRondas`, `TestListarRondas_SinRondas_ListaVacia`, `TestRepositorioRondas_ListarRondas_SinRondas` | `domain.HistorialRondas` |
+| CA-16.6 Proyecto o elemento inexistente, o elemento de otro proyecto | RN-16.5 | No se puede consultar el historial desde un proyecto que no existe `@error` · …de un elemento de otro proyecto `@error` | `TestListarRondas_Errores`, `TestListarRondas_FallaDelRepositorio_SePropaga` | `app.ListarRondas.Ejecutar` (`buscarElementoDelProyecto`) |
+| CA-16.7 HTTP 200 / 404 / 400 | Sección 3 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y la pantalla. | `TestGetHistorialRondas_DevuelveLasRondas`, `TestGetHistorialRondas_SinRondas_DevuelveArrayVacio`, `TestGetHistorialRondas_Errores`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerHistorialRondas` (reutiliza `aRespuestaRonda` de HU-14), `http.RegistrarHistorialRondas` |
+| CA-16.8 "Nueva ronda" en la última ronda cerrada; historial en el elemento | RN-16.3, RN-16.4 | Desde la pantalla de la ronda cerrada se abre la siguiente `@normal` | `TestPuedeRepetirse`, `TestPantallaRonda_NuevaRonda`, `TestPantallaRonda_CerradaPeroNoEsLaUltima_SinNuevaRonda`, `TestPantallaRonda_ElementoHecho_SinNuevaRonda`, `TestPantallaElemento_HistorialDeRondas`, `TestPantallaElemento_SinRondas_SinHistorial`, `TestPantallaElemento_FallaDelHistorial` | `http.pantallas.mostrarRonda` (`PuedeRepetirse`), `http.pantallas.pokerDelElemento` (`Historial`), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-16.1 Ronda nueva con la última cerrada y el elemento no Hecho; no con una abierta | CA-16.1, CA-16.3 | `domain.NuevaRonda` de HU-14 (HU-16 no la cambia) |
+| RN-16.2 Abrir una ronda nueva no modifica las anteriores | CA-16.1 | `domain.HistorialRondas` no modifica lo recibido; la persistencia de HU-14 inserta, no actualiza |
+| RN-16.3 Historial de la más reciente a la más antigua, sin valores de la abierta | CA-16.4, CA-16.5, CA-16.8 | `domain.HistorialRondas` |
+| RN-16.4 "Nueva ronda" solo en la última ronda, cerrada, de un elemento no Hecho, con o sin diferencia | CA-16.2, CA-16.8 | `domain.PuedeRepetirse` |
+| RN-16.5 Un elemento de otro proyecto se trata como inexistente | CA-16.6 | `app.ListarRondas.Ejecutar` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker_historial.go](../internal/domain/planning_poker_historial.go) (`HistorialRondas`, `PuedeRepetirse`) | [planning_poker_historial_test.go](../internal/domain/planning_poker_historial_test.go) |
+| Caso de uso y puerto | [internal/app/listar_rondas.go](../internal/app/listar_rondas.go) (`ListarRondas`, puerto angosto `LectorHistorialRondas`) | [listar_rondas_test.go](../internal/app/listar_rondas_test.go) (envuelve el fake de HU-14 sin tocarlo) |
+| Persistencia | [internal/adapters/persistencia/ronda_historial.go](../internal/adapters/persistencia/ronda_historial.go) (`ListarRondas`, reutiliza `BuscarRonda` de HU-14) | [ronda_historial_test.go](../internal/adapters/persistencia/ronda_historial_test.go), [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| HTTP | [internal/adapters/http/historial_rondas_handler.go](../internal/adapters/http/historial_rondas_handler.go) (`GET /proyectos/{id}/backlog/{elementoID}/rondas`), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [historial_rondas_handler_test.go](../internal/adapters/http/historial_rondas_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [pantallas_planning_poker.go](../internal/adapters/http/pantallas_planning_poker.go) (`PuedeRepetirse` en la ronda, `Historial` en el elemento), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_historial_rondas_test.go](../internal/adapters/http/pantallas_historial_rondas_test.go) |
+| BDD | [test/bdd/hu16_sistema_test.go](../test/bdd/hu16_sistema_test.go) (método nuevo del sistema de HU-14, en archivo propio), [hu16_steps_test.go](../test/bdd/hu16_steps_test.go) | 8 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 16.1 Spec | `5d60f4e` | — |
+| 16.2 Escenarios BDD | `1ab6a38` | — |
+| 16.3 Steps de godog | `7ea5111` [RED] (pendientes hasta el caso de uso) | BDD en rojo |
+| 16.4 Dominio | `5030b7a` [RED] → `75ab7bc` [GREEN] | **RED → GREEN** (sin REFACTOR: dos funciones cortas) |
+| 16.5 Caso de uso | `4e2c13f` [RED] → `afe8886` [GREEN] | **RED → GREEN** (sin REFACTOR: mismo molde que HU-14) |
+| 16.6 Persistencia | `72ecf17` [RED] → `64cee06` [GREEN] · `efb6090` (base cerrada) | **RED → GREEN** |
+| BDD conectado al caso de uso | `35e6f9e` | BDD en verde salvo la pantalla |
+| 16.7 Endpoint JSON | `cac55e2` [RED] → `aa49944` [GREEN] | **RED → GREEN** |
+| 16.8 Pantalla | `96cf6f9` [RED] → `0485622` [GREEN] | **RED → GREEN**; BDD 8/8 |
+| 16.9 Revisión y trazabilidad | `c391460` | — |
+
+### Huecos
+
+- No pasó por el agente `go-reviewer`; la revisión queda para el PR.
+- Cambios mínimos en archivos de HU-14 (Nico): registrar los steps de HU-16 en `hu14_steps_test.go`, sumar `ListarRondas` al router del sistema BDD de HU-14 y el campo `Historial` en `datosPokerElemento`. Conviene que lo vea Nico en el PR.
+- Si "Nueva ronda" falla (por ejemplo, otro pedido abrió la ronda en el medio), el error se muestra en la pantalla del elemento y no en la de la ronda, porque el botón usa la acción de HU-14 (anotado en la spec).
 
 ---
 

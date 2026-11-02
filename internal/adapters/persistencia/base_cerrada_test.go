@@ -84,6 +84,7 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 		"GuardarRonda": func() error { r := ronda; return rondas.GuardarRonda(ctx, &r) },
 		"BuscarRonda":  func() error { _, err := rondas.BuscarRonda(ctx, 1); return err },
 		"GuardarVoto":  func() error { return rondas.GuardarVoto(ctx, ronda, "Ana") },
+		"ListarRondas": func() error { _, err := rondas.ListarRondas(ctx, 1); return err }, // HU-16
 	}
 	for nombre, metodo := range metodos {
 		t.Run(nombre, func(t *testing.T) {

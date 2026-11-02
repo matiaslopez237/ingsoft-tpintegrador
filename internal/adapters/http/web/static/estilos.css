@@ -9,6 +9,8 @@
   --primario-oscuro: #1e3a8a;
   --peligro: #b91c1c;
   --alerta-fondo: #fdecec;
+  --exito: #166534;
+  --exito-fondo: #e8f5ec;
   --radio: 6px;
 }
 
@@ -100,6 +102,12 @@ button.peligro { background: #fff; color: var(--peligro); border-color: var(--pe
   border-left: 4px solid var(--peligro);
   background: var(--alerta-fondo);
   color: var(--peligro);
+}
+.exito {
+  padding: 0.6rem 0.8rem;
+  border-left: 4px solid var(--exito);
+  background: var(--exito-fondo);
+  color: var(--exito);
 }
 .vacio, .ayuda { color: var(--suave); }
 

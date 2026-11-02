@@ -123,6 +123,7 @@ type (
 type pantallas struct {
 	cu      CasosDeUso
 	paginas map[string]*template.Template
+	reloj   func() time.Time // HU-18: solo para el valor inicial de la fecha; la regla sigue en el caso de uso
 }
 
 var paginas = []string{
@@ -139,7 +140,7 @@ var funcionesPlantillas = template.FuncMap{"segmento": url.PathEscape}
 const tamanoMaximoFormulario = 64 << 10
 
 func nuevasPantallas(cu CasosDeUso) *pantallas {
-	p := &pantallas{cu: cu, paginas: map[string]*template.Template{}}
+	p := &pantallas{cu: cu, paginas: map[string]*template.Template{}, reloj: time.Now}
 	for _, nombre := range paginas {
 		// Must: las plantillas están embebidas, así que un error acá es de programación y lo
 		// detecta cualquier test que registre las pantallas.
@@ -183,6 +184,7 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	mux.HandleFunc("POST /web/proyectos/{id}/sprints/{sprintID}/cerrar", p.formulario(p.cerrarSprintPantalla))         // HU-11
 	p.registrarPantallasElemento(mux)                                                                                  // HU-06
 	p.registrarPantallasDefecto(mux)                                                                                   // HU-20
+	p.registrarPantallasEsfuerzo(mux)                                                                                  // HU-18
 	p.registrarPantallasPlanningPoker(mux)                                                                             // HU-14
 }
 
@@ -468,11 +470,17 @@ func (p *pantallas) fallaInterna(w http.ResponseWriter, accion string, err error
 
 // mensajeDeValidacion devuelve el mensaje a mostrar si err es un error de validación conocido.
 func mensajeDeValidacion(err error) (string, bool) {
+	return formMensajeDeErrorConocido(err, erroresDeValidacionPantallas)
+}
+
+// formMensajeDeErrorConocido devuelve el mensaje a mostrar si err es un error de formato del formulario
+// o uno de los errores conocidos. Cada pantalla pasa su propia lista.
+func formMensajeDeErrorConocido(err error, conocidos []error) (string, bool) {
 	var ef errFormulario
 	if errors.As(err, &ef) {
 		return ef.mensaje, true
 	}
-	for _, e := range erroresDeValidacionPantallas {
+	for _, e := range conocidos {
 		if errors.Is(err, e) {
 			return e.Error(), true // el texto del error de dominio, no el envuelto por el caso de uso
 		}
