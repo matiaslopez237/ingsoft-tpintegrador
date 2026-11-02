@@ -372,6 +372,47 @@ func TestPantallaElemento_HorasTipeadas_SeEscapan(t *testing.T) {
 	}
 }
 
+// El mismo intento de inyección en todos los campos del formulario del elemento, tipeados y ocultos.
+// Lo tipeado difiere de lo original para que haya cambios, y story_points no es un número: así la
+// página vuelve con 400 y se renderiza todo. Sin el control positivo, el test también pasaría con una
+// redirección o con una plantilla que dejara de mostrar los campos.
+// Traza: HU-19 CA-19.18, ADR-0003 (HU-06 CA-06.10)
+func TestPantallaElemento_TodosLosCampos_SeEscapan(t *testing.T) {
+	const (
+		ataque        = `"><script>alert(1)</script>`
+		ataqueEscrito = `&#34;&gt;&lt;script&gt;alert(1)&lt;/script&gt;`
+	)
+	campos := []string{"titulo", "descripcion", "prioridad", "story_points", "criterios", "estado", "horas_estimadas"}
+	form := url.Values{}
+	for _, campo := range campos {
+		form.Set(campo, ataque+"-tipeado")
+		form.Set("original_"+campo, ataque+"-original")
+	}
+	cu := casosConComparacion(comparacionFija(nil, 0))
+
+	rec := pedirPantalla(t, cu, http.MethodPost, rutaEditarWeb, form)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, se esperaba 400; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	if strings.Contains(rec.Body.String(), "<script>") {
+		t.Errorf("la página contiene <script> sin escapar; cuerpo: %s", rec.Body)
+	}
+	for _, campo := range campos {
+		contiene(t, rec, `name="original_`+campo+`" value="`+ataqueEscrito+`-original"`)
+	}
+	// prioridad y estado son desplegables: lo tipeado no vuelve a la página.
+	tipeado := ataqueEscrito + "-tipeado"
+	contiene(t, rec,
+		`name="titulo" type="text" maxlength="100" value="`+tipeado+`"`,
+		`name="descripcion" rows="3" required>`+tipeado+`</textarea>`,
+		`name="story_points" type="number" min="1" step="1" value="`+tipeado+`"`,
+		`name="criterios" rows="4" required>`+tipeado+`</textarea>`,
+		`name="horas_estimadas" type="number" step="0.5" value="`+tipeado+`"`,
+		`<h1>`+ataqueEscrito+`-original</h1>`,
+		`<title>`+ataqueEscrito+`-original`)
+}
+
 // Un POST sin los campos ocultos envía todos los campos, como los story points (DEF-01).
 // Traza: HU-19 CA-19.13 (RN-19.3; HU-06 CA-06.10)
 func TestPantallaElemento_SinOriginales_EnviaLasHoras(t *testing.T) {
