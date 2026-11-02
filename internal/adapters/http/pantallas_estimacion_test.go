@@ -24,7 +24,7 @@ func TestPantallaRonda_CerradaSinEstimacion_OfreceRegistrar(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d; cuerpo: %.400s", rec.Code, rec.Body)
 	}
-	contiene(t, rec, `action="`+accionEstimacion+`"`, `name="valor"`, `<option value="21">`, "Registrar estimación")
+	contiene(t, rec, `action="`+accionEstimacion+`"`, `name="estimacion"`, `<option value="21">`, "Registrar estimación")
 }
 
 // Traza: HU-17 CA-17.10 (RN-17.3, RN-17.4): en los demás casos no se ofrece.
@@ -85,7 +85,7 @@ func TestPantallaEstimacion_Valida_RedirigeALaRonda(t *testing.T) {
 	uc := &registradorEstimacionFalso{}
 	cu.RegistrarEstimacion = uc
 
-	rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"valor": {"8"}})
+	rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"estimacion": {"8"}})
 
 	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != rutaRonda {
 		t.Fatalf("status = %d, Location = %q; se esperaba 303 a %s", rec.Code, rec.Header().Get("Location"), rutaRonda)
@@ -104,7 +104,7 @@ func TestPantallaEstimacion_ErroresDeValidacion(t *testing.T) {
 			cu := casosPokerPantalla(conRonda(t, 3, 13))
 			cu.RegistrarEstimacion = &registradorEstimacionFalso{err: fmt.Errorf("guardar estimación de la ronda 1: %w", e)}
 
-			rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"valor": {"8"}})
+			rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"estimacion": {"8"}})
 
 			if rec.Code != http.StatusBadRequest {
 				t.Fatalf("status = %d, se esperaba 400; cuerpo: %.300s", rec.Code, rec.Body)
@@ -121,7 +121,7 @@ func TestPantallaEstimacion_ValorNoNumerico_NoLlamaAlCasoDeUso(t *testing.T) {
 	uc := &registradorEstimacionFalso{}
 	cu.RegistrarEstimacion = uc
 
-	rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"valor": {""}})
+	rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"estimacion": {""}})
 
 	if rec.Code != http.StatusBadRequest || uc.recibido != nil {
 		t.Errorf("status = %d, recibido = %+v; se esperaba 400 sin llamar al caso de uso", rec.Code, uc.recibido)
@@ -145,7 +145,7 @@ func TestPantallaEstimacion_OtrosErrores(t *testing.T) {
 			cu := casosPokerPantalla(conRonda(t, 3, 13))
 			cu.RegistrarEstimacion = &registradorEstimacionFalso{err: tt.err}
 
-			rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"valor": {"8"}})
+			rec := pedirPantalla(t, cu, http.MethodPost, accionEstimacion, url.Values{"estimacion": {"8"}})
 
 			if rec.Code != tt.want {
 				t.Errorf("status = %d, se esperaba %d", rec.Code, tt.want)
@@ -162,7 +162,7 @@ func TestPantallaEstimacion_DesdeOtroSitio_SeRechaza(t *testing.T) {
 	cu.RegistrarEstimacion = uc
 	mux := http.NewServeMux()
 	RegistrarPantallas(mux, cu)
-	req := httptest.NewRequest(http.MethodPost, accionEstimacion, strings.NewReader("valor=8"))
+	req := httptest.NewRequest(http.MethodPost, accionEstimacion, strings.NewReader("estimacion=8"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Sec-Fetch-Site", "cross-site")
 	rec := httptest.NewRecorder()

@@ -205,7 +205,7 @@ func (w *estimacionWorld) desdePantallaRegistro(numero int, titulo string, valor
 	if !strings.Contains(r.Cuerpo, `action="`+accion+`"`) {
 		return fmt.Errorf("la pantalla de la ronda %d no ofrece registrar la estimación (estado %d)", numero, r.Estado)
 	}
-	w.pantalla, err = w.sistema.Pedir("POST", accion, url.Values{"valor": {strconv.Itoa(valor)}})
+	w.pantalla, err = w.sistema.Pedir("POST", accion, url.Values{"estimacion": {strconv.Itoa(valor)}})
 	if err != nil {
 		return err
 	}

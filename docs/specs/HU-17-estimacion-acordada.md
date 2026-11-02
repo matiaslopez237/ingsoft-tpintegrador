@@ -25,7 +25,7 @@ Cerrar el ciclo del Planning Poker (HU-14 a HU-16): cuando el equipo termina de 
 - Se devuelve el resumen de la ronda de HU-14 y HU-15, que suma la estimación acordada.
 - **En HTTP:** `200` con el JSON del resumen, que suma `estimacion_acordada` cuando la ronda tiene una (si no, el campo no aparece); `400` si el dato no es válido o no se puede registrar; `404` si no existe el proyecto o la ronda, o si la ronda es de otro proyecto.
 - **Pantallas** (ADR-0003):
-  - **Pantalla de la ronda:** si se puede registrar (RN-17.3), un formulario con la escala para elegir el valor y el botón "Registrar estimación". Al guardar se vuelve a la misma pantalla (POST-redirect-GET, `303`); si hay un error, se muestra en ella. Si la ronda ya tiene una estimación, se muestra "Estimación acordada: N".
+  - **Pantalla de la ronda:** si se puede registrar (RN-17.3), un formulario con la escala para elegir el valor (campo `estimacion`) y el botón "Registrar estimación". Al guardar se vuelve a la misma pantalla (POST-redirect-GET, `303`); si hay un error, se muestra en ella. Si la ronda ya tiene una estimación, se muestra "Estimación acordada: N".
   - **Pantalla del elemento**, "Historial de rondas" (HU-16): las rondas con una estimación muestran "acordada: N".
 
 ## 4. Reglas de negocio

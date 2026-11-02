@@ -58,7 +58,7 @@
   <h3>Historial de rondas</h3>
   <ul>
     {{range .}}
-    <li><a href="/web/proyectos/{{$.ProyectoID}}/rondas/{{.ID}}">Ronda {{.Numero}}</a> · {{.Estado}}{{with .Revelacion}} · votos de {{.Minimo}} a {{.Maximo}}{{if .DiferenciaSignificativa}} · diferencia significativa{{end}}{{end}}</li>
+    <li><a href="/web/proyectos/{{$.ProyectoID}}/rondas/{{.ID}}">Ronda {{.Numero}}</a> · {{.Estado}}{{with .Revelacion}} · votos de {{.Minimo}} a {{.Maximo}}{{if .DiferenciaSignificativa}} · diferencia significativa{{end}}{{end}}{{with .EstimacionAcordada}} · acordada: {{.}}{{end}}</li>
     {{end}}
   </ul>
   {{end}}
