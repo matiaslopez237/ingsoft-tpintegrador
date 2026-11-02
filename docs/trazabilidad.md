@@ -25,6 +25,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
+| HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 
 ---
 
@@ -1173,6 +1174,69 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 - Las tareas 15.5 y 15.6 no tienen RED → GREEN: el caso de uso y la persistencia de HU-14 ya alcanzaban, así que sus tests pasaron desde el principio. Se dejaron como evidencia de que la revelación llega hasta la API y la base.
 - La ruta sugerida por la tarea 15.7 (`GET /proyectos/{id}/backlog/{elementoID}/rondas/{rondaID}`) no se agregó: la revelación va en el `GET /proyectos/{id}/rondas/{rondaID}` de HU-14, para no tener dos rutas para la misma ronda.
 - Revisión con el agente `go-reviewer` (tarea 15.9): sin hallazgos críticos, altos ni medios. Confirmó que con la ronda abierta ningún adaptador revela valores y que el mínimo, el máximo y el umbral son correctos. Tres observaciones bajas sin cambios: el `continue` para un votante sin voto es inalcanzable (la ronda se cierra cuando votaron todos), una ronda sin votantes no se puede crear (RN-14.2) y un comentario se reescribió.
+
+---
+
+## HU-16: Repetir una ronda de votación
+
+- **Issue:** #27 · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-16-nueva-ronda.md](specs/HU-16-nueva-ronda.md)
+- **Feature:** [features/HU-16-nueva-ronda.feature](../features/HU-16-nueva-ronda.feature) (steps en [test/bdd/hu16_steps_test.go](../test/bdd/hu16_steps_test.go), sobre el mundo de HU-14)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-16.1 Con la ronda cerrada se abre la siguiente; la anterior conserva sus votos | RN-16.1, RN-16.2 | Después de una ronda cerrada se abre la siguiente y la anterior conserva sus votos `@normal` | `TestListarRondas_DevuelveElHistorialDelElemento`, `TestRepositorioRondas_ListarRondas` | `domain.NuevaRonda` (HU-14), `app.ListarRondas`, `persistencia.RepositorioRondas.ListarRondas` |
+| CA-16.2 Se repite aunque no haya habido diferencias | RN-16.4 | Se puede repetir la ronda aunque no haya habido diferencias `@alternativo` | `TestPuedeRepetirse` (sin diferencia), `TestPantallaRonda_NuevaRonda` (sin diferencia) | `domain.PuedeRepetirse` |
+| CA-16.3 Con una ronda abierta no se abre otra | RN-16.1 | No se puede abrir otra ronda mientras hay una abierta `@error` | Los de HU-14 (`ErrRondaYaAbierta`) | `domain.NuevaRonda` (HU-14) |
+| CA-16.4 Historial de la más reciente a la más antigua, con votos de las cerradas y sin valores de la abierta | RN-16.3 | El historial muestra todas las rondas, de la más reciente a la más antigua `@normal` | `TestHistorialRondas_OrdenYRevelacion`, `TestHistorialRondas_NoModificaLasRondas`, `TestListarRondas_DevuelveElHistorialDelElemento` | `domain.HistorialRondas` (usa `Ronda.Resumen` de HU-14 y HU-15) |
+| CA-16.5 Sin rondas, historial vacío | RN-16.3 | Un elemento sin rondas tiene el historial vacío `@limite` | `TestHistorialRondas_SinRondas`, `TestListarRondas_SinRondas_ListaVacia`, `TestRepositorioRondas_ListarRondas_SinRondas` | `domain.HistorialRondas` |
+| CA-16.6 Proyecto o elemento inexistente, o elemento de otro proyecto | RN-16.5 | No se puede consultar el historial desde un proyecto que no existe `@error` · …de un elemento de otro proyecto `@error` | `TestListarRondas_Errores`, `TestListarRondas_FallaDelRepositorio_SePropaga` | `app.ListarRondas.Ejecutar` (`buscarElementoDelProyecto`) |
+| CA-16.7 HTTP 200 / 404 / 400 | Sección 3 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y la pantalla. | `TestGetHistorialRondas_DevuelveLasRondas`, `TestGetHistorialRondas_SinRondas_DevuelveArrayVacio`, `TestGetHistorialRondas_Errores`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerHistorialRondas` (reutiliza `aRespuestaRonda` de HU-14), `http.RegistrarHistorialRondas` |
+| CA-16.8 "Nueva ronda" en la última ronda cerrada; historial en el elemento | RN-16.3, RN-16.4 | Desde la pantalla de la ronda cerrada se abre la siguiente `@normal` | `TestPuedeRepetirse`, `TestPantallaRonda_NuevaRonda`, `TestPantallaRonda_CerradaPeroNoEsLaUltima_SinNuevaRonda`, `TestPantallaRonda_ElementoHecho_SinNuevaRonda`, `TestPantallaElemento_HistorialDeRondas`, `TestPantallaElemento_SinRondas_SinHistorial`, `TestPantallaElemento_FallaDelHistorial` | `http.pantallas.mostrarRonda` (`PuedeRepetirse`), `http.pantallas.pokerDelElemento` (`Historial`), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-16.1 Ronda nueva con la última cerrada y el elemento no Hecho; no con una abierta | CA-16.1, CA-16.3 | `domain.NuevaRonda` de HU-14 (HU-16 no la cambia) |
+| RN-16.2 Abrir una ronda nueva no modifica las anteriores | CA-16.1 | `domain.HistorialRondas` no modifica lo recibido; la persistencia de HU-14 inserta, no actualiza |
+| RN-16.3 Historial de la más reciente a la más antigua, sin valores de la abierta | CA-16.4, CA-16.5, CA-16.8 | `domain.HistorialRondas` |
+| RN-16.4 "Nueva ronda" solo en la última ronda, cerrada, de un elemento no Hecho, con o sin diferencia | CA-16.2, CA-16.8 | `domain.PuedeRepetirse` |
+| RN-16.5 Un elemento de otro proyecto se trata como inexistente | CA-16.6 | `app.ListarRondas.Ejecutar` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker_historial.go](../internal/domain/planning_poker_historial.go) (`HistorialRondas`, `PuedeRepetirse`) | [planning_poker_historial_test.go](../internal/domain/planning_poker_historial_test.go) |
+| Caso de uso y puerto | [internal/app/listar_rondas.go](../internal/app/listar_rondas.go) (`ListarRondas`, puerto angosto `LectorHistorialRondas`) | [listar_rondas_test.go](../internal/app/listar_rondas_test.go) (envuelve el fake de HU-14 sin tocarlo) |
+| Persistencia | [internal/adapters/persistencia/ronda_historial.go](../internal/adapters/persistencia/ronda_historial.go) (`ListarRondas`, reutiliza `BuscarRonda` de HU-14) | [ronda_historial_test.go](../internal/adapters/persistencia/ronda_historial_test.go), [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| HTTP | [internal/adapters/http/historial_rondas_handler.go](../internal/adapters/http/historial_rondas_handler.go) (`GET /proyectos/{id}/backlog/{elementoID}/rondas`), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [historial_rondas_handler_test.go](../internal/adapters/http/historial_rondas_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [pantallas_planning_poker.go](../internal/adapters/http/pantallas_planning_poker.go) (`PuedeRepetirse` en la ronda, `Historial` en el elemento), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_historial_rondas_test.go](../internal/adapters/http/pantallas_historial_rondas_test.go) |
+| BDD | [test/bdd/hu16_sistema_test.go](../test/bdd/hu16_sistema_test.go) (método nuevo del sistema de HU-14, en archivo propio), [hu16_steps_test.go](../test/bdd/hu16_steps_test.go) | 8 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 16.1 Spec | `5d60f4e` | — |
+| 16.2 Escenarios BDD | `1ab6a38` | — |
+| 16.3 Steps de godog | `7ea5111` [RED] (pendientes hasta el caso de uso) | BDD en rojo |
+| 16.4 Dominio | `5030b7a` [RED] → `75ab7bc` [GREEN] | **RED → GREEN** (sin REFACTOR: dos funciones cortas) |
+| 16.5 Caso de uso | `4e2c13f` [RED] → `afe8886` [GREEN] | **RED → GREEN** (sin REFACTOR: mismo molde que HU-14) |
+| 16.6 Persistencia | `72ecf17` [RED] → `64cee06` [GREEN] · `efb6090` (base cerrada) | **RED → GREEN** |
+| BDD conectado al caso de uso | `35e6f9e` | BDD en verde salvo la pantalla |
+| 16.7 Endpoint JSON | `cac55e2` [RED] → `aa49944` [GREEN] | **RED → GREEN** |
+| 16.8 Pantalla | `96cf6f9` [RED] → `0485622` [GREEN] | **RED → GREEN**; BDD 8/8 |
+| 16.9 Revisión y trazabilidad | este commit | — |
+
+### Huecos
+
+- No pasó por el agente `go-reviewer`; la revisión queda para el PR.
+- Cambios mínimos en archivos de HU-14 (Nico): registrar los steps de HU-16 en `hu14_steps_test.go`, sumar `ListarRondas` al router del sistema BDD de HU-14 y el campo `Historial` en `datosPokerElemento`. Conviene que lo vea Nico en el PR.
+- Si "Nueva ronda" falla (por ejemplo, otro pedido abrió la ronda en el medio), el error se muestra en la pantalla del elemento y no en la de la ronda, porque el botón usa la acción de HU-14 (anotado en la spec).
 
 ---
 

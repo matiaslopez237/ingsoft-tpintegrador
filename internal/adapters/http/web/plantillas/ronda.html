@@ -66,5 +66,11 @@
 </form>
 {{else}}
 <p class="vacio" role="status">Votaron todos: la ronda está cerrada.</p>
+{{if .PuedeRepetirse}}
+{{/* HU-16: abrir la ronda siguiente sobre el mismo elemento (RN-16.4). */}}
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.Ronda.ElementoID}}/rondas" class="en-linea">
+  <button type="submit" class="boton">Nueva ronda</button>
+</form>
+{{end}}
 {{end}}
 {{end}}
