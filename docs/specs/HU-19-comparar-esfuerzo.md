@@ -129,7 +129,7 @@ El resultado tiene además el método `SinEstimar() bool`, para que la pantalla 
 | Horas estimadas que no son múltiplo de 0,5 | `domain.ErrHorasNoMultiploMediaHora` (HU-18, se reutiliza) | "las horas se registran en múltiplos de media hora" (HTTP 400) |
 | Horas estimadas mayores a 1000 | `domain.ErrHorasEstimadasExcedenMaximo` (nuevo) | "las horas estimadas no pueden superar las 1000 horas" (HTTP 400) |
 | IDs de la ruta que no son números, o `horas_estimadas` que no es un número | — (adaptador HTTP) | HTTP 400; no se llama al caso de uso. |
-| Falla interna al consultar | — (se envuelve con `%w`) | HTTP 500 con un mensaje genérico, sin el detalle. |
+| Falla interna al consultar | — (solo se envuelve con `%w` la falla al leer las horas reales; las de las búsquedas salen tal cual) | HTTP 500 con un mensaje genérico, sin el detalle. |
 
 Sin estimar, sin esfuerzo y estimado 0 **no son errores** (RN-19.7 a RN-19.9).
 
