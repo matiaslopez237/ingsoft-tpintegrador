@@ -27,16 +27,17 @@ type datosDefecto struct {
 	Severidad   string
 }
 
-// defectoVisto es lo que los escenarios miran de un defecto (spec, sección 3).
-// SprintDeteccionID queda en nil cuando no hay Sprint vigente (RN-20.5).
+// defectoVisto es lo que los escenarios miran de un defecto (spec, sección 3; HU-21 spec, sección 3).
+// SprintDeteccionID y SprintResolucionID quedan en nil cuando no hay Sprint vigente (RN-20.5, RN-21.5).
 type defectoVisto struct {
-	ID                int64
-	ProyectoID        int64
-	ElementoID        int64
-	Descripcion       string
-	Severidad         string
-	Estado            string
-	SprintDeteccionID *int64
+	ID                 int64
+	ProyectoID         int64
+	ElementoID         int64
+	Descripcion        string
+	Severidad          string
+	Estado             string
+	SprintDeteccionID  *int64
+	SprintResolucionID *int64
 }
 
 type registrarDefectoWorld struct {
