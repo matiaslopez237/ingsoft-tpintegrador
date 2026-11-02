@@ -52,6 +52,17 @@ Feature: Calcular la velocidad del equipo
     When consulto la velocidad de "Alfa"
     Then la velocidad es 0 sobre 1 sprints cerrados
 
+  # CA-22.2 (primer escenario de esta feature, 3 sprints cerrados) ya cubre el límite de "exactamente
+  # 3": la ventana no recorta nada y entran los 3.
+  @CA-22.9 @limite
+  Scenario: Con más de 3 sprints cerrados, solo se promedian los 3 más recientes
+    Given "Alfa" tiene un sprint cerrado que completó 8 puntos
+    And "Alfa" tiene un sprint cerrado que completó 6 puntos
+    And "Alfa" tiene un sprint cerrado que completó 4 puntos
+    And "Alfa" tiene un sprint cerrado que completó 2 puntos
+    When consulto la velocidad de "Alfa"
+    Then la velocidad es 4 sobre 3 sprints cerrados
+
   @CA-22.2 @alternativo
   Scenario: Solo cuentan los sprints cerrados del proyecto consultado
     Given el proyecto "Beta" para la velocidad
