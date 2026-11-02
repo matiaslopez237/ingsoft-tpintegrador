@@ -59,11 +59,12 @@ El resultado tiene además el método `SinEstimar() bool`, para que la pantalla 
   "horas_estimadas": 8,
   "horas_reales": 10,
   "desviacion_horas": 2,
-  "desviacion_porcentaje": 25.0
+  "desviacion_porcentaje": 25
 }
 ```
 
-- **Horas estimadas en el elemento:** las respuestas JSON del elemento (crear, editar y listar el backlog) suman `horas_estimadas`, `null` si está sin estimar.
+- **Formato de los números:** en JSON son números, sin formato: 25,0 % sale como `25` y 33,3 % como `33.3`. El formato con coma y un decimal (`25,0`), como el de la tabla de arriba, es solo de la pantalla.
+- **Horas estimadas en el elemento:** las respuestas JSON del elemento (crear, editar y listar el backlog) suman `horas_estimadas`, `null` si está sin estimar. No existe un GET JSON de un elemento: esa consulta es de las pantallas.
 - **En la pantalla** (ubicación sujeta a P-11): la pantalla del elemento de HU-06 (`/web/proyectos/{id}/backlog/{elementoID}`) suma un campo "Horas estimadas" al formulario y un bloque "Esfuerzo estimado y real" con los cuatro valores. Las horas y los porcentajes se muestran con coma decimal y las desviaciones positivas con signo (`+2 h`, `+25,0 %`). Sin estimar, se muestra "Sin estimar" en lugar de la estimación y de las dos desviaciones, junto con las horas reales. Sin esfuerzo, las horas reales se muestran como `0 h`.
 
 ## 4. Reglas de negocio
@@ -189,3 +190,4 @@ La spec está escrita con la propuesta de cada una; si el equipo decide otra cos
 
 ## Historial
 - 2026-11-01: creada (borrador). Decisiones P-1 a P-9 tomadas por el autor, abiertas a objeción en el PR; P-10 a P-13, pendientes del equipo.
+- 2026-11-01: ajustada al contrato JSON real, sin cambiar reglas ni criterios: en el ejemplo de la sección 3, `desviacion_porcentaje` es `25` (el formato con coma y un decimal es solo de la pantalla), y se aclara que no existe un GET JSON de un elemento.
