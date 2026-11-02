@@ -75,7 +75,7 @@ func TestPostDefecto_DatosValidos_Devuelve201ConElDefecto(t *testing.T) {
 	want := map[string]any{
 		"id": 1.0, "proyecto_id": 7.0, "elemento_id": 3.0,
 		"descripcion": "No carga la pantalla de login", "severidad": "Alta", "estado": "Abierto",
-		"sprint_deteccion_id": nil,
+		"sprint_deteccion_id": nil, "sprint_resolucion_id": nil, // sprint_resolucion_id: HU-21
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("respuesta = %v, se esperaba %v", got, want)

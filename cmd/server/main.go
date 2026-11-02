@@ -33,7 +33,8 @@ func main() {
 	repoProyectos := persistencia.NuevoRepositorioProyectos(db)
 	repoBacklog := persistencia.NuevoRepositorioBacklog(db)
 	repoSprints := persistencia.NuevoRepositorioSprints(db)
-	repoRondas := persistencia.NuevoRepositorioRondas(db) // HU-14
+	repoRondas := persistencia.NuevoRepositorioRondas(db)     // HU-14
+	repoDefectos := persistencia.NuevoRepositorioDefectos(db) // HU-20/HU-21
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		CrearProyecto:            app.NuevoCrearProyecto(repoProyectos),
 		ModificarProyecto:        app.NuevoModificarProyecto(repoProyectos),
@@ -57,12 +58,14 @@ func main() {
 		CerrarSprint:       app.NuevoCerrarSprint(repoProyectos, repoSprints),      // HU-11
 		CompletarHistoria:  app.NuevoCompletarHistoria(repoProyectos, repoBacklog), // HU-10
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-20, RN-20.5).
-		RegistrarDefecto: app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints,
-			persistencia.NuevoRepositorioDefectos(db), time.Now),
+		RegistrarDefecto:        app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints, repoDefectos, time.Now),
 		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),   // HU-14
 		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                       // HU-14
 		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas), // HU-14
 		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),    // HU-12
+		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-21, RN-21.5).
+		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, time.Now),
+		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos), // HU-21
 	})
 
 	puerto := os.Getenv("PORT")
