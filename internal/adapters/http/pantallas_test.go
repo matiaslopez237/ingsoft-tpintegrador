@@ -89,6 +89,11 @@ func pedirPantalla(t *testing.T, cu CasosDeUso, metodo, ruta string, form url.Va
 	t.Helper()
 	mux := http.NewServeMux()
 	RegistrarPantallas(mux, cu)
+	return pedirAlMux(t, mux, metodo, ruta, form)
+}
+
+func pedirAlMux(t *testing.T, mux *http.ServeMux, metodo, ruta string, form url.Values) *httptest.ResponseRecorder {
+	t.Helper()
 	var req *http.Request
 	if form == nil {
 		req = httptest.NewRequest(metodo, ruta, nil)

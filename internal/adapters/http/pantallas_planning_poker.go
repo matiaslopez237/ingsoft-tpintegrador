@@ -81,7 +81,7 @@ func (p *pantallas) iniciarRondaPantalla(w http.ResponseWriter, r *http.Request)
 			return
 		}
 		f := aFormElemento(e)
-		p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, f, mensaje)
+		p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, f, mensaje, p.seccionEsfuerzoInicial())
 		return
 	}
 	if errors.Is(err, domain.ErrProyectoNoEncontrado) {
