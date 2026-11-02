@@ -455,7 +455,7 @@ func formSinEstimaciones() url.Values {
 
 // Un campo horas_estimadas ausente significa "no se envió": no cambia las horas, aunque falten los
 // ocultos. Presente y vacío las quita si difiere del original; presente con valor las cambia.
-// Traza: HU-19 CA-19.13, CA-19.18 (RN-19.3)
+// Traza: HU-19 CA-19.19 (RN-19.12), CA-19.13, CA-19.18 (RN-19.3)
 func TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran(t *testing.T) {
 	conOriginales := func(modificar func(url.Values)) url.Values {
 		form := formElementoOriginal()
@@ -518,7 +518,7 @@ func TestPantallaElemento_HorasEstimadasAusentes_NoSeBorran(t *testing.T) {
 
 // La corrección es solo para las horas: story_points mantiene el comportamiento de HU-06 y DEF-01.
 // Un POST sin original_* y sin el campo sigue quitándolos.
-// Traza: HU-06 CA-06.10, HU-19 CA-19.15 (RN-19.1)
+// Traza: HU-19 CA-19.19 (RN-19.12), CA-19.15 (RN-19.1), HU-06 CA-06.10
 func TestPantallaElemento_StoryPointsAusentes_MantienenElComportamientoDeHU06(t *testing.T) {
 	var guardado domain.ElementoBacklog
 	cu := casosConComparacion(comparacionFija(nil, 0))
