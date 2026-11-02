@@ -106,44 +106,70 @@ func sprintCerradoCon(t *testing.T, numero, completados int) Sprint {
 	return s
 }
 
-// Traza: HU-22 CA-22.2 a CA-22.5
+// Traza: HU-22 CA-22.2 a CA-22.5, CA-22.9
 func TestVelocidad(t *testing.T) {
 	tests := []struct {
 		name          string
 		cerrados      []Sprint
 		wantVelocidad float64
+		wantCantidad  int
 		wantHayDatos  bool
 	}{
 		{
 			name:         "CA-22.3: sin sprints cerrados, no hay velocidad",
 			cerrados:     nil,
+			wantCantidad: 0,
 			wantHayDatos: false,
 		},
 		{
 			name:          "CA-22.2: promedio de varios sprints cerrados",
 			cerrados:      []Sprint{sprintCerradoCon(t, 1, 8), sprintCerradoCon(t, 2, 6), sprintCerradoCon(t, 3, 4)},
 			wantVelocidad: 6,
+			wantCantidad:  3,
 			wantHayDatos:  true,
 		},
 		{
 			name:          "CA-22.4: el promedio se informa con decimales",
 			cerrados:      []Sprint{sprintCerradoCon(t, 1, 5), sprintCerradoCon(t, 2, 4)},
 			wantVelocidad: 4.5,
+			wantCantidad:  2,
 			wantHayDatos:  true,
 		},
 		{
 			name:          "CA-22.5: un único sprint cerrado con 0 puntos da velocidad 0, no 'sin datos'",
 			cerrados:      []Sprint{sprintCerradoCon(t, 1, 0)},
 			wantVelocidad: 0,
+			wantCantidad:  1,
+			wantHayDatos:  true,
+		},
+		{
+			// cerrados ya viene del más reciente al más antiguo (como lo devuelve SprintsAnteriores):
+			// el 4.º (2 puntos) es el más antiguo y queda afuera de la ventana de 3.
+			name: "CA-22.9: con más de 3 sprints cerrados, solo se promedian los 3 más recientes",
+			cerrados: []Sprint{
+				sprintCerradoCon(t, 4, 8), sprintCerradoCon(t, 3, 6), sprintCerradoCon(t, 2, 4), sprintCerradoCon(t, 1, 2),
+			},
+			wantVelocidad: 6, // (8+6+4)/3, el sprint 1 (2 puntos) no entra
+			wantCantidad:  3,
+			wantHayDatos:  true,
+		},
+		{
+			name:          "CA-22.9: con exactamente 3 sprints cerrados, la ventana no recorta nada",
+			cerrados:      []Sprint{sprintCerradoCon(t, 3, 9), sprintCerradoCon(t, 2, 6), sprintCerradoCon(t, 1, 3)},
+			wantVelocidad: 6,
+			wantCantidad:  3,
 			wantHayDatos:  true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			velocidad, hayDatos := Velocidad(tt.cerrados)
+			velocidad, cantidad, hayDatos := Velocidad(tt.cerrados)
 
 			if hayDatos != tt.wantHayDatos {
 				t.Fatalf("hayDatos = %v, se esperaba %v", hayDatos, tt.wantHayDatos)
+			}
+			if cantidad != tt.wantCantidad {
+				t.Errorf("cantidad = %d, se esperaba %d", cantidad, tt.wantCantidad)
 			}
 			if hayDatos && velocidad != tt.wantVelocidad {
 				t.Errorf("Velocidad() = %v, se esperaba %v", velocidad, tt.wantVelocidad)
@@ -159,9 +185,9 @@ func TestVelocidad_NoFiltraPorEstado(t *testing.T) {
 	abierto := sprintEn(t, 1, "2026-10-01", "2026-10-12", SprintAbierto)
 	abierto.PuntosCompletados = 99 // no debería pasar en la práctica (RN-11.6: un sprint Abierto vale 0)
 
-	velocidad, hayDatos := Velocidad([]Sprint{abierto})
+	velocidad, cantidad, hayDatos := Velocidad([]Sprint{abierto})
 
-	if !hayDatos || velocidad != 99 {
-		t.Errorf("Velocidad() = %v, %v; se esperaba 99, true (no filtra por estado)", velocidad, hayDatos)
+	if !hayDatos || velocidad != 99 || cantidad != 1 {
+		t.Errorf("Velocidad() = %v, %d, %v; se esperaba 99, 1, true (no filtra por estado)", velocidad, cantidad, hayDatos)
 	}
 }
