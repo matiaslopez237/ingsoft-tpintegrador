@@ -65,7 +65,7 @@ El resultado tiene además el método `SinEstimar() bool`, para que la pantalla 
 
 - **Formato de los números:** en JSON son números, sin formato: 25,0 % sale como `25` y 33,3 % como `33.3`. El formato con coma y un decimal (`25,0`), como el de la tabla de arriba, es solo de la pantalla.
 - **Horas estimadas en el elemento:** las respuestas JSON del elemento (crear, editar y listar el backlog) suman `horas_estimadas`, `null` si está sin estimar. No existe un GET JSON de un elemento: esa consulta es de las pantallas.
-- **En la pantalla** (ubicación sujeta a P-11): la pantalla del elemento de HU-06 (`/web/proyectos/{id}/backlog/{elementoID}`) suma un campo "Horas estimadas" al formulario y un bloque "Esfuerzo estimado y real" con los cuatro valores. Las horas y los porcentajes se muestran con coma decimal y las desviaciones positivas con signo (`+2 h`, `+25,0 %`). Sin estimar, se muestra "Sin estimar" en lugar de la estimación y de las dos desviaciones, junto con las horas reales. Sin esfuerzo, las horas reales se muestran como `0 h`.
+- **En la pantalla:** la pantalla del elemento de HU-06 (`/web/proyectos/{id}/backlog/{elementoID}`) suma un campo "Horas estimadas" al formulario y un bloque "Esfuerzo estimado y real" con los cuatro valores, después de "Registrar esfuerzo" y antes de "Eliminar". Las horas y los porcentajes se muestran con coma decimal; las desviaciones positivas llevan signo (`+2 h`, `+25,0 %`) y las negativas, el guion común (`-2 h`, `-25,0 %`). Sin estimar, se muestra "Sin estimar" en lugar de la estimación y de las dos desviaciones, incluido el porcentaje, junto con las horas reales. Con estimado 0, que solo es posible en la función del dominio (RN-19.8), el porcentaje muestra "No aplica". Sin esfuerzo, las horas reales se muestran como `0 h`.
 
 ## 4. Reglas de negocio
 - **RN-19.1:** Las horas estimadas son un dato propio del elemento y son opcionales: un elemento sin ese dato está "sin estimar" en horas, aunque tenga story points. No se derivan de los story points (P-10).
@@ -129,11 +129,12 @@ El resultado tiene además el método `SinEstimar() bool`, para que la pantalla 
 | Horas estimadas que no son múltiplo de 0,5 | `domain.ErrHorasNoMultiploMediaHora` (HU-18, se reutiliza) | "las horas se registran en múltiplos de media hora" (HTTP 400) |
 | Horas estimadas mayores a 1000 | `domain.ErrHorasEstimadasExcedenMaximo` (nuevo) | "las horas estimadas no pueden superar las 1000 horas" (HTTP 400) |
 | IDs de la ruta que no son números, o `horas_estimadas` que no es un número | — (adaptador HTTP) | HTTP 400; no se llama al caso de uso. |
+| Horas estimadas que no son un número en el formulario de la pantalla | — (lectura del formulario; lo define el adaptador) | "las horas estimadas deben ser un número" (HTTP 400, en el formulario); no se llama al caso de uso. |
 | Falla interna al consultar | — (solo se envuelve con `%w` la falla al leer las horas reales; las de las búsquedas salen tal cual) | HTTP 500 con un mensaje genérico, sin el detalle. |
 
 Sin estimar, sin esfuerzo y estimado 0 **no son errores** (RN-19.7 a RN-19.9).
 
-Si hay varios errores, se informa el primero en el orden de la tabla: primero se busca el proyecto y después el elemento. Las respuestas muestran el mensaje del error del dominio, nunca el texto envuelto por el caso de uso. En la pantalla, los `404` muestran la página de error (hay que sumar `ErrProyectoNoEncontrado` a `errorDeElemento`, que hoy solo reconoce el del elemento y respondería `500`) y los `400` vuelven al formulario con el mensaje.
+Si hay varios errores, se informa el primero en el orden de la tabla: primero se busca el proyecto y después el elemento. Las respuestas muestran el mensaje del error del dominio, nunca el texto envuelto por el caso de uso. En la pantalla, los `404` muestran la página de error y los `400` vuelven al formulario con el mensaje.
 
 ## 8. Criterios de aceptación
 - **CA-19.1 (desviación positiva):** Dado un elemento con 8 h estimadas y registros de 6 h y 4 h, cuando comparo, entonces obtengo 8 estimadas, 10 reales, desviación de 2 h y de 25,0 %. (RN-19.4, RN-19.5, RN-19.6)
@@ -153,7 +154,7 @@ Si hay varios errores, se informa el primero en el orden de la tabla: primero se
 - **CA-19.15 (independiente de los story points):** Dado un elemento con 5 story points y sin horas estimadas, cuando comparo, entonces está sin estimar; cuando cambio sus story points, sus horas estimadas no cambian. Un elemento recién creado nace sin estimar. (RN-19.1, RN-19.3)
 - **CA-19.16 (base existente):** Dada una base creada antes de HU-19, cuando arranca el sistema, entonces sus elementos se leen sin estimar y se les pueden cargar horas estimadas. (Sección 5)
 - **CA-19.17 (HTTP):** Dado un pedido a `GET /proyectos/{id}/backlog/{elementoID}/esfuerzo/comparacion`, entonces la respuesta es `200` con la comparación en JSON, con `null` en los valores que no existen; con proyecto o elemento inexistente, `404`; con un ID que no es un número, `400`. (Sección 3)
-- **CA-19.18 (pantalla, sujeto a P-11):** Dada la pantalla de un elemento con estimación y esfuerzo, entonces muestra las horas estimadas, las reales y las dos desviaciones; dado uno sin estimar, muestra "Sin estimar" y sus horas reales; dado uno sin esfuerzo, muestra `0 h`. Desde esa pantalla se pueden cargar y quitar las horas estimadas, y los errores se muestran con el mensaje del dominio. (Sección 3)
+- **CA-19.18 (pantalla):** Dada la pantalla de un elemento con estimación y esfuerzo, entonces muestra, después de "Registrar esfuerzo" y antes de "Eliminar", las horas estimadas, las reales y las dos desviaciones, las negativas con el guion común; dado uno sin estimar, muestra "Sin estimar" en lugar de la estimación y de las dos desviaciones, y sus horas reales; dado uno sin esfuerzo, muestra `0 h`; con estimado 0, que solo es posible en la función del dominio, el porcentaje muestra "No aplica". Desde esa pantalla se pueden cargar y quitar las horas estimadas, y los errores se muestran con el mensaje del dominio. (Sección 3)
 
 Los escenarios mínimos corresponden a: feliz y desviación positiva, CA-19.1; desviación negativa, CA-19.2; sin estimar, CA-19.4; sin esfuerzo, CA-19.5; elemento inexistente, CA-19.9; otro proyecto, CA-19.10.
 
@@ -170,9 +171,9 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-01, abiertas a objeción en el 
 - **P-9:** se compara en cualquier estado del elemento, del sprint y del proyecto (RN-19.11), y usa la estimación actual, sin historial (RN-19.3). Es una consulta de solo lectura, y limitarla a `Hecho` no dejaría ver cómo viene una historia en curso.
 
 ## Preguntas abiertas
-La spec está escrita con la propuesta de cada una; si el equipo decide otra cosa, hay que ajustar las reglas y los criterios indicados.
+P-11 y P-13 quedaron resueltas. P-10 y P-12 están implementadas según la propuesta; si el equipo decide otra cosa, hay que ajustar las reglas y los criterios indicados.
 
-- **P-10 — De dónde salen las horas estimadas.** Hoy `ElementoBacklog` solo tiene `StoryPoints`.
+- **P-10 — De dónde salen las horas estimadas. Implementada según la propuesta, abierta a objeción del equipo en la PR.** Antes de HU-19, `ElementoBacklog` solo tenía `StoryPoints`.
 
   | Opción | Ventajas | Desventajas |
   |---|---|---|
@@ -182,12 +183,14 @@ La spec está escrita con la propuesta de cada una; si el equipo decide otra cos
 
   **Recomendación: opción A**, por la que está escrita esta spec (RN-19.1 a RN-19.3, CA-19.13 a CA-19.16). Con B o C se quitan esas reglas y criterios, y el dominio no cambia: `CompararEsfuerzo` sigue recibiendo un número. Afecta también a HU-23.
 
-- **P-11 — Dónde se muestra la comparación** (la DoD exige pantalla, ADR-0003). **Propuesta:** en la pantalla del elemento de HU-06, porque la comparación es por elemento y ahí mismo se cargan las horas estimadas. La alternativa es una columna en el detalle del sprint (HU-09), que permite ver varias historias juntas pero deja afuera a los elementos sin sprint y se superpone con lo que va a mostrar HU-23.
+- **P-11 — Dónde se muestra la comparación** (la DoD exige pantalla, ADR-0003). **Resuelta con lo implementado: decisión tomada por el autor, abierta a objeción en la PR.** Se muestra en la pantalla del elemento de HU-06, porque la comparación es por elemento y ahí mismo se cargan las horas estimadas, después de "Registrar esfuerzo" y antes de "Eliminar" (sección 3). La alternativa era una columna en el detalle del sprint (HU-09), que permite ver varias historias juntas pero deja afuera a los elementos sin sprint y se superpone con lo que va a mostrar HU-23.
 
-- **P-12 — Tope de las horas estimadas.** RN-18.8 (24 h) es por registro y no sirve para una estimación. **Propuesta:** 1000 h por elemento, para frenar errores de tipeo y valores que desbordarían el entero de medias horas de la base. El número es arbitrario; la alternativa es otro valor, pero sin ningún tope `1e300` llegaría a la conversión a entero.
+- **P-12 — Tope de las horas estimadas. Implementada según la propuesta, abierta a objeción del equipo en la PR.** RN-18.8 (24 h) es por registro y no sirve para una estimación. **Propuesta:** 1000 h por elemento, para frenar errores de tipeo y valores que desbordarían el entero de medias horas de la base. El número es arbitrario; la alternativa es otro valor, pero sin ningún tope `1e300` llegaría a la conversión a entero.
 
-- **P-13 — No hay pantalla para cargar esfuerzo.** HU-18 dice que su pantalla "se suma después con HU-30", pero HU-30 no la incluyó: hoy no hay ninguna ruta `/web` ni plantilla de esfuerzo, y solo se carga con `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`. Sin ella, quien use la interfaz ve siempre 0 horas reales en esta comparación. **Propuesta:** resolverlo aparte de HU-19, como un issue propio para completar HU-18 y hacerlo antes de la pantalla de esta historia. La alternativa es sumar un formulario a esta misma pantalla, lo que aumenta el alcance de una historia de 3 puntos. Esta spec lo deja fuera de alcance hasta que el equipo decida.
+- **P-13 — No había pantalla para cargar esfuerzo. Resuelta por la pantalla de HU-18** (issue #289, rama `hu-18-pantalla-esfuerzo`): el formulario "Registrar esfuerzo" está en la pantalla del elemento. HU-18 decía que su pantalla "se suma después con HU-30", pero HU-30 no la incluyó, y sin ella quien usara la interfaz vería siempre 0 horas reales en esta comparación. Se resolvió aparte de HU-19, como se proponía acá.
 
 ## Historial
 - 2026-11-01: creada (borrador). Decisiones P-1 a P-9 tomadas por el autor, abiertas a objeción en el PR; P-10 a P-13, pendientes del equipo.
 - 2026-11-01: ajustada al contrato JSON real, sin cambiar reglas ni criterios: en el ejemplo de la sección 3, `desviacion_porcentaje` es `25` (el formato con coma y un decimal es solo de la pantalla), y se aclara que no existe un GET JSON de un elemento.
+- 2026-11-01: se corrige la fila de falla interna de la sección 7 (solo se envuelve la falla al leer las horas reales).
+- 2026-11-01: ajustada a la pantalla implementada. Secciones 3 y CA-19.18: el bloque va después de "Registrar esfuerzo" y antes de "Eliminar", sin estimar el porcentaje muestra "Sin estimar", con estimado 0 muestra "No aplica" y las desviaciones negativas llevan el guion común. Sección 7: se quita lo pendiente de `errorDeElemento`, ya hecho por HU-18, y se suma el mensaje "las horas estimadas deben ser un número". P-11 queda resuelta por el autor, abierta a objeción en la PR; P-13, resuelta por la pantalla de HU-18 (issue #289); P-10 y P-12, implementadas según la propuesta, abiertas a objeción del equipo en la PR. La spec sigue en borrador.
