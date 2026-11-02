@@ -92,6 +92,85 @@ func TestNuevoDefecto_VariosErrores_InformaElPrimero(t *testing.T) {
 	}
 }
 
+// Traza: HU-21 CA-21.1 (RN-21.2)
+func TestDefecto_Resolver_DesdeAbierto_QuedaResuelto(t *testing.T) {
+	d := Defecto{Estado: DefectoAbierto}
+
+	err := d.Resolver()
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if d.Estado != DefectoResuelto {
+		t.Errorf("Estado = %q, se esperaba %q", d.Estado, DefectoResuelto)
+	}
+}
+
+// Traza: HU-21 CA-21.4 (RN-21.2, RN-21.4: solo se resuelve un defecto Abierto)
+func TestDefecto_Resolver_NoAbierto_RetornaError(t *testing.T) {
+	for _, estado := range []EstadoDefecto{DefectoResuelto, DefectoCerrado} {
+		d := Defecto{Estado: estado}
+		err := d.Resolver()
+		if !errors.Is(err, ErrDefectoNoAbierto) {
+			t.Errorf("estado %q: error = %v, se esperaba ErrDefectoNoAbierto", estado, err)
+		}
+		if d.Estado != estado {
+			t.Errorf("estado %q: Estado cambió a %q, no debía cambiar", estado, d.Estado)
+		}
+	}
+}
+
+// Traza: HU-21 CA-21.3 (RN-21.3)
+func TestDefecto_Cerrar_DesdeResuelto_QuedaCerrado(t *testing.T) {
+	d := Defecto{Estado: DefectoResuelto}
+
+	err := d.Cerrar()
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if d.Estado != DefectoCerrado {
+		t.Errorf("Estado = %q, se esperaba %q", d.Estado, DefectoCerrado)
+	}
+}
+
+// Traza: HU-21 CA-21.5 (RN-21.3, RN-21.4: solo se cierra un defecto Resuelto, no se saltea ni retrocede)
+func TestDefecto_Cerrar_NoResuelto_RetornaError(t *testing.T) {
+	for _, estado := range []EstadoDefecto{DefectoAbierto, DefectoCerrado} {
+		d := Defecto{Estado: estado}
+		err := d.Cerrar()
+		if !errors.Is(err, ErrDefectoNoResuelto) {
+			t.Errorf("estado %q: error = %v, se esperaba ErrDefectoNoResuelto", estado, err)
+		}
+		if d.Estado != estado {
+			t.Errorf("estado %q: Estado cambió a %q, no debía cambiar", estado, d.Estado)
+		}
+	}
+}
+
+// Traza: HU-21 (PuedeResolverse/PuedeCerrarse los usa la pantalla para decidir qué botón mostrar,
+// sin repetir la regla, igual que Sprint.PuedeCerrarse en HU-11)
+func TestDefecto_PuedeResolverseYPuedeCerrarse(t *testing.T) {
+	tests := []struct {
+		estado          EstadoDefecto
+		puedeResolverse bool
+		puedeCerrarse   bool
+	}{
+		{DefectoAbierto, true, false},
+		{DefectoResuelto, false, true},
+		{DefectoCerrado, false, false},
+	}
+	for _, tt := range tests {
+		d := Defecto{Estado: tt.estado}
+		if got := d.PuedeResolverse(); got != tt.puedeResolverse {
+			t.Errorf("estado %q: PuedeResolverse() = %v, se esperaba %v", tt.estado, got, tt.puedeResolverse)
+		}
+		if got := d.PuedeCerrarse(); got != tt.puedeCerrarse {
+			t.Errorf("estado %q: PuedeCerrarse() = %v, se esperaba %v", tt.estado, got, tt.puedeCerrarse)
+		}
+	}
+}
+
 // diaSprint arma una fecha a medianoche, en la zona del servidor, igual que los sprints de HU-08.
 func diaSprint(anio int, mes time.Month, d int) time.Time {
 	return time.Date(anio, mes, d, 0, 0, 0, 0, time.Local)
