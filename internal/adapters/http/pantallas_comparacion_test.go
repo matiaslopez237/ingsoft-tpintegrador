@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"html"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -47,10 +48,11 @@ func valorDeComparacion(rotulo, valor string) string {
 	return "<dt>" + rotulo + "</dt><dd>" + valor + "</dd>"
 }
 
-// bloqueMuestra verifica las cuatro cifras del bloque.
+// bloqueMuestra verifica las cuatro cifras del bloque tal como las ve quien usa la pantalla:
+// html/template escribe el + como &#43; y el navegador lo muestra como +.
 func bloqueMuestra(t *testing.T, s, estimadas, reales, horas, porcentaje string) {
 	t.Helper()
-	seccionContiene(t, s,
+	seccionContiene(t, html.UnescapeString(s),
 		valorDeComparacion("Horas estimadas", estimadas),
 		valorDeComparacion("Horas reales", reales),
 		valorDeComparacion("Desviación en horas", horas),

@@ -23,7 +23,7 @@ type consultorElementos interface {
 
 // formEdicionElemento son los campos del formulario del elemento, como texto. Los criterios van uno por línea.
 type formEdicionElemento struct {
-	Titulo, Descripcion, Prioridad, StoryPoints, Criterios, Estado string
+	Titulo, Descripcion, Prioridad, StoryPoints, Criterios, Estado, HorasEstimadas string
 }
 
 type datosEdicionElemento struct {
@@ -35,6 +35,7 @@ type datosEdicionElemento struct {
 	Estados                []domain.EstadoElemento
 	Poker                  *datosPokerElemento  // nil si la aplicación no tiene Planning Poker (HU-14)
 	Esfuerzo               datosSeccionEsfuerzo // HU-18: tiene su propio formulario y su propio error
+	Comparacion            datosComparacion     // HU-19: siempre con los valores guardados
 }
 
 // registrarPantallasElemento agrega la pantalla para ver, editar y eliminar un elemento.
@@ -118,8 +119,9 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 // --- Ayudantes ---
 
 // mostrarElemento renderiza la pantalla. Consulta el proyecto por los integrantes del desplegable
-// de esfuerzo (HU-18), también cuando vuelve con un error de editar o eliminar, y la última ronda
-// para la sección de Planning Poker (HU-14).
+// de esfuerzo (HU-18), también cuando vuelve con un error de editar o eliminar, la última ronda
+// para la sección de Planning Poker (HU-14) y la comparación de esfuerzo (HU-19), que se lee de lo
+// guardado y no de lo que se acaba de tipear.
 func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64,
 	f, original formEdicionElemento, mensaje string, esfuerzo datosSeccionEsfuerzo) {
 	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), pid)
@@ -132,10 +134,16 @@ func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, stat
 		p.errorDeElemento(w, err)
 		return
 	}
+	comparacion, err := p.cu.CompararEsfuerzo.Ejecutar(r.Context(), pid, eid)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	esfuerzo.Integrantes = proyecto.Integrantes
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
 		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker, Esfuerzo: esfuerzo,
+		Comparacion: vistaComparacion(comparacion),
 	})
 }
 
@@ -172,6 +180,9 @@ func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
 	if e.StoryPoints != nil {
 		f.StoryPoints = strconv.Itoa(*e.StoryPoints)
 	}
+	if e.HorasEstimadas != nil {
+		f.HorasEstimadas = strconv.FormatFloat(*e.HorasEstimadas, 'f', -1, 64) // con punto: lo exige el input numérico
+	}
 	return f
 }
 
@@ -180,12 +191,13 @@ func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
 func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOriginal bool) {
 	leer := func(prefijo string) formEdicionElemento {
 		return formEdicionElemento{
-			Titulo:      r.PostFormValue(prefijo + "titulo"),
-			Descripcion: r.PostFormValue(prefijo + "descripcion"),
-			Prioridad:   r.PostFormValue(prefijo + "prioridad"),
-			StoryPoints: r.PostFormValue(prefijo + "story_points"),
-			Criterios:   r.PostFormValue(prefijo + "criterios"),
-			Estado:      r.PostFormValue(prefijo + "estado"),
+			Titulo:         r.PostFormValue(prefijo + "titulo"),
+			Descripcion:    r.PostFormValue(prefijo + "descripcion"),
+			Prioridad:      r.PostFormValue(prefijo + "prioridad"),
+			StoryPoints:    r.PostFormValue(prefijo + "story_points"),
+			Criterios:      r.PostFormValue(prefijo + "criterios"),
+			Estado:         r.PostFormValue(prefijo + "estado"),
+			HorasEstimadas: r.PostFormValue(prefijo + "horas_estimadas"),
 		}
 	}
 	_, conOriginal = r.PostForm["original_titulo"]
@@ -195,7 +207,8 @@ func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOrig
 // cambiosDeFormElemento arma la edición con los campos que cambiaron respecto de los originales,
 // para no pisar ediciones simultáneas (HU-06, sección 5; lección de DEF-01). Si el pedido no trae
 // los originales (conOriginal en false), se envían todos los campos, como cambiosDeForm en DEF-01.
-// Story points vacío quita la estimación; los criterios van uno por línea y se ignoran las vacías.
+// Story points u horas estimadas vacíos quitan la estimación; los criterios van uno por línea y se
+// ignoran las vacías.
 func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (domain.CambiosElemento, error) {
 	cambio := func(nuevo, viejo string) bool { return !conOriginal || nuevo != viejo }
 	var c domain.CambiosElemento
@@ -218,6 +231,16 @@ func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (d
 				return domain.CambiosElemento{}, errFormulario{"story_points debe ser un número entero"}
 			}
 			c.StoryPoints = &n
+		}
+	}
+	if cambio(strings.TrimSpace(f.HorasEstimadas), strings.TrimSpace(original.HorasEstimadas)) {
+		c.CambiarHorasEstimadas = true
+		if s := strings.TrimSpace(f.HorasEstimadas); s != "" {
+			horas, err := strconv.ParseFloat(s, 64) // NaN e Inf pasan: los rechaza el dominio (RN-19.2)
+			if err != nil {
+				return domain.CambiosElemento{}, errFormulario{"las horas estimadas deben ser un número"}
+			}
+			c.HorasEstimadas = &horas
 		}
 	}
 	// Los criterios se comparan como lista: el navegador envía el textarea con saltos CRLF.
