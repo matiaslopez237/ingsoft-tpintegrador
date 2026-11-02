@@ -69,13 +69,14 @@ func aRespuestaElemento(e domain.ElementoBacklog) respuestaElemento {
 		criterios = []string{}
 	}
 	return respuestaElemento{
-		ID:          e.ID,
-		ProyectoID:  e.ProyectoID,
-		Titulo:      e.Titulo,
-		Descripcion: e.Descripcion,
-		Prioridad:   string(e.Prioridad),
-		Estado:      string(e.Estado),
-		StoryPoints: e.StoryPoints,
-		Criterios:   criterios,
+		ID:             e.ID,
+		ProyectoID:     e.ProyectoID,
+		Titulo:         e.Titulo,
+		Descripcion:    e.Descripcion,
+		Prioridad:      string(e.Prioridad),
+		Estado:         string(e.Estado),
+		StoryPoints:    e.StoryPoints,
+		Criterios:      criterios,
+		HorasEstimadas: e.HorasEstimadas,
 	}
 }
