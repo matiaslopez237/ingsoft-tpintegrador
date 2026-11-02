@@ -24,6 +24,8 @@ type consultorElementos interface {
 // formEdicionElemento son los campos del formulario del elemento, como texto. Los criterios van uno por línea.
 type formEdicionElemento struct {
 	Titulo, Descripcion, Prioridad, StoryPoints, Criterios, Estado, HorasEstimadas string
+	// HorasEnviadas indica que el pedido trae el campo horas_estimadas: ausente no cambia las horas.
+	HorasEnviadas bool
 }
 
 type datosEdicionElemento struct {
@@ -190,6 +192,7 @@ func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
 // conOriginal es false si el pedido no trae esos campos (no viene de la pantalla).
 func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOriginal bool) {
 	leer := func(prefijo string) formEdicionElemento {
+		_, horasEnviadas := r.PostForm[prefijo+"horas_estimadas"]
 		return formEdicionElemento{
 			Titulo:         r.PostFormValue(prefijo + "titulo"),
 			Descripcion:    r.PostFormValue(prefijo + "descripcion"),
@@ -198,6 +201,7 @@ func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOrig
 			Criterios:      r.PostFormValue(prefijo + "criterios"),
 			Estado:         r.PostFormValue(prefijo + "estado"),
 			HorasEstimadas: r.PostFormValue(prefijo + "horas_estimadas"),
+			HorasEnviadas:  horasEnviadas,
 		}
 	}
 	_, conOriginal = r.PostForm["original_titulo"]
@@ -208,7 +212,8 @@ func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOrig
 // para no pisar ediciones simultáneas (HU-06, sección 5; lección de DEF-01). Si el pedido no trae
 // los originales (conOriginal en false), se envían todos los campos, como cambiosDeForm en DEF-01.
 // Story points u horas estimadas vacíos quitan la estimación; los criterios van uno por línea y se
-// ignoran las vacías.
+// ignoran las vacías. Las horas estimadas son la excepción: si el campo no vino en el pedido, no se
+// envían aunque falten los originales, para que un POST incompleto no las borre.
 func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (domain.CambiosElemento, error) {
 	cambio := func(nuevo, viejo string) bool { return !conOriginal || nuevo != viejo }
 	var c domain.CambiosElemento
@@ -233,7 +238,7 @@ func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (d
 			c.StoryPoints = &n
 		}
 	}
-	if cambio(strings.TrimSpace(f.HorasEstimadas), strings.TrimSpace(original.HorasEstimadas)) {
+	if f.HorasEnviadas && cambio(strings.TrimSpace(f.HorasEstimadas), strings.TrimSpace(original.HorasEstimadas)) {
 		c.CambiarHorasEstimadas = true
 		if s := strings.TrimSpace(f.HorasEstimadas); s != "" {
 			horas, err := strconv.ParseFloat(s, 64) // NaN e Inf pasan: los rechaza el dominio (RN-19.2)
