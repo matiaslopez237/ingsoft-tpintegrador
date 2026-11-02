@@ -40,8 +40,8 @@ func casosConAnteriores(sprints []domain.Sprint, err error) CasosDeUso {
 			return app.VelocidadProyecto{}, err
 		}
 		cerrados := domain.SprintsAnteriores(sprints)
-		velocidad, hayDatos := domain.Velocidad(cerrados)
-		return app.VelocidadProyecto{Velocidad: velocidad, HayDatos: hayDatos, SprintsCerrados: len(cerrados)}, nil
+		velocidad, cantidad, hayDatos := domain.Velocidad(cerrados)
+		return app.VelocidadProyecto{Velocidad: velocidad, HayDatos: hayDatos, SprintsCerrados: cantidad}, nil
 	})
 	return cu
 }

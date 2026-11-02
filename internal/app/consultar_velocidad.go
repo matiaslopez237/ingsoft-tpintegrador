@@ -11,8 +11,11 @@ import (
 // proyecto todavía no tiene ningún Sprint Cerrado (RN-22.3): en ese caso Velocidad no significa
 // nada y no hay que mostrarlo como si fuera un promedio real de 0 puntos.
 type VelocidadProyecto struct {
-	Velocidad       float64
-	HayDatos        bool
+	Velocidad float64
+	HayDatos  bool
+	// SprintsCerrados es cuántos Sprints Cerrados entraron en el promedio (como mucho
+	// domain.VentanaVelocidad), no el total de Sprints Cerrados que tiene el proyecto si son más
+	// (RN-22.2): con 5 Sprints cerrados, SprintsCerrados vale 3, no 5.
 	SprintsCerrados int
 }
 
@@ -40,6 +43,6 @@ func (uc *ConsultarVelocidad) Ejecutar(ctx context.Context, proyectoID int64) (V
 		return VelocidadProyecto{}, fmt.Errorf("listar sprints del proyecto %d: %w", proyectoID, err)
 	}
 	cerrados := domain.SprintsAnteriores(sprints)
-	velocidad, hayDatos := domain.Velocidad(cerrados)
-	return VelocidadProyecto{Velocidad: velocidad, HayDatos: hayDatos, SprintsCerrados: len(cerrados)}, nil
+	velocidad, cantidad, hayDatos := domain.Velocidad(cerrados)
+	return VelocidadProyecto{Velocidad: velocidad, HayDatos: hayDatos, SprintsCerrados: cantidad}, nil
 }
