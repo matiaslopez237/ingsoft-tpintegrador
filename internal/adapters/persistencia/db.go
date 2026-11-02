@@ -35,6 +35,10 @@ func AbrirDB(ruta string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrar columnas de puntos de sprints: %w", err)
 	}
+	if err := migrarEstimacionAcordada(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrar columna estimacion_acordada: %w", err)
+	}
 
 	return db, nil
 }
@@ -143,6 +147,7 @@ CREATE TABLE IF NOT EXISTS rondas (
 	elemento_id INTEGER NOT NULL REFERENCES backlog_elementos (id) ON DELETE CASCADE,
 	numero      INTEGER NOT NULL,
 	estado      TEXT    NOT NULL,
+	estimacion_acordada INTEGER, -- HU-17: NULL si no se registró
 	UNIQUE (elemento_id, numero)
 );
 
@@ -181,6 +186,13 @@ func migrarPuntosDeSprint(db *sql.DB) error {
 		"puntos_planificados": "INTEGER NOT NULL DEFAULT 0",
 		"puntos_completados":  "INTEGER NOT NULL DEFAULT 0",
 	})
+}
+
+// migrarEstimacionAcordada agrega a rondas la columna de HU-17 si todavía no existe, por el mismo
+// motivo que migrarSprintID. Las rondas que ya estaban quedan sin estimación. Es seguro llamarla en
+// cada arranque.
+func migrarEstimacionAcordada(db *sql.DB) error {
+	return agregarColumnas(db, "rondas", map[string]string{"estimacion_acordada": "INTEGER"})
 }
 
 // agregarColumnas agrega a la tabla las columnas que le falten, con su definición, sin tocar los
