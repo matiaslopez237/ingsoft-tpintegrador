@@ -3,22 +3,27 @@ package bdd
 import (
 	"context"
 
-	"github.com/cucumber/godog"
-
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// RegistrarEstimacion queda pendiente hasta que exista el caso de uso (tarea 17.5): mientras tanto,
-// los escenarios que lo usan quedan en rojo.
+// RegistrarEstimacion registra con el caso de uso de HU-17, sobre la misma base SQLite del escenario.
+// El caso de uso se arma acá para no sumar campos al sistema de HU-14.
 func (s sistemaPlanningPokerReal) RegistrarEstimacion(proyectoID, rondaID int64, valor int) error {
-	return godog.ErrPending
+	uc := app.NuevoRegistrarEstimacion(persistencia.NuevoRepositorioProyectos(s.db),
+		persistencia.NuevoRepositorioBacklog(s.db), persistencia.NuevoRepositorioRondas(s.db))
+	_, err := uc.Ejecutar(context.Background(), app.DatosEstimacion{ProyectoID: proyectoID, RondaID: rondaID, Valor: valor})
+	return err
 }
 
-// EstimacionDeRonda también queda pendiente: la ronda todavía no guarda la estimación (tarea 17.4).
+// EstimacionDeRonda lee la estimación de la ronda con el resumen de HU-14, que es lo que se muestra.
 func (s sistemaPlanningPokerReal) EstimacionDeRonda(proyectoID, rondaID int64) (*int, error) {
-	return nil, godog.ErrPending
+	r, err := s.consultar.Ejecutar(context.Background(), proyectoID, rondaID)
+	if err != nil {
+		return nil, err
+	}
+	return r.EstimacionAcordada, nil
 }
 
 // Elemento lee el elemento guardado, para ver sus story points y sus demás datos.
