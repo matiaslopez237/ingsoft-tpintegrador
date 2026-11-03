@@ -84,7 +84,8 @@ func nuevoSistemaPlanningPoker() (sistemaPlanningPoker, error) {
 		IniciarRonda:             s.iniciar,
 		Votar:                    s.votar,
 		ConsultarRonda:           s.consultar,
-		ListarRondas:             app.NuevoListarRondas(proyectos, backlog, rondas), // HU-16: historial en la pantalla del elemento
+		ListarRondas:             app.NuevoListarRondas(proyectos, backlog, rondas),        // HU-16: historial en la pantalla del elemento
+		RegistrarEstimacion:      app.NuevoRegistrarEstimacion(proyectos, backlog, rondas), // HU-17: formulario en la pantalla de la ronda
 	}))
 	s.cliente = s.servidor.Client()
 	s.cliente.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }

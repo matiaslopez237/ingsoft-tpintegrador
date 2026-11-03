@@ -59,11 +59,12 @@ func main() {
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-20, RN-20.5).
 		RegistrarDefecto: app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints,
 			persistencia.NuevoRepositorioDefectos(db), time.Now),
-		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),   // HU-14
-		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                       // HU-14
-		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas), // HU-14
-		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),    // HU-12
-		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),   // HU-16
+		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),        // HU-14
+		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                            // HU-14
+		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas),      // HU-14
+		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),         // HU-12
+		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),        // HU-16
+		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas), // HU-17
 	})
 
 	puerto := os.Getenv("PORT")

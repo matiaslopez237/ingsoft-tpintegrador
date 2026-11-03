@@ -46,7 +46,7 @@ Arrancar el Planning Poker (Épica 4): abrir una ronda de estimación sobre un e
 
 - **Pantallas** (ADR-0003):
   - En la pantalla del elemento (HU-06), una sección "Planning Poker": si el elemento tiene una ronda abierta, un enlace a ella; si no, y el elemento no está `Hecho`, el botón "Iniciar ronda". Al iniciarla se va a la pantalla de la ronda (POST-redirect-GET, `303`).
-  - Pantalla de la ronda (`/web/proyectos/{id}/rondas/{rondaID}`): el elemento, el número y el estado de la ronda y cada votante con "Votó" o "Falta votar". Con la ronda abierta, un formulario para elegir el integrante y el valor (solo los de RN-14.4) y votar; al votar se vuelve a la misma pantalla (`303`). Con la ronda cerrada, un aviso de que votaron todos y ningún formulario. Los errores se muestran en la misma pantalla.
+  - Pantalla de la ronda (`/web/proyectos/{id}/rondas/{rondaID}`): el elemento, el número y el estado de la ronda y cada votante con "Votó" o "Falta votar". Con la ronda abierta, un formulario para elegir el integrante y el valor (solo los de RN-14.4) y votar; al votar se vuelve a la misma pantalla (`303`). Con la ronda cerrada, un aviso de que votaron todos y ningún formulario para votar (HU-17 suma el de registrar la estimación). Los errores se muestran en la misma pantalla.
 
 ## 4. Reglas de negocio
 - **RN-14.1:** Una ronda se abre sobre un elemento del backlog que no está `Hecho`. Un elemento tiene a lo sumo una ronda `Abierta` a la vez; cuando se cierra, se puede abrir otra (HU-16), con el número siguiente.
@@ -102,7 +102,7 @@ Si hay varios errores, se informa el primero en este orden. Al iniciar: proyecto
 - **CA-14.6:** No se puede iniciar una ronda sobre un elemento `Hecho` (`ErrElementoTerminado`), en un proyecto sin integrantes (`ErrRondaSinVotantes`) ni si el elemento ya tiene una ronda abierta (`ErrRondaYaAbierta`). Con la ronda anterior cerrada, se abre la número 2. (RN-14.1, RN-14.2)
 - **CA-14.7:** Dado un proyecto, un elemento o una ronda inexistentes o de otro proyecto, entonces obtengo `ErrProyectoNoEncontrado`, `ErrElementoNoEncontrado` o `ErrRondaNoEncontrada`. (RN-14.7)
 - **CA-14.8:** La API responde `201` al iniciar, `200` al votar y al consultar, y mientras la ronda está abierta ninguna respuesta trae el valor de un voto; los errores de validación dan `400` y las entidades inexistentes, `404`. (Sección 3, RN-14.3)
-- **CA-14.9:** Desde la pantalla del elemento inicio una ronda y llego a su pantalla; ahí veo quién votó y quién falta, voto eligiendo integrante y valor, y mientras la ronda está abierta no veo el valor de ningún voto. Con la ronda cerrada no hay formulario. Los errores se muestran en la misma pantalla. (Sección 3)
+- **CA-14.9:** Desde la pantalla del elemento inicio una ronda y llego a su pantalla; ahí veo quién votó y quién falta, voto eligiendo integrante y valor, y mientras la ronda está abierta no veo el valor de ningún voto. Con la ronda cerrada no hay formulario para votar. Los errores se muestran en la misma pantalla. (Sección 3)
 
 ## Decisiones tomadas
 Definidas por Nicolás Andino al refinar la historia (2026-11-01):
@@ -118,3 +118,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 - 2026-11-01: creada (borrador).
 - 2026-11-01: con HU-15, el resumen oculta los valores mientras la ronda está abierta y los revela al cerrarse (RN-14.3, CA-14.8 y CA-14.9 ajustados).
 - 2026-11-01: la escala de los votos es la de los story points de HU-13 (`EscalaStoryPoints()`); se quitó `ValoresVoto`.
+- 2026-11-02: aclarado, por HU-17, que la ronda cerrada no tiene formulario para votar (sí el de registrar la estimación).
