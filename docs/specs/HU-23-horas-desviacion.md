@@ -71,14 +71,14 @@ Cuando hay elementos sin estimar, la desviación **no** es `HorasReales − Hora
 - **Formato de los números:** igual que en HU-19. En JSON son números sin formato; la coma decimal, el signo y el `25,0` son solo de la pantalla.
 
 ### Pantalla
-Solo lectura, sin formularios. El mismo bloque "Horas estimadas y reales" se muestra en dos pantallas existentes, en las dos después de la lista de datos (`dl.datos`) y antes de la primera sección:
+Solo lectura, sin formularios. El mismo bloque "Horas y desviación" se muestra en dos pantallas existentes, en las dos después de la lista de datos (`dl.datos`) y antes de la primera sección:
 
 - **Sprint:** en el detalle del sprint de HU-09 (`/web/proyectos/{id}/sprints/{sprintID}`), antes de "Elementos del Sprint Backlog". A esa pantalla se llega con "Ver detalle" desde la lista de sprints (HU-08) y desde sprints anteriores (HU-12).
 - **Proyecto:** en el detalle del proyecto (`/web/proyectos/{id}`), antes de "Integrantes".
 
 El bloque muestra:
 
-- Horas estimadas, horas reales y las dos desviaciones, con el formato de HU-19: coma decimal, `+2 h` y `+25,0 %` en las positivas, `-2 h` y `-25,0 %` con el guion común en las negativas.
+- La cantidad de elementos, las horas estimadas, las horas reales y las dos desviaciones, con el formato de HU-19: coma decimal, `+2 h` y `+25,0 %` en las positivas, `-2 h` y `-25,0 %` con el guion común en las negativas.
 - Con `SinEstimar()`, las dos desviaciones muestran "Sin estimar". Las horas estimadas muestran `0 h` y las reales, su valor.
 - Con elementos sin estimar, un aviso: "1 de 2 elementos sin estimar: sus 5 h están en las horas reales, pero no en la desviación."
 - Sin elementos, además de lo anterior: "Todavía no hay elementos." (`0 h` en estimadas y reales).
@@ -206,3 +206,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-03, abiertas a objeción en el 
 
 ## Historial
 - 2026-11-03: creada (borrador). Decisiones P-1 a P-8 tomadas por el autor, abiertas a objeción en el PR; P-9 a P-12, pendientes del equipo.
+- 2026-11-03: ajustada a la pantalla implementada, sin cambiar reglas ni criterios: el bloque se llama "Horas y desviación" y muestra también la cantidad de elementos. La spec sigue en borrador.
