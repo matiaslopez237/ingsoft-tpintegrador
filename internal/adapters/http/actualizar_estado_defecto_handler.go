@@ -13,6 +13,7 @@ import (
 
 // actualizadorEstadoDefecto es lo que el handler necesita del caso de uso ActualizarEstadoDefecto.
 type actualizadorEstadoDefecto interface {
+	Iniciar(ctx context.Context, d app.DatosActualizarEstadoDefecto) (domain.Defecto, error)
 	Resolver(ctx context.Context, d app.DatosActualizarEstadoDefecto) (domain.Defecto, error)
 	Cerrar(ctx context.Context, d app.DatosActualizarEstadoDefecto) (domain.Defecto, error)
 }
@@ -27,28 +28,26 @@ var erroresEstadoDefecto = []struct {
 	{domain.ErrProyectoNoEncontrado, http.StatusNotFound},
 	{domain.ErrDefectoNoEncontrado, http.StatusNotFound},
 	{domain.ErrDefectoNoAbierto, http.StatusBadRequest},
+	{domain.ErrDefectoNoEnProgreso, http.StatusBadRequest},
 	{domain.ErrDefectoNoResuelto, http.StatusBadRequest},
 }
 
-// RegistrarActualizarEstadoDefecto agrega al mux las dos rutas de acción de HU-21.
+// RegistrarActualizarEstadoDefecto agrega al mux las tres rutas de acción de HU-21.
 //
-// La llamada a uc.Resolver/uc.Cerrar se hace recién al atender cada pedido (nunca acá, al
-// registrar), igual que todos los demás handlers: extraer un method value de una interfaz nil (por
-// ejemplo cuando un escenario BDD arma el router con un CasosDeUso parcial para otra historia) hace
-// panic de inmediato, aunque esa ruta nunca se use.
+// La llamada a uc.Iniciar/uc.Resolver/uc.Cerrar se hace recién al atender cada pedido (nunca acá,
+// al registrar), igual que todos los demás handlers: extraer un method value de una interfaz nil
+// (por ejemplo cuando un escenario BDD arma el router con un CasosDeUso parcial para otra historia)
+// hace panic de inmediato, aunque esa ruta nunca se use.
 func RegistrarActualizarEstadoDefecto(mux *http.ServeMux, uc actualizadorEstadoDefecto) {
-	mux.HandleFunc("POST /proyectos/{id}/defectos/{defectoID}/resolver", handlerAccionEstadoDefecto(uc, true))
-	mux.HandleFunc("POST /proyectos/{id}/defectos/{defectoID}/cerrar", handlerAccionEstadoDefecto(uc, false))
+	mux.HandleFunc("POST /proyectos/{id}/defectos/{defectoID}/iniciar", handlerAccionEstadoDefecto(uc, "iniciar"))
+	mux.HandleFunc("POST /proyectos/{id}/defectos/{defectoID}/resolver", handlerAccionEstadoDefecto(uc, "resolver"))
+	mux.HandleFunc("POST /proyectos/{id}/defectos/{defectoID}/cerrar", handlerAccionEstadoDefecto(uc, "cerrar"))
 }
 
-// handlerAccionEstadoDefecto atiende resolver (resolver=true) o cerrar (resolver=false): 204 si se
-// actualizó, 400 si los IDs no son válidos o el defecto no estaba en el estado de origen requerido,
-// 404 si el proyecto o el defecto no existen, 500 ante una falla interna. Implementa HU-21 (CA-21.7).
-func handlerAccionEstadoDefecto(uc actualizadorEstadoDefecto, resolver bool) http.HandlerFunc {
-	nombre := "cerrar defecto"
-	if resolver {
-		nombre = "resolver defecto"
-	}
+// handlerAccionEstadoDefecto atiende iniciar, resolver o cerrar: 204 si se actualizó, 400 si los
+// IDs no son válidos o el defecto no estaba en el estado de origen requerido, 404 si el proyecto o
+// el defecto no existen, 500 ante una falla interna. Implementa HU-21 (CA-21.9).
+func handlerAccionEstadoDefecto(uc actualizadorEstadoDefecto, accion string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		proyectoID, err := proyectoIDDesdeRuta(r)
 		if err != nil {
@@ -62,9 +61,12 @@ func handlerAccionEstadoDefecto(uc actualizadorEstadoDefecto, resolver bool) htt
 		}
 
 		datos := app.DatosActualizarEstadoDefecto{ProyectoID: proyectoID, DefectoID: defectoID}
-		if resolver {
+		switch accion {
+		case "iniciar":
+			_, err = uc.Iniciar(r.Context(), datos)
+		case "resolver":
 			_, err = uc.Resolver(r.Context(), datos)
-		} else {
+		case "cerrar":
 			_, err = uc.Cerrar(r.Context(), datos)
 		}
 		if err != nil {
@@ -74,7 +76,7 @@ func handlerAccionEstadoDefecto(uc actualizadorEstadoDefecto, resolver bool) htt
 					return
 				}
 			}
-			log.Printf("%s defecto %d del proyecto %d: %v", nombre, defectoID, proyectoID, err)
+			log.Printf("%s defecto %d del proyecto %d: %v", accion, defectoID, proyectoID, err)
 			escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al actualizar el defecto"})
 			return
 		}

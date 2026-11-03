@@ -69,6 +69,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/7/rondas/1/votos", `{"integrante":"Ana","valor":5}`},                                                   // HU-14
 		{http.MethodGet, "/proyectos/1/sprints/anteriores", ""},                                                                              // HU-12
 		{http.MethodGet, "/proyectos/1/defectos", ""},                                                                                        // HU-21
+		{http.MethodPost, "/proyectos/1/defectos/1/iniciar", ""},                                                                             // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/resolver", ""},                                                                            // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/cerrar", ""},                                                                              // HU-21
 		{http.MethodGet, "/", ""},                                                                                                            // HU-30
@@ -80,6 +81,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},                                                                           // HU-11
 		{http.MethodGet, "/web/proyectos/1/backlog", ""},                                                                                     // HU-07
 		{http.MethodGet, "/web/proyectos/1/defectos", ""},                                                                                    // HU-21
+		{http.MethodPost, "/web/proyectos/1/defectos/1/iniciar", ""},                                                                         // HU-21
 		{http.MethodPost, "/web/proyectos/1/defectos/1/resolver", ""},                                                                        // HU-21
 		{http.MethodPost, "/web/proyectos/1/defectos/1/cerrar", ""},                                                                          // HU-21
 		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},                                                                                   // HU-06
