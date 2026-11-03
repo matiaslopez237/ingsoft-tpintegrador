@@ -25,6 +25,8 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
+| HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
+| HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 abiertas a objeción del equipo en la PR) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (311/311 en el BDD completo) |
 
 ---
@@ -1251,6 +1253,138 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 - Las tareas 15.5 y 15.6 no tienen RED → GREEN: el caso de uso y la persistencia de HU-14 ya alcanzaban, así que sus tests pasaron desde el principio. Se dejaron como evidencia de que la revelación llega hasta la API y la base.
 - La ruta sugerida por la tarea 15.7 (`GET /proyectos/{id}/backlog/{elementoID}/rondas/{rondaID}`) no se agregó: la revelación va en el `GET /proyectos/{id}/rondas/{rondaID}` de HU-14, para no tener dos rutas para la misma ronda.
 - Revisión con el agente `go-reviewer` (tarea 15.9): sin hallazgos críticos, altos ni medios. Confirmó que con la ronda abierta ningún adaptador revela valores y que el mínimo, el máximo y el umbral son correctos. Tres observaciones bajas sin cambios: el `continue` para un votante sin voto es inalcanzable (la ronda se cierra cuando votaron todos), una ronda sin votantes no se puede crear (RN-14.2) y un comentario se reescribió.
+
+---
+
+## HU-16: Repetir una ronda de votación
+
+- **Issue:** #27 · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-16-nueva-ronda.md](specs/HU-16-nueva-ronda.md)
+- **Feature:** [features/HU-16-nueva-ronda.feature](../features/HU-16-nueva-ronda.feature) (steps en [test/bdd/hu16_steps_test.go](../test/bdd/hu16_steps_test.go), sobre el mundo de HU-14)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-16.1 Con la ronda cerrada se abre la siguiente; la anterior conserva sus votos | RN-16.1, RN-16.2 | Después de una ronda cerrada se abre la siguiente y la anterior conserva sus votos `@normal` | `TestListarRondas_DevuelveElHistorialDelElemento`, `TestRepositorioRondas_ListarRondas` | `domain.NuevaRonda` (HU-14), `app.ListarRondas`, `persistencia.RepositorioRondas.ListarRondas` |
+| CA-16.2 Se repite aunque no haya habido diferencias | RN-16.4 | Se puede repetir la ronda aunque no haya habido diferencias `@alternativo` | `TestPuedeRepetirse` (sin diferencia), `TestPantallaRonda_NuevaRonda` (sin diferencia) | `domain.PuedeRepetirse` |
+| CA-16.3 Con una ronda abierta no se abre otra | RN-16.1 | No se puede abrir otra ronda mientras hay una abierta `@error` | Los de HU-14 (`ErrRondaYaAbierta`) | `domain.NuevaRonda` (HU-14) |
+| CA-16.4 Historial de la más reciente a la más antigua, con votos de las cerradas y sin valores de la abierta | RN-16.3 | El historial muestra todas las rondas, de la más reciente a la más antigua `@normal` | `TestHistorialRondas_OrdenYRevelacion`, `TestHistorialRondas_NoModificaLasRondas`, `TestListarRondas_DevuelveElHistorialDelElemento` | `domain.HistorialRondas` (usa `Ronda.Resumen` de HU-14 y HU-15) |
+| CA-16.5 Sin rondas, historial vacío | RN-16.3 | Un elemento sin rondas tiene el historial vacío `@limite` | `TestHistorialRondas_SinRondas`, `TestListarRondas_SinRondas_ListaVacia`, `TestRepositorioRondas_ListarRondas_SinRondas` | `domain.HistorialRondas` |
+| CA-16.6 Proyecto o elemento inexistente, o elemento de otro proyecto | RN-16.5 | No se puede consultar el historial desde un proyecto que no existe `@error` · …de un elemento de otro proyecto `@error` | `TestListarRondas_Errores`, `TestListarRondas_FallaDelRepositorio_SePropaga` | `app.ListarRondas.Ejecutar` (`buscarElementoDelProyecto`) |
+| CA-16.7 HTTP 200 / 404 / 400 | Sección 3 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y la pantalla. | `TestGetHistorialRondas_DevuelveLasRondas`, `TestGetHistorialRondas_SinRondas_DevuelveArrayVacio`, `TestGetHistorialRondas_Errores`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerHistorialRondas` (reutiliza `aRespuestaRonda` de HU-14), `http.RegistrarHistorialRondas` |
+| CA-16.8 "Nueva ronda" en la última ronda cerrada; historial en el elemento | RN-16.3, RN-16.4 | Desde la pantalla de la ronda cerrada se abre la siguiente `@normal` | `TestPuedeRepetirse`, `TestPantallaRonda_NuevaRonda`, `TestPantallaRonda_CerradaPeroNoEsLaUltima_SinNuevaRonda`, `TestPantallaRonda_ElementoHecho_SinNuevaRonda`, `TestPantallaElemento_HistorialDeRondas`, `TestPantallaElemento_SinRondas_SinHistorial`, `TestPantallaElemento_FallaDelHistorial` | `http.pantallas.mostrarRonda` (`PuedeRepetirse`), `http.pantallas.pokerDelElemento` (`Historial`), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-16.1 Ronda nueva con la última cerrada y el elemento no Hecho; no con una abierta | CA-16.1, CA-16.3 | `domain.NuevaRonda` de HU-14 (HU-16 no la cambia) |
+| RN-16.2 Abrir una ronda nueva no modifica las anteriores | CA-16.1 | `domain.HistorialRondas` no modifica lo recibido; la persistencia de HU-14 inserta, no actualiza |
+| RN-16.3 Historial de la más reciente a la más antigua, sin valores de la abierta | CA-16.4, CA-16.5, CA-16.8 | `domain.HistorialRondas` |
+| RN-16.4 "Nueva ronda" solo en la última ronda, cerrada, de un elemento no Hecho, con o sin diferencia | CA-16.2, CA-16.8 | `domain.PuedeRepetirse` |
+| RN-16.5 Un elemento de otro proyecto se trata como inexistente | CA-16.6 | `app.ListarRondas.Ejecutar` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker_historial.go](../internal/domain/planning_poker_historial.go) (`HistorialRondas`, `PuedeRepetirse`) | [planning_poker_historial_test.go](../internal/domain/planning_poker_historial_test.go) |
+| Caso de uso y puerto | [internal/app/listar_rondas.go](../internal/app/listar_rondas.go) (`ListarRondas`, puerto angosto `LectorHistorialRondas`) | [listar_rondas_test.go](../internal/app/listar_rondas_test.go) (envuelve el fake de HU-14 sin tocarlo) |
+| Persistencia | [internal/adapters/persistencia/ronda_historial.go](../internal/adapters/persistencia/ronda_historial.go) (`ListarRondas`, reutiliza `BuscarRonda` de HU-14) | [ronda_historial_test.go](../internal/adapters/persistencia/ronda_historial_test.go), [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| HTTP | [internal/adapters/http/historial_rondas_handler.go](../internal/adapters/http/historial_rondas_handler.go) (`GET /proyectos/{id}/backlog/{elementoID}/rondas`), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [historial_rondas_handler_test.go](../internal/adapters/http/historial_rondas_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [pantallas_planning_poker.go](../internal/adapters/http/pantallas_planning_poker.go) (`PuedeRepetirse` en la ronda, `Historial` en el elemento), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_historial_rondas_test.go](../internal/adapters/http/pantallas_historial_rondas_test.go) |
+| BDD | [test/bdd/hu16_sistema_test.go](../test/bdd/hu16_sistema_test.go) (método nuevo del sistema de HU-14, en archivo propio), [hu16_steps_test.go](../test/bdd/hu16_steps_test.go) | 8 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 16.1 Spec | `5d60f4e` | — |
+| 16.2 Escenarios BDD | `1ab6a38` | — |
+| 16.3 Steps de godog | `7ea5111` [RED] (pendientes hasta el caso de uso) | BDD en rojo |
+| 16.4 Dominio | `5030b7a` [RED] → `75ab7bc` [GREEN] | **RED → GREEN** (sin REFACTOR: dos funciones cortas) |
+| 16.5 Caso de uso | `4e2c13f` [RED] → `afe8886` [GREEN] | **RED → GREEN** (sin REFACTOR: mismo molde que HU-14) |
+| 16.6 Persistencia | `72ecf17` [RED] → `64cee06` [GREEN] · `efb6090` (base cerrada) | **RED → GREEN** |
+| BDD conectado al caso de uso | `35e6f9e` | BDD en verde salvo la pantalla |
+| 16.7 Endpoint JSON | `cac55e2` [RED] → `aa49944` [GREEN] | **RED → GREEN** |
+| 16.8 Pantalla | `96cf6f9` [RED] → `0485622` [GREEN] | **RED → GREEN**; BDD 8/8 |
+| 16.9 Revisión y trazabilidad | este commit | — |
+
+### Huecos
+
+- No pasó por el agente `go-reviewer`; la revisión queda para el PR.
+- Cambios mínimos en archivos de HU-14 (Nico): registrar los steps de HU-16 en `hu14_steps_test.go`, sumar `ListarRondas` al router del sistema BDD de HU-14 y el campo `Historial` en `datosPokerElemento`. Conviene que lo vea Nico en el PR.
+- Si "Nueva ronda" falla (por ejemplo, otro pedido abrió la ronda en el medio), el error se muestra en la pantalla del elemento y no en la de la ronda, porque el botón usa la acción de HU-14 (anotado en la spec).
+
+---
+
+## HU-17: Registrar la estimación acordada
+
+- **Issue:** #28 · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-17-estimacion-acordada.md](specs/HU-17-estimacion-acordada.md)
+- **Feature:** [features/HU-17-estimacion-acordada.feature](../features/HU-17-estimacion-acordada.feature) (steps en [test/bdd/hu17_steps_test.go](../test/bdd/hu17_steps_test.go), sobre el mundo de HU-14)
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-17.1 La estimación queda en la ronda y como story points del elemento | RN-17.1 | La estimación queda en la ronda y como story points del elemento `@normal` | `TestRegistrarEstimacion_ValoresDeLaEscala`, `TestRegistrarEstimacion_Valida_LaGuarda`, `TestRepositorioRondas_GuardarEstimacion` | `domain.Ronda.RegistrarEstimacion`, `app.RegistrarEstimacion`, `persistencia.RepositorioRondas.GuardarEstimacion` |
+| CA-17.2 Reemplaza los story points y no cambia los demás datos | RN-17.1 | La estimación reemplaza los story points y no cambia los demás datos `@alternativo` | `TestRepositorioRondas_GuardarEstimacion` | `persistencia.RepositorioRondas.GuardarEstimacion` (solo actualiza `story_points`) |
+| CA-17.3 Cualquier valor de la escala, aunque nadie lo haya votado | RN-17.2 | Se puede acordar un valor que nadie votó `@alternativo` · El valor tiene que ser de la escala `@error` (3 ejemplos) | `TestRegistrarEstimacion_ValoresDeLaEscala`, `TestRegistrarEstimacion_Errores`, `TestRegistrarEstimacion_Errores_NoGuarda` | `domain.Ronda.RegistrarEstimacion` |
+| CA-17.4 No en una ronda abierta, que no es la última o con el elemento Hecho | RN-17.3 | No se registra en una ronda abierta `@error` · …que no es la última `@error` · …si el elemento ya está terminado `@error` | `TestRegistrarEstimacion_Errores`, `TestRegistrarEstimacion_Errores_NoGuarda`, `TestRepositorioRondas_GuardarEstimacion_Errores` | `domain.errorParaRegistrar`, `persistencia.RepositorioRondas.errorDeEstimacion` |
+| CA-17.5 Una sola estimación por ronda | RN-17.4 | Una ronda tiene una sola estimación `@error` | `TestRegistrarEstimacion_Errores`, `TestRepositorioRondas_GuardarEstimacion_Errores`, `TestRepositorioRondas_GuardarEstimacion_Simultaneos` | `domain.errorParaRegistrar`; en la base, `UPDATE ... AND estimacion_acordada IS NULL` |
+| CA-17.6 Una ronda nueva cambia la estimación y la anterior queda registrada | RN-17.4, RN-17.6 | Una ronda nueva puede cambiar la estimación y la anterior queda registrada `@normal` | `TestRepositorioRondas_GuardarEstimacion_RondaNueva` | `persistencia.RepositorioRondas.GuardarEstimacion` |
+| CA-17.7 Editar a mano no cambia lo acordado | RN-17.5 | Editar los story points a mano no cambia lo acordado en la ronda `@alternativo` | — (HU-06 no se modificó; lo cubre el escenario sobre SQLite real) | La estimación se guarda en `rondas`, separada de `backlog_elementos.story_points` |
+| CA-17.8 Proyecto o ronda inexistentes, o ronda de otro proyecto | Sección 7 | No se registra en una ronda que no existe `@error` · …desde un proyecto que no existe `@error` · Una ronda de otro proyecto se trata como inexistente `@error` | `TestRegistrarEstimacion_Errores_NoGuarda`, `TestRepositorioRondas_GuardarEstimacion_Errores` | `app.rondaDelProyecto` (HU-14) |
+| CA-17.9 HTTP 200 / 400 / 404 | Sección 3 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y la pantalla. | `TestPostEstimacion_Valida_Devuelve200ConLaEstimacion`, `TestRespuestaRonda_SinEstimacion_NoTraeElCampo`, `TestPostEstimacion_ErroresDelCasoDeUso`, `TestPostEstimacion_PedidoInvalido_NoLlamaAlCasoDeUso`, `TestNuevoRouter_RegistraTodasLasRutas` | `http.handlerRegistrarEstimacion` (reutiliza `responderRonda` de HU-14), `http.RegistrarEstimacionAcordada` |
+| CA-17.10 Pantalla de la ronda e historial del elemento | Sección 3, RN-17.3 | Desde la pantalla de la ronda se registra la estimación `@normal` · La pantalla de una ronda abierta no ofrece registrar la estimación `@alternativo` | `TestPuedeRegistrarEstimacion`, `TestPantallaRonda_CerradaSinEstimacion_OfreceRegistrar`, `TestPantallaRonda_NoOfreceRegistrar`, `TestPantallaRonda_ConEstimacion_LaMuestra`, `TestPantallaEstimacion_Valida_RedirigeALaRonda`, `TestPantallaEstimacion_ErroresDeValidacion`, `TestPantallaEstimacion_ValorNoNumerico_NoLlamaAlCasoDeUso`, `TestPantallaEstimacion_OtrosErrores`, `TestPantallaEstimacion_DesdeOtroSitio_SeRechaza`, `TestPantallaElemento_HistorialMuestraLaEstimacion` | `domain.PuedeRegistrarEstimacion`, `http.pantallas.registrarEstimacionPantalla`, [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-17.1 El valor se guarda en la ronda y se copia al elemento, en una sola operación | CA-17.1, CA-17.2 | `persistencia.RepositorioRondas.GuardarEstimacion` (transacción) |
+| RN-17.2 Cualquier valor de la escala | CA-17.3 | `domain.Ronda.RegistrarEstimacion` |
+| RN-17.3 Solo en la última ronda, cerrada, con el elemento no Hecho | CA-17.4, CA-17.10 | `domain.errorParaRegistrar`; en la base, las condiciones de los `UPDATE` |
+| RN-17.4 Una estimación por ronda; para cambiarla se vota otra | CA-17.5, CA-17.6 | `domain.errorParaRegistrar`; en la base, `estimacion_acordada IS NULL` |
+| RN-17.5 La edición manual no se bloquea y la ronda conserva lo acordado | CA-17.7 | HU-06 sin cambios; el dato vive en `rondas.estimacion_acordada` |
+| RN-17.6 Registrar no impide abrir otra ronda | CA-17.6 | `domain.PuedeRepetirse` (HU-16) no mira la estimación |
+
+Sin CA propio: `TestRepositorioRondas_GuardarEstimacion_Simultaneos` (10 pedidos a la vez: se registra uno solo, y la ronda y el elemento quedan con el mismo valor), `TestAbrirDB_BaseExistenteSinEstimacionAcordada_AgregaLaColumna` y `TestResumen_TraeLaEstimacionAcordada`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/planning_poker_estimacion.go](../internal/domain/planning_poker_estimacion.go), campo `EstimacionAcordada` en [planning_poker.go](../internal/domain/planning_poker.go) | [planning_poker_estimacion_test.go](../internal/domain/planning_poker_estimacion_test.go) |
+| Caso de uso y puerto | [internal/app/registrar_estimacion.go](../internal/app/registrar_estimacion.go) (`RegistrarEstimacion`, puerto angosto `RepositorioEstimacion`) | [registrar_estimacion_test.go](../internal/app/registrar_estimacion_test.go) |
+| Persistencia | [internal/adapters/persistencia/ronda_estimacion.go](../internal/adapters/persistencia/ronda_estimacion.go), lectura en [ronda_repo.go](../internal/adapters/persistencia/ronda_repo.go), columna y migración en [db.go](../internal/adapters/persistencia/db.go) | [ronda_estimacion_test.go](../internal/adapters/persistencia/ronda_estimacion_test.go), [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| HTTP | [internal/adapters/http/estimacion_handler.go](../internal/adapters/http/estimacion_handler.go) (`POST /proyectos/{id}/rondas/{rondaID}/estimacion`), [planning_poker_handler.go](../internal/adapters/http/planning_poker_handler.go), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [estimacion_handler_test.go](../internal/adapters/http/estimacion_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantalla | [pantallas_planning_poker.go](../internal/adapters/http/pantallas_planning_poker.go), [ronda.html](../internal/adapters/http/web/plantillas/ronda.html), [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_estimacion_test.go](../internal/adapters/http/pantallas_estimacion_test.go) |
+| BDD | [test/bdd/hu17_sistema_test.go](../test/bdd/hu17_sistema_test.go), [hu17_steps_test.go](../test/bdd/hu17_steps_test.go) | 17 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 17.1 Spec | `8e92530` · `7c8020e` (aprobada) | — |
+| 17.2 Escenarios BDD | `e760c80` | — |
+| 17.3 Steps de godog | `1ecb594` [RED] | BDD en rojo |
+| 17.4 Dominio | `a6d4122` [RED] → `6cc012c` [GREEN] | **RED → GREEN** (sin REFACTOR: dos líneas repetidas que no vale la pena unificar) |
+| 17.5 Caso de uso | `bbec012` [RED] → `0569373` [GREEN] | **RED → GREEN** (sin REFACTOR: mismo molde que HU-14) |
+| 17.6 Persistencia | `f9edcec` [RED] → `a6b9c13` [GREEN] | **RED → GREEN** |
+| BDD conectado al caso de uso | `fdada2a` | BDD en verde salvo la pantalla |
+| 17.7 Endpoint JSON | `f4cca58` [RED] → `8b771f3` [GREEN] | **RED → GREEN** |
+| 17.8 Pantalla | `050ff0f` [RED] → `a85d395` [GREEN] | **RED → GREEN**; BDD 17/17 |
+| 17.9 Revisión y trazabilidad | este commit | — |
+
+### Huecos
+
+- **Depende de HU-13 (#288):** HU-17 usa `valoresVoto` y `ValoresVoto`, que esa rama reemplaza por la escala unificada (RN-13.4). Al combinarlas hay que cambiar esas referencias.
+- No pasó por el agente `go-reviewer`; la revisión queda para el PR.
+- Las condiciones de la transacción se prueban una a una y con pedidos simultáneos sobre la misma ronda, pero no hay un test de una estimación simultánea con un cambio del elemento a `Hecho`.
+- Cambios mínimos en código de HU-14 (Nico): el campo `EstimacionAcordada`, `rondaDelProyecto` con un parámetro más angosto, la lectura de la columna en `BuscarRonda`, y el registro en el sistema BDD. Conviene que lo vea Nico en el PR.
 
 ---
 

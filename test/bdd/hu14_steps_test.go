@@ -99,6 +99,8 @@ func registrarStepsHU14(ctx *godog.ScenarioContext) {
 	ctx.Step(`^la pantalla de la ronda no muestra los valores "([^"]*)"$`, w.pantallaSinValores)
 
 	registrarStepsHU15(ctx, w)
+	registrarStepsHU16(ctx, w)
+	registrarStepsHU17(ctx, w)
 }
 
 // nombres separa una lista del escenario como "Ana, Beto".

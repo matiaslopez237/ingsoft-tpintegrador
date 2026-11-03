@@ -120,7 +120,7 @@ func registrarStepsHU19(ctx *godog.ScenarioContext) {
 	ctx.Step(`^se rechaza la edición de las horas estimadas con el error "([^"]*)"$`, w.seRechazaEdicion)
 	ctx.Step(`^"([^"]*)" tiene `+horas+` horas estimadas$`, w.tieneHoras)
 	ctx.Step(`^"([^"]*)" está sin horas estimadas$`, w.estaSinHoras)
-	ctx.Step(`^"([^"]*)" tiene (\d+) story points$`, w.tienePuntos)
+	ctx.Step(`^"([^"]*)" quedó con (\d+) story points$`, w.tienePuntos)
 }
 
 // --- Given ---

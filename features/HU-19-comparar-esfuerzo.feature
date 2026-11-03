@@ -148,7 +148,7 @@ Feature: Comparar esfuerzo estimado contra real
     Given "Login" tiene cargadas 8 horas estimadas
     When edito los story points de "Login" a 5
     Then la edición de las horas estimadas termina sin errores
-    And "Login" tiene 5 story points
+    And "Login" quedó con 5 story points
     And "Login" tiene 8 horas estimadas
 
   @CA-19.13 @alternativo
@@ -217,7 +217,7 @@ Feature: Comparar esfuerzo estimado contra real
     And "Pagos" tiene cargadas 8 horas estimadas
     When edito los story points de "Pagos" a 13
     Then la edición de las horas estimadas termina sin errores
-    And "Pagos" tiene 13 story points
+    And "Pagos" quedó con 13 story points
     And "Pagos" tiene 8 horas estimadas
 
   @CA-19.15 @normal

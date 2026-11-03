@@ -40,13 +40,14 @@ type (
 		Voto   bool   `json:"voto"`
 	}
 	respuestaRonda struct {
-		ID         int64              `json:"id"`
-		ProyectoID int64              `json:"proyecto_id"`
-		ElementoID int64              `json:"elemento_id"`
-		Numero     int                `json:"numero"`
-		Estado     string             `json:"estado"`
-		Votantes   []respuestaVotante `json:"votantes"`
-		Revelacion *respuestaRevelada `json:"revelacion,omitempty"` // HU-15: solo con la ronda cerrada
+		ID                 int64              `json:"id"`
+		ProyectoID         int64              `json:"proyecto_id"`
+		ElementoID         int64              `json:"elemento_id"`
+		Numero             int                `json:"numero"`
+		Estado             string             `json:"estado"`
+		Votantes           []respuestaVotante `json:"votantes"`
+		Revelacion         *respuestaRevelada `json:"revelacion,omitempty"`          // HU-15: solo con la ronda cerrada
+		EstimacionAcordada *int               `json:"estimacion_acordada,omitempty"` // HU-17: solo si se registró
 	}
 	respuestaVoto struct {
 		Nombre string `json:"nombre"`
@@ -65,7 +66,9 @@ type (
 var (
 	erroresNoEncontradoRonda = []error{domain.ErrProyectoNoEncontrado, domain.ErrElementoNoEncontrado, domain.ErrRondaNoEncontrada}
 	erroresDeValidacionRonda = []error{domain.ErrElementoTerminado, domain.ErrRondaSinVotantes, domain.ErrRondaYaAbierta,
-		domain.ErrRondaCerrada, domain.ErrNoEsVotante, domain.ErrVotoInvalido}
+		domain.ErrRondaCerrada, domain.ErrNoEsVotante, domain.ErrVotoInvalido,
+		// HU-17
+		domain.ErrEstimacionRondaAbierta, domain.ErrRondaNoEsLaUltima, domain.ErrEstimacionYaRegistrada, domain.ErrEstimacionInvalida}
 )
 
 // RegistrarPlanningPoker agrega las rutas de HU-14 al mux.
@@ -170,7 +173,7 @@ func aRespuestaRonda(r domain.ResumenRonda) respuestaRonda {
 		votantes[i] = respuestaVotante{Nombre: v.Nombre, Voto: v.YaVoto}
 	}
 	res := respuestaRonda{ID: r.ID, ProyectoID: r.ProyectoID, ElementoID: r.ElementoID, Numero: r.Numero,
-		Estado: string(r.Estado), Votantes: votantes}
+		Estado: string(r.Estado), Votantes: votantes, EstimacionAcordada: r.EstimacionAcordada}
 	if rev := r.Revelacion; rev != nil { // HU-15 (RN-15.1)
 		res.Revelacion = &respuestaRevelada{Votos: make([]respuestaVoto, len(rev.Votos)), Minimo: rev.Minimo,
 			Maximo: rev.Maximo, DiferenciaSignificativa: rev.DiferenciaSignificativa}

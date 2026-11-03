@@ -58,6 +58,15 @@
   {{else}}
   <p class="vacio">El elemento está terminado: ya no se estima.</p>
   {{end}}
+  {{with .Historial}}
+  {{/* HU-16: las rondas del elemento, de la más reciente a la más antigua (RN-16.3). */}}
+  <h3>Historial de rondas</h3>
+  <ul>
+    {{range .}}
+    <li><a href="/web/proyectos/{{$.ProyectoID}}/rondas/{{.ID}}">Ronda {{.Numero}}</a> · {{.Estado}}{{with .Revelacion}} · votos de {{.Minimo}} a {{.Maximo}}{{if .DiferenciaSignificativa}} · diferencia significativa{{end}}{{end}}{{with .EstimacionAcordada}} · acordada: {{.}}{{end}}</li>
+    {{end}}
+  </ul>
+  {{end}}
 </section>
 {{end}}
 
