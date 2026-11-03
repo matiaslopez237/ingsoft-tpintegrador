@@ -120,6 +120,7 @@ func TestPatchElemento_Errores(t *testing.T) {
 		{"estado inválido", "/proyectos/1/backlog/7", `{"estado":"Cerrado"}`, nil, http.StatusBadRequest, domain.ErrEstadoElementoInvalido.Error()},
 		{"criterios vacíos", "/proyectos/1/backlog/7", `{"criterios":[]}`, nil, http.StatusBadRequest, domain.ErrSinCriterios.Error()},
 		{"story points no enteros", "/proyectos/1/backlog/7", `{"story_points":2.5}`, nil, http.StatusBadRequest, "story_points debe ser un entero o null"},
+		{"story points fuera de la escala (HU-13)", "/proyectos/1/backlog/7", `{"story_points":10}`, nil, http.StatusBadRequest, domain.ErrStoryPointsInvalidos.Error()},
 		{"título duplicado", "/proyectos/1/backlog/7", `{"titulo":"Registro"}`, domain.ErrTituloDuplicado, http.StatusBadRequest, domain.ErrTituloDuplicado.Error()},
 		{"de otro proyecto", "/proyectos/2/backlog/7", `{"titulo":"Otro"}`, nil, http.StatusNotFound, domain.ErrElementoNoEncontrado.Error()},
 		{"campo desconocido", "/proyectos/1/backlog/7", `{"id":9}`, nil, http.StatusBadRequest, "el cuerpo debe ser un JSON válido"},

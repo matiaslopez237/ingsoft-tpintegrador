@@ -23,6 +23,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
+| HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Borrador, pendiente de aprobación en el PR) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
 | HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
@@ -1162,7 +1163,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 | CA-14.2 Voto oculto | RN-14.3, RN-14.6 | Un voto no muestra su valor mientras la ronda está abierta `@normal` | `TestVotar_UnVotoNoCierraLaRondaNiMuestraElValor`, `TestVotar_GuardaElVotoYDevuelveElResumenSinValores`, `TestPostVoto_Devuelve200SinElValor` | `domain.Ronda.Votar`, `domain.Ronda.Resumen`, `app.Votar` |
 | CA-14.3 Cierre al votar todos | RN-14.6 | La ronda se cierra cuando votaron todos `@normal` · Con un solo integrante, su voto cierra la ronda `@limite` | `TestVotar_CuandoVotanTodosLaRondaSeCierra`, `TestRepositorioRondas_GuardarVoto`, `TestRepositorioRondas_VotosSimultaneos` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
 | CA-14.4 Cambiar el voto | RN-14.5, RN-14.2 | Cambiar el voto mientras la ronda está abierta `@alternativo` · El nombre del votante no distingue mayúsculas ni espacios `@alternativo` | `TestVotar_CambiarElVotoYNombreSinMayusculas`, `TestRepositorioRondas_GuardarVoto` | `domain.Ronda.Votar` (`ClaveNombre`) |
-| CA-14.5 Voto inválido, no votante, ronda cerrada | RN-14.2, RN-14.4, RN-14.6 | Un voto fuera de la escala de Fibonacci `@error` (×4) · Vota alguien que se sumó al proyecto después de abrir la ronda `@error` · No se vota en una ronda cerrada `@error` | `TestVotar_Errores` (dominio y caso de uso), `TestVotar_RondaCerrada`, `TestRepositorioRondas_GuardarVoto_RondaYaCerrada`, `TestValoresVoto` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
+| CA-14.5 Voto inválido, no votante, ronda cerrada | RN-14.2, RN-14.4, RN-14.6 | Un voto fuera de la escala de Fibonacci `@error` (×4) · Vota alguien que se sumó al proyecto después de abrir la ronda `@error` · No se vota en una ronda cerrada `@error` | `TestVotar_Errores` (dominio y caso de uso), `TestVotar_RondaCerrada`, `TestRepositorioRondas_GuardarVoto_RondaYaCerrada`, `TestVotar_UsaLaEscalaDeLosStoryPoints` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
 | CA-14.6 No se puede iniciar | RN-14.1, RN-14.2 | No se estima un elemento terminado `@error` · Un proyecto sin integrantes no puede abrir una ronda `@error` · Un elemento tiene una sola ronda abierta a la vez `@error` · Con la ronda anterior cerrada se abre la número 2 `@limite` | `TestNuevaRonda_Errores`, `TestNuevaRonda_ConLaAnteriorCerrada_TomaElNumeroSiguiente`, `TestIniciarRonda_Errores`, `TestIniciarRonda_ConLaAnteriorCerrada_AbreLaSiguiente`, `TestRepositorioRondas_UltimaRonda`, `TestRepositorioRondas_UnaSolaAbiertaPorElemento` | `domain.NuevaRonda`, índice único `rondas_una_abierta_por_elemento` |
 | CA-14.7 Otro proyecto o inexistente | RN-14.7 | No se abre una ronda sobre un elemento de otro proyecto `@error` · No se vota en una ronda de otro proyecto `@error` | `TestIniciarRonda_Errores`, `TestVotar_Errores`, `TestConsultarRonda`, `TestConsultarRonda_UltimaDelElemento`, `TestPantallaRonda_Inexistente` | `buscarElementoDelProyecto`, `rondaDelProyecto` |
 | CA-14.8 API sin valores | Sección 3, RN-14.3 | El resumen se pide al endpoint real en los escenarios de CA-14.2 y CA-14.3 ("el resumen de la ronda no muestra ningún valor") | `TestPostRonda_Devuelve201ConElResumen`, `TestPostVoto_Devuelve200SinElValor`, `TestGetRonda_Devuelve200ConElResumen`, `TestPlanningPoker_Errores` (17 casos) | `planning_poker_handler.go` |
@@ -1172,7 +1173,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Ronda`, `NuevaRonda`, `Votar`, `Resumen`, `ValoresVoto`) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
+| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Ronda`, `NuevaRonda`, `Votar`, `Resumen`; la escala es `EscalaStoryPoints()` de HU-13) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
 | Casos de uso | [internal/app/planning_poker.go](../internal/app/planning_poker.go) (`IniciarRonda`, `Votar`, `ConsultarRonda`) | [planning_poker_test.go](../internal/app/planning_poker_test.go) |
 | Persistencia | [internal/adapters/persistencia/ronda_repo.go](../internal/adapters/persistencia/ronda_repo.go), [db.go](../internal/adapters/persistencia/db.go) (tablas `rondas` y `ronda_votantes`) | [ronda_repo_test.go](../internal/adapters/persistencia/ronda_repo_test.go), métodos de rondas en [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
 | HTTP (JSON) | [internal/adapters/http/planning_poker_handler.go](../internal/adapters/http/planning_poker_handler.go) (`POST /proyectos/{id}/backlog/{elementoID}/rondas`, `GET /proyectos/{id}/rondas/{rondaID}`, `POST /proyectos/{id}/rondas/{rondaID}/votos`) | [planning_poker_handler_test.go](../internal/adapters/http/planning_poker_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
@@ -1380,10 +1381,65 @@ Sin CA propio: `TestRepositorioRondas_GuardarEstimacion_Simultaneos` (10 pedidos
 
 ### Huecos
 
-- **Depende de HU-13 (#288):** HU-17 usa `valoresVoto` y `ValoresVoto`, que esa rama reemplaza por la escala unificada (RN-13.4). Al combinarlas hay que cambiar esas referencias.
+- **Escala de HU-13 (#288):** al combinar las dos historias, `RegistrarEstimacion` valida con `escalaStoryPoints` y la pantalla de la ronda usa `EscalaStoryPoints()`, la escala unificada de HU-13 (RN-13.4), en lugar de `valoresVoto` y `ValoresVoto`.
 - No pasó por el agente `go-reviewer`; la revisión queda para el PR.
 - Las condiciones de la transacción se prueban una a una y con pedidos simultáneos sobre la misma ronda, pero no hay un test de una estimación simultánea con un cambio del elemento a `Hecho`.
 - Cambios mínimos en código de HU-14 (Nico): el campo `EstimacionAcordada`, `rondaDelProyecto` con un parámetro más angosto, la lectura de la columna en `BuscarRonda`, y el registro en el sistema BDD. Conviene que lo vea Nico en el PR.
+
+---
+
+## HU-13: Estimar una historia con story points de la escala Fibonacci
+
+- **Issue:** [#24](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/24) · Sprint 3 · 1 SP · tareas #272 a #280
+- **Spec:** [docs/specs/HU-13-escala-story-points.md](specs/HU-13-escala-story-points.md)
+- **Feature:** [features/HU-13-escala-story-points.feature](../features/HU-13-escala-story-points.feature) (steps en [test/bdd/hu13_steps_test.go](../test/bdd/hu13_steps_test.go), sobre SQLite real; el escenario de CA-13.6 usa el endpoint real)
+- **Cambio en HU-05:** RN-05.6, CA-05.7 y el mensaje de `ErrStoryPointsInvalidos` pasan a la escala.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-13.1 Valores de la escala | RN-13.1 | Los valores de la escala se aceptan `@normal` (×7) | `TestNuevoElementoBacklog_ValoresDeLaEscala` | `domain.NuevoElementoBacklog` |
+| CA-13.2 Fuera de la escala al crear | RN-13.1 | Un valor fuera de la escala se rechaza `@error` (×4) | `TestNuevoElementoBacklog_FueraDeLaEscala`, `TestCrearElemento_StoryPointsFueraDeLaEscala_NoSeGuarda` | `domain.NuevoElementoBacklog` |
+| CA-13.3 Editar los story points | RN-13.1 | Editar los story points a otro valor de la escala `@normal` · a un valor fuera de la escala `@error` | `TestEditar_StoryPointsFueraDeLaEscala` | `domain.ElementoBacklog.Editar` |
+| CA-13.4 Sin estimar | RN-13.2 | Un elemento puede quedar sin estimar `@alternativo` · Quitarle la estimación `@alternativo` | `TestEditar_StoryPointsNil_QuedaSinEstimar` (HU-06), `TestEditar_ValorAnteriorALaEscala` | `domain.NuevoElementoBacklog`, `domain.ElementoBacklog.Editar` |
+| CA-13.5 Valores anteriores a la escala | RN-13.3 | Un valor guardado antes de la escala se respeta al editar otro campo `@limite` · no se puede volver a enviar `@error` · se puede corregir `@limite` | `TestEditar_ValorAnteriorALaEscala`, `TestEditarElemento_ValorAnteriorALaEscala`, `TestRepositorioBacklog_ValorAnteriorALaEscala` | `domain.ElementoBacklog.Editar` |
+| CA-13.6 API | Sección 3 | La API rechaza un valor fuera de la escala `@error` | `TestPostBacklog_DatosInvalidos_Devuelve400` y `TestPatchElemento_Errores` (casos HU-13) | sin cambios en los handlers |
+| CA-13.7 Pantallas | Sección 3, RN-13.3, RN-13.4 | No va acá (como CA-20.8): se cubre con los tests de la pantalla | `TestPantallaBacklog_AltaConLaEscala`, `TestPantallaElemento_EdicionConLaEscala`, `TestPantallaElemento_ValorAnteriorALaEscala`, `TestOpcionesStoryPoints` | `pantallas_escala.go`, `web/plantillas/backlog.html`, `web/plantillas/elemento.html` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog.go](../internal/domain/backlog.go) (`EscalaStoryPoints`, validación en `NuevoElementoBacklog`), [backlog_editar.go](../internal/domain/backlog_editar.go) (`Editar` valida los story points solo si se envían) | [backlog_escala_test.go](../internal/domain/backlog_escala_test.go) |
+| Casos de uso | Sin cambios | [escala_story_points_test.go](../internal/app/escala_story_points_test.go) |
+| Persistencia | Sin cambios ni migración | [escala_story_points_test.go](../internal/adapters/persistencia/escala_story_points_test.go) |
+| HTTP (JSON) | Sin cambios: `ErrStoryPointsInvalidos` ya se respondía con 400 | [backlog_handler_test.go](../internal/adapters/http/backlog_handler_test.go), [backlog_editar_handler_test.go](../internal/adapters/http/backlog_editar_handler_test.go) |
+| Pantallas | [internal/adapters/http/pantallas_escala.go](../internal/adapters/http/pantallas_escala.go) (`opcionesStoryPoints`), listas en [backlog.html](../internal/adapters/http/web/plantillas/backlog.html) y [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_escala_test.go](../internal/adapters/http/pantallas_escala_test.go) |
+| BDD | [test/bdd/hu13_steps_test.go](../test/bdd/hu13_steps_test.go) | 19 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 13.1 Spec (y ajuste de HU-05) | `5fa677d` | — |
+| 13.2 Escenarios BDD | `711ca5b` | — |
+| 13.3 Steps godog | `d7dbeaa` | BDD en rojo |
+| 13.4 Escala en el dominio | `a785cf8` [RED] → `f246c79` [GREEN] | **RED → GREEN**, BDD en verde |
+| 13.5 Casos de uso | `c679dcf` | test, sin cambios en el código |
+| 13.6 Persistencia | `43024a2` | test, sin persistencia nueva |
+| 13.7 HTTP | `816bdd7` | test, sin cambios en los handlers |
+| 13.8 Pantallas | `5a6432b` [RED] → `ddb9e08` [GREEN] | **RED → GREEN** |
+| 13.9 Revisión y trazabilidad | `e5fcbd3` (test de la revisión), `25a3997` | — |
+| Revisión del PR #288: escala unificada con HU-14 | `55ba3cf` | **REFACTOR** |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- Las tareas 13.5 a 13.7 no tienen RED → GREEN: crear y editar ya pasaban por el dominio, la base guarda un entero y los handlers ya respondían `ErrStoryPointsInvalidos` con 400. Se dejaron tests como evidencia, como sugerían las tareas.
+- `TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente` (HU-11) creaba historias con 1 a 8 story points; ahora usa valores de la escala.
+- **Escala unificada con HU-14 (revisión del PR #288):** después de traer `main`, los votos de HU-14 usan `EscalaStoryPoints()` y se quitó `ValoresVoto`: hay una sola escala en el dominio (RN-13.4). Commit `55ba3cf` [REFACTOR], con `TestVotar_UsaLaEscalaDeLosStoryPoints`.
+- Revisión con el agente `go-reviewer` (tarea 13.9): sin hallazgos críticos ni altos; confirmó que `Editar` no comparte el puntero de los story points y que un valor anterior a la escala no se valida si no se envía, pero sí si se envía. Se agregó el test de punta a punta que sugirió (`TestPantallaElemento_GuardarConValorAnteriorALaEscala_NoEnviaLosStoryPoints`, `e5fcbd3`). Dos observaciones bajas sin cambios: en el alta, un POST armado a mano con un valor fuera de la escala se vuelve a mostrar marcado (el dominio igual lo rechaza), y si una edición de 4 a 5 falla por otro error, la lista ya no ofrece el 4.
 
 ---
 

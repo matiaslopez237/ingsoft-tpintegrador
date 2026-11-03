@@ -186,7 +186,7 @@ func (p *pantallas) mostrarRonda(w http.ResponseWriter, r *http.Request, status 
 		ProyectoID: pid, Titulo: e.Titulo, Ronda: res, Abierta: res.Estado == domain.RondaAbierta,
 		PuedeRepetirse: domain.PuedeRepetirse(res, ultima, e),
 		PuedeRegistrar: domain.PuedeRegistrarEstimacion(res, ultima, e),
-		Valores:        domain.ValoresVoto(), Integrante: integrante, Error: mensaje,
+		Valores:        domain.EscalaStoryPoints(), Integrante: integrante, Error: mensaje,
 	})
 }
 
