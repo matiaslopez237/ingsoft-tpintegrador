@@ -199,6 +199,24 @@ Feature: Horas estimadas, reales y desviación de un sprint o proyecto
     And la desviación de HU-23 es de 2 horas y de 25,0 %
     And las horas de HU-23 cuentan 1 elemento y 0 sin estimar
 
+  # RN-23.8: el elemento devuelto al backlog y el Hecho reasignado terminan juntos en el sprint nuevo.
+  @CA-23.10 @limite
+  Scenario: El elemento devuelto y el Hecho reasignado suman juntos en el sprint nuevo
+    Given el sprint "Sprint 1" de HU-23 tiene estos elementos:
+      | elemento | estimadas | reales |
+      | Login    | 8         | 10     |
+      | Reportes | 4         | 3      |
+    And "Login" de HU-23 se completa
+    And "Reportes" de HU-23 pasa a En progreso
+    And el sprint "Sprint 1" de HU-23 se cierra
+    And el proyecto "Alfa" tiene abierto el sprint "Sprint 2" de HU-23
+    And "Reportes" de HU-23 se planifica en el sprint "Sprint 2"
+    And "Login" de HU-23 se planifica en el sprint "Sprint 2"
+    When consulto las horas de HU-23 del sprint "Sprint 2"
+    Then las horas de HU-23 informan 12 estimadas, 13 reales y 0 reales sin estimar
+    And la desviación de HU-23 es de 1 horas y de 8,3 %
+    And las horas de HU-23 cuentan 2 elementos y 0 sin estimar
+
   # RN-23.9: los totales usan los valores actuales; los puntos que guardó el cierre quedan fijos (RN-11.6).
   @CA-23.11 @alternativo
   Scenario: Los totales de un sprint cerrado reflejan los valores actuales
