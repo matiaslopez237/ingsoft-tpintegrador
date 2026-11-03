@@ -33,8 +33,9 @@ type datosEdicionElemento struct {
 	Error                  string
 	Prioridades            []domain.Prioridad
 	Estados                []domain.EstadoElemento
-	OpcionesStoryPoints    []opcionStoryPoints // HU-13
-	Poker                  *datosPokerElemento // nil si la aplicación no tiene Planning Poker (HU-14)
+	OpcionesStoryPoints    []opcionStoryPoints  // HU-13
+	Poker                  *datosPokerElemento  // nil si la aplicación no tiene Planning Poker (HU-14)
+	Esfuerzo               datosSeccionEsfuerzo // HU-18: tiene su propio formulario y su propio error
 }
 
 // registrarPantallasElemento agrega la pantalla para ver, editar y eliminar un elemento.
@@ -56,7 +57,9 @@ func (p *pantallas) elemento(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := aFormElemento(e)
-	p.mostrarElemento(w, r, http.StatusOK, pid, eid, f, f, "")
+	esfuerzo := p.seccionEsfuerzoInicial()
+	esfuerzo.Registrado = r.URL.Query().Get("esfuerzo") == "registrado" // HU-18: confirmación tras la redirección
+	p.mostrarElemento(w, r, http.StatusOK, pid, eid, f, f, "", esfuerzo)
 }
 
 func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
@@ -81,7 +84,7 @@ func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if mensaje, ok := mensajeDeValidacionElemento(err); ok {
-			p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, original, mensaje)
+			p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, original, mensaje, p.seccionEsfuerzoInicial())
 			return
 		}
 		p.fallaInterna(w, "editar elemento", err)
@@ -107,7 +110,7 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		f := aFormElemento(e)
-		p.mostrarElemento(w, r, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err))
+		p.mostrarElemento(w, r, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err), p.seccionEsfuerzoInicial())
 	default:
 		p.errorDeElemento(w, err)
 	}
@@ -115,15 +118,25 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 
 // --- Ayudantes ---
 
-func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64, f, original formEdicionElemento, mensaje string) {
+// mostrarElemento renderiza la pantalla. Consulta el proyecto por los integrantes del desplegable
+// de esfuerzo (HU-18), también cuando vuelve con un error de editar o eliminar, y la última ronda
+// para la sección de Planning Poker (HU-14).
+func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64,
+	f, original formEdicionElemento, mensaje string, esfuerzo datosSeccionEsfuerzo) {
+	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), pid)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	poker, err := p.pokerDelElemento(r, pid, eid, original.Estado)
 	if err != nil {
 		p.errorDeElemento(w, err)
 		return
 	}
+	esfuerzo.Integrantes = proyecto.Integrantes
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
-		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker,
+		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker, Esfuerzo: esfuerzo,
 		OpcionesStoryPoints: opcionesStoryPoints(f.StoryPoints),
 	})
 }
@@ -137,26 +150,20 @@ func (p *pantallas) idsElemento(w http.ResponseWriter, r *http.Request) (int64, 
 	return pid, eid, true
 }
 
-// errorDeElemento muestra la página 404 si el elemento no existe en el proyecto, o la de falla interna.
+// errorDeElemento muestra la página 404 si no existe el proyecto o el elemento en el proyecto, o la
+// de falla interna.
 func (p *pantallas) errorDeElemento(w http.ResponseWriter, err error) {
-	if errors.Is(err, domain.ErrElementoNoEncontrado) {
-		p.renderizar(w, http.StatusNotFound, "error.html", datosError{domain.ErrElementoNoEncontrado.Error()})
-		return
+	for _, noEncontrado := range []error{domain.ErrProyectoNoEncontrado, domain.ErrElementoNoEncontrado} {
+		if errors.Is(err, noEncontrado) {
+			p.renderizar(w, http.StatusNotFound, "error.html", datosError{noEncontrado.Error()})
+			return
+		}
 	}
 	p.fallaInterna(w, "elemento del backlog", err)
 }
 
 func mensajeDeValidacionElemento(err error) (string, bool) {
-	var ef errFormulario
-	if errors.As(err, &ef) {
-		return ef.mensaje, true
-	}
-	for _, e := range erroresDeValidacionEdicion {
-		if errors.Is(err, e) {
-			return e.Error(), true
-		}
-	}
-	return "", false
+	return formMensajeDeErrorConocido(err, erroresDeValidacionEdicion)
 }
 
 func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {

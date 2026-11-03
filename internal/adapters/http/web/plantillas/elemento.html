@@ -55,8 +55,45 @@
   {{else}}
   <p class="vacio">El elemento está terminado: ya no se estima.</p>
   {{end}}
+  {{with .Historial}}
+  {{/* HU-16: las rondas del elemento, de la más reciente a la más antigua (RN-16.3). */}}
+  <h3>Historial de rondas</h3>
+  <ul>
+    {{range .}}
+    <li><a href="/web/proyectos/{{$.ProyectoID}}/rondas/{{.ID}}">Ronda {{.Numero}}</a> · {{.Estado}}{{with .Revelacion}} · votos de {{.Minimo}} a {{.Maximo}}{{if .DiferenciaSignificativa}} · diferencia significativa{{end}}{{end}}</li>
+    {{end}}
+  </ul>
+  {{end}}
 </section>
 {{end}}
+
+{{/* HU-18: registrar esfuerzo. El fragmento lleva a esta sección si el formulario vuelve con un error. */}}
+<section id="esfuerzo" aria-labelledby="titulo-esfuerzo">
+  <h2 id="titulo-esfuerzo">Registrar esfuerzo</h2>
+  {{if .Esfuerzo.Registrado}}<p class="exito" role="status">Esfuerzo registrado.</p>{{end}}
+  {{template "error_form" .Esfuerzo.Error}}
+  {{if not .Esfuerzo.Integrantes}}<p class="vacio">El proyecto no tiene integrantes. Agregalos en el <a href="/web/proyectos/{{.ProyectoID}}">detalle del proyecto</a>.</p>{{end}}
+  <form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.ElementoID}}/esfuerzo#esfuerzo" class="formulario">
+    <label for="integrante">Integrante</label>
+    <select id="integrante" name="integrante" required>
+      <option value="">Elegí un integrante</option>
+      {{range .Esfuerzo.Integrantes}}<option value="{{.Nombre}}"{{if eq .Nombre $.Esfuerzo.Form.Integrante}} selected{{end}}>{{.Nombre}}</option>{{end}}
+    </select>
+
+    <label for="fecha">Fecha</label>
+    <input id="fecha" name="fecha" type="date" value="{{.Esfuerzo.Form.Fecha}}" required>
+
+    <label for="actividad">Actividad</label>
+    <input id="actividad" name="actividad" type="text" value="{{.Esfuerzo.Form.Actividad}}" required>
+
+    <label for="horas">Horas</label>
+    <input id="horas" name="horas" type="number" step="0.5" value="{{.Esfuerzo.Form.Horas}}" required>
+
+    <div class="acciones">
+      <button type="submit" class="boton">Registrar esfuerzo</button>
+    </div>
+  </form>
+</section>
 
 <details class="confirmar">
   <summary>Eliminar elemento</summary>

@@ -5,7 +5,7 @@
 **Estado de la spec:** Borrador
 
 ## 1. Objetivo
-Dejar constancia de las horas que cada integrante trabajó realmente sobre un elemento del backlog: quién, qué día, en qué actividad y cuánto tiempo. Es el dato base del esfuerzo real, que después usan las métricas (estimado vs. real), el dashboard y los reportes. Reutiliza los elementos de backlog de HU-05 y los integrantes de HU-03. En esta historia solo se expone un endpoint JSON; la pantalla para cargar el esfuerzo se suma después con HU-30.
+Dejar constancia de las horas que cada integrante trabajó realmente sobre un elemento del backlog: quién, qué día, en qué actividad y cuánto tiempo. Es el dato base del esfuerzo real, que después usan las métricas (estimado vs. real), el dashboard y los reportes. Reutiliza los elementos de backlog de HU-05 y los integrantes de HU-03. Se expone con un endpoint JSON y con una pantalla (sección 9).
 
 ## 2. Entradas
 | Dato | Tipo (Go) | Obligatorio | Validación |
@@ -33,6 +33,7 @@ Dejar constancia de las horas que cada integrante trabajó realmente sobre un el
 - El registro queda persistido y se puede recuperar por su `ID`.
 - Si hay un error, no se guarda nada.
 - **En HTTP:** `201` con el registro creado en JSON (`id`, `proyecto_id`, `elemento_id`, `integrante`, `fecha`, `actividad`, `horas`); `400` con el error si los datos del cuerpo son inválidos, incluido un integrante que no pertenece al proyecto (`ErrIntegranteNoEncontrado`); `404` solo si no existe el proyecto o el elemento, que son los datos que van en la ruta.
+- **En la pantalla** del elemento: ver la sección 9.
 
 ## 4. Reglas de negocio
 - **RN-18.1:** Todo registro de esfuerzo pertenece a un elemento de backlog existente del proyecto indicado. Las tareas no existen como entidad propia: una tarea es un elemento más del backlog. Un elemento de otro proyecto se trata como inexistente.
@@ -54,7 +55,7 @@ Dejar constancia de las horas que cada integrante trabajó realmente sobre un el
 - El registro guarda el nombre del integrante, no una referencia a la fila del integrante. En la base no hay clave foránea hacia la tabla de integrantes, para que quitar a un integrante (HU-03) no borre ni bloquee sus registros (RN-18.3).
 - Las horas se reciben como `float64`; para evitar errores de redondeo se recomienda guardarlas internamente como cantidad de medias horas (`int`).
 - Persistencia en SQLite (ADR-0002); `net/http` (ADR-0001) con la ruta propuesta `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`, en lugar del `POST /esfuerzo` de la tarea 18.7 (pendiente de confirmar, ver P-6).
-- Solo endpoint JSON: la vista web se hace en HU-30.
+- La pantalla se especifica en la sección 9 (ADR-0003) y usa el mismo caso de uso que el endpoint JSON.
 - Fuera de alcance: editar, eliminar o listar registros de esfuerzo, y totales por elemento o por integrante (los usan historias posteriores de métricas). No hay autenticación ni roles.
 
 ## 6. Casos límite
@@ -109,10 +110,77 @@ Si hay varios errores al registrar, se informa el primero en el orden de la tabl
 - **CA-18.13:** Dado que Ana tiene esfuerzo registrado, cuando se la quita del proyecto (HU-03), entonces sus registros se siguen recuperando por su ID. (RN-18.3)
 - **CA-18.14:** Dado un proyecto que no está Activo y una fecha anterior a su fecha de inicio, cuando registro esfuerzo con esa fecha, entonces se crea. (RN-18.4)
 - **CA-18.15:** Dado un pedido válido a `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo` (ruta sujeta a P-6), entonces la respuesta es `201` con el registro en JSON; con datos inválidos, `400`; con un integrante que no pertenece al proyecto, `400`; con proyecto o elemento inexistente, `404`.
+- **CA-18.16:** Dada la pantalla de un elemento de un proyecto con las integrantes "Ana" y "Caro", entonces la sección "Registrar esfuerzo" muestra un desplegable con esas dos integrantes y sin ninguna elegida, la fecha de hoy, y la actividad y las horas vacías. No muestra registros ni totales de esfuerzo. (Sección 9)
+- **CA-18.17:** Dada la lista del backlog, entonces cada elemento tiene el enlace "Registrar esfuerzo", que lleva a la sección del formulario en la pantalla de ese elemento. (Sección 9)
+- **CA-18.18:** Dado el formulario con datos válidos, cuando lo envío, entonces el caso de uso recibe esos datos una sola vez y la respuesta es `303` a `/web/proyectos/{id}/backlog/{elementoID}?esfuerzo=registrado#esfuerzo`. Esa pantalla muestra "Esfuerzo registrado." y el formulario con sus valores iniciales. Si la recargo, no se crea otro registro. (Sección 9)
+- **CA-18.19:** Dado el formulario con un dato que el dominio rechaza (integrante vacío, fecha vacía o futura, actividad vacía, horas 0, 1,25 o 24,5), cuando lo envío, entonces la respuesta es `400`, la misma pantalla muestra en esa sección el mensaje de la sección 7, sin el texto envuelto por el caso de uso, y conserva lo que tipeé. El formulario de edición muestra los valores guardados del elemento. (RN-18.2, RN-18.4 a RN-18.8, sección 9)
+- **CA-18.20:** Dada una fecha con otro formato o unas horas que no son un número, cuando envío el formulario, entonces la respuesta es `400` con el mensaje de formato de la sección 9, conserva lo que tipeé y no se llama al caso de uso. Con las horas vacías, el mensaje es el de `ErrHorasInvalidas`, igual que en JSON. (Sección 9)
+- **CA-18.21:** Dado que a "Caro" la quitaron del proyecto después de abrir la pantalla, cuando envío el formulario con Caro, entonces la respuesta es `400` con "integrante no encontrado en el proyecto", los demás campos conservan lo que tipeé y Caro ya no aparece en el desplegable. (RN-18.3, sección 9)
+- **CA-18.22:** Dado un proyecto o un elemento inexistente, o un elemento de otro proyecto, cuando envío el formulario, entonces la respuesta es `404` y la página de error muestra "proyecto no encontrado" o "elemento de backlog no encontrado". Con un ID que no es un entero positivo, la respuesta es `400` con la página de error. (RN-18.1, sección 9)
+- **CA-18.23:** Dado un envío desde otro sitio, entonces la respuesta es `403` y no se llama al caso de uso. Dada una falla interna, entonces la respuesta es `500` con el mensaje genérico, sin el detalle. (Sección 9)
+- **CA-18.24:** Dado un proyecto sin integrantes, entonces la sección avisa que no hay integrantes y enlaza al detalle del proyecto. (Sección 9)
+- **CA-18.25:** Dado un error al editar (`400`) o al eliminar (`409`) el elemento, entonces la pantalla sigue mostrando ese mensaje arriba, como en HU-06, y también la sección "Registrar esfuerzo" con sus valores iniciales. (Sección 9)
 
 En todos los casos de error, no se crea ningún registro.
 
 Los escenarios mínimos de la tarea 18.2 (válido, horas negativas, sin actividad) corresponden a CA-18.1, CA-18.3 y CA-18.4.
+
+CA-18.16 a CA-18.25 se cubren con tests del adaptador (`httptest`), como las pantallas de HU-10 y HU-11: las reglas ya están cubiertas por los escenarios BDD de CA-18.1 a CA-18.14.
+
+## 9. Pantalla
+Agregada por el issue #289. HU-18 se entregó solo con el endpoint JSON y HU-30 no incluyó la pantalla, que la DoD del proyecto exige (ADR-0003).
+
+**Dónde vive.** En la pantalla del elemento de HU-06 (`GET /web/proyectos/{id}/backlog/{elementoID}`, plantilla `elemento.html`), en una sección nueva "Registrar esfuerzo" con `id="esfuerzo"`, entre el formulario de edición y "Eliminar elemento". No hay plantilla nueva. La lista del backlog (HU-07) suma en cada fila el enlace "Registrar esfuerzo" a `/web/proyectos/{id}/backlog/{elementoID}#esfuerzo`, porque "Editar" no sugiere que ahí se cargan horas.
+
+**Qué muestra.**
+
+| Campo (`name`) | Control | Valor inicial |
+|---|---|---|
+| `integrante` | `<select>` obligatorio con los integrantes del proyecto (HU-03), más una primera opción vacía "Elegí un integrante" | Sin elegir |
+| `fecha` | `<input type="date">` obligatorio | Hoy, en la zona del servidor (`AAAA-MM-DD`) |
+| `actividad` | `<input type="text">` obligatorio | Vacío |
+| `horas` | `<input type="number" step="0.5">` obligatorio | Vacío |
+
+- `step="0.5"` hace falta porque, sin él, el navegador no acepta decimales. No se agregan `min`, `max` ni tope de fecha: los límites siguen en un solo lugar, el dominio. El navegador envía el número con punto aunque lo muestre con coma.
+- No se listan registros ni se muestran totales: siguen fuera de alcance (sección 5). Las horas reales del elemento se suman con HU-19.
+- Sin integrantes en el proyecto, el formulario se muestra igual, con un aviso y un enlace a `/web/proyectos/{id}` para agregarlos. No se puede elegir a nadie, así que un envío termina en `ErrNombreIntegranteVacio`.
+- El formulario se muestra con cualquier estado del proyecto (RN-18.4) y del elemento: ninguna regla lo limita y el caso de uso no los mira.
+
+**Acción.** `POST /web/proyectos/{id}/backlog/{elementoID}/esfuerzo`, con el `action` terminado en `#esfuerzo` para que, si vuelve con un error, el navegador muestre la sección y no el principio de la página.
+
+- Se registra con `p.formulario`, como las demás acciones: chequeo `mismoOrigen` (`403`) y cuerpo de hasta 64 KiB (`413`).
+- Llama a `CasosDeUso.RegistrarEsfuerzo`, el mismo caso de uso del endpoint JSON.
+- Si sale bien: POST-redirect-GET con `303` a `/web/proyectos/{id}/backlog/{elementoID}?esfuerzo=registrado#esfuerzo`. El `GET` muestra "Esfuerzo registrado." (`class="exito" role="status"`, como en HU-20) cuando recibe ese parámetro. No hay sesiones para guardar un aviso. Escribir el parámetro a mano solo muestra el texto, sin ningún efecto sobre los datos.
+
+**Lectura del formulario** (adaptador, antes de llamar al caso de uso, como la fila "cuerpo mal formado" de la sección 7):
+
+| Dato | Lectura | Si no se puede leer |
+|---|---|---|
+| `fecha` | `fechaDelPedido`, que la interpreta en `time.Local` (sección 5). No se usa `fechaDeForm` de las pantallas de proyecto, que la interpreta en UTC. Vacía es la fecha cero: responde `ErrFechaEsfuerzoObligatoria`. | "la fecha debe tener el formato AAAA-MM-DD" (`400`) |
+| `horas` | `strconv.ParseFloat`, sin los espacios de alrededor. Vacías valen 0: responden `ErrHorasInvalidas`, igual que en JSON cuando faltan. | "las horas deben ser un número" (`400`) |
+
+Si fallan las dos lecturas, se informa primero la fecha. `errFormulario` lleva estos mensajes, como "story_points debe ser un número entero" en HU-06. `NaN` e `Inf` se pueden leer y los rechaza el dominio.
+
+**Errores.** Se muestra siempre el mensaje del error del dominio de la sección 7, nunca el texto envuelto por el caso de uso. Se comparan con `errors.Is` contra las listas que ya usa el handler JSON (`erroresNoEncontradoEsfuerzo` y `erroresDeValidacionEsfuerzo`): `mensajeDeValidacion` no incluye los errores propios de HU-18 y respondería `500`.
+
+| Situación | Código | Qué se ve |
+|---|---|---|
+| Error de validación de la sección 7, incluido `ErrIntegranteNoEncontrado`, o de lectura del formulario | `400` | La pantalla del elemento con el mensaje en la sección "Registrar esfuerzo" (`error_form`) |
+| `ErrProyectoNoEncontrado` o `ErrElementoNoEncontrado` | `404` | `error.html` con el mensaje |
+| ID de la ruta inválido | `400` | `error.html` (`idsElemento`) |
+| Envío desde otro sitio | `403` | `error.html` |
+| Formulario demasiado grande | `413` | `error.html` |
+| Cualquier otro error | `500` | `error.html` con el mensaje genérico (`fallaInterna`), sin el detalle |
+
+**Valores al volver con un error.** `actividad`, `horas` y `fecha` conservan exactamente lo tipeado, aunque la fecha haya quedado vacía. `integrante` conserva la opción elegida si sigue en el proyecto; si no, queda sin elegir y el mensaje lo explica. El formulario de edición se rearma con los valores guardados del elemento, porque cada formulario se envía por separado: lo que se haya tipeado ahí sin guardar se pierde, igual que al usar "Eliminar".
+
+**Cambios en el adaptador.**
+- Archivo nuevo `pantallas_esfuerzo.go`, con `registrarPantallasEsfuerzo(mux)`, sumado a `RegistrarPantallas` y con la ruta sumada a `router_test.go`.
+- `datosEdicionElemento` suma los integrantes, el formulario de esfuerzo, su error propio (separado de `Error`, que sigue siendo el de editar y eliminar) y el aviso de registrado.
+- `mostrarElemento` también consulta el proyecto con `ConsultarProyecto`, porque lo usan el `GET` y los errores de editar y eliminar (CA-18.25). `errorDeElemento` suma `ErrProyectoNoEncontrado`, que hoy terminaría en `500`.
+- `pantallas` suma el campo `reloj func() time.Time`, que `nuevasPantallas` inicializa con `time.Now`, solo para el valor inicial de la fecha. Los tests lo fijan y registran la ruta con `registrarPantallasElemento`. La validación de "hoy" sigue en el caso de uso, con su propio reloj.
+
+**Qué no cambia.** Las reglas RN-18.1 a RN-18.10, el dominio, el caso de uso `RegistrarEsfuerzo`, la persistencia y el endpoint JSON `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo` con sus códigos.
 
 ## Decisiones tomadas
 Las acordó el equipo en el chat el 2026-10-25, a partir del borrador de esta spec:
@@ -121,13 +189,25 @@ Las acordó el equipo en el chat el 2026-10-25, a partir del borrador de esta sp
 - **P-3:** la actividad es texto libre y obligatoria.
 - **P-4:** se aceptan medias horas, con un tope de 24 h por registro. No se suman los registros del día.
 - **P-5:** la fecha solo no puede ser futura; no se valida contra las fechas del proyecto ni contra su estado. Confirmada por Matías.
-- HU-18 es solo un endpoint JSON, por el plan del Sprint 1; la pantalla se suma con HU-30. No hubo objeciones.
+- HU-18 es solo un endpoint JSON, por el plan del Sprint 1; la pantalla se suma con HU-30. No hubo objeciones. (Reemplazada por P-7 a P-13: HU-30 no incluyó la pantalla.)
+
+P-7 a P-13 las tomó el autor (Lucas Orellana) el 2026-11-01; quedan abiertas a objeción en el PR.
+- **P-7:** el formulario vive en la pantalla del elemento y no en una propia. El esfuerzo es de un elemento, esa pantalla ya resuelve los IDs y los `404`, y es donde aparece "no se puede eliminar un elemento con esfuerzo registrado". Sumar a una pantalla existente es lo que hicieron HU-10 y HU-11, y HU-19 propone mostrar ahí las horas reales (su P-11). Una pantalla propia, como la de HU-20, evitaría tocar `mostrarElemento`, pero sumaría una plantilla y una ruta `GET` más y separaría la carga de lo demás del elemento.
+- **P-8:** no se muestra ni el listado ni el total, y se respeta la sección 5, que deja fuera a los dos; se muestra solo la confirmación "Esfuerzo registrado." Es lo más chico que le dice a quien carga que el registro quedó. El total necesitaría un puerto, un caso de uso y una consulta SQL, que la spec de HU-19 (en su rama, en borrador) ya define como `LectorHorasReales`, para mostrarlo en esta misma pantalla: hacerlo acá duplicaría ese trabajo.
+- **P-9:** la acción es `POST /web/proyectos/{id}/backlog/{elementoID}/esfuerzo`, con `303` al elemento. La confirmación viaja en el parámetro `?esfuerzo=registrado` porque no hay sesiones, y `#esfuerzo` lleva a la sección, que queda debajo del formulario de edición.
+- **P-10:** los códigos son los de las otras pantallas: `400` en el mismo formulario, `404` con `error.html`, `403` por otro origen, `413` por tamaño y `500` genérico. `ErrIntegranteNoEncontrado` es `400`, como en JSON.
+- **P-11:** la lectura del formulario sigue al endpoint JSON: la fecha se lee con `fechaDelPedido` y las horas vacías valen 0. "las horas deben ser un número" es el único mensaje nuevo y vive en el adaptador, porque es de formato, no una regla de negocio.
+- **P-12:** en el navegador solo se valida lo que hace usable al formulario (`required` y `step="0.5"`). Sin `min`, `max` ni tope de fecha, los límites de RN-18.4, RN-18.6 y RN-18.8 quedan solo en el dominio y sus mensajes se ven en la pantalla.
+- **P-13:** el enlace "Registrar esfuerzo" va en la lista del backlog. Queda afuera el detalle del sprint (HU-09), para no agrandar el cambio. Sin integrantes, el formulario se muestra igual, con un aviso y un enlace para agregarlos.
 
 ## Preguntas abiertas
 - **P-6 — Ruta HTTP:** se propone `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`, en lugar del `POST /esfuerzo` del plan (tarea 18.7), para seguir el estilo de HU-05. Pendiente de confirmar con Matías.
+- **P-14 — ¿Alcanza la confirmación si HU-19 no llega a la entrega?** Sin el total, la pantalla no muestra lo ya cargado, y como no se pueden editar ni eliminar registros, un doble registro no se detecta ni se corrige desde la interfaz. **Propuesta:** aceptarlo y dejar el total para HU-19. Si HU-19 se cae del Sprint 3, se suma solo el total a esta pantalla, con el mismo puerto `LectorHorasReales`, como cambio de alcance de la sección 5.
+- **P-15 — Quién suma `ErrProyectoNoEncontrado` a `errorDeElemento`.** HU-18 y HU-19 piden el mismo cambio, y las dos tocan `mostrarElemento`. **Propuesta:** que lo haga esta pantalla, que se implementa antes (lo propone P-13 de HU-19), y que HU-19 lo reciba al actualizarse con `main`.
 
 ## Historial
 - 2026-10-25: creada (borrador), con las decisiones P-1 a P-4 todavía sin confirmar por el equipo.
 - 2026-10-25: el equipo resuelve P-1 a P-6. El tope de horas pasa a ser por registro (24 h) en vez de diario: se quitan `ErrTopeHorasDiarias` y la suma por día, y se agrega `ErrHorasExcedenMaximo` en el dominio. Se agregan la conservación de registros al quitar un integrante (RN-18.3, CA-18.13), la falta de validación contra las fechas y el estado del proyecto (RN-18.4, CA-18.14), la ruta y el contrato JSON (CA-18.15), y la aclaración de que la vista web va en HU-30.
 - 2026-10-25: ajustes: `ErrIntegranteNoEncontrado` responde HTTP 400 (el integrante va en el cuerpo, no en la ruta) en las secciones 3 y 7 y en CA-18.15; los mensajes de los errores reutilizados se copian de `internal/domain` y los nuevos siguen su estilo (minúscula, sin punto final); "hoy" se define en la zona horaria del servidor (RN-18.4 y Restricciones); se fija el orden de validación de las horas (> 0, múltiplo de 0,5, máximo 24). "Decisiones tomadas" registra que se acordaron en el chat y que Matías confirmó P-5. P-6 (ruta) vuelve a "Preguntas abiertas", pendiente de confirmar con Matías.
 - 2026-10-25: correcciones de la revisión con go-reviewer (tarea 18.8): se separan RN-18.8 y RN-18.9, que habían quedado en la misma línea; se agrega a la sección 7 `ErrRegistroEsfuerzoNoEncontrado`, que devuelve la búsqueda por ID de la persistencia (sin endpoint en HU-18). En el código, una fecha cero en cualquier zona horaria y unas horas NaN se rechazan con `ErrFechaEsfuerzoObligatoria` y `ErrHorasInvalidas`, sin cambiar las reglas.
+- 2026-11-01: se especifica la pantalla para registrar esfuerzo (issue #289): sección 9, CA-18.16 a CA-18.25, decisiones P-7 a P-13 del autor, abiertas a objeción en el PR, y preguntas P-14 y P-15. Se actualizan las secciones 1, 3 y 5, que decían que la pantalla iba en HU-30. No cambian las reglas RN-18.x ni el endpoint JSON. La spec sigue en borrador.

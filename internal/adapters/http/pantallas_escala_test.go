@@ -30,7 +30,7 @@ func TestPantallaElemento_EdicionConLaEscala(t *testing.T) {
 
 	contiene(t, rec, opcionesEscala...)
 	contiene(t, rec, `<option value="5" selected>5</option>`, `<option value="">Sin estimar</option>`)
-	noContiene(t, rec.Body.String(), `type="number"`)
+	noContiene(t, rec.Body.String(), `name="story_points" type="number"`) // las horas de HU-18 sí son un número
 }
 
 // Traza: HU-13 CA-13.7 (RN-13.3): un valor anterior a la escala aparece seleccionado y marcado,

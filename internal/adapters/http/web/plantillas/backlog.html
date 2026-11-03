@@ -38,6 +38,8 @@
       <td>
         {{/* HU-06: editar y eliminar el elemento. */}}
         <a class="boton" href="/web/proyectos/{{$.Proyecto.ID}}/backlog/{{.ID}}" aria-label="Editar {{.Titulo}}">Editar</a>
+        {{/* HU-18: lleva al formulario de esfuerzo en la pantalla del elemento. */}}
+        <a href="/web/proyectos/{{$.Proyecto.ID}}/backlog/{{.ID}}#esfuerzo" aria-label="Registrar esfuerzo en {{.Titulo}}">Registrar esfuerzo</a>
         <details class="confirmar">
           <summary>Eliminar</summary>
           <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/backlog/{{.ID}}/eliminar" class="en-linea">
