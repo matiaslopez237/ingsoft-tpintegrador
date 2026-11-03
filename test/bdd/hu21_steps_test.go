@@ -15,6 +15,7 @@ type sistemaEstadoDefecto interface {
 	CrearElemento(proyectoID int64, titulo string) (int64, error)
 	CrearSprint(proyectoID int64, inicio, fin time.Time) error
 	CrearDefecto(d datosDefecto) (defectoVisto, error)
+	IniciarDefecto(d datosActualizarDefecto) (defectoVisto, error)
 	ResolverDefecto(d datosActualizarDefecto) (defectoVisto, error)
 	CerrarDefecto(d datosActualizarDefecto) (defectoVisto, error)
 	Cerrar() error
@@ -60,8 +61,10 @@ func registrarStepsHU21(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto "([^"]*)" cuenta con un sprint vigente entre "([^"]*)" y "([^"]*)"$`, w.proyectoTieneSprint)
 	ctx.Step(`^hay un defecto "([^"]*)" con severidad "([^"]*)" en "([^"]*)"$`, w.hayUnDefecto)
 
+	ctx.Step(`^inicié el defecto$`, w.inicieElDefecto)
 	ctx.Step(`^resolví el defecto$`, w.resolviElDefecto)
 	ctx.Step(`^cerré el defecto$`, w.cerreElDefecto)
+	ctx.Step(`^inicio el defecto$`, w.inicioElDefecto)
 	ctx.Step(`^resuelvo el defecto$`, w.resuelvoElDefecto)
 	ctx.Step(`^cierro el defecto$`, w.cierroElDefecto)
 	ctx.Step(`^resuelvo el defecto en un proyecto inexistente$`, w.resuelvoEnProyectoInexistente)
@@ -69,6 +72,7 @@ func registrarStepsHU21(ctx *godog.ScenarioContext) {
 	ctx.Step(`^resuelvo el defecto de "([^"]*)" indicando el proyecto "([^"]*)"$`, w.resuelvoDefectoDeOtroProyecto)
 
 	ctx.Step(`^el defecto se actualiza correctamente$`, w.seActualizaCorrectamente)
+	ctx.Step(`^el defecto queda en estado "([^"]*)"$`, w.estadoCoincide)
 	ctx.Step(`^el defecto queda en estado "([^"]*)" con el Sprint de resolución asignado$`, w.defectoQuedaConSprint)
 	ctx.Step(`^el defecto queda en estado "([^"]*)" sin Sprint de resolución$`, w.defectoQuedaSinSprint)
 	ctx.Step(`^se rechaza la actualización con el error "([^"]*)"$`, w.seRechazaConError)
@@ -147,6 +151,13 @@ func (w *actualizarEstadoDefectoWorld) hayUnDefecto(descripcion, severidad, elem
 	return nil
 }
 
+// inicieElDefecto prepara un defecto ya En progreso: a diferencia de "inicio", si falla corta el
+// escenario (es un paso de preparación, no la acción bajo prueba), igual que "cerré" en HU-11.
+func (w *actualizarEstadoDefectoWorld) inicieElDefecto() error {
+	w.ejecutarIniciar(w.datosActuales())
+	return w.ultimoErr
+}
+
 // resolviElDefecto prepara un defecto ya Resuelto: a diferencia de "resuelvo", si falla corta el
 // escenario (es un paso de preparación, no la acción bajo prueba), igual que "cerré" en HU-11.
 func (w *actualizarEstadoDefectoWorld) resolviElDefecto() error {
@@ -160,6 +171,11 @@ func (w *actualizarEstadoDefectoWorld) cerreElDefecto() error {
 }
 
 // --- When ---
+
+func (w *actualizarEstadoDefectoWorld) inicioElDefecto() error {
+	w.ejecutarIniciar(w.datosActuales())
+	return nil
+}
 
 func (w *actualizarEstadoDefectoWorld) resuelvoElDefecto() error {
 	w.ejecutarResolver(w.datosActuales())
@@ -197,6 +213,10 @@ func (w *actualizarEstadoDefectoWorld) resuelvoDefectoDeOtroProyecto(proyectoDef
 	}
 	w.ejecutarResolver(datosActualizarDefecto{ProyectoID: idPedido, DefectoID: w.defectoID})
 	return nil
+}
+
+func (w *actualizarEstadoDefectoWorld) ejecutarIniciar(d datosActualizarDefecto) {
+	w.ultimo, w.ultimoErr = w.sistema.IniciarDefecto(d)
 }
 
 func (w *actualizarEstadoDefectoWorld) ejecutarResolver(d datosActualizarDefecto) {

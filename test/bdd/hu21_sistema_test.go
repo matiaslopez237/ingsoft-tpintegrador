@@ -16,10 +16,11 @@ import (
 // erroresHU21 traduce la descripción del escenario al error definido en la spec (sección 7).
 func erroresHU21() map[string]defectoErrorEsperado {
 	return map[string]defectoErrorEsperado{
-		"proyecto no encontrado":      {err: domain.ErrProyectoNoEncontrado},
-		"defecto no encontrado":       {err: domain.ErrDefectoNoEncontrado},
-		"el defecto no está Abierto":  {err: domain.ErrDefectoNoAbierto},
-		"el defecto no está Resuelto": {err: domain.ErrDefectoNoResuelto},
+		"proyecto no encontrado":         {err: domain.ErrProyectoNoEncontrado},
+		"defecto no encontrado":          {err: domain.ErrDefectoNoEncontrado},
+		"el defecto no está Abierto":     {err: domain.ErrDefectoNoAbierto},
+		"el defecto no está En progreso": {err: domain.ErrDefectoNoEnProgreso},
+		"el defecto no está Resuelto":    {err: domain.ErrDefectoNoResuelto},
 	}
 }
 
@@ -116,6 +117,13 @@ func (s sistemaEstadoDefectoReal) CrearDefecto(d datosDefecto) (defectoVisto, er
 		Descripcion: r.Descripcion, Severidad: string(r.Severidad), Estado: string(r.Estado),
 		SprintDeteccionID: r.SprintDeteccionID,
 	}, nil
+}
+
+func (s sistemaEstadoDefectoReal) IniciarDefecto(d datosActualizarDefecto) (defectoVisto, error) {
+	r, err := s.actualizar.Iniciar(context.Background(), app.DatosActualizarEstadoDefecto{
+		ProyectoID: d.ProyectoID, DefectoID: d.DefectoID,
+	})
+	return aDefectoVisto(r), err
 }
 
 func (s sistemaEstadoDefectoReal) ResolverDefecto(d datosActualizarDefecto) (defectoVisto, error) {
