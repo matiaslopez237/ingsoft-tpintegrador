@@ -24,15 +24,8 @@ type datosHoras struct {
 func vistaHoras(t domain.TotalHoras) datosHoras {
 	v := datosHoras{
 		Elementos: t.Elementos, HorasEstimadas: textoHoras(t.HorasEstimadas), HorasReales: textoHoras(t.HorasReales),
-		DesviacionHoras: textoSinEstimar, DesviacionPorcentaje: textoSinEstimar,
 	}
-	if !t.SinEstimar() {
-		v.DesviacionHoras = conSigno(*t.DesviacionHoras, textoHoras(*t.DesviacionHoras))
-		v.DesviacionPorcentaje = textoSinPorcentaje
-		if t.DesviacionPorcentaje != nil {
-			v.DesviacionPorcentaje = conSigno(*t.DesviacionPorcentaje, textoPorcentaje(*t.DesviacionPorcentaje))
-		}
-	}
+	v.DesviacionHoras, v.DesviacionPorcentaje = textosDesviacion(t.DesviacionHoras, t.DesviacionPorcentaje)
 	switch {
 	case t.Elementos == 0:
 		v.Avisos = []string{"Todavía no hay elementos."}
