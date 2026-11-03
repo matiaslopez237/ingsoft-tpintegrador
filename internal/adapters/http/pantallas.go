@@ -111,6 +111,7 @@ type (
 		Proyecto       vistaProyecto
 		Error          string
 		FormIntegrante formIntegrante
+		Horas          datosHoras // HU-23
 	}
 	datosError struct {
 		Mensaje string
@@ -280,15 +281,22 @@ func (p *pantallas) detalle(w http.ResponseWriter, r *http.Request) {
 	p.mostrarDetalle(w, r, id, http.StatusOK, "", formIntegrante{})
 }
 
-// mostrarDetalle renderiza el detalle del proyecto, con el mensaje de error de una acción sobre
-// sus integrantes si lo hay.
+// mostrarDetalle renderiza el detalle del proyecto, con sus horas (HU-23) y el mensaje de error de una
+// acción sobre sus integrantes si lo hay.
 func (p *pantallas) mostrarDetalle(w http.ResponseWriter, r *http.Request, id int64, status int, mensaje string, f formIntegrante) {
 	pr, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), id)
 	if err != nil {
 		p.errorDeConsulta(w, err)
 		return
 	}
-	p.renderizar(w, status, "proyecto_detalle.html", datosDetalle{Proyecto: aVistaProyecto(pr), Error: mensaje, FormIntegrante: f})
+	horas, err := p.cu.ConsultarHorasProyecto.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.errorDeHoras(w, err)
+		return
+	}
+	p.renderizar(w, status, "proyecto_detalle.html", datosDetalle{
+		Proyecto: aVistaProyecto(pr), Error: mensaje, FormIntegrante: f, Horas: vistaHoras(horas),
+	})
 }
 
 func (p *pantallas) formEditar(w http.ResponseWriter, r *http.Request) {

@@ -50,6 +50,8 @@ func nuevoSistemaWeb() (sistemaWeb, error) {
 		AgregarRol:        app.NuevoAgregarRol(repo),
 		ConsultarProyecto: app.NuevoConsultarProyecto(repo),
 		ListarProyectos:   app.NuevoListarProyectos(repo),
+		// HU-23: el detalle del proyecto lo consulta.
+		ConsultarHorasProyecto: app.NuevoConsultarHorasProyecto(repo, persistencia.NuevoRepositorioEsfuerzo(db)),
 	})
 	servidor := httptest.NewServer(mux)
 	cliente := servidor.Client()
