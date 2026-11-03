@@ -29,6 +29,11 @@
       <td>{{if .SprintDeteccion}}#{{.SprintDeteccion}}{{else}}—{{end}}</td>
       <td>{{if .SprintResolucion}}#{{.SprintResolucion}}{{else}}—{{end}}</td>
       <td>
+        {{if .PuedeIniciarse}}
+        <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/defectos/{{.ID}}/iniciar" class="en-linea">
+          <button type="submit" class="boton" aria-label="Marcar en progreso el defecto {{.Descripcion}}">Marcar en progreso</button>
+        </form>
+        {{end}}
         {{if .PuedeResolverse}}
         <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/defectos/{{.ID}}/resolver" class="en-linea">
           <button type="submit" class="boton" aria-label="Marcar resuelto el defecto {{.Descripcion}}">Marcar resuelto</button>

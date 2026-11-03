@@ -14,23 +14,26 @@ import (
 // con HTTP 400 (los 404 de proyecto/defecto van a la página de error, como las demás historias).
 var erroresEstadoDefectoPantalla = []error{
 	domain.ErrDefectoNoAbierto,
+	domain.ErrDefectoNoEnProgreso,
 	domain.ErrDefectoNoResuelto,
 }
 
-// accionEstadoDefecto es la firma común de ActualizarEstadoDefecto.Resolver y .Cerrar. Se forma
-// recién dentro de resolverDefectoPantalla/cerrarDefectoPantalla (por pedido), nunca al registrar
-// las rutas: ver el comentario de RegistrarActualizarEstadoDefecto.
+// accionEstadoDefecto es la firma común de ActualizarEstadoDefecto.Iniciar, .Resolver y .Cerrar.
+// Se forma recién dentro de iniciarDefectoPantalla/resolverDefectoPantalla/cerrarDefectoPantalla
+// (por pedido), nunca al registrar las rutas: ver el comentario de RegistrarActualizarEstadoDefecto.
 type accionEstadoDefecto func(ctx context.Context, d app.DatosActualizarEstadoDefecto) (domain.Defecto, error)
 
 // Datos de la pantalla de defectos (HU-21): solo texto ya formateado, sin lógica de negocio.
 type (
 	vistaDefecto struct {
-		ID                             int64
-		Elemento, Descripcion          string
-		Severidad, Estado              string
-		SprintDeteccion                *int64
-		SprintResolucion               *int64
-		PuedeResolverse, PuedeCerrarse bool
+		ID                    int64
+		Elemento, Descripcion string
+		Severidad, Estado     string
+		SprintDeteccion       *int64
+		SprintResolucion      *int64
+		PuedeIniciarse        bool
+		PuedeResolverse       bool
+		PuedeCerrarse         bool
 	}
 	datosDefectos struct {
 		Proyecto vistaProyecto
@@ -40,9 +43,10 @@ type (
 )
 
 // registrarPantallasDefectosLista agrega las pantallas de HU-21: listar los defectos de un
-// proyecto y actualizar el estado de uno. Implementa HU-21 (CA-21.9).
+// proyecto y actualizar el estado de uno. Implementa HU-21 (CA-21.11).
 func (p *pantallas) registrarPantallasDefectosLista(mux *http.ServeMux) {
 	mux.HandleFunc("GET /web/proyectos/{id}/defectos", p.defectos)
+	mux.HandleFunc("POST /web/proyectos/{id}/defectos/{defectoID}/iniciar", p.formulario(p.iniciarDefectoPantalla))
 	mux.HandleFunc("POST /web/proyectos/{id}/defectos/{defectoID}/resolver", p.formulario(p.resolverDefectoPantalla))
 	mux.HandleFunc("POST /web/proyectos/{id}/defectos/{defectoID}/cerrar", p.formulario(p.cerrarDefectoPantalla))
 }
@@ -55,8 +59,15 @@ func (p *pantallas) defectos(w http.ResponseWriter, r *http.Request) {
 	p.mostrarDefectos(w, r, id, http.StatusOK, "")
 }
 
+// iniciarDefectoPantalla inicia el defecto con el caso de uso de HU-21 y vuelve a la lista. Si no
+// estaba Abierto, la muestra con el error; si el proyecto o el defecto no existen, la página 404.
+func (p *pantallas) iniciarDefectoPantalla(w http.ResponseWriter, r *http.Request) {
+	p.accionEstadoDefectoPantalla(w, r, p.cu.ActualizarEstadoDefecto.Iniciar, "iniciar defecto")
+}
+
 // resolverDefectoPantalla resuelve el defecto con el caso de uso de HU-21 y vuelve a la lista. Si
-// no estaba Abierto, la muestra con el error; si el proyecto o el defecto no existen, la página 404.
+// no estaba En progreso, la muestra con el error; si el proyecto o el defecto no existen, la
+// página 404.
 func (p *pantallas) resolverDefectoPantalla(w http.ResponseWriter, r *http.Request) {
 	p.accionEstadoDefectoPantalla(w, r, p.cu.ActualizarEstadoDefecto.Resolver, "resolver defecto")
 }
@@ -135,6 +146,6 @@ func aVistaDefecto(d domain.Defecto, elemento string) vistaDefecto {
 		ID: d.ID, Elemento: elemento, Descripcion: d.Descripcion,
 		Severidad: string(d.Severidad), Estado: string(d.Estado),
 		SprintDeteccion: d.SprintDeteccionID, SprintResolucion: d.SprintResolucionID,
-		PuedeResolverse: d.PuedeResolverse(), PuedeCerrarse: d.PuedeCerrarse(),
+		PuedeIniciarse: d.PuedeIniciarse(), PuedeResolverse: d.PuedeResolverse(), PuedeCerrarse: d.PuedeCerrarse(),
 	}
 }
