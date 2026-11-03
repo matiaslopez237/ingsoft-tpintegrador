@@ -191,16 +191,23 @@ func TestVotar_Errores(t *testing.T) {
 	}
 }
 
-// Traza: HU-14 RN-14.4: los valores de la escala, en orden, para el formulario de la pantalla.
-func TestValoresVoto(t *testing.T) {
-	want := []int{1, 2, 3, 5, 8, 13, 21}
-	got := ValoresVoto()
-	if !slices.Equal(got, want) {
-		t.Fatalf("ValoresVoto() = %v, se esperaba %v", got, want)
+// Traza: HU-14 RN-14.4 y HU-13 RN-13.4: los votos usan la misma escala que los story points, así
+// la estimación acordada (HU-17) siempre es un valor válido de story points.
+func TestVotar_UsaLaEscalaDeLosStoryPoints(t *testing.T) {
+	for _, v := range EscalaStoryPoints() {
+		r := rondaAbierta(t, "Ana", "Beto")
+		if err := r.Votar("Ana", v); err != nil {
+			t.Errorf("votar %d (de la escala): %v", v, err)
+		}
 	}
-	got[0] = 99
-	if ValoresVoto()[0] != 1 {
-		t.Error("modificar la lista devuelta cambió la escala")
+	for v := range 22 {
+		if slices.Contains(EscalaStoryPoints(), v) {
+			continue
+		}
+		r := rondaAbierta(t, "Ana", "Beto")
+		if err := r.Votar("Ana", v); !errors.Is(err, ErrVotoInvalido) {
+			t.Errorf("votar %d (fuera de la escala): error = %v, se esperaba %v", v, err, ErrVotoInvalido)
+		}
 	}
 }
 

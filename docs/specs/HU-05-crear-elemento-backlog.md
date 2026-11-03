@@ -28,7 +28,7 @@ Permitir cargar en el Product Backlog de un proyecto las necesidades del product
 - **RN-05.3:** No puede haber dos elementos con el mismo título dentro del mismo proyecto, comparando sin distinguir mayúsculas ni espacios alrededor. En proyectos distintos sí se puede repetir.
 - **RN-05.4:** La descripción es obligatoria (una de solo espacios es vacía).
 - **RN-05.5:** La prioridad es obligatoria y toma uno de tres valores: `Alta`, `Media` o `Baja`.
-- **RN-05.6:** Los story points son opcionales (se pueden estimar después). Si se informan, son un entero positivo.
+- **RN-05.6:** Los story points son opcionales (se pueden estimar después). Si se informan, son un valor de la escala de Fibonacci: 1, 2, 3, 5, 8, 13 o 21 (HU-13, RN-13.1; antes, cualquier entero positivo).
 - **RN-05.7:** El elemento tiene al menos un criterio de aceptación, y ninguno puede estar vacío.
 - **RN-05.8:** Los estados posibles de un elemento son `Pendiente`, `En progreso` y `Hecho`. Todo elemento nuevo queda en `Pendiente`. Los cambios de estado se definen en otras historias.
 - **RN-05.9:** El `ID` es único y lo genera el sistema (entero autoincremental).
@@ -57,7 +57,7 @@ Permitir cargar en el Product Backlog de un proyecto las necesidades del product
 | Título de más de 100 caracteres | `ErrTituloDemasiadoLargo` | "El título no puede superar los 100 caracteres." |
 | Descripción vacía | `ErrDescripcionVacia` | "La descripción es obligatoria." |
 | Prioridad que no es Alta, Media ni Baja | `ErrPrioridadInvalida` | "La prioridad debe ser Alta, Media o Baja." |
-| Story points 0 o negativos | `ErrStoryPointsInvalidos` | "Los story points deben ser un entero positivo." |
+| Story points fuera de la escala, 0 o negativos (HU-13) | `ErrStoryPointsInvalidos` | "los story points deben ser 1, 2, 3, 5, 8, 13 o 21" |
 | Sin criterios de aceptación | `ErrSinCriterios` | "Debe haber al menos un criterio de aceptación." |
 | Un criterio vacío | `ErrCriterioVacio` | "Los criterios de aceptación no pueden estar vacíos." |
 | Ya hay un elemento con ese título en el proyecto | `ErrTituloDuplicado` | "Ya existe un elemento con ese título en el proyecto." |
@@ -71,7 +71,7 @@ Errores de datos: HTTP 400. Si hay varios errores, se informa el primero en el o
 - **CA-05.4:** Cuando el título está vacío, tiene solo espacios o supera los 100 caracteres, entonces obtengo `ErrTituloVacio` o `ErrTituloDemasiadoLargo`; con exactamente 100 se crea. (RN-05.2)
 - **CA-05.5:** Cuando la descripción está vacía, entonces obtengo `ErrDescripcionVacia`. (RN-05.4)
 - **CA-05.6:** Cuando la prioridad no es `Alta`, `Media` ni `Baja`, entonces obtengo `ErrPrioridadInvalida`. (RN-05.5)
-- **CA-05.7:** Cuando los story points son 0 o negativos, entonces obtengo `ErrStoryPointsInvalidos`. (RN-05.6)
+- **CA-05.7:** Cuando los story points son 0, negativos o no son de la escala (HU-13), entonces obtengo `ErrStoryPointsInvalidos`. (RN-05.6)
 - **CA-05.8:** Cuando no envío criterios, o alguno está vacío, entonces obtengo `ErrSinCriterios` o `ErrCriterioVacio`. (RN-05.7)
 - **CA-05.9:** Dado un elemento "Login" en un proyecto, cuando creo otro "login" en el mismo proyecto, entonces obtengo `ErrTituloDuplicado`; si lo creo en otro proyecto, se crea. (RN-05.3)
 - **CA-05.10:** Dados dos elementos creados, entonces tienen IDs distintos y cada uno se recupera por su ID con sus criterios en orden. (RN-05.9)
@@ -92,3 +92,4 @@ Las propuso Nicolás Andino al refinar la historia y las decidió el equipo comp
 ## Historial
 - 2026-10-23: creada (borrador).
 - 2026-10-23: el equipo confirma en clase las decisiones tomadas; la historia se suma al Sprint 1.
+- 2026-11-01: HU-13 restringe los story points a la escala de Fibonacci (RN-05.6, CA-05.7 y el mensaje de `ErrStoryPointsInvalidos`).

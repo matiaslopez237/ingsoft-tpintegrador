@@ -401,12 +401,14 @@ func TestPantallaElemento_TodosLosCampos_SeEscapan(t *testing.T) {
 	for _, campo := range campos {
 		contiene(t, rec, `name="original_`+campo+`" value="`+ataqueEscrito+`-original"`)
 	}
-	// prioridad y estado son desplegables: lo tipeado no vuelve a la página.
+	// prioridad y estado son desplegables: lo tipeado no vuelve a la página. story_points también es
+	// un desplegable (HU-13), pero un valor fuera de la escala vuelve como opción elegida: en el
+	// atributo y en el texto.
 	tipeado := ataqueEscrito + "-tipeado"
 	contiene(t, rec,
 		`name="titulo" type="text" maxlength="100" value="`+tipeado+`"`,
 		`name="descripcion" rows="3" required>`+tipeado+`</textarea>`,
-		`name="story_points" type="number" min="1" step="1" value="`+tipeado+`"`,
+		`<option value="`+tipeado+`" selected>`+tipeado+` (fuera de la escala)</option>`,
 		`name="criterios" rows="4" required>`+tipeado+`</textarea>`,
 		`name="horas_estimadas" type="number" step="0.5" value="`+tipeado+`"`,
 		`<h1>`+ataqueEscrito+`-original</h1>`,
