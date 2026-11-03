@@ -1,17 +1,5 @@
 package bdd
 
-// RED de HU-23: este archivo y hu23_sistema_test.go no compilan hasta que existan, en producción:
-//
-//	domain.HorasElemento: HorasEstimadas *float64, HorasReales float64
-//	domain.TotalHoras: HorasEstimadas, HorasReales, HorasRealesSinEstimar, DesviacionHoras,
-//	  DesviacionPorcentaje, Elementos, ElementosSinEstimar y SinEstimar()
-//	app.LectorHoras: HorasDeProyecto(ctx, proyectoID) y HorasDeSprint(ctx, sprintID), ambos ([]domain.HorasElemento, error)
-//	app.LectorSprintPorID: BuscarSprintPorID(ctx, id) (domain.Sprint, error)
-//	app.ConsultarHorasProyecto y app.NuevoConsultarHorasProyecto(LectorProyectos, LectorHoras)
-//	app.ConsultarHorasSprint y app.NuevoConsultarHorasSprint(LectorProyectos, LectorSprintPorID, LectorHoras)
-//
-// Mientras tanto, todo el paquete test/bdd queda sin compilar en esta rama: es el rojo aceptado.
-
 import (
 	"context"
 	"errors"
@@ -26,8 +14,8 @@ import (
 )
 
 // hu23Sistema es la puerta de entrada de los escenarios de HU-23 al núcleo. La implementa
-// hu23SistemaMemoria (hu23_sistema_test.go); más adelante pasa a SQLite, como en HU-19. Todos los
-// identificadores de paquete llevan el prefijo hu23 para no chocar con los de otras historias.
+// hu23SistemaReal, sobre SQLite (hu23_sistema_test.go). Todos los identificadores de paquete llevan el
+// prefijo hu23 para no chocar con los de otras historias.
 type hu23Sistema interface {
 	CrearProyecto(nombre string) (int64, error)
 	AgregarIntegrante(proyectoID int64, nombre string) error
