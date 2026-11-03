@@ -98,63 +98,35 @@ func diaEstadoDefecto(anio int, mes time.Month, d int) time.Time {
 	return time.Date(anio, mes, d, 0, 0, 0, 0, time.Local)
 }
 
-// --- Resolver ---
+// --- Iniciar ---
 
-// Traza: HU-21 CA-21.1 (RN-21.5: se asigna el Sprint Abierto vigente hoy)
-func TestActualizarEstadoDefecto_Resolver_ConSprintVigente_AsignaSuID(t *testing.T) {
+// Traza: HU-21 CA-21.1
+func TestActualizarEstadoDefecto_Iniciar_DesdeAbierto_QuedaEnProgreso(t *testing.T) {
 	f := nuevoEstadoDefectoFalso()
-	f.sprints = []domain.Sprint{
-		{ID: 5, ProyectoID: 1, Estado: domain.SprintAbierto,
-			FechaInicio: diaEstadoDefecto(2026, time.October, 20), FechaFin: diaEstadoDefecto(2026, time.October, 30)},
-	}
 
-	d, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
+	d, err := actualizarEstadoDefectoCon(f).Iniciar(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
 
 	if err != nil {
 		t.Fatalf("error inesperado: %v", err)
 	}
-	if d.Estado != domain.DefectoResuelto {
-		t.Errorf("Estado = %q, se esperaba %q", d.Estado, domain.DefectoResuelto)
+	if d.Estado != domain.DefectoEnProgreso {
+		t.Errorf("Estado = %q, se esperaba %q", d.Estado, domain.DefectoEnProgreso)
 	}
-	if d.SprintResolucionID == nil || *d.SprintResolucionID != 5 {
-		t.Errorf("SprintResolucionID = %v, se esperaba un puntero a 5", d.SprintResolucionID)
-	}
-	if f.defectos[100].Estado != domain.DefectoResuelto {
+	if f.defectos[100].Estado != domain.DefectoEnProgreso {
 		t.Errorf("no quedó guardado: Estado = %q", f.defectos[100].Estado)
 	}
 }
 
-// Traza: HU-21 CA-21.2 (RN-21.5: sin sprint vigente, queda sin asignar)
-func TestActualizarEstadoDefecto_Resolver_SinSprintVigente_QuedaSinAsignar(t *testing.T) {
-	f := nuevoEstadoDefectoFalso()
-	f.sprints = []domain.Sprint{ // ya terminó: no incluye "hoy" (2026-10-25)
-		{ID: 5, ProyectoID: 1, Estado: domain.SprintAbierto,
-			FechaInicio: diaEstadoDefecto(2026, time.September, 1), FechaFin: diaEstadoDefecto(2026, time.September, 15)},
-	}
-
-	d, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
-
-	if err != nil {
-		t.Fatalf("error inesperado: %v", err)
-	}
-	if d.Estado != domain.DefectoResuelto {
-		t.Errorf("Estado = %q, se esperaba %q", d.Estado, domain.DefectoResuelto)
-	}
-	if d.SprintResolucionID != nil {
-		t.Errorf("SprintResolucionID = %v, se esperaba nil", *d.SprintResolucionID)
-	}
-}
-
-// Traza: HU-21 CA-21.4 (RN-21.2: solo se resuelve un defecto Abierto)
-func TestActualizarEstadoDefecto_Resolver_NoAbierto_RetornaErrorYNoGuarda(t *testing.T) {
-	for _, estado := range []domain.EstadoDefecto{domain.DefectoResuelto, domain.DefectoCerrado} {
+// Traza: HU-21 CA-21.5 (RN-21.2: solo se inicia un defecto Abierto)
+func TestActualizarEstadoDefecto_Iniciar_NoAbierto_RetornaErrorYNoGuarda(t *testing.T) {
+	for _, estado := range []domain.EstadoDefecto{domain.DefectoEnProgreso, domain.DefectoResuelto, domain.DefectoCerrado} {
 		t.Run(string(estado), func(t *testing.T) {
 			f := nuevoEstadoDefectoFalso()
 			d := f.defectos[100]
 			d.Estado = estado
 			f.defectos[100] = d
 
-			_, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
+			_, err := actualizarEstadoDefectoCon(f).Iniciar(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
 
 			if !errors.Is(err, domain.ErrDefectoNoAbierto) {
 				t.Errorf("error = %v, se esperaba %v", err, domain.ErrDefectoNoAbierto)
@@ -166,9 +138,83 @@ func TestActualizarEstadoDefecto_Resolver_NoAbierto_RetornaErrorYNoGuarda(t *tes
 	}
 }
 
+// --- Resolver ---
+
+// Traza: HU-21 CA-21.2 (RN-21.6: se asigna el Sprint Abierto vigente hoy)
+func TestActualizarEstadoDefecto_Resolver_ConSprintVigente_AsignaSuID(t *testing.T) {
+	f := nuevoEstadoDefectoFalso()
+	d := f.defectos[100]
+	d.Estado = domain.DefectoEnProgreso
+	f.defectos[100] = d
+	f.sprints = []domain.Sprint{
+		{ID: 5, ProyectoID: 1, Estado: domain.SprintAbierto,
+			FechaInicio: diaEstadoDefecto(2026, time.October, 20), FechaFin: diaEstadoDefecto(2026, time.October, 30)},
+	}
+
+	got, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if got.Estado != domain.DefectoResuelto {
+		t.Errorf("Estado = %q, se esperaba %q", got.Estado, domain.DefectoResuelto)
+	}
+	if got.SprintResolucionID == nil || *got.SprintResolucionID != 5 {
+		t.Errorf("SprintResolucionID = %v, se esperaba un puntero a 5", got.SprintResolucionID)
+	}
+	if f.defectos[100].Estado != domain.DefectoResuelto {
+		t.Errorf("no quedó guardado: Estado = %q", f.defectos[100].Estado)
+	}
+}
+
+// Traza: HU-21 CA-21.3 (RN-21.6: sin sprint vigente, queda sin asignar)
+func TestActualizarEstadoDefecto_Resolver_SinSprintVigente_QuedaSinAsignar(t *testing.T) {
+	f := nuevoEstadoDefectoFalso()
+	d := f.defectos[100]
+	d.Estado = domain.DefectoEnProgreso
+	f.defectos[100] = d
+	f.sprints = []domain.Sprint{ // ya terminó: no incluye "hoy" (2026-10-25)
+		{ID: 5, ProyectoID: 1, Estado: domain.SprintAbierto,
+			FechaInicio: diaEstadoDefecto(2026, time.September, 1), FechaFin: diaEstadoDefecto(2026, time.September, 15)},
+	}
+
+	got, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if got.Estado != domain.DefectoResuelto {
+		t.Errorf("Estado = %q, se esperaba %q", got.Estado, domain.DefectoResuelto)
+	}
+	if got.SprintResolucionID != nil {
+		t.Errorf("SprintResolucionID = %v, se esperaba nil", *got.SprintResolucionID)
+	}
+}
+
+// Traza: HU-21 CA-21.6 (RN-21.3: solo se resuelve un defecto En progreso)
+func TestActualizarEstadoDefecto_Resolver_NoEnProgreso_RetornaErrorYNoGuarda(t *testing.T) {
+	for _, estado := range []domain.EstadoDefecto{domain.DefectoAbierto, domain.DefectoResuelto, domain.DefectoCerrado} {
+		t.Run(string(estado), func(t *testing.T) {
+			f := nuevoEstadoDefectoFalso()
+			d := f.defectos[100]
+			d.Estado = estado
+			f.defectos[100] = d
+
+			_, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
+
+			if !errors.Is(err, domain.ErrDefectoNoEnProgreso) {
+				t.Errorf("error = %v, se esperaba %v", err, domain.ErrDefectoNoEnProgreso)
+			}
+			if f.vecesGuarda != 0 {
+				t.Errorf("se llamó a ActualizarEstadoDefecto %d veces, no se esperaba ninguna", f.vecesGuarda)
+			}
+		})
+	}
+}
+
 // --- Cerrar ---
 
-// Traza: HU-21 CA-21.3 (RN-21.3: el Sprint de resolución no cambia al cerrar)
+// Traza: HU-21 CA-21.4 (RN-21.4: el Sprint de resolución no cambia al cerrar)
 func TestActualizarEstadoDefecto_Cerrar_DesdeResuelto_QuedaCerradoConElMismoSprint(t *testing.T) {
 	f := nuevoEstadoDefectoFalso()
 	sprintID := int64(5)
@@ -189,9 +235,9 @@ func TestActualizarEstadoDefecto_Cerrar_DesdeResuelto_QuedaCerradoConElMismoSpri
 	}
 }
 
-// Traza: HU-21 CA-21.5 (RN-21.3, RN-21.4: solo se cierra un defecto Resuelto, no se saltea ni retrocede)
+// Traza: HU-21 CA-21.7 (RN-21.4, RN-21.5: solo se cierra un defecto Resuelto, no se saltea ni retrocede)
 func TestActualizarEstadoDefecto_Cerrar_NoResuelto_RetornaErrorYNoGuarda(t *testing.T) {
-	for _, estado := range []domain.EstadoDefecto{domain.DefectoAbierto, domain.DefectoCerrado} {
+	for _, estado := range []domain.EstadoDefecto{domain.DefectoAbierto, domain.DefectoEnProgreso, domain.DefectoCerrado} {
 		t.Run(string(estado), func(t *testing.T) {
 			f := nuevoEstadoDefectoFalso()
 			d := f.defectos[100]
@@ -210,9 +256,9 @@ func TestActualizarEstadoDefecto_Cerrar_NoResuelto_RetornaErrorYNoGuarda(t *test
 	}
 }
 
-// --- Comunes a Resolver y Cerrar (RN-21.6) ---
+// --- Comunes a Iniciar, Resolver y Cerrar (RN-21.7) ---
 
-// Traza: HU-21 CA-21.6
+// Traza: HU-21 CA-21.8
 func TestActualizarEstadoDefecto_ProyectoInexistente_RetornaError(t *testing.T) {
 	f := nuevoEstadoDefectoFalso()
 
@@ -226,7 +272,7 @@ func TestActualizarEstadoDefecto_ProyectoInexistente_RetornaError(t *testing.T) 
 	}
 }
 
-// Traza: HU-21 CA-21.6
+// Traza: HU-21 CA-21.8
 func TestActualizarEstadoDefecto_DefectoInexistente_RetornaError(t *testing.T) {
 	f := nuevoEstadoDefectoFalso()
 
@@ -237,7 +283,7 @@ func TestActualizarEstadoDefecto_DefectoInexistente_RetornaError(t *testing.T) {
 	}
 }
 
-// Traza: HU-21 CA-21.6, RN-21.6: un defecto de otro proyecto se trata como inexistente.
+// Traza: HU-21 CA-21.8, RN-21.7: un defecto de otro proyecto se trata como inexistente.
 func TestActualizarEstadoDefecto_DefectoDeOtroProyecto_RetornaError(t *testing.T) {
 	f := nuevoEstadoDefectoFalso()
 
@@ -265,6 +311,9 @@ func TestActualizarEstadoDefecto_FallaDelRepositorio_SePropaga(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
 			f := nuevoEstadoDefectoFalso()
+			d := f.defectos[100]
+			d.Estado = domain.DefectoEnProgreso // para llegar a listar sprints y guardar
+			f.defectos[100] = d
 			tt.fallar(f)
 
 			_, err := actualizarEstadoDefectoCon(f).Resolver(context.Background(), DatosActualizarEstadoDefecto{ProyectoID: 1, DefectoID: 100})
