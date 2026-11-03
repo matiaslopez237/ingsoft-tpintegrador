@@ -23,6 +23,7 @@ type horasFalsas struct {
 	vecesSprint       int
 	consultasProyecto []int64
 	consultasSprint   []int64
+	ctxHoras          context.Context // el contexto que recibió el lector de horas
 }
 
 func nuevasHorasFalsas() *horasFalsas {
@@ -68,7 +69,8 @@ func (f *horasFalsas) BuscarSprintPorID(_ context.Context, id int64) (domain.Spr
 	return s, nil
 }
 
-func (f *horasFalsas) HorasDeProyecto(_ context.Context, proyectoID int64) ([]domain.HorasElemento, error) {
+func (f *horasFalsas) HorasDeProyecto(ctx context.Context, proyectoID int64) ([]domain.HorasElemento, error) {
+	f.ctxHoras = ctx
 	f.consultasProyecto = append(f.consultasProyecto, proyectoID)
 	if f.errHoras != nil {
 		return nil, f.errHoras
@@ -76,7 +78,8 @@ func (f *horasFalsas) HorasDeProyecto(_ context.Context, proyectoID int64) ([]do
 	return f.horasPorProyecto[proyectoID], nil
 }
 
-func (f *horasFalsas) HorasDeSprint(_ context.Context, sprintID int64) ([]domain.HorasElemento, error) {
+func (f *horasFalsas) HorasDeSprint(ctx context.Context, sprintID int64) ([]domain.HorasElemento, error) {
+	f.ctxHoras = ctx
 	f.consultasSprint = append(f.consultasSprint, sprintID)
 	if f.errHoras != nil {
 		return nil, f.errHoras
@@ -136,6 +139,36 @@ func TestConsultarHorasProyecto_DevuelveElTotalDeLosElementosDelProyecto(t *test
 }
 
 // El caso de uso le deja al dominio los elementos sin estimar: no los filtra antes de totalizar.
+// El lector de horas recibe el contexto del pedido, para que cancelarlo corte la consulta.
+// Traza: HU-23 CA-23.1, CA-23.2 (sección 5: casos de uso)
+func TestConsultarHoras_ElLectorRecibeElContextoDelPedido(t *testing.T) {
+	type clave struct{}
+	ctx := context.WithValue(context.Background(), clave{}, "pedido")
+	tests := []struct {
+		nombre    string
+		consultar func(f *horasFalsas) (domain.TotalHoras, error)
+	}{
+		{"sprint", func(f *horasFalsas) (domain.TotalHoras, error) {
+			return NuevoConsultarHorasSprint(f, f, f).Ejecutar(ctx, 1, 10)
+		}},
+		{"proyecto", func(f *horasFalsas) (domain.TotalHoras, error) {
+			return NuevoConsultarHorasProyecto(f, f).Ejecutar(ctx, 1)
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			f := nuevasHorasFalsas()
+
+			if _, err := tt.consultar(f); err != nil {
+				t.Fatalf("error inesperado: %v", err)
+			}
+			if f.ctxHoras != ctx {
+				t.Errorf("el lector recibió %v, se esperaba el contexto del pedido", f.ctxHoras)
+			}
+		})
+	}
+}
+
 // Traza: HU-23 CA-23.6 (RN-23.5)
 func TestConsultarHoras_ConElementosSinEstimar_LosPasaAlDominio(t *testing.T) {
 	filas := []domain.HorasElemento{{HorasEstimadas: pHoras(8), HorasReales: 10}, {HorasReales: 5}}
