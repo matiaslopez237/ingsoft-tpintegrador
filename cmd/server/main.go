@@ -34,7 +34,7 @@ func main() {
 	repoBacklog := persistencia.NuevoRepositorioBacklog(db)
 	repoSprints := persistencia.NuevoRepositorioSprints(db)
 	repoRondas := persistencia.NuevoRepositorioRondas(db)     // HU-14
-	repoEsfuerzo := persistencia.NuevoRepositorioEsfuerzo(db) // HU-18 y HU-19
+	repoEsfuerzo := persistencia.NuevoRepositorioEsfuerzo(db) // HU-18, HU-19 y HU-23
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		CrearProyecto:            app.NuevoCrearProyecto(repoProyectos),
 		ModificarProyecto:        app.NuevoModificarProyecto(repoProyectos),
@@ -59,13 +59,15 @@ func main() {
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-20, RN-20.5).
 		RegistrarDefecto: app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints,
 			persistencia.NuevoRepositorioDefectos(db), time.Now),
-		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),        // HU-14
-		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                            // HU-14
-		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas),      // HU-14
-		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),         // HU-12
-		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),        // HU-16
-		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas), // HU-17
-		CompararEsfuerzo:        app.NuevoCompararEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo),  // HU-19
+		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),           // HU-14
+		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                               // HU-14
+		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas),         // HU-14
+		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),            // HU-12
+		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),           // HU-16
+		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas),    // HU-17
+		CompararEsfuerzo:        app.NuevoCompararEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo),     // HU-19
+		ConsultarHorasProyecto:  app.NuevoConsultarHorasProyecto(repoProyectos, repoEsfuerzo),            // HU-23
+		ConsultarHorasSprint:    app.NuevoConsultarHorasSprint(repoProyectos, repoSprints, repoEsfuerzo), // HU-23
 	})
 
 	puerto := os.Getenv("PORT")
