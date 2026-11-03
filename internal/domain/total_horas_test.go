@@ -141,7 +141,7 @@ func TestTotalizarHoras_ReutilizaCompararEsfuerzo(t *testing.T) {
 }
 
 // Totalizar no toca los elementos que recibe: el caso de uso se los pasa tal como los leyó.
-// Traza: HU-23 CA-23.1 (RN-23.2; spec, sección 5: cálculo en el dominio)
+// Traza: HU-23 (spec, sección 5: cálculo en el dominio)
 func TestTotalizarHoras_NoModificaLosElementos(t *testing.T) {
 	estimadas := 8.0
 	elementos := []HorasElemento{{HorasEstimadas: &estimadas, HorasReales: 10}, sinEst(5)}

@@ -202,7 +202,7 @@ func TestPantallasHoras_AclaracionDelSprintCerrado(t *testing.T) {
 	seccionNoContiene(t, seccionHoras(t, pedirPantalla(t, cerrado, http.MethodGet, rutaProyectoWeb, nil)), textoSprintCerrado)
 }
 
-// Traza: HU-23 CA-23.17, CA-23.18 (sección 5: rutas y pantallas): cada pantalla consulta con sus IDs.
+// Traza: HU-23 CA-23.17, CA-23.18 (sección 3: pantalla): cada pantalla consulta con los IDs de su ruta.
 func TestPantallasHoras_ConsultanConLosIDsDeLaRuta(t *testing.T) {
 	proyecto, sprint := &consultorHorasProyectoFalso{}, &consultorHorasSprintFalso{}
 	cu := casosConAsignacion(nil, nil)

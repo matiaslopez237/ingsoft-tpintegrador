@@ -138,9 +138,8 @@ func TestConsultarHorasProyecto_DevuelveElTotalDeLosElementosDelProyecto(t *test
 	}
 }
 
-// El caso de uso le deja al dominio los elementos sin estimar: no los filtra antes de totalizar.
 // El lector de horas recibe el contexto del pedido, para que cancelarlo corte la consulta.
-// Traza: HU-23 CA-23.1, CA-23.2 (sección 5: casos de uso)
+// Traza: HU-23 (sección 5: contexto)
 func TestConsultarHoras_ElLectorRecibeElContextoDelPedido(t *testing.T) {
 	type clave struct{}
 	ctx := context.WithValue(context.Background(), clave{}, "pedido")
@@ -169,6 +168,7 @@ func TestConsultarHoras_ElLectorRecibeElContextoDelPedido(t *testing.T) {
 	}
 }
 
+// El caso de uso le deja al dominio los elementos sin estimar: no los filtra antes de totalizar.
 // Traza: HU-23 CA-23.6 (RN-23.5)
 func TestConsultarHoras_ConElementosSinEstimar_LosPasaAlDominio(t *testing.T) {
 	filas := []domain.HorasElemento{{HorasEstimadas: pHoras(8), HorasReales: 10}, {HorasReales: 5}}
@@ -316,7 +316,7 @@ func TestConsultarHorasSprint_ProyectoInexistente_NoBuscaElSprint(t *testing.T) 
 
 // Las fallas de infraestructura se propagan y no se confunden con "no encontrado". Al buscar, salen
 // como vienen; al leer las horas, envueltas con %w.
-// Traza: HU-23 CA-23.14, CA-23.15 (RN-23.11; sección 7: falla interna al consultar)
+// Traza: HU-23 (sección 7: falla interna al consultar)
 func TestConsultarHoras_FallaDeInfraestructura_SePropaga(t *testing.T) {
 	errBase := errors.New("base caída")
 	consultarSprint := func(f *horasFalsas) (domain.TotalHoras, error) { return horasDeSprint(f, 1, 10) }

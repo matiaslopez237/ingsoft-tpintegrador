@@ -151,8 +151,8 @@ func TestRepositorioEsfuerzo_HorasDeProyecto_NoMezclaLosRegistrosDeOtroElemento(
 	mismasFilas(t, b.horasDeProyecto(t), []domain.HorasElemento{fila(pHoras(8), 2), fila(pHoras(4), 5)})
 }
 
-// Sección 5: el total no depende del orden, pero leer siempre en el mismo evita resultados que cambian.
-// Traza: HU-23 CA-23.2 (sección 5: puerto de lectura)
+// Las filas vienen por el id del elemento, aunque los registros se hayan cargado en otro orden.
+// Traza: HU-23 (sección 5: puerto de lectura)
 func TestRepositorioEsfuerzo_HorasDeProyecto_OrdenaPorElemento(t *testing.T) {
 	b := nuevaBaseEsfuerzo(t).sinElementos(t)
 	primero := b.elementoConHoras(t, "Primero", pHoras(1))

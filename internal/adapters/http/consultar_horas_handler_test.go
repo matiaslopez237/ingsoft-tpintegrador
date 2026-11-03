@@ -306,7 +306,7 @@ func TestGetHoras_FallaInterna_Devuelve500SinDetalle(t *testing.T) {
 }
 
 // El caso de uso recibe el contexto del pedido, para que cancelarlo corte la consulta.
-// Traza: HU-23 CA-23.16 (sección 5: rutas y pantallas)
+// Traza: HU-23 (sección 5: contexto)
 func TestGetHoras_ElCasoDeUsoRecibeElContextoDelPedido(t *testing.T) {
 	type clave struct{}
 	ctx := context.WithValue(context.Background(), clave{}, "pedido")
