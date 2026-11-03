@@ -101,7 +101,7 @@ El bloque también se muestra cuando estas pantallas vuelven con el error de un 
 - **RN-23.12:** Se puede consultar con el sprint `Abierto` o `Cerrado` y con el proyecto en cualquier estado (como RN-19.11). En elementos sin terminar, la desviación muestra cómo va hasta ahora: un sprint recién empezado puede dar cerca de −100 %.
 
 ## 5. Restricciones
-- **Cálculo en el dominio:** `TotalizarHoras(elementos []HorasElemento) TotalHoras` vive en `internal/domain/total_horas.go`, sin dependencias externas. `HorasElemento` tiene `HorasEstimadas *float64` y `HorasReales float64`. Implementa RN-23.2 a RN-23.6 y llama a `CompararEsfuerzo`, que no cambia. La suma no se hace en SQL porque es regla de negocio y tiene que poder probarse con TDD.
+- **Cálculo en el dominio:** `TotalizarHoras(elementos []HorasElemento) TotalHoras` vive en `internal/domain/total_horas.go`, sin dependencias externas. `HorasElemento` tiene `HorasEstimadas *float64` y `HorasReales float64`. Implementa RN-23.2 a RN-23.6 y llama a `CompararEsfuerzo`, que no cambia. La suma no se hace en SQL porque es regla de negocio y tiene que poder probarse con TDD. No modifica los elementos que recibe.
 - **Precisión:** los valores vienen de medias horas enteras (`medias_horas`, `medias_horas_estimadas`), así que todos son múltiplos de 0,5, que `float64` representa de forma exacta: sumarlos no acumula error. La suma no tiene tope; el de 1000 h es por elemento (RN-19.2) y el de 24 h, por registro (RN-18.8).
 - **Puerto de lectura:** los casos de uso definen `LectorHoras`, angosto, sin ensanchar `RepositorioEsfuerzo` ni `LectorHorasReales`, por el mismo motivo que HU-19:
 
@@ -111,8 +111,9 @@ El bloque también se muestra cuando estas pantallas vuelven con el error de un 
   HorasDeSprint(ctx context.Context, sprintID int64) ([]domain.HorasElemento, error)
   ```
 
-  Lo implementa `persistencia.RepositorioEsfuerzo` con una sola consulta, con `LEFT JOIN` a `registros_esfuerzo` y `GROUP BY` por elemento. Tiene que ser `LEFT JOIN`: si no, un elemento estimado y sin esfuerzo no sumaría a las estimadas. Se usa una consulta por conjunto y no `HorasRealesDeElemento` por cada elemento, para no hacer N consultas.
+  Lo implementa `persistencia.RepositorioEsfuerzo` con una sola consulta, con `LEFT JOIN` a `registros_esfuerzo` y `GROUP BY` por elemento. Tiene que ser `LEFT JOIN`: si no, un elemento estimado y sin esfuerzo no sumaría a las estimadas. Se usa una consulta por conjunto y no `HorasRealesDeElemento` por cada elemento, para no hacer N consultas. Las filas vienen ordenadas por el id del elemento: el total no depende del orden, pero así el resultado es estable.
 - **Casos de uso:** `ConsultarHorasProyecto` y `ConsultarHorasSprint` (`internal/app/consultar_horas.go`). Reutilizan `LectorProyectos` (HU-04). Para el sprint, un puerto de un método con `BuscarSprintPorID`, que ya implementa `persistencia.RepositorioSprints` (HU-11) y devuelve `ErrSprintNoEncontrado`. Primero buscan el proyecto, después el sprint.
+- **Contexto:** los handlers JSON pasan a los casos de uso el contexto del pedido, y los casos de uso se lo pasan al lector de horas, para que cancelar el pedido corte la consulta.
 - **Sin persistencia nueva:** no hay tablas, columnas ni migraciones.
 - **Rutas y pantallas:** `net/http` (ADR-0001), SQLite (ADR-0002) y `html/template` (ADR-0003). Las dos rutas JSON se registran con `RegistrarConsultarHoras` en `consultar_horas_handler.go` y se suman a `NuevoRouter`, a `CasosDeUso` y a `router_test.go`. Los dobles de `pantallas_test.go` también tienen que sumar los dos casos de uso, porque las dos pantallas los consultan siempre. El formato reutiliza `textoHoras`, `textoPorcentaje`, `conSigno` y `textoSinEstimar` de HU-19. La pantalla no calcula nada.
 - **Dependencia:** usa `CompararEsfuerzo` y `HorasEstimadas` de HU-19, que todavía no están en `main`. Esta rama sale de `hu-19-comparar-esfuerzo`, así que su PR se mergea después del de HU-19.
@@ -208,3 +209,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-03, abiertas a objeción en el 
 - 2026-11-03: creada (borrador). Decisiones P-1 a P-8 tomadas por el autor, abiertas a objeción en el PR; P-9 a P-12, pendientes del equipo.
 - 2026-11-03: ajustada a la pantalla implementada, sin cambiar reglas ni criterios: el bloque se llama "Horas y desviación" y muestra también la cantidad de elementos. La spec sigue en borrador.
 - 2026-11-03: el aviso de elementos sin estimar y sin horas reales solo los cuenta, sin hablar de 0 h. La spec sigue en borrador.
+- 2026-11-03: se documentan en la sección 5 tres cosas que el código ya hacía y los tests verifican: el orden de las filas, el paso del contexto y que `TotalizarHoras` no modifica lo que recibe. La spec sigue en borrador.
