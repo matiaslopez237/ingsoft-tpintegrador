@@ -83,8 +83,13 @@ func TestPantallasHoras_MuestranLosValores(t *testing.T) {
 			"2 de 2 elementos sin estimar: sus 8 h están en las horas reales, pero no en la desviación."},
 		{"un solo elemento, sin estimar", []domain.HorasElemento{sinEstimar(5)}, "1", "0 h", "5 h", sinEstimarTexto, sinEstimarTexto,
 			"1 de 1 elemento sin estimar: " + textoRealesSinEstim},
+		// Sin horas reales no hay nada que explicar: el aviso solo cuenta los elementos.
 		{"sin estimar y sin esfuerzo", []domain.HorasElemento{sinEstimar(0)}, "1", "0 h", "0 h", sinEstimarTexto, sinEstimarTexto,
-			"1 de 1 elemento sin estimar: sus 0 h están en las horas reales, pero no en la desviación."},
+			"1 de 1 elemento sin estimar."},
+		{"varios sin estimar y sin esfuerzo", []domain.HorasElemento{sinEstimar(0), sinEstimar(0)}, "2", "0 h", "0 h", sinEstimarTexto, sinEstimarTexto,
+			"2 de 2 elementos sin estimar."},
+		{"uno sin estimar y sin esfuerzo, junto a uno estimado", []domain.HorasElemento{estimado(8, 10), sinEstimar(0)}, "2", "8 h", "10 h", "+2 h", "+25,0 %",
+			"1 de 2 elementos sin estimar."},
 		{"sin elementos", nil, "0", "0 h", "0 h", sinEstimarTexto, sinEstimarTexto, textoSinElementos},
 	}
 	for _, p := range pantallasConHoras {
