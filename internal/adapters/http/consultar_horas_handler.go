@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -79,14 +80,7 @@ func handlerHorasProyecto(uc consultorHorasProyecto) http.HandlerFunc {
 
 		total, err := uc.Ejecutar(r.Context(), proyectoID)
 		if err != nil {
-			for _, e := range erroresConsultaHoras {
-				if errors.Is(err, e) {
-					escribirJSON(w, http.StatusNotFound, respuestaError{e.Error()})
-					return
-				}
-			}
-			log.Printf("consultar horas del proyecto %d: %v", proyectoID, err)
-			escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al consultar las horas"})
+			responderErrorHoras(w, err, fmt.Sprintf("proyecto %d", proyectoID))
 			return
 		}
 
@@ -112,17 +106,23 @@ func handlerHorasSprint(uc consultorHorasSprint) http.HandlerFunc {
 
 		total, err := uc.Ejecutar(r.Context(), proyectoID, sprintID)
 		if err != nil {
-			for _, e := range erroresConsultaHoras {
-				if errors.Is(err, e) {
-					escribirJSON(w, http.StatusNotFound, respuestaError{e.Error()})
-					return
-				}
-			}
-			log.Printf("consultar horas del sprint %d del proyecto %d: %v", sprintID, proyectoID, err)
-			escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al consultar las horas"})
+			responderErrorHoras(w, err, fmt.Sprintf("sprint %d del proyecto %d", sprintID, proyectoID))
 			return
 		}
 
 		escribirJSON(w, http.StatusOK, respuestaHorasSprint{ProyectoID: proyectoID, SprintID: sprintID, respuestaTotalHoras: aRespuestaTotalHoras(total)})
 	}
+}
+
+// responderErrorHoras responde 404 con el mensaje del dominio si el error está en la tabla, o 500 sin el
+// detalle, que queda solo en el log. alcance dice qué se estaba consultando.
+func responderErrorHoras(w http.ResponseWriter, err error, alcance string) {
+	for _, e := range erroresConsultaHoras {
+		if errors.Is(err, e) {
+			escribirJSON(w, http.StatusNotFound, respuestaError{e.Error()})
+			return
+		}
+	}
+	log.Printf("consultar horas del %s: %v", alcance, err)
+	escribirJSON(w, http.StatusInternalServerError, respuestaError{"error interno al consultar las horas"})
 }
