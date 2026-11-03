@@ -8,9 +8,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
@@ -307,7 +311,7 @@ func TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras(t *testing.T
 		{"sprint: id no numérico", "/web/proyectos/7/sprints/abc", http.StatusBadRequest, idSprint},
 		{"sprint: id en cero", "/web/proyectos/7/sprints/0", http.StatusBadRequest, idSprint},
 		{"sprint: proyecto inexistente", "/web/proyectos/99/sprints/1", http.StatusNotFound, domain.ErrProyectoNoEncontrado.Error()},
-		{"sprint: inexistente o de otro proyecto", "/web/proyectos/7/sprints/99", http.StatusNotFound, domain.ErrSprintNoEncontrado.Error()},
+		{"sprint: inexistente", "/web/proyectos/7/sprints/99", http.StatusNotFound, domain.ErrSprintNoEncontrado.Error()},
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
@@ -326,6 +330,69 @@ func TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras(t *testing.T
 			}
 		})
 	}
+}
+
+// Con los casos de uso y SQLite reales, porque es la pieza que decide de quién es el sprint: un doble
+// solo repetiría lo que se le indica. El mismo sprint, pedido desde su proyecto, muestra el bloque.
+// Traza: HU-23 CA-23.15, CA-23.17 (RN-23.11; sección 7)
+func TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404(t *testing.T) {
+	ctx := context.Background()
+	db, err := persistencia.AbrirDB(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("abrir base: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+	proyectos, backlog := persistencia.NuevoRepositorioProyectos(db), persistencia.NuevoRepositorioBacklog(db)
+	sprints, esfuerzo := persistencia.NuevoRepositorioSprints(db), persistencia.NuevoRepositorioEsfuerzo(db)
+
+	crearProyecto := app.NuevoCrearProyecto(proyectos)
+	inicio := time.Date(2026, 3, 1, 0, 0, 0, 0, time.UTC)
+	deAlfa, err := crearProyecto.Ejecutar(ctx, app.DatosNuevoProyecto{Nombre: "Alfa", FechaInicio: inicio})
+	if err != nil {
+		t.Fatal(err)
+	}
+	deBeta, err := crearProyecto.Ejecutar(ctx, app.DatosNuevoProyecto{Nombre: "Beta", FechaInicio: inicio})
+	if err != nil {
+		t.Fatal(err)
+	}
+	sprintBeta, err := app.NuevoCrearSprint(proyectos, sprints).Ejecutar(ctx, app.DatosNuevoSprint{
+		ProyectoID: deBeta.ID, FechaInicio: inicio, FechaFin: inicio.AddDate(0, 0, 13), Objetivo: "Objetivo de Beta",
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e, err := domain.NuevoElementoBacklog(deBeta.ID, "Pagos", "Descripción", domain.PrioridadAlta, nil, []string{"Criterio"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	e.HorasEstimadas = pHoras(6)
+	if err := backlog.GuardarElemento(ctx, &e); err != nil {
+		t.Fatal(err)
+	}
+	e.SprintID = &sprintBeta.ID
+	if err := backlog.GuardarAsignacion(ctx, &e); err != nil {
+		t.Fatal(err)
+	}
+
+	cu := casosFalsos()
+	cu.ConsultarProyecto = app.NuevoConsultarProyecto(proyectos)
+	cu.ListarSprints = app.NuevoListarSprints(proyectos, sprints)
+	cu.ListarBacklog = app.NuevoListarBacklog(proyectos, backlog)
+	cu.ConsultarHorasSprint = app.NuevoConsultarHorasSprint(proyectos, sprints, esfuerzo)
+
+	desdeBeta := pedirPantalla(t, cu, http.MethodGet, fmt.Sprintf("/web/proyectos/%d/sprints/%d", deBeta.ID, sprintBeta.ID), nil)
+	if desdeBeta.Code != http.StatusOK {
+		t.Fatalf("desde su proyecto: status = %d; cuerpo: %.400s", desdeBeta.Code, desdeBeta.Body)
+	}
+	seccionContiene(t, seccionHoras(t, desdeBeta), valorDeComparacion("Horas estimadas", "6 h"))
+
+	rec := pedirPantalla(t, cu, http.MethodGet, fmt.Sprintf("/web/proyectos/%d/sprints/%d", deAlfa.ID, sprintBeta.ID), nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("desde otro proyecto: status = %d, se esperaba 404; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	esPaginaDeError(t, rec, domain.ErrSprintNoEncontrado.Error())
+	seccionNoContiene(t, rec.Body.String(), `id="total-horas"`, "Objetivo de Beta", "Pagos")
 }
 
 // Traza: HU-23 CA-23.17, CA-23.18 (sección 7): cualquier otro error es 500 genérico, sin el detalle.
