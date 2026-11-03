@@ -99,7 +99,32 @@ func TestRepositorioDefectos_ActualizarEstado_YaCambiadoPorOtroPedido_RetornaErr
 	}
 }
 
-// Traza: HU-21 CA-21.8
+// Traza: HU-21, sección 5 (pedidos simultáneos, caso En progreso)
+func TestRepositorioDefectos_ActualizarEstado_YaCambiadoDesdeEnProgreso_RetornaError(t *testing.T) {
+	ctx := context.Background()
+	b := nuevaBaseDefecto(t)
+	d := b.defectoGuardado(t, domain.SeveridadAlta)
+	d.Estado = domain.DefectoEnProgreso
+	if err := b.repo.ActualizarEstadoDefecto(ctx, &d, domain.DefectoAbierto); err != nil {
+		t.Fatalf("preparar: %v", err)
+	}
+	// otro pedido ya lo resolvió: en la base sigue En progreso como "anterior" esperado por este pedido.
+	ya := d
+	ya.Estado = domain.DefectoResuelto
+	if err := b.repo.ActualizarEstadoDefecto(ctx, &ya, domain.DefectoEnProgreso); err != nil {
+		t.Fatalf("preparar: %v", err)
+	}
+
+	cambio := d
+	cambio.Estado = domain.DefectoResuelto
+	err := b.repo.ActualizarEstadoDefecto(ctx, &cambio, domain.DefectoEnProgreso)
+
+	if !errors.Is(err, domain.ErrDefectoNoEnProgreso) {
+		t.Errorf("error = %v, se esperaba %v", err, domain.ErrDefectoNoEnProgreso)
+	}
+}
+
+// Traza: HU-21 CA-21.10 (orden estable por id, pedido en la revisión del PR)
 func TestRepositorioDefectos_ListarDefectos_DelProyecto_LosDevuelve(t *testing.T) {
 	ctx := context.Background()
 	b := nuevaBaseDefecto(t)
@@ -114,9 +139,8 @@ func TestRepositorioDefectos_ListarDefectos_DelProyecto_LosDevuelve(t *testing.T
 	if len(got) != 2 {
 		t.Fatalf("se esperaban 2 defectos, hay %d", len(got))
 	}
-	ids := map[int64]bool{got[0].ID: true, got[1].ID: true}
-	if !ids[d1.ID] || !ids[d2.ID] {
-		t.Errorf("IDs devueltos = %v, se esperaban %d y %d", ids, d1.ID, d2.ID)
+	if got[0].ID != d1.ID || got[1].ID != d2.ID {
+		t.Errorf("IDs devueltos = [%d, %d], se esperaban [%d, %d] en ese orden", got[0].ID, got[1].ID, d1.ID, d2.ID)
 	}
 }
 
