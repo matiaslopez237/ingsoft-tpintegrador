@@ -12,9 +12,14 @@ import (
 )
 
 type actualizadorEstadoDefectoFalso struct {
-	errResolver, errCerrar           error
-	recibidoResolver, recibidoCerrar app.DatosActualizarEstadoDefecto
-	llamadoResolver, llamadoCerrar   bool
+	errIniciar, errResolver, errCerrar                error
+	recibidoIniciar, recibidoResolver, recibidoCerrar app.DatosActualizarEstadoDefecto
+	llamadoIniciar, llamadoResolver, llamadoCerrar    bool
+}
+
+func (f *actualizadorEstadoDefectoFalso) Iniciar(_ context.Context, d app.DatosActualizarEstadoDefecto) (domain.Defecto, error) {
+	f.llamadoIniciar, f.recibidoIniciar = true, d
+	return domain.Defecto{}, f.errIniciar
 }
 
 func (f *actualizadorEstadoDefectoFalso) Resolver(_ context.Context, d app.DatosActualizarEstadoDefecto) (domain.Defecto, error) {
@@ -36,7 +41,21 @@ func postEstadoDefecto(t *testing.T, uc actualizadorEstadoDefecto, ruta string) 
 	return rec
 }
 
-// Traza: HU-21 CA-21.7: pedido válido a resolver, 204 sin cuerpo.
+// Traza: HU-21 CA-21.9: pedido válido a iniciar, 204 sin cuerpo.
+func TestPostIniciarDefecto_PedidoValido_Devuelve204SinCuerpo(t *testing.T) {
+	uc := &actualizadorEstadoDefectoFalso{}
+
+	rec := postEstadoDefecto(t, uc, "/proyectos/7/defectos/3/iniciar")
+
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, se esperaba 204; cuerpo: %s", rec.Code, rec.Body)
+	}
+	if !uc.llamadoIniciar || uc.recibidoIniciar != (app.DatosActualizarEstadoDefecto{ProyectoID: 7, DefectoID: 3}) {
+		t.Errorf("datos recibidos por Iniciar: %+v (llamado: %v)", uc.recibidoIniciar, uc.llamadoIniciar)
+	}
+}
+
+// Traza: HU-21 CA-21.9: pedido válido a resolver, 204 sin cuerpo.
 func TestPostResolverDefecto_PedidoValido_Devuelve204SinCuerpo(t *testing.T) {
 	uc := &actualizadorEstadoDefectoFalso{}
 
@@ -53,7 +72,7 @@ func TestPostResolverDefecto_PedidoValido_Devuelve204SinCuerpo(t *testing.T) {
 	}
 }
 
-// Traza: HU-21 CA-21.7: pedido válido a cerrar, 204 sin cuerpo.
+// Traza: HU-21 CA-21.9: pedido válido a cerrar, 204 sin cuerpo.
 func TestPostCerrarDefecto_PedidoValido_Devuelve204SinCuerpo(t *testing.T) {
 	uc := &actualizadorEstadoDefectoFalso{}
 
@@ -67,7 +86,7 @@ func TestPostCerrarDefecto_PedidoValido_Devuelve204SinCuerpo(t *testing.T) {
 	}
 }
 
-// Traza: HU-21 CA-21.7: proyecto o defecto inexistente, 404.
+// Traza: HU-21 CA-21.9: proyecto o defecto inexistente, 404.
 func TestPostResolverDefecto_NoEncontrado_Devuelve404(t *testing.T) {
 	tests := []struct {
 		nombre string
@@ -90,14 +109,22 @@ func TestPostResolverDefecto_NoEncontrado_Devuelve404(t *testing.T) {
 	}
 }
 
-// Traza: HU-21 CA-21.7: estado inválido para la acción, 400.
+// Traza: HU-21 CA-21.9: estado inválido para la acción, 400.
 func TestPostActualizarEstadoDefecto_EstadoInvalido_Devuelve400(t *testing.T) {
-	rec := postEstadoDefecto(t, &actualizadorEstadoDefectoFalso{errResolver: domain.ErrDefectoNoAbierto}, "/proyectos/7/defectos/3/resolver")
+	rec := postEstadoDefecto(t, &actualizadorEstadoDefectoFalso{errIniciar: domain.ErrDefectoNoAbierto}, "/proyectos/7/defectos/3/iniciar")
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, se esperaba 400; cuerpo: %s", rec.Code, rec.Body)
 	}
 	if got := mensajeDeError(t, rec); got != domain.ErrDefectoNoAbierto.Error() {
 		t.Errorf("mensaje = %q, se esperaba %q", got, domain.ErrDefectoNoAbierto.Error())
+	}
+
+	rec = postEstadoDefecto(t, &actualizadorEstadoDefectoFalso{errResolver: domain.ErrDefectoNoEnProgreso}, "/proyectos/7/defectos/3/resolver")
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, se esperaba 400; cuerpo: %s", rec.Code, rec.Body)
+	}
+	if got := mensajeDeError(t, rec); got != domain.ErrDefectoNoEnProgreso.Error() {
+		t.Errorf("mensaje = %q, se esperaba %q", got, domain.ErrDefectoNoEnProgreso.Error())
 	}
 
 	rec = postEstadoDefecto(t, &actualizadorEstadoDefectoFalso{errCerrar: domain.ErrDefectoNoResuelto}, "/proyectos/7/defectos/3/cerrar")
@@ -116,7 +143,7 @@ func TestPostActualizarEstadoDefecto_IDInvalido_Devuelve400(t *testing.T) {
 		ruta    string
 		wantMsg string
 	}{
-		{"id de proyecto no numérico", "/proyectos/abc/defectos/3/resolver", "el id del proyecto debe ser un número entero positivo"},
+		{"id de proyecto no numérico", "/proyectos/abc/defectos/3/iniciar", "el id del proyecto debe ser un número entero positivo"},
 		{"id de defecto no numérico", "/proyectos/7/defectos/abc/resolver", "el id del defecto debe ser un número entero positivo"},
 		{"id de defecto en cero", "/proyectos/7/defectos/0/cerrar", "el id del defecto debe ser un número entero positivo"},
 	}
@@ -132,7 +159,7 @@ func TestPostActualizarEstadoDefecto_IDInvalido_Devuelve400(t *testing.T) {
 			if got := mensajeDeError(t, rec); got != tt.wantMsg {
 				t.Errorf("mensaje = %q, se esperaba %q", got, tt.wantMsg)
 			}
-			if uc.llamadoResolver || uc.llamadoCerrar {
+			if uc.llamadoIniciar || uc.llamadoResolver || uc.llamadoCerrar {
 				t.Error("no se esperaba que se llamara al caso de uso")
 			}
 		})
