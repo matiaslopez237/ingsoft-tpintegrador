@@ -1592,7 +1592,7 @@ Los dos que sobreviven no son un hueco del test: `<textarea>` y `<title>` son co
 ### Huecos
 
 - La spec sigue en **Borrador**.
-- **P-10 (campo nuevo de horas estimadas, toca HU-05 y HU-06)** y **P-12 (tope de 1000 h, arbitrario)** están implementadas según la propuesta y abiertas a objeción del equipo en la PR.
+- **Decisiones confirmadas por el equipo (no abiertas):** P-10 (campo propio `HorasEstimadas`, toca HU-05 y HU-06) y P-12 (tope de 1000 h), confirmadas por Matías el 2026-11-03 en la revisión del PR #297.
 - **Carrera de `agregarColumnas` en las migraciones:** #296 (DEF-04). Es preexistente (también `sprint_id` y `puntos_*`, por lectura del código) y compartida. Con 4 `AbrirDB` simultáneos sobre el esquema anterior a HU-19, hubo fallas en 30 de 30 rondas (89 de 120 aperturas, `duplicate column name`), con conexiones en un mismo proceso. Según ADR-0004, en el plan gratuito de Render el disco se borra en cada despliegue, así que hoy esas bases nacen con la columna.
 - El mensaje "las horas se registran en múltiplos de media hora" al estimar viene de HU-18 y la sección 7 de la spec lo fija. Se entiende, pero habla de registrar.
 - **Asimetría conocida, para decisión del equipo:** un POST del formulario sin campos ocultos conserva las horas estimadas (RN-19.12), pero sigue quitando los story points (comportamiento de HU-06, DEF-01). Comprobado contra el servidor real.
