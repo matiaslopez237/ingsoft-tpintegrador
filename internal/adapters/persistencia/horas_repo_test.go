@@ -247,6 +247,58 @@ func TestRepositorioEsfuerzo_HorasDeSprint_SinElementos_ListaVacia(t *testing.T)
 	}
 }
 
+// Los story points no se convierten en horas, aunque el elemento tenga esfuerzo.
+// Traza: HU-23 (sección 6; RN-23.2)
+func TestRepositorioEsfuerzo_Horas_ElementoConStoryPointsYSinHoras_SigueSinEstimar(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t).sinElementos(t)
+	s := b.sprint(t, 20, 21)
+	e := elementoDePrueba(t, b.proyectoID, "Login", puntosDePrueba(5))
+	login := b.asignar(t, guardarElementoDePrueba(t, NuevoRepositorioBacklog(b.db), e), s)
+	b.registrarHoras(t, login.ID, "Ana", 20, 3)
+
+	mismasFilas(t, b.horasDeProyecto(t), []domain.HorasElemento{fila(nil, 3)})
+	mismasFilas(t, b.horasDeSprint(t, s.ID), []domain.HorasElemento{fila(nil, 3)})
+}
+
+// Con el caso de uso real de HU-09: el elemento quitado deja de contar en el sprint y sigue en el proyecto.
+// Traza: HU-23 (sección 6; RN-23.7, RN-23.10)
+func TestRepositorioEsfuerzo_HorasDeSprint_ElementoQuitado_DejaDeContar(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t).sinElementos(t)
+	s := b.sprint(t, 20, 21)
+	login := b.asignar(t, b.elementoConHoras(t, "Login", pHoras(8)), s)
+	b.asignar(t, b.elementoConHoras(t, "Reportes", pHoras(4)), s)
+	b.registrarHoras(t, login.ID, "Ana", 20, 10)
+	mismasFilas(t, b.horasDeSprint(t, s.ID), []domain.HorasElemento{fila(pHoras(8), 10), fila(pHoras(4), 0)})
+
+	err := app.NuevoDesasignarHistoria(NuevoRepositorioBacklog(b.db)).Ejecutar(context.Background(),
+		app.DatosDesasignacion{ProyectoID: b.proyectoID, ElementoID: login.ID})
+
+	if err != nil {
+		t.Fatalf("quitar del sprint (HU-09): %v", err)
+	}
+	mismasFilas(t, b.horasDeSprint(t, s.ID), []domain.HorasElemento{fila(pHoras(4), 0)})
+	mismasFilas(t, b.horasDeProyecto(t), []domain.HorasElemento{fila(pHoras(8), 10), fila(pHoras(4), 0)})
+}
+
+// Con el caso de uso real de HU-06: el elemento eliminado deja de sumar sus estimadas. Que uno con
+// esfuerzo no se pueda eliminar (RN-06.7) ya lo prueban los tests de HU-06.
+// Traza: HU-23 (sección 6; RN-23.2, RN-23.10)
+func TestRepositorioEsfuerzo_HorasDeProyecto_ElementoEliminado_DejaDeSumar(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t).sinElementos(t)
+	login := b.elementoConHoras(t, "Login", pHoras(8))
+	reportes := b.elementoConHoras(t, "Reportes", pHoras(4))
+	b.registrarHoras(t, reportes.ID, "Ana", 20, 3)
+	mismasFilas(t, b.horasDeProyecto(t), []domain.HorasElemento{fila(pHoras(8), 0), fila(pHoras(4), 3)})
+
+	err := app.NuevoEliminarElementoBacklog(NuevoRepositorioBacklog(b.db)).Ejecutar(context.Background(),
+		app.DatosEliminarElemento{ProyectoID: b.proyectoID, ElementoID: login.ID})
+
+	if err != nil {
+		t.Fatalf("eliminar elemento (HU-06): %v", err)
+	}
+	mismasFilas(t, b.horasDeProyecto(t), []domain.HorasElemento{fila(pHoras(4), 3)})
+}
+
 // Con el cierre real de HU-11: el elemento sin terminar sale del sprint y sigue en el proyecto.
 // Traza: HU-23 CA-23.10 (RN-23.7, RN-23.8, RN-23.10)
 func TestRepositorioEsfuerzo_HorasDeSprint_TrasElCierre_SoloLoQueSigueAsignado(t *testing.T) {
