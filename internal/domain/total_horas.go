@@ -28,7 +28,6 @@ func (t TotalHoras) SinEstimar() bool {
 // 0, para no mostrar todo lo trabajado como desviación (RN-23.6). Implementa HU-23 (RN-23.2 a RN-23.6).
 func TotalizarHoras(elementos []HorasElemento) TotalHoras {
 	t := TotalHoras{Elementos: len(elementos)}
-	var realesEstimados float64
 	for _, e := range elementos {
 		t.HorasReales += e.HorasReales
 		if e.HorasEstimadas == nil {
@@ -37,13 +36,12 @@ func TotalizarHoras(elementos []HorasElemento) TotalHoras {
 			continue
 		}
 		t.HorasEstimadas += *e.HorasEstimadas
-		realesEstimados += e.HorasReales
 	}
 	var estimadas *float64
-	if t.ElementosSinEstimar < t.Elementos {
+	if !t.SinEstimar() {
 		estimadas = &t.HorasEstimadas
 	}
-	c := CompararEsfuerzo(estimadas, realesEstimados)
+	c := CompararEsfuerzo(estimadas, t.HorasReales-t.HorasRealesSinEstimar)
 	t.DesviacionHoras, t.DesviacionPorcentaje = c.DesviacionHoras, c.DesviacionPorcentaje
 	return t
 }
