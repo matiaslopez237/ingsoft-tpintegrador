@@ -28,7 +28,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
 | HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
-| HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 abiertas a objeción del equipo en la PR) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (336/336 en el BDD completo; pasos: 1687/1687) |
+| HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 
 ---
 
@@ -1498,11 +1498,12 @@ Salen de `git log origin/hu-18-pantalla-esfuerzo..HEAD --no-merges`, en orden. E
 | Spec: RN-19.12 y CA-19.19 | `159981b` docs(HU-19): regla del campo horas_estimadas ausente en el formulario | — |
 | Etiqueta de CA-19.19 | `9e64052` test(HU-19): etiqueta de trazabilidad de CA-19.19 | — (solo comentarios) |
 | Renombre del paso BDD | `a23c87e` (merge): `"X" tiene N story points` → `"X" quedó con N story points` | — (resuelto dentro del merge) |
+| Test de escape con el desplegable de HU-13 | `6054837` (merge): `TestPantallaElemento_TodosLosCampos_SeEscapan` exige la `<option>` elegida, con el valor escapado en el atributo y en el texto. Quitar el escape de cualquiera de los dos hace fallar el test. | — (resuelto dentro del merge) |
 | Trazabilidad | este commit | — |
 
 **Commits que el filtro `git log --grep="(HU-19)"` no encuentra**, porque usan el prefijo `test(bdd):`: `19eb4be` (RED de los steps), `4d25796` (sistema SQLite) y `c4b3c8a` (comentarios).
 
-**Merges de la rama, que no son de HU-19:** `29991ac` (trae `main`: HU-14 y HU-15), `a106188` (trae `hu-18-pantalla-esfuerzo`) y `a23c87e` (trae `main`: HU-16 y HU-17).
+**Merges de la rama, que no son de HU-19:** `29991ac` (trae `main`: HU-14 y HU-15), `a106188` (trae `hu-18-pantalla-esfuerzo`), `a23c87e` (trae `main`: HU-16 y HU-17) y `6054837` (trae `main`: HU-13).
 
 **Dos unificaciones de commits GREEN**, hechas con `git reset --soft` antes de subir, porque cada GREEN había dejado tests en rojo. Los hashes de la tabla son los del historial real; los anteriores solo quedan en el reflog local. En las dos, el hash de árbol fue el mismo antes y después.
 
@@ -1600,8 +1601,8 @@ Los dos que sobreviven no son un hueco del test: `<textarea>` y `<title>` son co
 - Si la comparación falla al volver de un error de edición, se responde 500 y se pierde lo tipeado. Es intencional y está probado, pero la spec no lo menciona.
 - La pantalla **no se probó en un navegador** ni con un lector de pantalla: se probó con tests y con curl contra el servidor.
 - La duración del BDD completo subió a unos 224 s: cada escenario de cualquier historia crea una base más, porque los hooks de todas las historias corren siempre.
-- Si HU-13 (que toca `story_points` en los mismos archivos) entra antes, habrá que traer `main` de nuevo.
-- **Paso BDD renombrado al integrar con `main`:** `"X" tiene N story points` de HU-19 colisionaba con el mismo paso de HU-17; godog lo rechaza como ambiguo y el compilador no lo detecta. Se renombró en HU-19 a `"X" quedó con N story points` ([features/HU-19-comparar-esfuerzo.feature](../features/HU-19-comparar-esfuerzo.feature) y [test/bdd/hu19_steps_test.go](../test/bdd/hu19_steps_test.go)). La comprobación es la misma. Se tocó HU-19 porque HU-17 ya estaba en `main`. Tras integrar: 336/336 escenarios en el BDD completo (pasos: 1687/1687), y los de HU-19 siguen siendo 34/34.
+- **HU-13 integrada:** HU-13 (que toca `story_points` en los mismos archivos) entró a `main` y se integró en `6054837` (merge de `main` en la rama). Se resolvieron los conflictos de [pantallas_elemento.go](../internal/adapters/http/pantallas_elemento.go) (se conservan `Comparacion` y `OpcionesStoryPoints`) y de este archivo (las secciones de HU-19 y HU-13, que Git había intercalado). `TestPantallaElemento_TodosLosCampos_SeEscapan` se ajustó al desplegable de story points; el cambio quedó dentro del merge. Tras integrar: 355/355 escenarios en el BDD completo (pasos: 1755/1755), y los de HU-19 siguen siendo 34/34.
+- **Paso BDD renombrado al integrar con `main`:** `"X" tiene N story points` de HU-19 colisionaba con el mismo paso de HU-17; godog lo rechaza como ambiguo y el compilador no lo detecta. Se renombró en HU-19 a `"X" quedó con N story points` ([features/HU-19-comparar-esfuerzo.feature](../features/HU-19-comparar-esfuerzo.feature) y [test/bdd/hu19_steps_test.go](../test/bdd/hu19_steps_test.go)). La comprobación es la misma. Se tocó HU-19 porque HU-17 ya estaba en `main`. Tras integrar: 336/336 escenarios en el BDD completo (pasos: 1687/1687), y los de HU-19 siguen siendo 34/34. Ese es el total de ese merge (`a23c87e`, que trajo HU-16 y HU-17), no el actual.
 - Etiquetas: los tests atados solo a una sección de la spec llevan el CA más cercano. El 500 usa CA-19.17, aunque ese CA no menciona el 500.
 - El comentario de cabecera del feature nombra CA-19.16 a CA-19.18, pero no CA-19.19, que se agregó después. `cambiosDeFormElemento` explica la regla, pero no nombra RN-19.12.
 - `mostrarElemento` consulta el proyecto y `CompararEsfuerzo` lo vuelve a consultar, igual que el elemento: son lecturas de más, sin consecuencias prácticas.
