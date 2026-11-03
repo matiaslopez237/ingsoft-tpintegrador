@@ -54,9 +54,9 @@ func (r *RepositorioDefectos) BuscarDefectoPorID(ctx context.Context, id int64) 
 
 // ActualizarEstadoDefecto guarda el estado y el SprintResolucionID de d, solo si el defecto sigue
 // en anterior. Si otro pedido lo cambió en el medio, no afecta ninguna fila y se relee para
-// devolver el error de dominio que corresponda (ErrDefectoNoAbierto si ya no está en anterior y se
-// esperaba Abierto, ErrDefectoNoResuelto si se esperaba Resuelto), igual que CerrarSprint en HU-11
-// (spec HU-21, sección 5: pedidos simultáneos). Implementa HU-21 (app.RepositorioEstadoDefecto).
+// devolver el error de dominio que corresponda a anterior (ErrDefectoNoAbierto, ErrDefectoNoEnProgreso
+// o ErrDefectoNoResuelto), igual que CerrarSprint en HU-11 (spec HU-21, sección 5: pedidos simultáneos).
+// Implementa HU-21 (app.RepositorioEstadoDefecto).
 func (r *RepositorioDefectos) ActualizarEstadoDefecto(ctx context.Context, d *domain.Defecto, anterior domain.EstadoDefecto) error {
 	var sprintResolucion sql.NullInt64
 	if d.SprintResolucionID != nil {
@@ -88,6 +88,8 @@ func (r *RepositorioDefectos) errorDeActualizacion(ctx context.Context, id int64
 	switch anterior {
 	case domain.DefectoAbierto:
 		return domain.ErrDefectoNoAbierto
+	case domain.DefectoEnProgreso:
+		return domain.ErrDefectoNoEnProgreso
 	case domain.DefectoResuelto:
 		return domain.ErrDefectoNoResuelto
 	default:
@@ -95,10 +97,10 @@ func (r *RepositorioDefectos) errorDeActualizacion(ctx context.Context, id int64
 	}
 }
 
-// ListarDefectos devuelve los defectos del proyecto, en cualquier orden (lista vacía si no tiene
-// ninguno). Implementa HU-21 (app.LectorDefectos).
+// ListarDefectos devuelve los defectos del proyecto ordenados por id (orden estable, no depende de
+// cómo los devuelva SQLite); lista vacía si no tiene ninguno. Implementa HU-21 (app.LectorDefectos).
 func (r *RepositorioDefectos) ListarDefectos(ctx context.Context, proyectoID int64) ([]domain.Defecto, error) {
-	rows, err := r.db.QueryContext(ctx, `SELECT `+columnasDefecto+` FROM defectos WHERE proyecto_id = ?`, proyectoID)
+	rows, err := r.db.QueryContext(ctx, `SELECT `+columnasDefecto+` FROM defectos WHERE proyecto_id = ? ORDER BY id`, proyectoID)
 	if err != nil {
 		return nil, fmt.Errorf("listar defectos del proyecto %d: %w", proyectoID, err)
 	}
