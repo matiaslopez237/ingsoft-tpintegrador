@@ -80,7 +80,7 @@ El bloque muestra:
 
 - La cantidad de elementos, las horas estimadas, las horas reales y las dos desviaciones, con el formato de HU-19: coma decimal, `+2 h` y `+25,0 %` en las positivas, `-2 h` y `-25,0 %` con el guion común en las negativas.
 - Con `SinEstimar()`, las dos desviaciones muestran "Sin estimar". Las horas estimadas muestran `0 h` y las reales, su valor.
-- Con elementos sin estimar, un aviso: "1 de 2 elementos sin estimar: sus 5 h están en las horas reales, pero no en la desviación."
+- Con elementos sin estimar, un aviso: "1 de 2 elementos sin estimar: sus 5 h están en las horas reales, pero no en la desviación." Si esos elementos no tienen horas reales, solo los cuenta: "1 de 2 elementos sin estimar."
 - Sin elementos, además de lo anterior: "Todavía no hay elementos." (`0 h` en estimadas y reales).
 - **Solo en un sprint `Cerrado`,** una aclaración: "Solo cuentan los elementos que siguen en este sprint. Los que volvieron al backlog al cerrarlo no suman acá, pero sí en el total del proyecto." (RN-23.8)
 
@@ -207,3 +207,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-03, abiertas a objeción en el 
 ## Historial
 - 2026-11-03: creada (borrador). Decisiones P-1 a P-8 tomadas por el autor, abiertas a objeción en el PR; P-9 a P-12, pendientes del equipo.
 - 2026-11-03: ajustada a la pantalla implementada, sin cambiar reglas ni criterios: el bloque se llama "Horas y desviación" y muestra también la cantidad de elementos. La spec sigue en borrador.
+- 2026-11-03: el aviso de elementos sin estimar y sin horas reales solo los cuenta, sin hablar de 0 h. La spec sigue en borrador.

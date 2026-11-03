@@ -35,14 +35,18 @@ func vistaHoras(t domain.TotalHoras) datosHoras {
 	return v
 }
 
-// avisoSinEstimar explica por qué la desviación no sale de restar las dos cifras del bloque (RN-23.5).
+// avisoSinEstimar cuenta los elementos sin estimar y, si tienen horas reales, explica por qué la
+// desviación no sale de restar las dos cifras del bloque (RN-23.5).
 func avisoSinEstimar(t domain.TotalHoras) string {
 	nombre := "elementos"
 	if t.Elementos == 1 {
 		nombre = "elemento"
 	}
-	return fmt.Sprintf("%d de %d %s sin estimar: sus %s están en las horas reales, pero no en la desviación.",
-		t.ElementosSinEstimar, t.Elementos, nombre, textoHoras(t.HorasRealesSinEstimar))
+	cuenta := fmt.Sprintf("%d de %d %s sin estimar", t.ElementosSinEstimar, t.Elementos, nombre)
+	if t.HorasRealesSinEstimar == 0 {
+		return cuenta + "."
+	}
+	return fmt.Sprintf("%s: sus %s están en las horas reales, pero no en la desviación.", cuenta, textoHoras(t.HorasRealesSinEstimar))
 }
 
 // errorDeHoras muestra la página 404 si no existe el proyecto o el sprint, con el mensaje del dominio y
