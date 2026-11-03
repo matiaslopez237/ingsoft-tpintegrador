@@ -77,6 +77,7 @@ type casoHoras struct {
 func casosHoras() []casoHoras {
 	return []casoHoras{
 		{"sprint normal", []domain.HorasElemento{estimado(8, 10), estimado(4, 3)}, "12", "13", "0", "1", "8.3", "2", "0"},
+		{"proyecto con tres elementos", []domain.HorasElemento{estimado(8, 10), estimado(4, 3), estimado(20, 15)}, "32", "28", "0", "-4", "-12.5", "3", "0"},
 		{"sobre las sumas", []domain.HorasElemento{estimado(10, 20), estimado(90, 90)}, "100", "110", "0", "10", "10", "2", "0"},
 		{"desvíos que se compensan: 0 y no null", []domain.HorasElemento{estimado(8, 10), estimado(8, 6)}, "16", "16", "0", "0", "0", "2", "0"},
 		{"horas con decimal", []domain.HorasElemento{estimado(20, 20.5), estimado(20, 20)}, "40", "40.5", "0", "0.5", "1.3", "2", "0"},
@@ -112,7 +113,7 @@ func (c casoHoras) campos() map[string]string {
 	}
 }
 
-// Traza: HU-23 CA-23.16, CA-23.2, CA-23.6, CA-23.7, CA-23.8 (sección 3)
+// Traza: HU-23 CA-23.16, CA-23.1, CA-23.2, CA-23.3, CA-23.4, CA-23.5, CA-23.6, CA-23.7, CA-23.8, CA-23.9 (sección 3)
 func TestGetHorasProyecto_Devuelve200ConElTotal(t *testing.T) {
 	for _, tt := range casosHoras() {
 		t.Run(tt.nombre, func(t *testing.T) {
@@ -130,7 +131,7 @@ func TestGetHorasProyecto_Devuelve200ConElTotal(t *testing.T) {
 	}
 }
 
-// Traza: HU-23 CA-23.16, CA-23.1, CA-23.3, CA-23.4, CA-23.5, CA-23.6, CA-23.7, CA-23.8, CA-23.9 (sección 3)
+// Traza: HU-23 CA-23.16, CA-23.1, CA-23.2, CA-23.3, CA-23.4, CA-23.5, CA-23.6, CA-23.7, CA-23.8, CA-23.9 (sección 3)
 func TestGetHorasSprint_Devuelve200ConElTotal(t *testing.T) {
 	for _, tt := range casosHoras() {
 		t.Run(tt.nombre, func(t *testing.T) {
