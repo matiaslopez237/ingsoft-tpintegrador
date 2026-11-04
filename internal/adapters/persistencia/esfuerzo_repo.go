@@ -11,8 +11,8 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// RepositorioEsfuerzo implementa app.RepositorioEsfuerzo sobre SQLite.
-// Implementa HU-18 (RN-18.3, RN-18.10).
+// RepositorioEsfuerzo implementa app.RepositorioEsfuerzo y app.LectorHorasReales sobre SQLite.
+// Implementa HU-18 (RN-18.3, RN-18.10) y HU-19 (RN-19.4).
 type RepositorioEsfuerzo struct {
 	db *sql.DB
 }
@@ -72,6 +72,19 @@ func (r *RepositorioEsfuerzo) BuscarRegistroPorID(ctx context.Context, id int64)
 	}
 	reg.Horas = desdeMediasHoras(medias)
 	return reg, nil
+}
+
+// HorasRealesDeElemento devuelve la suma de las horas registradas del elemento; 0 si no tiene
+// registros, y también si no existe: el caso de uso ya lo verificó. Se suman las medias horas, que son
+// enteros, así que no hay error de redondeo. Implementa HU-19 (app.LectorHorasReales, RN-19.4).
+func (r *RepositorioEsfuerzo) HorasRealesDeElemento(ctx context.Context, elementoID int64) (float64, error) {
+	var medias int
+	err := r.db.QueryRowContext(ctx,
+		`SELECT COALESCE(SUM(medias_horas), 0) FROM registros_esfuerzo WHERE elemento_id = ?`, elementoID).Scan(&medias)
+	if err != nil {
+		return 0, fmt.Errorf("sumar horas del elemento %d: %w", elementoID, err)
+	}
+	return desdeMediasHoras(medias), nil
 }
 
 // aMediasHoras pasa las horas a un entero de medias horas (1,5 h → 3). El dominio ya garantiza

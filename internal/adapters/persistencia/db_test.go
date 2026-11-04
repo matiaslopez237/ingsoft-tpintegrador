@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	_ "modernc.org/sqlite"
+
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
 // Traza: HU-09 (comentario de revisión: migrar no agregaba sprint_id a una base ya existente,
@@ -71,6 +73,89 @@ VALUES (1, 1, '2026-10-12', '2026-10-25', 'Viejo', 'Cerrado');`)
 	}
 	if s.Objetivo != "Viejo" || s.PuntosPlanificados != 0 || s.PuntosCompletados != 0 {
 		t.Errorf("sprint viejo = %+v, se esperaba el mismo con 0 puntos", s)
+	}
+}
+
+// Traza: HU-19 CA-19.16 (RN-19.1): una base con elementos, creada antes de HU-19, recibe la columna al abrirla.
+// Sus elementos se leen sin estimar y se les pueden cargar horas, que siguen ahí al volver a abrirla.
+func TestAbrirDB_BaseExistenteSinHorasEstimadas_AgregaLaColumna(t *testing.T) {
+	ctx := context.Background()
+	ruta := filepath.Join(t.TempDir(), "vieja.db")
+	crearEsquemaSinSprintID(t, ruta)
+	vieja, err := sql.Open("sqlite", ruta)
+	if err != nil {
+		t.Fatalf("abrir base vieja: %v", err)
+	}
+	_, err = vieja.Exec(`
+CREATE TABLE backlog_criterios (
+	id          INTEGER PRIMARY KEY AUTOINCREMENT,
+	elemento_id INTEGER NOT NULL REFERENCES backlog_elementos (id) ON DELETE CASCADE,
+	orden       INTEGER NOT NULL,
+	texto       TEXT    NOT NULL,
+	UNIQUE (elemento_id, orden)
+);
+INSERT INTO proyectos (nombre, nombre_clave, fecha_inicio, estado) VALUES ('Alfa', 'alfa', '2026-10-01', 'Activo');
+INSERT INTO backlog_elementos (proyecto_id, titulo, titulo_clave, descripcion, prioridad, estado, story_points)
+VALUES (1, 'Login', 'login', 'Entrar', 'Alta', 'En progreso', 5);
+INSERT INTO backlog_criterios (elemento_id, orden, texto) VALUES (1, 0, 'Con email');`)
+	vieja.Close()
+	if err != nil {
+		t.Fatalf("crear datos viejos: %v", err)
+	}
+
+	db, err := AbrirDB(ruta)
+	if err != nil {
+		t.Fatalf("abrir base vieja con la migración actual: %v", err)
+	}
+	defer func() { db.Close() }()
+
+	if !tieneColumna(t, db, "backlog_elementos", "medias_horas_estimadas") {
+		t.Fatal("se esperaba que backlog_elementos tuviera la columna medias_horas_estimadas después de migrar")
+	}
+	repo := NuevoRepositorioBacklog(db)
+	e, err := repo.BuscarElementoPorID(ctx, 1)
+	if err != nil {
+		t.Fatalf("leer el elemento viejo: %v", err)
+	}
+	if e.Titulo != "Login" || e.Estado != domain.EstadoEnProgreso || e.StoryPoints == nil || *e.StoryPoints != 5 || e.HorasEstimadas != nil {
+		t.Errorf("elemento viejo = %+v, se esperaba el mismo, sin estimar", e)
+	}
+	lista, err := repo.ListarElementos(ctx, 1)
+	if err != nil {
+		t.Fatalf("listar los elementos viejos: %v", err)
+	}
+	if len(lista) != 1 || lista[0].HorasEstimadas != nil {
+		t.Errorf("listado = %+v, se esperaba un elemento sin estimar", lista)
+	}
+
+	got := editarYGuardar(t, repo, e, cambiarHoras(pHoras(8)))
+	if !mismasHoras(got.HorasEstimadas, pHoras(8)) {
+		t.Fatalf("HorasEstimadas = %v, se esperaba 8", verHoras(got.HorasEstimadas))
+	}
+
+	db.Close()
+	if db, err = AbrirDB(ruta); err != nil {
+		t.Fatalf("volver a abrir la base migrada: %v", err)
+	}
+	got, err = NuevoRepositorioBacklog(db).BuscarElementoPorID(ctx, 1)
+	if err != nil {
+		t.Fatalf("releer después de volver a abrir: %v", err)
+	}
+	if !mismasHoras(got.HorasEstimadas, pHoras(8)) {
+		t.Errorf("después de volver a abrir: HorasEstimadas = %v, se esperaba 8", verHoras(got.HorasEstimadas))
+	}
+}
+
+// Traza: HU-19 CA-19.16 (RN-19.1): una base nueva nace con la columna, sin pasar por la migración.
+func TestAbrirDB_BaseNueva_TieneLaColumnaDeHorasEstimadas(t *testing.T) {
+	db, err := AbrirDB(filepath.Join(t.TempDir(), "nueva.db"))
+	if err != nil {
+		t.Fatalf("abrir base: %v", err)
+	}
+	defer db.Close()
+
+	if !tieneColumna(t, db, "backlog_elementos", "medias_horas_estimadas") {
+		t.Error("se esperaba que backlog_elementos tuviera la columna medias_horas_estimadas")
 	}
 }
 

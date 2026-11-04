@@ -95,6 +95,7 @@ func TestPostBacklog_DatosInvalidos_Devuelve400(t *testing.T) {
 		{"descripción vacía", "/proyectos/7/backlog", `{"titulo":"T","prioridad":"Alta","criterios":["C"]}`, &creadorElementosFalso{}, domain.ErrDescripcionVacia.Error()},
 		{"prioridad inválida", "/proyectos/7/backlog", `{"titulo":"T","descripcion":"D","prioridad":"alta","criterios":["C"]}`, &creadorElementosFalso{}, domain.ErrPrioridadInvalida.Error()},
 		{"story points en cero", "/proyectos/7/backlog", `{"titulo":"T","descripcion":"D","prioridad":"Alta","story_points":0,"criterios":["C"]}`, &creadorElementosFalso{}, domain.ErrStoryPointsInvalidos.Error()},
+		{"story points fuera de la escala (HU-13)", "/proyectos/7/backlog", `{"titulo":"T","descripcion":"D","prioridad":"Alta","story_points":4,"criterios":["C"]}`, &creadorElementosFalso{}, domain.ErrStoryPointsInvalidos.Error()},
 		{"sin criterios", "/proyectos/7/backlog", `{"titulo":"T","descripcion":"D","prioridad":"Alta","criterios":[]}`, &creadorElementosFalso{}, domain.ErrSinCriterios.Error()},
 		{"criterio vacío", "/proyectos/7/backlog", `{"titulo":"T","descripcion":"D","prioridad":"Alta","criterios":["C",""]}`, &creadorElementosFalso{}, domain.ErrCriterioVacio.Error()},
 		{"título duplicado", "/proyectos/7/backlog", cuerpoValido, &creadorElementosFalso{err: domain.ErrTituloDuplicado}, domain.ErrTituloDuplicado.Error()},

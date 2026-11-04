@@ -31,13 +31,14 @@ type (
 		Titulo, Descripcion, Prioridad, StoryPoints, Criterios string
 	}
 	datosBacklog struct {
-		Proyecto      vistaProyecto
-		Elementos     []vistaElemento
-		Orden, Estado string // el orden y el filtro elegidos
-		Form          formularioElemento
-		Error         string
-		Prioridades   []domain.Prioridad
-		Estados       []domain.EstadoElemento
+		Proyecto            vistaProyecto
+		Elementos           []vistaElemento
+		Orden, Estado       string // el orden y el filtro elegidos
+		Form                formularioElemento
+		Error               string
+		Prioridades         []domain.Prioridad
+		Estados             []domain.EstadoElemento
+		OpcionesStoryPoints []opcionStoryPoints // HU-13
 	}
 )
 
@@ -132,6 +133,7 @@ func (p *pantallas) mostrarBacklog(w http.ResponseWriter, r *http.Request, id in
 	p.renderizar(w, status, "backlog.html", datosBacklog{
 		Proyecto: aVistaProyecto(proyecto), Elementos: vistas, Orden: orden, Estado: estado,
 		Form: form, Error: mensaje, Prioridades: prioridadesElemento, Estados: estadosElemento,
+		OpcionesStoryPoints: opcionesStoryPoints(form.StoryPoints),
 	})
 }
 

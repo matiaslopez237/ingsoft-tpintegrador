@@ -43,6 +43,10 @@ func (r *RepositorioBacklog) ActualizarElemento(ctx context.Context, e domain.El
 		sets = append(sets, "estado = ?")
 		args = append(args, string(e.Estado))
 	}
+	if c.CambiarHorasEstimadas {
+		sets = append(sets, "medias_horas_estimadas = ?")
+		args = append(args, aMediasHorasEstimadas(e.HorasEstimadas))
+	}
 
 	tx, err := r.db.BeginTx(ctx, nil)
 	if err != nil {

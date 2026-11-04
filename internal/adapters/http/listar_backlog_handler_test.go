@@ -53,8 +53,8 @@ func TestGetBacklog_DevuelveLosElementos(t *testing.T) {
 		t.Errorf("datos recibidos = %+v, se esperaba solo el proyecto 1", uc.recibido)
 	}
 	mismoJSON(t, rec.Body.String(), `[
-		{"id":2,"proyecto_id":1,"titulo":"Login","descripcion":"Ingresar","prioridad":"Alta","estado":"Pendiente","story_points":5,"criterios":["Con clave"]},
-		{"id":1,"proyecto_id":1,"titulo":"Reportes","descripcion":"Ver","prioridad":"Baja","estado":"Hecho","story_points":null,"criterios":["Exporta PDF"]}]`)
+		{"id":2,"proyecto_id":1,"titulo":"Login","descripcion":"Ingresar","prioridad":"Alta","estado":"Pendiente","story_points":5,"criterios":["Con clave"],"horas_estimadas":null},
+		{"id":1,"proyecto_id":1,"titulo":"Reportes","descripcion":"Ver","prioridad":"Baja","estado":"Hecho","story_points":null,"criterios":["Exporta PDF"],"horas_estimadas":null}]`)
 }
 
 // Traza: HU-07 CA-07.2, CA-07.4: el orden y el estado llegan desde la URL.

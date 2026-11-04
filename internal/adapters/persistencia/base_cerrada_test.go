@@ -58,6 +58,9 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 		"ActualizarElemento": func() error {
 			return backlog.ActualizarElemento(ctx, elemento, domain.CambiosElemento{Titulo: &titulo})
 		},
+		"ActualizarElemento solo horas estimadas": func() error { // HU-19
+			return backlog.ActualizarElemento(ctx, elemento, domain.CambiosElemento{CambiarHorasEstimadas: true})
+		},
 		"TieneEsfuerzo":     func() error { _, err := backlog.TieneEsfuerzo(ctx, 1); return err },
 		"TieneDefectos":     func() error { _, err := backlog.TieneDefectos(ctx, 1); return err },
 		"EliminarElemento":  func() error { return backlog.EliminarElemento(ctx, 1) },
@@ -74,7 +77,8 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 			r := domain.RegistroEsfuerzo{ProyectoID: 1, ElementoID: 1, Integrante: "Ana", Fecha: dia, Actividad: "Dev", Horas: 1}
 			return esfuerzo.GuardarRegistro(ctx, &r)
 		},
-		"BuscarRegistroPorID": func() error { _, err := esfuerzo.BuscarRegistroPorID(ctx, 1); return err },
+		"BuscarRegistroPorID":   func() error { _, err := esfuerzo.BuscarRegistroPorID(ctx, 1); return err },
+		"HorasRealesDeElemento": func() error { _, err := esfuerzo.HorasRealesDeElemento(ctx, 1); return err }, // HU-19
 		"GuardarDefecto": func() error {
 			d := domain.Defecto{ProyectoID: 1, ElementoID: 1, Descripcion: "d", Severidad: domain.SeveridadAlta, Estado: domain.DefectoAbierto}
 			return defectos.GuardarDefecto(ctx, &d)
@@ -85,6 +89,12 @@ func TestRepositorios_BaseCerrada_DevuelvenElError(t *testing.T) {
 		"BuscarRonda":  func() error { _, err := rondas.BuscarRonda(ctx, 1); return err },
 		"GuardarVoto":  func() error { return rondas.GuardarVoto(ctx, ronda, "Ana") },
 		"ListarRondas": func() error { _, err := rondas.ListarRondas(ctx, 1); return err }, // HU-16
+		"GuardarEstimacion": func() error { // HU-17
+			v := 8
+			r := ronda
+			r.EstimacionAcordada = &v
+			return rondas.GuardarEstimacion(ctx, r)
+		},
 	}
 	for nombre, metodo := range metodos {
 		t.Run(nombre, func(t *testing.T) {
