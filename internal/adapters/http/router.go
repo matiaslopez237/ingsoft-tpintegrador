@@ -7,34 +7,36 @@ import "net/http"
 // CasosDeUso son los casos de uso que exponen las rutas HTTP. Cada historia de usuario suma
 // los suyos acá y registra sus rutas con su propia función RegistrarX, en el archivo de su handler.
 type CasosDeUso struct {
-	CrearProyecto            creadorProyectos      // HU-01
-	ModificarProyecto        modificadorProyectos  // HU-02
-	AgregarIntegrante        agregadorIntegrantes  // HU-03
-	QuitarIntegrante         quitadorIntegrantes   // HU-03
-	AgregarRol               agregadorRoles        // HU-03
-	ConsultarProyecto        consultorProyectos    // HU-04
-	CrearElementoBacklog     creadorElementos      // HU-05
-	RegistrarEsfuerzo        registradorEsfuerzo   // HU-18
-	CrearSprint              creadorSprints        // HU-08
-	ListarSprints            listadorSprints       // HU-08
-	ListarBacklog            listadorBacklog       // HU-07
-	AsignarHistoria          agregadorAsignacion   // HU-09
-	DesasignarHistoria       quitadorAsignacion    // HU-09
-	CerrarSprint             cerradorSprints       // HU-11
-	CompletarHistoria        completadorHistorias  // HU-10
-	ListarProyectos          listadorProyectos     // HU-30
-	EditarElementoBacklog    editorElementos       // HU-06
-	EliminarElementoBacklog  eliminadorElementos   // HU-06
-	ConsultarElementoBacklog consultorElementos    // HU-06
-	RegistrarDefecto         registradorDefecto    // HU-20
-	IniciarRonda             iniciadorRondas       // HU-14
-	Votar                    votadorRondas         // HU-14
-	ConsultarRonda           consultorRondas       // HU-14
-	ListarSprintsAnteriores  listadorSprints       // HU-12
-	ConsultarVelocidad       consultorVelocidad    // HU-22
-	ListarRondas             historiadorRondas     // HU-16
-	RegistrarEstimacion      registradorEstimacion // HU-17
-	CompararEsfuerzo         comparadorEsfuerzo    // HU-19
+	CrearProyecto            creadorProyectos          // HU-01
+	ModificarProyecto        modificadorProyectos      // HU-02
+	AgregarIntegrante        agregadorIntegrantes      // HU-03
+	QuitarIntegrante         quitadorIntegrantes       // HU-03
+	AgregarRol               agregadorRoles            // HU-03
+	ConsultarProyecto        consultorProyectos        // HU-04
+	CrearElementoBacklog     creadorElementos          // HU-05
+	RegistrarEsfuerzo        registradorEsfuerzo       // HU-18
+	CrearSprint              creadorSprints            // HU-08
+	ListarSprints            listadorSprints           // HU-08
+	ListarBacklog            listadorBacklog           // HU-07
+	AsignarHistoria          agregadorAsignacion       // HU-09
+	DesasignarHistoria       quitadorAsignacion        // HU-09
+	CerrarSprint             cerradorSprints           // HU-11
+	CompletarHistoria        completadorHistorias      // HU-10
+	ListarProyectos          listadorProyectos         // HU-30
+	EditarElementoBacklog    editorElementos           // HU-06
+	EliminarElementoBacklog  eliminadorElementos       // HU-06
+	ConsultarElementoBacklog consultorElementos        // HU-06
+	RegistrarDefecto         registradorDefecto        // HU-20
+	IniciarRonda             iniciadorRondas           // HU-14
+	Votar                    votadorRondas             // HU-14
+	ConsultarRonda           consultorRondas           // HU-14
+	ListarSprintsAnteriores  listadorSprints           // HU-12
+	ConsultarVelocidad       consultorVelocidad        // HU-22
+	ListarRondas             historiadorRondas         // HU-16
+	RegistrarEstimacion      registradorEstimacion     // HU-17
+	CompararEsfuerzo         comparadorEsfuerzo        // HU-19
+	ActualizarEstadoDefecto  actualizadorEstadoDefecto // HU-21
+	ListarDefectos           listadorDefectos          // HU-21
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
@@ -61,6 +63,8 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarHistorialRondas(mux, cu.ListarRondas)
 	RegistrarEstimacionAcordada(mux, cu.RegistrarEstimacion)
 	RegistrarCompararEsfuerzo(mux, cu.CompararEsfuerzo)
+	RegistrarActualizarEstadoDefecto(mux, cu.ActualizarEstadoDefecto)
+	RegistrarListarDefectos(mux, cu.ListarDefectos)
 	RegistrarPantallas(mux, cu)
 	return mux
 }

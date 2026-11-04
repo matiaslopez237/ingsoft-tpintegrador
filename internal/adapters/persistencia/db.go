@@ -43,6 +43,10 @@ func AbrirDB(ruta string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrar columna estimacion_acordada: %w", err)
 	}
+	if err := migrarSprintResolucionDefecto(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrar columna sprint_resolucion_id: %w", err)
+	}
 
 	return db, nil
 }
@@ -208,6 +212,15 @@ func migrarHorasEstimadas(db *sql.DB) error {
 // cada arranque.
 func migrarEstimacionAcordada(db *sql.DB) error {
 	return agregarColumnas(db, "rondas", map[string]string{"estimacion_acordada": "INTEGER"})
+}
+
+// migrarSprintResolucionDefecto agrega a defectos la columna sprint_resolucion_id de HU-21
+// (RN-21.5) si todavía no existe, por el mismo motivo que migrarSprintID. Los defectos que ya
+// estaban quedan con NULL (sin Sprint de resolución). Es seguro llamarla en cada arranque.
+func migrarSprintResolucionDefecto(db *sql.DB) error {
+	return agregarColumnas(db, "defectos", map[string]string{
+		"sprint_resolucion_id": "INTEGER REFERENCES sprints (id)",
+	})
 }
 
 // agregarColumnas agrega a la tabla las columnas que le falten, con su definición, sin tocar los

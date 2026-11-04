@@ -30,6 +30,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
+| HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 
 ---
 
@@ -1087,6 +1088,82 @@ Sin CA propio en la spec:
 - El enlace "Registrar defecto" sale de la lista del backlog (HU-07); no hay todavía un enlace desde el detalle del elemento (HU-06), porque la pantalla de HU-20 elige el elemento de una lista, no parte de uno puntual.
 - Fuera de alcance (spec, sección 5): editar, eliminar, listar o cambiar el estado de un defecto; vincularlo manualmente a un Sprint distinto del detectado automáticamente.
 - Revisión con el agente `go-reviewer` (tarea 20.9): sin hallazgos bloqueantes. Encontró que el `<select>` de severidad de la pantalla no tenía una opción vacía por defecto ni `required` (a diferencia del de elemento); se corrigió en el mismo commit de esta revisión.
+
+---
+
+## HU-21: Actualizar el estado de un defecto
+
+- **Issue:** a confirmar · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-21-actualizar-estado-defecto.md](specs/HU-21-actualizar-estado-defecto.md)
+- **Feature:** [features/HU-21-actualizar-estado-defecto.feature](../features/HU-21-actualizar-estado-defecto.feature) (steps en [test/bdd/hu21_steps_test.go](../test/bdd/hu21_steps_test.go), sistema en [hu21_sistema_test.go](../test/bdd/hu21_sistema_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-21.1 Iniciar un defecto Abierto | RN-21.2 | Iniciar un defecto Abierto `@normal` | `TestDefecto_Iniciar_DesdeAbierto_QuedaEnProgreso`, `TestActualizarEstadoDefecto_Iniciar_DesdeAbierto_QuedaEnProgreso` | `domain.Defecto.Iniciar`, `app.ActualizarEstadoDefecto.Iniciar` |
+| CA-21.2 Resolver con Sprint activo asigna su ID | RN-21.3, RN-21.6 | Resolver un defecto En progreso con un Sprint activo `@normal` | `TestDefecto_Resolver_DesdeEnProgreso_QuedaResuelto`, `TestActualizarEstadoDefecto_Resolver_ConSprintVigente_AsignaSuID`, `TestRepositorioDefectos_ActualizarEstado_ConSprintResolucion_LoGuarda` | `domain.Defecto.Resolver`, `app.ActualizarEstadoDefecto.Resolver` |
+| CA-21.3 Sin Sprint vigente, queda nulo | RN-21.6 | Resolver un defecto En progreso sin ningún Sprint vigente `@alternativo` · Un sprint que ya terminó no se asigna como Sprint de resolución `@limite` | `TestActualizarEstadoDefecto_Resolver_SinSprintVigente_QuedaSinAsignar` | `domain.SprintVigente` (reutilizado de HU-20), `app.ActualizarEstadoDefecto.Resolver` |
+| CA-21.4 Cerrar un defecto Resuelto, sin tocar el Sprint de resolución | RN-21.4 | Cerrar un defecto Resuelto `@normal` | `TestDefecto_Cerrar_DesdeResuelto_QuedaCerrado`, `TestActualizarEstadoDefecto_Cerrar_DesdeResuelto_QuedaCerradoConElMismoSprint` | `domain.Defecto.Cerrar`, `app.ActualizarEstadoDefecto.Cerrar` |
+| CA-21.5 Iniciar uno que no está Abierto | RN-21.2, RN-21.5 | No se puede iniciar un defecto que ya está En progreso `@error` · No se puede iniciar un defecto que ya está Cerrado `@error` | `TestDefecto_Iniciar_NoAbierto_RetornaError`, `TestActualizarEstadoDefecto_Iniciar_NoAbierto_RetornaErrorYNoGuarda` | `domain.Defecto.Iniciar` (`ErrDefectoNoAbierto`) |
+| CA-21.6 Resolver uno que no está En progreso | RN-21.3, RN-21.5 | No se puede resolver un defecto Abierto (saltear En progreso) `@error` · No se puede resolver un defecto que ya está Cerrado `@error` | `TestDefecto_Resolver_NoEnProgreso_RetornaError`, `TestActualizarEstadoDefecto_Resolver_NoEnProgreso_RetornaErrorYNoGuarda` | `domain.Defecto.Resolver` (`ErrDefectoNoEnProgreso`) |
+| CA-21.7 Cerrar uno que no está Resuelto | RN-21.4, RN-21.5 | No se puede cerrar un defecto Abierto (saltear En progreso y Resuelto) `@error` · No se puede cerrar un defecto En progreso (saltear Resuelto) `@error` | `TestDefecto_Cerrar_NoResuelto_RetornaError`, `TestActualizarEstadoDefecto_Cerrar_NoResuelto_RetornaErrorYNoGuarda` | `domain.Defecto.Cerrar` (`ErrDefectoNoResuelto`) |
+| CA-21.8 Proyecto o defecto inexistente, o de otro proyecto | RN-21.7 | No se puede actualizar un defecto de un proyecto inexistente `@error` · No se puede actualizar un defecto inexistente `@error` · Un defecto de otro proyecto se trata como inexistente `@error` | `TestActualizarEstadoDefecto_ProyectoInexistente_RetornaError`, `TestActualizarEstadoDefecto_DefectoInexistente_RetornaError`, `TestActualizarEstadoDefecto_DefectoDeOtroProyecto_RetornaError`, `TestRepositorioDefectos_BuscarDefectoPorID_Inexistente_RetornaError` | `app.ActualizarEstadoDefecto.buscar` (`ErrDefectoNoEncontrado`) |
+| CA-21.9 Respuesta HTTP de iniciar/resolver/cerrar | Sección 3 | No va acá (como CA-20.6): se cubre con los tests del adaptador | `TestPostIniciarDefecto_*`, `TestPostResolverDefecto_*`, `TestPostCerrarDefecto_*`, `TestPostActualizarEstadoDefecto_*` (10 tests) | `internal/adapters/http/actualizar_estado_defecto_handler.go` |
+| CA-21.10 Listado JSON de apoyo, ordenado por id | Sección 3 | No va acá: es infraestructura de la pantalla, no una regla de negocio propia | `TestListarDefectos_*` (3), `TestRepositorioDefectos_ListarDefectos_*` (3), `TestGetListarDefectos_*` (3) | `app.ListarDefectos`, `persistencia.RepositorioDefectos.ListarDefectos` (`ORDER BY id`), `internal/adapters/http/listar_defectos_handler.go` |
+| CA-21.11 Pantalla con botones según estado | Sección 3 | No va acá (como CA-20.8): es la pantalla | `TestPantallaDefectos_*` (3), `TestPantallaIniciarDefecto_*` (2), `TestPantallaResolverDefecto_*` (2), `TestPantallaCerrarDefecto_*` (2), `TestPantallaActualizarEstadoDefecto_DefectoInexistente_Es404` | `pantallas_defectos_lista.go`, `web/plantillas/defectos.html`, enlaces en `proyecto_detalle.html` y `defecto_form.html` |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-21.1 Cuatro estados: Abierto, En progreso, Resuelto, Cerrado | Todas | `domain.EstadoDefecto`, `domain.DefectoAbierto/EnProgreso/Resuelto/Cerrado` |
+| RN-21.2 Iniciar = Abierto→En progreso; error si no está Abierto | CA-21.1, CA-21.5 | `domain.Defecto.Iniciar`, `domain.Defecto.PuedeIniciarse` |
+| RN-21.3 Resolver = En progreso→Resuelto; error si no está En progreso | CA-21.2, CA-21.6 | `domain.Defecto.Resolver`, `domain.Defecto.PuedeResolverse` |
+| RN-21.4 Cerrar = Resuelto→Cerrado; error si no está Resuelto | CA-21.4, CA-21.7 | `domain.Defecto.Cerrar`, `domain.Defecto.PuedeCerrarse` |
+| RN-21.5 Siempre secuencial, sin saltos ni retrocesos | CA-21.5 a CA-21.7 | `domain.Defecto.Iniciar`/`Resolver`/`Cerrar` (no hay forma de volver a un estado anterior ni saltear uno) |
+| RN-21.6 Sprint de resolución automático, mismo criterio que detección | CA-21.2, CA-21.3 | `domain.SprintVigente` (HU-20), `app.ActualizarEstadoDefecto.Resolver` |
+| RN-21.7 Defecto de otro proyecto es inexistente | CA-21.8 | `app.ActualizarEstadoDefecto.buscar` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/defecto.go](../internal/domain/defecto.go) (`Iniciar`, `Resolver`, `Cerrar`, `PuedeIniciarse`, `PuedeResolverse`, `PuedeCerrarse`, `DefectoEnProgreso/Resuelto/Cerrado`, `ErrDefectoNoEncontrado/NoAbierto/NoEnProgreso/NoResuelto`) | [defecto_test.go](../internal/domain/defecto_test.go) |
+| Caso de uso | [internal/app/actualizar_estado_defecto.go](../internal/app/actualizar_estado_defecto.go) (`Iniciar`, `Resolver`, `Cerrar`), [listar_defectos.go](../internal/app/listar_defectos.go) | [actualizar_estado_defecto_test.go](../internal/app/actualizar_estado_defecto_test.go), [listar_defectos_test.go](../internal/app/listar_defectos_test.go) |
+| Persistencia | [internal/adapters/persistencia/defecto_estado_repo.go](../internal/adapters/persistencia/defecto_estado_repo.go) (incluye el caso `DefectoEnProgreso` en `errorDeActualizacion` y `ORDER BY id` en `ListarDefectos`), [db.go](../internal/adapters/persistencia/db.go) (columna `sprint_resolucion_id`) | [defecto_estado_repo_test.go](../internal/adapters/persistencia/defecto_estado_repo_test.go) |
+| HTTP (JSON) | [internal/adapters/http/actualizar_estado_defecto_handler.go](../internal/adapters/http/actualizar_estado_defecto_handler.go) (`POST .../iniciar`, `.../resolver`, `.../cerrar`), [listar_defectos_handler.go](../internal/adapters/http/listar_defectos_handler.go) (`GET /proyectos/{id}/defectos`) | [actualizar_estado_defecto_handler_test.go](../internal/adapters/http/actualizar_estado_defecto_handler_test.go), [listar_defectos_handler_test.go](../internal/adapters/http/listar_defectos_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_defectos_lista.go](../internal/adapters/http/pantallas_defectos_lista.go), [web/plantillas/defectos.html](../internal/adapters/http/web/plantillas/defectos.html) (`/web/proyectos/{id}/defectos`) | [pantallas_defectos_lista_test.go](../internal/adapters/http/pantallas_defectos_lista_test.go) |
+| BDD | [test/bdd/hu21_sistema_test.go](../test/bdd/hu21_sistema_test.go), [hu21_steps_test.go](../test/bdd/hu21_steps_test.go) | 14 escenarios en verde |
+
+### Commits
+
+Rama `hu-21-actualizar-estado-defecto`. El ciclo RED → GREEN completo está en el historial (no se hizo squash).
+
+| Tarea | Commit (mensaje) | Etapa |
+|---|---|---|
+| 21.1 Spec | `docs(HU-21): [21.1] spec SDD de actualizar el estado de un defecto` | — |
+| 21.2 Escenarios BDD | `test(HU-21): [21.2] escenarios BDD de actualizar el estado de un defecto` | — |
+| 21.3 Steps godog | `test(HU-21): [21.3][RED] steps de godog` | BDD en rojo |
+| 21.4 Entidad Defecto (Resolver/Cerrar) | `test(HU-21): [21.4][RED] Defecto.Resolver y Defecto.Cerrar` → `feat(HU-21): [21.4][GREEN] Defecto.Resolver y Defecto.Cerrar` | **RED → GREEN** |
+| 21.5 Caso de uso ActualizarEstadoDefecto | `test(HU-21): [21.5][RED] caso de uso ActualizarEstadoDefecto` → `feat(HU-21): [21.5][GREEN] caso de uso ActualizarEstadoDefecto` | **RED → GREEN** |
+| 21.6 Persistencia (RepositorioEstadoDefecto, LectorDefectos) | `test(HU-21): [21.6][RED] adaptador de persistencia` → `feat(HU-21): [21.6][GREEN] RepositorioEstadoDefecto y LectorDefectos sobre SQLite` | **RED → GREEN** |
+| Conectar los escenarios BDD con los casos de uso reales | `test(HU-21): conectar los escenarios BDD con ActualizarEstadoDefecto` | BDD en verde |
+| 21.7 HTTP (resolver/cerrar) | `test(HU-21): [21.7][RED] adaptador HTTP` → `feat(HU-21): [21.7][GREEN] POST .../resolver y .../cerrar, conexión en el router y main` | **RED → GREEN** |
+| 21.7 HTTP (listado, apoyo) | `test(HU-21): [21.7][RED] listado HTTP de defectos` → `feat(HU-21): [21.7][GREEN] GET /proyectos/{id}/defectos` | **RED → GREEN** |
+| 21.8 Pantalla | `test(HU-21): [21.8][RED] pantalla de defectos` → `feat(HU-21): [21.8][GREEN] pantalla de defectos con botones según estado` | **RED → GREEN** |
+| 21.9 Revisión y trazabilidad | `docs(HU-21): [21.9] revisión con go-reviewer y matriz de trazabilidad` | — |
+| 21.10 Corrección de la revisión del PR (estado En progreso, ORDER BY) | spec → BDD → `[RED]` dominio/caso de uso/persistencia/HTTP/pantalla → `[GREEN]` dominio/caso de uso/persistencia/HTTP/pantalla → router/main → trazabilidad | **RED → GREEN** |
+
+### Huecos
+
+- La spec quedó Aprobada el 2026-11-01; el 2026-11-03, en la revisión del PR, Matías López pidió agregar el estado `En progreso` entre `Abierto` y `Resuelto` (lo pedía el enunciado de la cátedra). Ezequiel decidió que siempre hay que pasar por `En progreso` (no se puede saltear directo a `Resuelto`), manteniendo el mismo criterio "sin saltos" que ya tenía la historia. Ver Historial de la spec.
+- No hay issue de GitHub todavía asignado (el Sprint 3 ya lo repartió a Eze en la planning, pero el número de issue específico de HU-21 queda a confirmar).
+- Igual que HU-20, no hay endpoint para consultar un único defecto por ID: `ActualizarEstadoDefecto` lo busca internamente, y el listado (CA-21.10) alcanza para la pantalla.
+- Fuera de alcance (spec, sección 5): reabrir un defecto, editar su descripción/severidad/elemento, eliminarlo, elegir manualmente el Sprint de resolución, filtros o búsqueda en la lista.
+- Durante el desarrollo se encontró y corrigió un bug: `RegistrarActualizarEstadoDefecto` armaba un *method value* (`uc.Resolver`) al registrar las rutas, lo que hacía panic con una interfaz nil (pasa en varios fixtures BDD de otras historias que arman el router con un `CasosDeUso` parcial, ej. HU-06). Se corrigió pasando la interfaz completa y llamando al método recién al atender cada pedido, igual que los demás handlers.
+- Revisión con el agente `go-reviewer` (tarea 21.9, sobre la versión de 3 estados): Approve, sin hallazgos bloqueantes. Confirmó que el fix del bug de method value quedó aplicado correctamente en todo `internal/adapters/http` (recorrió los ~20 archivos `*_handler.go`/`pantallas*.go`) y no encontró otra instancia del mismo problema. Dos notas de estilo no bloqueantes, ambas ya consistentes con patrones existentes: `app.ListarDefectos.Ejecutar` no envuelve el error de `BuscarPorID` (igual que `ListarBacklog`, HU-07), y `errorDeActualizacion` decide el error a partir de `anterior` en vez de releer el estado (determinístico, documentado en el propio código).
+- Revisión de nicoandino y Matías López en el PR (2026-11-03): agregar el estado `En progreso` (resuelto, tarea 21.10), traer `main` resolviendo los conflictos en `main.go`/`router.go`/`router_test.go`/`trazabilidad.md` manteniendo ambos lados (pendiente, orden de merge sugerido #288 → #292 → #294, HU-21 va último), y el `ORDER BY id` en `ListarDefectos` (resuelto, tarea 21.10). El aviso de `router_test.go` sin gofmt ya no aplicaba al revisar (el archivo ya pasaba `gofmt -l` antes de tocarlo).
 
 ---
 
