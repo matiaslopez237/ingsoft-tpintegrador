@@ -23,11 +23,14 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
+| HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Borrador, pendiente de aprobación en el PR) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
+| HU-22 Calcular story points y velocidad del equipo | ✓ (Aprobada) | 6/9 (CA-22.1 ya la cubre HU-12; CA-22.7 y CA-22.8 se cubren con tests del handler y de la pantalla) | 9/9 | ✓ | RED → GREEN ×6 | ✓ 9/9 escenarios |
 | HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
-| HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 abiertas a objeción del equipo en la PR) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (336/336 en el BDD completo; pasos: 1687/1687) |
+| HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
+| HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Borrador; P-1 a P-8 abiertas a objeción en el PR; P-9 a P-12 pendientes del equipo) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (365/365 en el BDD completo; pasos: 1927/1927) |
 
 ---
@@ -1089,6 +1092,82 @@ Sin CA propio en la spec:
 
 ---
 
+## HU-21: Actualizar el estado de un defecto
+
+- **Issue:** a confirmar · Sprint 3 · 2 SP
+- **Spec:** [docs/specs/HU-21-actualizar-estado-defecto.md](specs/HU-21-actualizar-estado-defecto.md)
+- **Feature:** [features/HU-21-actualizar-estado-defecto.feature](../features/HU-21-actualizar-estado-defecto.feature) (steps en [test/bdd/hu21_steps_test.go](../test/bdd/hu21_steps_test.go), sistema en [hu21_sistema_test.go](../test/bdd/hu21_sistema_test.go))
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-21.1 Iniciar un defecto Abierto | RN-21.2 | Iniciar un defecto Abierto `@normal` | `TestDefecto_Iniciar_DesdeAbierto_QuedaEnProgreso`, `TestActualizarEstadoDefecto_Iniciar_DesdeAbierto_QuedaEnProgreso` | `domain.Defecto.Iniciar`, `app.ActualizarEstadoDefecto.Iniciar` |
+| CA-21.2 Resolver con Sprint activo asigna su ID | RN-21.3, RN-21.6 | Resolver un defecto En progreso con un Sprint activo `@normal` | `TestDefecto_Resolver_DesdeEnProgreso_QuedaResuelto`, `TestActualizarEstadoDefecto_Resolver_ConSprintVigente_AsignaSuID`, `TestRepositorioDefectos_ActualizarEstado_ConSprintResolucion_LoGuarda` | `domain.Defecto.Resolver`, `app.ActualizarEstadoDefecto.Resolver` |
+| CA-21.3 Sin Sprint vigente, queda nulo | RN-21.6 | Resolver un defecto En progreso sin ningún Sprint vigente `@alternativo` · Un sprint que ya terminó no se asigna como Sprint de resolución `@limite` | `TestActualizarEstadoDefecto_Resolver_SinSprintVigente_QuedaSinAsignar` | `domain.SprintVigente` (reutilizado de HU-20), `app.ActualizarEstadoDefecto.Resolver` |
+| CA-21.4 Cerrar un defecto Resuelto, sin tocar el Sprint de resolución | RN-21.4 | Cerrar un defecto Resuelto `@normal` | `TestDefecto_Cerrar_DesdeResuelto_QuedaCerrado`, `TestActualizarEstadoDefecto_Cerrar_DesdeResuelto_QuedaCerradoConElMismoSprint` | `domain.Defecto.Cerrar`, `app.ActualizarEstadoDefecto.Cerrar` |
+| CA-21.5 Iniciar uno que no está Abierto | RN-21.2, RN-21.5 | No se puede iniciar un defecto que ya está En progreso `@error` · No se puede iniciar un defecto que ya está Cerrado `@error` | `TestDefecto_Iniciar_NoAbierto_RetornaError`, `TestActualizarEstadoDefecto_Iniciar_NoAbierto_RetornaErrorYNoGuarda` | `domain.Defecto.Iniciar` (`ErrDefectoNoAbierto`) |
+| CA-21.6 Resolver uno que no está En progreso | RN-21.3, RN-21.5 | No se puede resolver un defecto Abierto (saltear En progreso) `@error` · No se puede resolver un defecto que ya está Cerrado `@error` | `TestDefecto_Resolver_NoEnProgreso_RetornaError`, `TestActualizarEstadoDefecto_Resolver_NoEnProgreso_RetornaErrorYNoGuarda` | `domain.Defecto.Resolver` (`ErrDefectoNoEnProgreso`) |
+| CA-21.7 Cerrar uno que no está Resuelto | RN-21.4, RN-21.5 | No se puede cerrar un defecto Abierto (saltear En progreso y Resuelto) `@error` · No se puede cerrar un defecto En progreso (saltear Resuelto) `@error` | `TestDefecto_Cerrar_NoResuelto_RetornaError`, `TestActualizarEstadoDefecto_Cerrar_NoResuelto_RetornaErrorYNoGuarda` | `domain.Defecto.Cerrar` (`ErrDefectoNoResuelto`) |
+| CA-21.8 Proyecto o defecto inexistente, o de otro proyecto | RN-21.7 | No se puede actualizar un defecto de un proyecto inexistente `@error` · No se puede actualizar un defecto inexistente `@error` · Un defecto de otro proyecto se trata como inexistente `@error` | `TestActualizarEstadoDefecto_ProyectoInexistente_RetornaError`, `TestActualizarEstadoDefecto_DefectoInexistente_RetornaError`, `TestActualizarEstadoDefecto_DefectoDeOtroProyecto_RetornaError`, `TestRepositorioDefectos_BuscarDefectoPorID_Inexistente_RetornaError` | `app.ActualizarEstadoDefecto.buscar` (`ErrDefectoNoEncontrado`) |
+| CA-21.9 Respuesta HTTP de iniciar/resolver/cerrar | Sección 3 | No va acá (como CA-20.6): se cubre con los tests del adaptador | `TestPostIniciarDefecto_*`, `TestPostResolverDefecto_*`, `TestPostCerrarDefecto_*`, `TestPostActualizarEstadoDefecto_*` (10 tests) | `internal/adapters/http/actualizar_estado_defecto_handler.go` |
+| CA-21.10 Listado JSON de apoyo, ordenado por id | Sección 3 | No va acá: es infraestructura de la pantalla, no una regla de negocio propia | `TestListarDefectos_*` (3), `TestRepositorioDefectos_ListarDefectos_*` (3), `TestGetListarDefectos_*` (3) | `app.ListarDefectos`, `persistencia.RepositorioDefectos.ListarDefectos` (`ORDER BY id`), `internal/adapters/http/listar_defectos_handler.go` |
+| CA-21.11 Pantalla con botones según estado | Sección 3 | No va acá (como CA-20.8): es la pantalla | `TestPantallaDefectos_*` (3), `TestPantallaIniciarDefecto_*` (2), `TestPantallaResolverDefecto_*` (2), `TestPantallaCerrarDefecto_*` (2), `TestPantallaActualizarEstadoDefecto_DefectoInexistente_Es404` | `pantallas_defectos_lista.go`, `web/plantillas/defectos.html`, enlaces en `proyecto_detalle.html` y `defecto_form.html` |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-21.1 Cuatro estados: Abierto, En progreso, Resuelto, Cerrado | Todas | `domain.EstadoDefecto`, `domain.DefectoAbierto/EnProgreso/Resuelto/Cerrado` |
+| RN-21.2 Iniciar = Abierto→En progreso; error si no está Abierto | CA-21.1, CA-21.5 | `domain.Defecto.Iniciar`, `domain.Defecto.PuedeIniciarse` |
+| RN-21.3 Resolver = En progreso→Resuelto; error si no está En progreso | CA-21.2, CA-21.6 | `domain.Defecto.Resolver`, `domain.Defecto.PuedeResolverse` |
+| RN-21.4 Cerrar = Resuelto→Cerrado; error si no está Resuelto | CA-21.4, CA-21.7 | `domain.Defecto.Cerrar`, `domain.Defecto.PuedeCerrarse` |
+| RN-21.5 Siempre secuencial, sin saltos ni retrocesos | CA-21.5 a CA-21.7 | `domain.Defecto.Iniciar`/`Resolver`/`Cerrar` (no hay forma de volver a un estado anterior ni saltear uno) |
+| RN-21.6 Sprint de resolución automático, mismo criterio que detección | CA-21.2, CA-21.3 | `domain.SprintVigente` (HU-20), `app.ActualizarEstadoDefecto.Resolver` |
+| RN-21.7 Defecto de otro proyecto es inexistente | CA-21.8 | `app.ActualizarEstadoDefecto.buscar` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/defecto.go](../internal/domain/defecto.go) (`Iniciar`, `Resolver`, `Cerrar`, `PuedeIniciarse`, `PuedeResolverse`, `PuedeCerrarse`, `DefectoEnProgreso/Resuelto/Cerrado`, `ErrDefectoNoEncontrado/NoAbierto/NoEnProgreso/NoResuelto`) | [defecto_test.go](../internal/domain/defecto_test.go) |
+| Caso de uso | [internal/app/actualizar_estado_defecto.go](../internal/app/actualizar_estado_defecto.go) (`Iniciar`, `Resolver`, `Cerrar`), [listar_defectos.go](../internal/app/listar_defectos.go) | [actualizar_estado_defecto_test.go](../internal/app/actualizar_estado_defecto_test.go), [listar_defectos_test.go](../internal/app/listar_defectos_test.go) |
+| Persistencia | [internal/adapters/persistencia/defecto_estado_repo.go](../internal/adapters/persistencia/defecto_estado_repo.go) (incluye el caso `DefectoEnProgreso` en `errorDeActualizacion` y `ORDER BY id` en `ListarDefectos`), [db.go](../internal/adapters/persistencia/db.go) (columna `sprint_resolucion_id`) | [defecto_estado_repo_test.go](../internal/adapters/persistencia/defecto_estado_repo_test.go) |
+| HTTP (JSON) | [internal/adapters/http/actualizar_estado_defecto_handler.go](../internal/adapters/http/actualizar_estado_defecto_handler.go) (`POST .../iniciar`, `.../resolver`, `.../cerrar`), [listar_defectos_handler.go](../internal/adapters/http/listar_defectos_handler.go) (`GET /proyectos/{id}/defectos`) | [actualizar_estado_defecto_handler_test.go](../internal/adapters/http/actualizar_estado_defecto_handler_test.go), [listar_defectos_handler_test.go](../internal/adapters/http/listar_defectos_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_defectos_lista.go](../internal/adapters/http/pantallas_defectos_lista.go), [web/plantillas/defectos.html](../internal/adapters/http/web/plantillas/defectos.html) (`/web/proyectos/{id}/defectos`) | [pantallas_defectos_lista_test.go](../internal/adapters/http/pantallas_defectos_lista_test.go) |
+| BDD | [test/bdd/hu21_sistema_test.go](../test/bdd/hu21_sistema_test.go), [hu21_steps_test.go](../test/bdd/hu21_steps_test.go) | 14 escenarios en verde |
+
+### Commits
+
+Rama `hu-21-actualizar-estado-defecto`. El ciclo RED → GREEN completo está en el historial (no se hizo squash).
+
+| Tarea | Commit (mensaje) | Etapa |
+|---|---|---|
+| 21.1 Spec | `docs(HU-21): [21.1] spec SDD de actualizar el estado de un defecto` | — |
+| 21.2 Escenarios BDD | `test(HU-21): [21.2] escenarios BDD de actualizar el estado de un defecto` | — |
+| 21.3 Steps godog | `test(HU-21): [21.3][RED] steps de godog` | BDD en rojo |
+| 21.4 Entidad Defecto (Resolver/Cerrar) | `test(HU-21): [21.4][RED] Defecto.Resolver y Defecto.Cerrar` → `feat(HU-21): [21.4][GREEN] Defecto.Resolver y Defecto.Cerrar` | **RED → GREEN** |
+| 21.5 Caso de uso ActualizarEstadoDefecto | `test(HU-21): [21.5][RED] caso de uso ActualizarEstadoDefecto` → `feat(HU-21): [21.5][GREEN] caso de uso ActualizarEstadoDefecto` | **RED → GREEN** |
+| 21.6 Persistencia (RepositorioEstadoDefecto, LectorDefectos) | `test(HU-21): [21.6][RED] adaptador de persistencia` → `feat(HU-21): [21.6][GREEN] RepositorioEstadoDefecto y LectorDefectos sobre SQLite` | **RED → GREEN** |
+| Conectar los escenarios BDD con los casos de uso reales | `test(HU-21): conectar los escenarios BDD con ActualizarEstadoDefecto` | BDD en verde |
+| 21.7 HTTP (resolver/cerrar) | `test(HU-21): [21.7][RED] adaptador HTTP` → `feat(HU-21): [21.7][GREEN] POST .../resolver y .../cerrar, conexión en el router y main` | **RED → GREEN** |
+| 21.7 HTTP (listado, apoyo) | `test(HU-21): [21.7][RED] listado HTTP de defectos` → `feat(HU-21): [21.7][GREEN] GET /proyectos/{id}/defectos` | **RED → GREEN** |
+| 21.8 Pantalla | `test(HU-21): [21.8][RED] pantalla de defectos` → `feat(HU-21): [21.8][GREEN] pantalla de defectos con botones según estado` | **RED → GREEN** |
+| 21.9 Revisión y trazabilidad | `docs(HU-21): [21.9] revisión con go-reviewer y matriz de trazabilidad` | — |
+| 21.10 Corrección de la revisión del PR (estado En progreso, ORDER BY) | spec → BDD → `[RED]` dominio/caso de uso/persistencia/HTTP/pantalla → `[GREEN]` dominio/caso de uso/persistencia/HTTP/pantalla → router/main → trazabilidad | **RED → GREEN** |
+
+### Huecos
+
+- La spec quedó Aprobada el 2026-11-01; el 2026-11-03, en la revisión del PR, Matías López pidió agregar el estado `En progreso` entre `Abierto` y `Resuelto` (lo pedía el enunciado de la cátedra). Ezequiel decidió que siempre hay que pasar por `En progreso` (no se puede saltear directo a `Resuelto`), manteniendo el mismo criterio "sin saltos" que ya tenía la historia. Ver Historial de la spec.
+- No hay issue de GitHub todavía asignado (el Sprint 3 ya lo repartió a Eze en la planning, pero el número de issue específico de HU-21 queda a confirmar).
+- Igual que HU-20, no hay endpoint para consultar un único defecto por ID: `ActualizarEstadoDefecto` lo busca internamente, y el listado (CA-21.10) alcanza para la pantalla.
+- Fuera de alcance (spec, sección 5): reabrir un defecto, editar su descripción/severidad/elemento, eliminarlo, elegir manualmente el Sprint de resolución, filtros o búsqueda en la lista.
+- Durante el desarrollo se encontró y corrigió un bug: `RegistrarActualizarEstadoDefecto` armaba un *method value* (`uc.Resolver`) al registrar las rutas, lo que hacía panic con una interfaz nil (pasa en varios fixtures BDD de otras historias que arman el router con un `CasosDeUso` parcial, ej. HU-06). Se corrigió pasando la interfaz completa y llamando al método recién al atender cada pedido, igual que los demás handlers.
+- Revisión con el agente `go-reviewer` (tarea 21.9, sobre la versión de 3 estados): Approve, sin hallazgos bloqueantes. Confirmó que el fix del bug de method value quedó aplicado correctamente en todo `internal/adapters/http` (recorrió los ~20 archivos `*_handler.go`/`pantallas*.go`) y no encontró otra instancia del mismo problema. Dos notas de estilo no bloqueantes, ambas ya consistentes con patrones existentes: `app.ListarDefectos.Ejecutar` no envuelve el error de `BuscarPorID` (igual que `ListarBacklog`, HU-07), y `errorDeActualizacion` decide el error a partir de `anterior` en vez de releer el estado (determinístico, documentado en el propio código).
+- Revisión de nicoandino y Matías López en el PR (2026-11-03): agregar el estado `En progreso` (resuelto, tarea 21.10), traer `main` resolviendo los conflictos en `main.go`/`router.go`/`router_test.go`/`trazabilidad.md` manteniendo ambos lados (pendiente, orden de merge sugerido #288 → #292 → #294, HU-21 va último), y el `ORDER BY id` en `ListarDefectos` (resuelto, tarea 21.10). El aviso de `router_test.go` sin gofmt ya no aplicaba al revisar (el archivo ya pasaba `gofmt -l` antes de tocarlo).
+
+---
+
 ## HU-12: Consultar Sprints anteriores
 
 - **Issue:** #23 · Sprint 3 · 2 SP
@@ -1164,7 +1243,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 | CA-14.2 Voto oculto | RN-14.3, RN-14.6 | Un voto no muestra su valor mientras la ronda está abierta `@normal` | `TestVotar_UnVotoNoCierraLaRondaNiMuestraElValor`, `TestVotar_GuardaElVotoYDevuelveElResumenSinValores`, `TestPostVoto_Devuelve200SinElValor` | `domain.Ronda.Votar`, `domain.Ronda.Resumen`, `app.Votar` |
 | CA-14.3 Cierre al votar todos | RN-14.6 | La ronda se cierra cuando votaron todos `@normal` · Con un solo integrante, su voto cierra la ronda `@limite` | `TestVotar_CuandoVotanTodosLaRondaSeCierra`, `TestRepositorioRondas_GuardarVoto`, `TestRepositorioRondas_VotosSimultaneos` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
 | CA-14.4 Cambiar el voto | RN-14.5, RN-14.2 | Cambiar el voto mientras la ronda está abierta `@alternativo` · El nombre del votante no distingue mayúsculas ni espacios `@alternativo` | `TestVotar_CambiarElVotoYNombreSinMayusculas`, `TestRepositorioRondas_GuardarVoto` | `domain.Ronda.Votar` (`ClaveNombre`) |
-| CA-14.5 Voto inválido, no votante, ronda cerrada | RN-14.2, RN-14.4, RN-14.6 | Un voto fuera de la escala de Fibonacci `@error` (×4) · Vota alguien que se sumó al proyecto después de abrir la ronda `@error` · No se vota en una ronda cerrada `@error` | `TestVotar_Errores` (dominio y caso de uso), `TestVotar_RondaCerrada`, `TestRepositorioRondas_GuardarVoto_RondaYaCerrada`, `TestValoresVoto` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
+| CA-14.5 Voto inválido, no votante, ronda cerrada | RN-14.2, RN-14.4, RN-14.6 | Un voto fuera de la escala de Fibonacci `@error` (×4) · Vota alguien que se sumó al proyecto después de abrir la ronda `@error` · No se vota en una ronda cerrada `@error` | `TestVotar_Errores` (dominio y caso de uso), `TestVotar_RondaCerrada`, `TestRepositorioRondas_GuardarVoto_RondaYaCerrada`, `TestVotar_UsaLaEscalaDeLosStoryPoints` | `domain.Ronda.Votar`, `persistencia.RepositorioRondas.GuardarVoto` |
 | CA-14.6 No se puede iniciar | RN-14.1, RN-14.2 | No se estima un elemento terminado `@error` · Un proyecto sin integrantes no puede abrir una ronda `@error` · Un elemento tiene una sola ronda abierta a la vez `@error` · Con la ronda anterior cerrada se abre la número 2 `@limite` | `TestNuevaRonda_Errores`, `TestNuevaRonda_ConLaAnteriorCerrada_TomaElNumeroSiguiente`, `TestIniciarRonda_Errores`, `TestIniciarRonda_ConLaAnteriorCerrada_AbreLaSiguiente`, `TestRepositorioRondas_UltimaRonda`, `TestRepositorioRondas_UnaSolaAbiertaPorElemento` | `domain.NuevaRonda`, índice único `rondas_una_abierta_por_elemento` |
 | CA-14.7 Otro proyecto o inexistente | RN-14.7 | No se abre una ronda sobre un elemento de otro proyecto `@error` · No se vota en una ronda de otro proyecto `@error` | `TestIniciarRonda_Errores`, `TestVotar_Errores`, `TestConsultarRonda`, `TestConsultarRonda_UltimaDelElemento`, `TestPantallaRonda_Inexistente` | `buscarElementoDelProyecto`, `rondaDelProyecto` |
 | CA-14.8 API sin valores | Sección 3, RN-14.3 | El resumen se pide al endpoint real en los escenarios de CA-14.2 y CA-14.3 ("el resumen de la ronda no muestra ningún valor") | `TestPostRonda_Devuelve201ConElResumen`, `TestPostVoto_Devuelve200SinElValor`, `TestGetRonda_Devuelve200ConElResumen`, `TestPlanningPoker_Errores` (17 casos) | `planning_poker_handler.go` |
@@ -1174,7 +1253,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 
 | Capa | Código | Tests |
 |---|---|---|
-| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Ronda`, `NuevaRonda`, `Votar`, `Resumen`, `ValoresVoto`) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
+| Dominio | [internal/domain/planning_poker.go](../internal/domain/planning_poker.go) (`Ronda`, `NuevaRonda`, `Votar`, `Resumen`; la escala es `EscalaStoryPoints()` de HU-13) | [planning_poker_test.go](../internal/domain/planning_poker_test.go) |
 | Casos de uso | [internal/app/planning_poker.go](../internal/app/planning_poker.go) (`IniciarRonda`, `Votar`, `ConsultarRonda`) | [planning_poker_test.go](../internal/app/planning_poker_test.go) |
 | Persistencia | [internal/adapters/persistencia/ronda_repo.go](../internal/adapters/persistencia/ronda_repo.go), [db.go](../internal/adapters/persistencia/db.go) (tablas `rondas` y `ronda_votantes`) | [ronda_repo_test.go](../internal/adapters/persistencia/ronda_repo_test.go), métodos de rondas en [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
 | HTTP (JSON) | [internal/adapters/http/planning_poker_handler.go](../internal/adapters/http/planning_poker_handler.go) (`POST /proyectos/{id}/backlog/{elementoID}/rondas`, `GET /proyectos/{id}/rondas/{rondaID}`, `POST /proyectos/{id}/rondas/{rondaID}/votos`) | [planning_poker_handler_test.go](../internal/adapters/http/planning_poker_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
@@ -1257,6 +1336,61 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 
 ---
 
+## HU-22: Calcular story points y velocidad del equipo
+
+- **Issue:** [#33](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/33) · Sprint 3 · 5 SP
+- **Spec:** [docs/specs/HU-22-calcular-velocidad.md](specs/HU-22-calcular-velocidad.md)
+- **Feature:** [features/HU-22-calcular-velocidad.feature](../features/HU-22-calcular-velocidad.feature) (steps en [test/bdd/hu22_steps_test.go](../test/bdd/hu22_steps_test.go))
+- **Alcance real:** HU-11 ya calcula y guarda los puntos planificados y completados de cada Sprint al cerrarlo (RN-11.6), y HU-12 ya los muestra (pantalla y JSON). HU-22 agrega solo la **velocidad** (el promedio de puntos completados entre los últimos 3 Sprints cerrados); no agrega persistencia nueva.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-22.1 Planificados vs. completados de un Sprint | RN-22.1 | No va acá: ya lo cubren el endpoint y la pantalla de HU-12 | `TestSprintsAnteriores_ConservaLosDatos` (HU-12) | Ya implementado por HU-11 y HU-12; HU-22 no agrega código |
+| CA-22.2 Velocidad = promedio de los cerrados | RN-22.2 | La velocidad es el promedio de los puntos completados de los sprints cerrados `@normal` · Un sprint todavía abierto no cuenta `@alternativo` · Solo cuentan los sprints cerrados del proyecto consultado `@alternativo` | `TestVelocidad`, `TestVelocidad_NoFiltraPorEstado`, `TestConsultarVelocidad_PromedioDeLosCerrados` | `domain.Velocidad`, `app.ConsultarVelocidad` |
+| CA-22.3 Sin sprints cerrados, sin velocidad | RN-22.3 | Un proyecto sin ningún sprint no tiene velocidad `@limite` · Un proyecto con sprints, pero ninguno cerrado, no tiene velocidad `@alternativo` | `TestVelocidad` (caso "sin sprints cerrados"), `TestConsultarVelocidad_SinCerrados_NoHayDatos` | `domain.Velocidad` |
+| CA-22.4 Con decimales | RN-22.4 | La velocidad se informa con decimales cuando no divide exacto `@limite` | `TestVelocidad` (caso decimales), `TestConsultarVelocidad_ConDecimales` | `domain.Velocidad` |
+| CA-22.5 Un sprint en 0 da velocidad 0, no "sin datos" | RN-22.2, RN-22.3 | Un único sprint cerrado con 0 puntos completados da velocidad 0, no "sin datos" `@limite` | `TestVelocidad` (caso 0), `TestConsultarVelocidad_UnSoloSprintEnCero_DaVelocidadCero` | `domain.Velocidad` |
+| CA-22.6 Proyecto inexistente | — (error reutilizado) | No se puede consultar la velocidad de un proyecto que no existe `@error` | `TestConsultarVelocidad_ProyectoInexistente_RetornaError` | `app.ConsultarVelocidad` |
+| CA-22.7 Respuesta HTTP | — | No va acá (como CA-18.15): se cubre con tests del adaptador | `TestGetVelocidad_*` (5 tests) | `internal/adapters/http/velocidad_handler.go` |
+| CA-22.8 Pantalla | Restricciones | No va acá (como CA-06.10): se cubre con tests de la pantalla | `TestPantallaSprintsAnteriores_ConSprintsCerrados_MuestraLaVelocidad`, `TestPantallaSprintsAnteriores_SinSprintsCerrados_AvisaSinVelocidad` | `pantallas_sprints.go` (`sprintsAnteriores`, `formatearVelocidad`), `web/plantillas/sprints_anteriores.html` |
+| CA-22.9 Solo los últimos 3 sprints cerrados entran en el promedio | RN-22.2 | Con más de 3 sprints cerrados, solo se promedian los 3 más recientes `@limite` | `TestVelocidad` (caso ventana) | `domain.Velocidad` (`VentanaVelocidad`) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/sprint_historial.go](../internal/domain/sprint_historial.go) (`Velocidad`, `VentanaVelocidad`, junto a `SprintsAnteriores` de HU-12) | [sprint_historial_test.go](../internal/domain/sprint_historial_test.go) |
+| Caso de uso | [internal/app/consultar_velocidad.go](../internal/app/consultar_velocidad.go) | [consultar_velocidad_test.go](../internal/app/consultar_velocidad_test.go) |
+| HTTP (JSON) | [internal/adapters/http/velocidad_handler.go](../internal/adapters/http/velocidad_handler.go) (`GET /proyectos/{id}/velocidad`) | [velocidad_handler_test.go](../internal/adapters/http/velocidad_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_sprints.go](../internal/adapters/http/pantallas_sprints.go) (reutiliza la pantalla de HU-12), [web/plantillas/sprints_anteriores.html](../internal/adapters/http/web/plantillas/sprints_anteriores.html) | [pantallas_sprints_anteriores_test.go](../internal/adapters/http/pantallas_sprints_anteriores_test.go) |
+| BDD | [test/bdd/hu22_sistema_test.go](../test/bdd/hu22_sistema_test.go), [hu22_steps_test.go](../test/bdd/hu22_steps_test.go) | 9 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 22.1 Spec | `c9c046b` docs(HU-22): [22.1] spec SDD | — |
+| 22.2 Escenarios BDD | `60c2c24` test(HU-22): [22.2] escenarios BDD | — |
+| 22.3 Steps godog | `7f9c2ad` test(HU-22): [22.3][RED] steps (en rojo) | BDD en rojo |
+| 22.4 Velocidad (dominio) | `457d6a3` [RED] → `7577e40` [GREEN] | **RED → GREEN** |
+| 22.5 Caso de uso ConsultarVelocidad | `d327cbb` [RED] → `28771ad` [GREEN] | **RED → GREEN** |
+| Conectar los escenarios BDD con el caso de uso real | `9370946` | BDD en verde |
+| 22.7 HTTP | `56dfdb1` [RED] → `9dedf2a` [GREEN] | **RED → GREEN** |
+| 22.8 Pantalla (sumada a la de HU-12) | `372945a` [RED] → `203fb56` [GREEN] | **RED → GREEN** |
+| 22.9 Revisión y trazabilidad | `83f6053` | — |
+| 22.10 Corrección de la revisión del PR (ventana de 3) | `a107acb` (spec) → `b1c51c1` (BDD) → `c4a7558` [RED] → `3514f64` [GREEN] | **RED → GREEN** |
+
+### Huecos
+
+- ~~La spec está en Borrador, P-1 pendiente de confirmar~~: resuelto el 2026-11-02. Matías López (Agile Enabler) pidió en la revisión del PR que la velocidad promedie solo los últimos 3 Sprints cerrados (ventana móvil), no todos; se corrigió la spec (RN-22.2, CA-22.9 nuevo) y el código (tarea 22.10). Spec Aprobada.
+- No hay pantalla nueva: la velocidad se agregó a la pantalla ya existente de HU-12 (`/web/proyectos/{id}/sprints/anteriores`), como se acordó al refinar la historia.
+- Revisión con el agente `go-reviewer` (tarea 22.9): sin hallazgos bloqueantes. Confirmó la lógica del promedio, la distinción `null` vs. `0` (RN-22.3) y que no hay lógica de negocio en los adaptadores. Notas menores sin cambios: el handler de la pantalla repite la consulta del proyecto y de los sprints por usar dos casos de uso separados (`ListarSprintsAnteriores` y `ConsultarVelocidad`), que es la separación que pide la propia spec; y el ejemplo de la spec (`6.0` en vez de `6`) se corrigió en ese commit.
+- `sprints_cerrados` en la respuesta JSON y en `VelocidadProyecto.SprintsCerrados` es cuántos Sprints entraron en el promedio (hasta 3), no el total de Sprints cerrados del proyecto: se aclaró explícitamente en la spec (sección 3) y en el comentario del campo, porque con la ventana podían confundirse los dos números (tarea 22.10).
+
+---
+
 ## HU-16: Repetir una ronda de votación
 
 - **Issue:** #27 · Sprint 3 · 2 SP
@@ -1310,7 +1444,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 | BDD conectado al caso de uso | `35e6f9e` | BDD en verde salvo la pantalla |
 | 16.7 Endpoint JSON | `cac55e2` [RED] → `aa49944` [GREEN] | **RED → GREEN** |
 | 16.8 Pantalla | `96cf6f9` [RED] → `0485622` [GREEN] | **RED → GREEN**; BDD 8/8 |
-| 16.9 Revisión y trazabilidad | este commit | — |
+| 16.9 Revisión y trazabilidad | `c391460` | — |
 
 ### Huecos
 
@@ -1382,7 +1516,7 @@ Sin CA propio: `TestRepositorioRondas_GuardarEstimacion_Simultaneos` (10 pedidos
 
 ### Huecos
 
-- **Depende de HU-13 (#288):** HU-17 usa `valoresVoto` y `ValoresVoto`, que esa rama reemplaza por la escala unificada (RN-13.4). Al combinarlas hay que cambiar esas referencias.
+- **Escala de HU-13 (#288):** al combinar las dos historias, `RegistrarEstimacion` valida con `escalaStoryPoints` y la pantalla de la ronda usa `EscalaStoryPoints()`, la escala unificada de HU-13 (RN-13.4), en lugar de `valoresVoto` y `ValoresVoto`.
 - No pasó por el agente `go-reviewer`; la revisión queda para el PR.
 - Las condiciones de la transacción se prueban una a una y con pedidos simultáneos sobre la misma ronda, pero no hay un test de una estimación simultánea con un cambio del elemento a `Hecho`.
 - Cambios mínimos en código de HU-14 (Nico): el campo `EstimacionAcordada`, `rondaDelProyecto` con un parámetro más angosto, la lectura de la columna en `BuscarRonda`, y el registro en el sistema BDD. Conviene que lo vea Nico en el PR.
@@ -1498,11 +1632,12 @@ Salen de `git log origin/hu-18-pantalla-esfuerzo..HEAD --no-merges`, en orden. E
 | Spec: RN-19.12 y CA-19.19 | `159981b` docs(HU-19): regla del campo horas_estimadas ausente en el formulario | — |
 | Etiqueta de CA-19.19 | `9e64052` test(HU-19): etiqueta de trazabilidad de CA-19.19 | — (solo comentarios) |
 | Renombre del paso BDD | `a23c87e` (merge): `"X" tiene N story points` → `"X" quedó con N story points` | — (resuelto dentro del merge) |
+| Test de escape con el desplegable de HU-13 | `6054837` (merge): `TestPantallaElemento_TodosLosCampos_SeEscapan` exige la `<option>` elegida, con el valor escapado en el atributo y en el texto. Quitar el escape de cualquiera de los dos hace fallar el test. | — (resuelto dentro del merge) |
 | Trazabilidad | este commit | — |
 
 **Commits que el filtro `git log --grep="(HU-19)"` no encuentra**, porque usan el prefijo `test(bdd):`: `19eb4be` (RED de los steps), `4d25796` (sistema SQLite) y `c4b3c8a` (comentarios).
 
-**Merges de la rama, que no son de HU-19:** `29991ac` (trae `main`: HU-14 y HU-15), `a106188` (trae `hu-18-pantalla-esfuerzo`) y `a23c87e` (trae `main`: HU-16 y HU-17).
+**Merges de la rama, que no son de HU-19:** `29991ac` (trae `main`: HU-14 y HU-15), `a106188` (trae `hu-18-pantalla-esfuerzo`), `a23c87e` (trae `main`: HU-16 y HU-17) y `6054837` (trae `main`: HU-13).
 
 **Dos unificaciones de commits GREEN**, hechas con `git reset --soft` antes de subir, porque cada GREEN había dejado tests en rojo. Los hashes de la tabla son los del historial real; los anteriores solo quedan en el reflog local. En las dos, el hash de árbol fue el mismo antes y después.
 
@@ -1592,7 +1727,7 @@ Los dos que sobreviven no son un hueco del test: `<textarea>` y `<title>` son co
 ### Huecos
 
 - La spec sigue en **Borrador**.
-- **P-10 (campo nuevo de horas estimadas, toca HU-05 y HU-06)** y **P-12 (tope de 1000 h, arbitrario)** están implementadas según la propuesta y abiertas a objeción del equipo en la PR.
+- **Decisiones confirmadas por el equipo (no abiertas):** P-10 (campo propio `HorasEstimadas`, toca HU-05 y HU-06) y P-12 (tope de 1000 h), confirmadas por Matías el 2026-11-03 en la revisión del PR #297.
 - **Carrera de `agregarColumnas` en las migraciones:** #296 (DEF-04). Es preexistente (también `sprint_id` y `puntos_*`, por lectura del código) y compartida. Con 4 `AbrirDB` simultáneos sobre el esquema anterior a HU-19, hubo fallas en 30 de 30 rondas (89 de 120 aperturas, `duplicate column name`), con conexiones en un mismo proceso. Según ADR-0004, en el plan gratuito de Render el disco se borra en cada despliegue, así que hoy esas bases nacen con la columna.
 - El mensaje "las horas se registran en múltiplos de media hora" al estimar viene de HU-18 y la sección 7 de la spec lo fija. Se entiende, pero habla de registrar.
 - **Asimetría conocida, para decisión del equipo:** un POST del formulario sin campos ocultos conserva las horas estimadas (RN-19.12), pero sigue quitando los story points (comportamiento de HU-06, DEF-01). Comprobado contra el servidor real.
@@ -1600,12 +1735,67 @@ Los dos que sobreviven no son un hueco del test: `<textarea>` y `<title>` son co
 - Si la comparación falla al volver de un error de edición, se responde 500 y se pierde lo tipeado. Es intencional y está probado, pero la spec no lo menciona.
 - La pantalla **no se probó en un navegador** ni con un lector de pantalla: se probó con tests y con curl contra el servidor.
 - La duración del BDD completo subió a unos 224 s: cada escenario de cualquier historia crea una base más, porque los hooks de todas las historias corren siempre.
-- Si HU-13 (que toca `story_points` en los mismos archivos) entra antes, habrá que traer `main` de nuevo.
-- **Paso BDD renombrado al integrar con `main`:** `"X" tiene N story points` de HU-19 colisionaba con el mismo paso de HU-17; godog lo rechaza como ambiguo y el compilador no lo detecta. Se renombró en HU-19 a `"X" quedó con N story points` ([features/HU-19-comparar-esfuerzo.feature](../features/HU-19-comparar-esfuerzo.feature) y [test/bdd/hu19_steps_test.go](../test/bdd/hu19_steps_test.go)). La comprobación es la misma. Se tocó HU-19 porque HU-17 ya estaba en `main`. Tras integrar: 336/336 escenarios en el BDD completo (pasos: 1687/1687), y los de HU-19 siguen siendo 34/34.
+- **HU-13 integrada:** HU-13 (que toca `story_points` en los mismos archivos) entró a `main` y se integró en `6054837` (merge de `main` en la rama). Se resolvieron los conflictos de [pantallas_elemento.go](../internal/adapters/http/pantallas_elemento.go) (se conservan `Comparacion` y `OpcionesStoryPoints`) y de este archivo (las secciones de HU-19 y HU-13, que Git había intercalado). `TestPantallaElemento_TodosLosCampos_SeEscapan` se ajustó al desplegable de story points; el cambio quedó dentro del merge. Tras integrar: 355/355 escenarios en el BDD completo (pasos: 1755/1755), y los de HU-19 siguen siendo 34/34.
+- **Paso BDD renombrado al integrar con `main`:** `"X" tiene N story points` de HU-19 colisionaba con el mismo paso de HU-17; godog lo rechaza como ambiguo y el compilador no lo detecta. Se renombró en HU-19 a `"X" quedó con N story points` ([features/HU-19-comparar-esfuerzo.feature](../features/HU-19-comparar-esfuerzo.feature) y [test/bdd/hu19_steps_test.go](../test/bdd/hu19_steps_test.go)). La comprobación es la misma. Se tocó HU-19 porque HU-17 ya estaba en `main`. Tras integrar: 336/336 escenarios en el BDD completo (pasos: 1687/1687), y los de HU-19 siguen siendo 34/34. Ese es el total de ese merge (`a23c87e`, que trajo HU-16 y HU-17), no el actual.
 - Etiquetas: los tests atados solo a una sección de la spec llevan el CA más cercano. El 500 usa CA-19.17, aunque ese CA no menciona el 500.
 - El comentario de cabecera del feature nombra CA-19.16 a CA-19.18, pero no CA-19.19, que se agregó después. `cambiosDeFormElemento` explica la regla, pero no nombra RN-19.12.
 - `mostrarElemento` consulta el proyecto y `CompararEsfuerzo` lo vuelve a consultar, igual que el elemento: son lecturas de más, sin consecuencias prácticas.
 - Refactors que tocaron código de otras historias: `validarMediasHoras` en `validarHoras` (HU-18), `copiarPuntero` en `NuevoElementoBacklog` (HU-05), `Editar` y `ActualizarElemento` (HU-06), y `TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos` (HU-18), que suma la sección nueva. La descripción de ese test en HU-18 todavía enumera las secciones anteriores. Conviene que lo revisen sus autores en la PR.
+
+---
+
+## HU-13: Estimar una historia con story points de la escala Fibonacci
+
+- **Issue:** [#24](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/24) · Sprint 3 · 1 SP · tareas #272 a #280
+- **Spec:** [docs/specs/HU-13-escala-story-points.md](specs/HU-13-escala-story-points.md)
+- **Feature:** [features/HU-13-escala-story-points.feature](../features/HU-13-escala-story-points.feature) (steps en [test/bdd/hu13_steps_test.go](../test/bdd/hu13_steps_test.go), sobre SQLite real; el escenario de CA-13.6 usa el endpoint real)
+- **Cambio en HU-05:** RN-05.6, CA-05.7 y el mensaje de `ErrStoryPointsInvalidos` pasan a la escala.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-13.1 Valores de la escala | RN-13.1 | Los valores de la escala se aceptan `@normal` (×7) | `TestNuevoElementoBacklog_ValoresDeLaEscala` | `domain.NuevoElementoBacklog` |
+| CA-13.2 Fuera de la escala al crear | RN-13.1 | Un valor fuera de la escala se rechaza `@error` (×4) | `TestNuevoElementoBacklog_FueraDeLaEscala`, `TestCrearElemento_StoryPointsFueraDeLaEscala_NoSeGuarda` | `domain.NuevoElementoBacklog` |
+| CA-13.3 Editar los story points | RN-13.1 | Editar los story points a otro valor de la escala `@normal` · a un valor fuera de la escala `@error` | `TestEditar_StoryPointsFueraDeLaEscala` | `domain.ElementoBacklog.Editar` |
+| CA-13.4 Sin estimar | RN-13.2 | Un elemento puede quedar sin estimar `@alternativo` · Quitarle la estimación `@alternativo` | `TestEditar_StoryPointsNil_QuedaSinEstimar` (HU-06), `TestEditar_ValorAnteriorALaEscala` | `domain.NuevoElementoBacklog`, `domain.ElementoBacklog.Editar` |
+| CA-13.5 Valores anteriores a la escala | RN-13.3 | Un valor guardado antes de la escala se respeta al editar otro campo `@limite` · no se puede volver a enviar `@error` · se puede corregir `@limite` | `TestEditar_ValorAnteriorALaEscala`, `TestEditarElemento_ValorAnteriorALaEscala`, `TestRepositorioBacklog_ValorAnteriorALaEscala` | `domain.ElementoBacklog.Editar` |
+| CA-13.6 API | Sección 3 | La API rechaza un valor fuera de la escala `@error` | `TestPostBacklog_DatosInvalidos_Devuelve400` y `TestPatchElemento_Errores` (casos HU-13) | sin cambios en los handlers |
+| CA-13.7 Pantallas | Sección 3, RN-13.3, RN-13.4 | No va acá (como CA-20.8): se cubre con los tests de la pantalla | `TestPantallaBacklog_AltaConLaEscala`, `TestPantallaElemento_EdicionConLaEscala`, `TestPantallaElemento_ValorAnteriorALaEscala`, `TestOpcionesStoryPoints` | `pantallas_escala.go`, `web/plantillas/backlog.html`, `web/plantillas/elemento.html` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/backlog.go](../internal/domain/backlog.go) (`EscalaStoryPoints`, validación en `NuevoElementoBacklog`), [backlog_editar.go](../internal/domain/backlog_editar.go) (`Editar` valida los story points solo si se envían) | [backlog_escala_test.go](../internal/domain/backlog_escala_test.go) |
+| Casos de uso | Sin cambios | [escala_story_points_test.go](../internal/app/escala_story_points_test.go) |
+| Persistencia | Sin cambios ni migración | [escala_story_points_test.go](../internal/adapters/persistencia/escala_story_points_test.go) |
+| HTTP (JSON) | Sin cambios: `ErrStoryPointsInvalidos` ya se respondía con 400 | [backlog_handler_test.go](../internal/adapters/http/backlog_handler_test.go), [backlog_editar_handler_test.go](../internal/adapters/http/backlog_editar_handler_test.go) |
+| Pantallas | [internal/adapters/http/pantallas_escala.go](../internal/adapters/http/pantallas_escala.go) (`opcionesStoryPoints`), listas en [backlog.html](../internal/adapters/http/web/plantillas/backlog.html) y [elemento.html](../internal/adapters/http/web/plantillas/elemento.html) | [pantallas_escala_test.go](../internal/adapters/http/pantallas_escala_test.go) |
+| BDD | [test/bdd/hu13_steps_test.go](../test/bdd/hu13_steps_test.go) | 19 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 13.1 Spec (y ajuste de HU-05) | `5fa677d` | — |
+| 13.2 Escenarios BDD | `711ca5b` | — |
+| 13.3 Steps godog | `d7dbeaa` | BDD en rojo |
+| 13.4 Escala en el dominio | `a785cf8` [RED] → `f246c79` [GREEN] | **RED → GREEN**, BDD en verde |
+| 13.5 Casos de uso | `c679dcf` | test, sin cambios en el código |
+| 13.6 Persistencia | `43024a2` | test, sin persistencia nueva |
+| 13.7 HTTP | `816bdd7` | test, sin cambios en los handlers |
+| 13.8 Pantallas | `5a6432b` [RED] → `ddb9e08` [GREEN] | **RED → GREEN** |
+| 13.9 Revisión y trazabilidad | `e5fcbd3` (test de la revisión), `25a3997` | — |
+| Revisión del PR #288: escala unificada con HU-14 | `55ba3cf` | **REFACTOR** |
+
+### Huecos
+
+- La spec está en **Borrador** hasta la aprobación del PR.
+- Las tareas 13.5 a 13.7 no tienen RED → GREEN: crear y editar ya pasaban por el dominio, la base guarda un entero y los handlers ya respondían `ErrStoryPointsInvalidos` con 400. Se dejaron tests como evidencia, como sugerían las tareas.
+- `TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente` (HU-11) creaba historias con 1 a 8 story points; ahora usa valores de la escala.
+- **Escala unificada con HU-14 (revisión del PR #288):** después de traer `main`, los votos de HU-14 usan `EscalaStoryPoints()` y se quitó `ValoresVoto`: hay una sola escala en el dominio (RN-13.4). Commit `55ba3cf` [REFACTOR], con `TestVotar_UsaLaEscalaDeLosStoryPoints`.
+- Revisión con el agente `go-reviewer` (tarea 13.9): sin hallazgos críticos ni altos; confirmó que `Editar` no comparte el puntero de los story points y que un valor anterior a la escala no se valida si no se envía, pero sí si se envía. Se agregó el test de punta a punta que sugirió (`TestPantallaElemento_GuardarConValorAnteriorALaEscala_NoEnviaLosStoryPoints`, `e5fcbd3`). Dos observaciones bajas sin cambios: en el alta, un POST armado a mano con un valor fuera de la escala se vuelve a mostrar marcado (el dominio igual lo rechaza), y si una edición de 4 a 5 falla por otro error, la lista ya no ofrece el 4.
 
 ---
 

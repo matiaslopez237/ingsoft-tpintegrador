@@ -24,13 +24,14 @@ type pedidoRegistrarDefecto struct {
 }
 
 type respuestaDefecto struct {
-	ID                int64  `json:"id"`
-	ProyectoID        int64  `json:"proyecto_id"`
-	ElementoID        int64  `json:"elemento_id"`
-	Descripcion       string `json:"descripcion"`
-	Severidad         string `json:"severidad"`
-	Estado            string `json:"estado"`
-	SprintDeteccionID *int64 `json:"sprint_deteccion_id"`
+	ID                 int64  `json:"id"`
+	ProyectoID         int64  `json:"proyecto_id"`
+	ElementoID         int64  `json:"elemento_id"`
+	Descripcion        string `json:"descripcion"`
+	Severidad          string `json:"severidad"`
+	Estado             string `json:"estado"`
+	SprintDeteccionID  *int64 `json:"sprint_deteccion_id"`
+	SprintResolucionID *int64 `json:"sprint_resolucion_id"` // HU-21
 }
 
 // erroresNoEncontradoDefecto son los errores de HU-20 que se responden como 404: los datos que
@@ -102,12 +103,13 @@ func handlerRegistrarDefecto(uc registradorDefecto) http.HandlerFunc {
 
 func aRespuestaDefecto(d domain.Defecto) respuestaDefecto {
 	return respuestaDefecto{
-		ID:                d.ID,
-		ProyectoID:        d.ProyectoID,
-		ElementoID:        d.ElementoID,
-		Descripcion:       d.Descripcion,
-		Severidad:         string(d.Severidad),
-		Estado:            string(d.Estado),
-		SprintDeteccionID: d.SprintDeteccionID,
+		ID:                 d.ID,
+		ProyectoID:         d.ProyectoID,
+		ElementoID:         d.ElementoID,
+		Descripcion:        d.Descripcion,
+		Severidad:          string(d.Severidad),
+		Estado:             string(d.Estado),
+		SprintDeteccionID:  d.SprintDeteccionID,
+		SprintResolucionID: d.SprintResolucionID,
 	}
 }

@@ -161,6 +161,7 @@ func TestPantallasHoras_ElBloqueEsDeSoloLectura(t *testing.T) {
 func TestPantallasHoras_NoApareceEnOtrasPantallas(t *testing.T) {
 	cu := casosConHoras(estimado(8, 10))
 	cu.ListarSprintsAnteriores = &listadorSprintsFalso{}
+	cu.ConsultarVelocidad = &consultorVelocidadFalso{} // HU-22: esa pantalla también muestra la velocidad
 	comparacion := casosConComparacion(comparacionFija(pHoras(8), 10))
 	tests := []struct {
 		nombre, ruta string

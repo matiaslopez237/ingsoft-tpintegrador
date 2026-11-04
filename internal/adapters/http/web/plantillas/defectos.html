@@ -1,0 +1,55 @@
+{{define "titulo"}}Defectos de {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Defectos de {{.Proyecto.Nombre}}</h1>
+  <div class="botones">
+    <a class="boton" href="/web/proyectos/{{.Proyecto.ID}}/defectos/nuevo">Registrar defecto</a>
+    <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+  </div>
+</div>
+{{template "error_form" .Error}}
+
+{{if .Defectos}}
+<table>
+  <caption class="oculto">Defectos del proyecto</caption>
+  <thead>
+    <tr>
+      <th scope="col">Elemento</th><th scope="col">Descripción</th><th scope="col">Severidad</th>
+      <th scope="col">Estado</th><th scope="col">Sprint detección</th><th scope="col">Sprint resolución</th>
+      <th scope="col"><span class="oculto">Acciones</span></th>
+    </tr>
+  </thead>
+  <tbody>
+    {{range .Defectos}}
+    <tr>
+      <td>{{.Elemento}}</td>
+      <td>{{.Descripcion}}</td>
+      <td>{{.Severidad}}</td>
+      <td><span class="estado">{{.Estado}}</span></td>
+      <td>{{if .SprintDeteccion}}#{{.SprintDeteccion}}{{else}}—{{end}}</td>
+      <td>{{if .SprintResolucion}}#{{.SprintResolucion}}{{else}}—{{end}}</td>
+      <td>
+        {{if .PuedeIniciarse}}
+        <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/defectos/{{.ID}}/iniciar" class="en-linea">
+          <button type="submit" class="boton" aria-label="Marcar en progreso el defecto {{.Descripcion}}">Marcar en progreso</button>
+        </form>
+        {{end}}
+        {{if .PuedeResolverse}}
+        <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/defectos/{{.ID}}/resolver" class="en-linea">
+          <button type="submit" class="boton" aria-label="Marcar resuelto el defecto {{.Descripcion}}">Marcar resuelto</button>
+        </form>
+        {{end}}
+        {{if .PuedeCerrarse}}
+        <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/defectos/{{.ID}}/cerrar" class="en-linea">
+          <button type="submit" class="boton" aria-label="Cerrar el defecto {{.Descripcion}}">Cerrar</button>
+        </form>
+        {{end}}
+      </td>
+    </tr>
+    {{end}}
+  </tbody>
+</table>
+{{else}}
+<p class="vacio">El proyecto todavía no tiene defectos registrados.</p>
+{{end}}
+{{end}}

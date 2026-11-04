@@ -25,7 +25,7 @@ func (r *Ronda) RegistrarEstimacion(valor int, ultima *Ronda, e ElementoBacklog)
 	if err := errorParaRegistrar(r.ID, r.Estado, r.EstimacionAcordada, ultimaID, e); err != nil {
 		return err
 	}
-	if !slices.Contains(valoresVoto, valor) {
+	if !slices.Contains(escalaStoryPoints, valor) { // la escala de HU-13 (RN-13.4)
 		return ErrEstimacionInvalida
 	}
 	r.EstimacionAcordada = &valor

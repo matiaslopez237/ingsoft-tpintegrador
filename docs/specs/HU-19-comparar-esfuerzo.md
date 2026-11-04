@@ -16,7 +16,7 @@ Mostrar, para un elemento del backlog, cuántas horas se estimaron, cuántas se 
 | `proyectoID` | `int64` | Sí | Debe corresponder a un proyecto existente (HU-01). |
 | `elementoID` | `int64` | Sí | Debe corresponder a un elemento de backlog (HU-05) de ese proyecto (RN-19.10). |
 
-**Cargar las horas estimadas** (se suma a la edición de HU-06, sujeto a P-10). **En HTTP:** `PATCH /proyectos/{id}/backlog/{elementoID}`, con el campo nuevo `horas_estimadas`. Como `story_points`, ausente no cambia nada y `null` quita la estimación:
+**Cargar las horas estimadas** (se suma a la edición de HU-06, según P-10). **En HTTP:** `PATCH /proyectos/{id}/backlog/{elementoID}`, con el campo nuevo `horas_estimadas`. Como `story_points`, ausente no cambia nada y `null` quita la estimación:
 
 | Dato | Tipo (Go) | Obligatorio | Validación |
 |---|---|---|---|
@@ -172,10 +172,10 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-01, abiertas a objeción en el 
 - **P-8:** el alcance es un elemento. Los totales por sprint o por proyecto y qué hacer con las historias que volvieron al backlog son de HU-23 (sección 5).
 - **P-9:** se compara en cualquier estado del elemento, del sprint y del proyecto (RN-19.11), y usa la estimación actual, sin historial (RN-19.3). Es una consulta de solo lectura, y limitarla a `Hecho` no dejaría ver cómo viene una historia en curso.
 
-## Preguntas abiertas
-P-11 y P-13 quedaron resueltas. P-10 y P-12 están implementadas según la propuesta; si el equipo decide otra cosa, hay que ajustar las reglas y los criterios indicados.
+## Decisiones confirmadas por el equipo
+Confirmadas por Matías el 2026-11-03, en la revisión del PR #297. No están abiertas.
 
-- **P-10 — De dónde salen las horas estimadas. Implementada según la propuesta, abierta a objeción del equipo en la PR.** Antes de HU-19, `ElementoBacklog` solo tenía `StoryPoints`.
+- **P-10 — De dónde salen las horas estimadas: campo propio `HorasEstimadas` (opción A).** Antes de HU-19, `ElementoBacklog` solo tenía `StoryPoints`.
 
   | Opción | Ventajas | Desventajas |
   |---|---|---|
@@ -183,11 +183,14 @@ P-11 y P-13 quedaron resueltas. P-10 y P-12 están implementadas según la propu
   | **B. Conversión fija desde story points** (por ejemplo, 1 SP = 4 h) | No hay campo ni cambio de pantalla. Lo estimado en Planning Poker (HU-17) se usa directamente. | Inventa un factor sin datos que lo respalden. La desviación mediría sobre todo si el factor está bien, no la estimación. Mezcla tamaño relativo con duración. Cambiar el factor reescribe todas las desviaciones. |
   | **C. Factor por proyecto, configurable** | Cada equipo lo puede calibrar con su velocidad. No hay que cargar horas por elemento. | Mismo problema de fondo que B. Además suma un dato de proyecto con su edición y su pantalla: es más trabajo que A. |
 
-  **Recomendación: opción A**, por la que está escrita esta spec (RN-19.1 a RN-19.3, CA-19.13 a CA-19.16). Con B o C se quitan esas reglas y criterios, y el dominio no cambia: `CompararEsfuerzo` sigue recibiendo un número. Afecta también a HU-23.
+  **Decisión: opción A**, por la que está escrita esta spec (RN-19.1 a RN-19.3, CA-19.13 a CA-19.16). Con B o C se quitarían esas reglas y criterios, y el dominio no cambiaría: `CompararEsfuerzo` sigue recibiendo un número. Afecta también a HU-23.
+
+- **P-12 — Tope de las horas estimadas: 1000 h por elemento.** RN-18.8 (24 h) es por registro y no sirve para una estimación. El tope frena errores de tipeo y valores que desbordarían el entero de medias horas de la base. El número es arbitrario; la alternativa era otro valor, pero sin ningún tope `1e300` llegaría a la conversión a entero.
+
+## Preguntas abiertas
+P-11 y P-13 quedaron resueltas. P-10 y P-12 pasaron a "Decisiones confirmadas por el equipo".
 
 - **P-11 — Dónde se muestra la comparación** (la DoD exige pantalla, ADR-0003). **Resuelta con lo implementado: decisión tomada por el autor, abierta a objeción en la PR.** Se muestra en la pantalla del elemento de HU-06, porque la comparación es por elemento y ahí mismo se cargan las horas estimadas, después de "Registrar esfuerzo" y antes de "Eliminar" (sección 3). La alternativa era una columna en el detalle del sprint (HU-09), que permite ver varias historias juntas pero deja afuera a los elementos sin sprint y se superpone con lo que va a mostrar HU-23.
-
-- **P-12 — Tope de las horas estimadas. Implementada según la propuesta, abierta a objeción del equipo en la PR.** RN-18.8 (24 h) es por registro y no sirve para una estimación. **Propuesta:** 1000 h por elemento, para frenar errores de tipeo y valores que desbordarían el entero de medias horas de la base. El número es arbitrario; la alternativa es otro valor, pero sin ningún tope `1e300` llegaría a la conversión a entero.
 
 - **P-13 — No había pantalla para cargar esfuerzo. Resuelta por la pantalla de HU-18** (issue #289, rama `hu-18-pantalla-esfuerzo`): el formulario "Registrar esfuerzo" está en la pantalla del elemento. HU-18 decía que su pantalla "se suma después con HU-30", pero HU-30 no la incluyó, y sin ella quien usara la interfaz vería siempre 0 horas reales en esta comparación. Se resolvió aparte de HU-19, como se proponía acá.
 
@@ -197,3 +200,4 @@ P-11 y P-13 quedaron resueltas. P-10 y P-12 están implementadas según la propu
 - 2026-11-01: se corrige la fila de falla interna de la sección 7 (solo se envuelve la falla al leer las horas reales).
 - 2026-11-01: ajustada a la pantalla implementada. Secciones 3 y CA-19.18: el bloque va después de "Registrar esfuerzo" y antes de "Eliminar", sin estimar el porcentaje muestra "Sin estimar", con estimado 0 muestra "No aplica" y las desviaciones negativas llevan el guion común. Sección 7: se quita lo pendiente de `errorDeElemento`, ya hecho por HU-18, y se suma el mensaje "las horas estimadas deben ser un número". P-11 queda resuelta por el autor, abierta a objeción en la PR; P-13, resuelta por la pantalla de HU-18 (issue #289); P-10 y P-12, implementadas según la propuesta, abiertas a objeción del equipo en la PR. La spec sigue en borrador.
 - 2026-11-02: se agregan RN-19.12 y CA-19.19: un campo `horas_estimadas` ausente del formulario de la pantalla no cambia las horas. `story_points` conserva el comportamiento de HU-06; la asimetría queda para el equipo. La spec sigue en borrador.
+- 2026-11-03: Matías confirma P-10 (campo propio `HorasEstimadas`) y P-12 (tope de 1000 h) en la revisión del PR #297; pasan a "Decisiones confirmadas por el equipo". Las reglas y los criterios no cambian.

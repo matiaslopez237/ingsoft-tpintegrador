@@ -25,8 +25,10 @@
     {{range .Prioridades}}<option value="{{.}}"{{if eq (print .) $.Form.Prioridad}} selected{{end}}>{{.}}</option>{{end}}
   </select>
 
-  <label for="story_points">Story points <span class="ayuda">(vacío: sin estimar)</span></label>
-  <input id="story_points" name="story_points" type="number" min="1" step="1" value="{{.Form.StoryPoints}}">
+  <label for="story_points">Story points <span class="ayuda">(escala de Fibonacci)</span></label>
+  <select id="story_points" name="story_points">
+    {{range .OpcionesStoryPoints}}<option value="{{.Valor}}"{{if .Elegida}} selected{{end}}>{{.Etiqueta}}</option>{{end}}
+  </select>
 
   {{/* HU-19: sin min ni max, los límites quedan en el dominio y sus mensajes se ven acá. */}}
   <label for="horas_estimadas">Horas estimadas <span class="ayuda">(vacío: sin estimar)</span></label>

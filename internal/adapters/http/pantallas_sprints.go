@@ -4,6 +4,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
@@ -155,12 +157,14 @@ type vistaSprintAnterior struct {
 }
 
 type datosSprintsAnteriores struct {
-	Proyecto vistaProyecto
-	Sprints  []vistaSprintAnterior
+	Proyecto     vistaProyecto
+	Sprints      []vistaSprintAnterior
+	HayVelocidad bool   // false: todavía no hay Sprints cerrados (HU-22, RN-22.3)
+	Velocidad    string // ya formateada con coma decimal, solo si HayVelocidad
 }
 
 // sprintsAnteriores muestra el historial de sprints cerrados del proyecto, en el orden que da el
-// caso de uso. Implementa HU-12 (CA-12.7).
+// caso de uso, con la velocidad del equipo. Implementa HU-12 (CA-12.7) y HU-22 (CA-22.8).
 func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 	id, ok := p.idDeRuta(w, r)
 	if !ok {
@@ -176,6 +180,11 @@ func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 		p.errorDeConsulta(w, err)
 		return
 	}
+	velocidad, err := p.cu.ConsultarVelocidad.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.errorDeConsulta(w, err)
+		return
+	}
 	vistas := make([]vistaSprintAnterior, len(sprints))
 	for i, s := range sprints {
 		vistas[i] = vistaSprintAnterior{
@@ -184,5 +193,16 @@ func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 			Objetivo: s.Objetivo, Planificados: s.PuntosPlanificados, Completados: s.PuntosCompletados,
 		}
 	}
-	p.renderizar(w, http.StatusOK, "sprints_anteriores.html", datosSprintsAnteriores{Proyecto: aVistaProyecto(proyecto), Sprints: vistas})
+	datos := datosSprintsAnteriores{Proyecto: aVistaProyecto(proyecto), Sprints: vistas}
+	if velocidad.HayDatos {
+		datos.HayVelocidad = true
+		datos.Velocidad = formatearVelocidad(velocidad.Velocidad)
+	}
+	p.renderizar(w, http.StatusOK, "sprints_anteriores.html", datos)
+}
+
+// formatearVelocidad muestra la velocidad con un decimal y coma, como el resto de los números de
+// la interfaz (spec HU-22, P-2: es un detalle de la plantilla, no una regla de negocio).
+func formatearVelocidad(v float64) string {
+	return strings.Replace(strconv.FormatFloat(v, 'f', 1, 64), ".", ",", 1)
 }

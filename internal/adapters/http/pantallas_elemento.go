@@ -35,6 +35,7 @@ type datosEdicionElemento struct {
 	Error                  string
 	Prioridades            []domain.Prioridad
 	Estados                []domain.EstadoElemento
+	OpcionesStoryPoints    []opcionStoryPoints  // HU-13
 	Poker                  *datosPokerElemento  // nil si la aplicación no tiene Planning Poker (HU-14)
 	Esfuerzo               datosSeccionEsfuerzo // HU-18: tiene su propio formulario y su propio error
 	Comparacion            datosComparacion     // HU-19: siempre con los valores guardados
@@ -145,7 +146,8 @@ func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, stat
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
 		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker, Esfuerzo: esfuerzo,
-		Comparacion: vistaComparacion(comparacion),
+		Comparacion:         vistaComparacion(comparacion),
+		OpcionesStoryPoints: opcionesStoryPoints(f.StoryPoints),
 	})
 }
 

@@ -41,11 +41,14 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		Votar:                    votadorPokerFalso{poker},
 		ConsultarRonda:           consultorPokerFalso{poker},
 		ListarSprintsAnteriores:  &listadorSprintsFalso{},
+		ConsultarVelocidad:       &consultorVelocidadFalso{},
 		ListarRondas:             &historialRondasFalso{},
 		RegistrarEstimacion:      &registradorEstimacionFalso{},
 		CompararEsfuerzo:         &comparadorEsfuerzoFalso{},
 		ConsultarHorasProyecto:   &consultorHorasProyectoFalso{},
 		ConsultarHorasSprint:     &consultorHorasSprintFalso{},
+		ActualizarEstadoDefecto:  &actualizadorEstadoDefectoFalso{},
+		ListarDefectos:           &listadorDefectosFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -73,9 +76,14 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/7/rondas/1/estimacion", `{"valor":8}`},                                                                 // HU-17
 		{http.MethodGet, "/proyectos/7/backlog/7/rondas", ""},                                                                                // HU-16
 		{http.MethodGet, "/proyectos/1/sprints/anteriores", ""},                                                                              // HU-12
+		{http.MethodGet, "/proyectos/1/velocidad", ""},                                                                                       // HU-22
 		{http.MethodGet, "/proyectos/1/backlog/1/esfuerzo/comparacion", ""},                                                                  // HU-19
 		{http.MethodGet, "/proyectos/1/horas", ""},                                                                                           // HU-23
 		{http.MethodGet, "/proyectos/1/sprints/1/horas", ""},                                                                                 // HU-23
+		{http.MethodGet, "/proyectos/1/defectos", ""},                                                                                        // HU-21
+		{http.MethodPost, "/proyectos/1/defectos/1/iniciar", ""},                                                                             // HU-21
+		{http.MethodPost, "/proyectos/1/defectos/1/resolver", ""},                                                                            // HU-21
+		{http.MethodPost, "/proyectos/1/defectos/1/cerrar", ""},                                                                              // HU-21
 		{http.MethodGet, "/", ""},                                                                                                            // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                                                                                               // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                                                                                          // HU-30
@@ -84,6 +92,10 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/web/proyectos/1/sprints/anteriores", ""},                                                                          // HU-12
 		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},                                                                           // HU-11
 		{http.MethodGet, "/web/proyectos/1/backlog", ""},                                                                                     // HU-07
+		{http.MethodGet, "/web/proyectos/1/defectos", ""},                                                                                    // HU-21
+		{http.MethodPost, "/web/proyectos/1/defectos/1/iniciar", ""},                                                                         // HU-21
+		{http.MethodPost, "/web/proyectos/1/defectos/1/resolver", ""},                                                                        // HU-21
+		{http.MethodPost, "/web/proyectos/1/defectos/1/cerrar", ""},                                                                          // HU-21
 		{http.MethodGet, "/web/proyectos/7/backlog/7", ""},                                                                                   // HU-06
 		{http.MethodPost, "/web/proyectos/1/backlog/7/editar", ""},                                                                           // HU-06 (proyecto 1: el editor falso responde 404 para otros)
 		{http.MethodPost, "/web/proyectos/7/backlog/7/eliminar", ""},                                                                         // HU-06

@@ -8,7 +8,7 @@
   El defecto se registró correctamente.
   {{if .SprintID}}Sprint de detección asignado: #{{.SprintID}}.{{else}}No se asignó ningún Sprint de detección (no hay un Sprint abierto vigente hoy).{{end}}
 </p>
-<p><a href="/web/proyectos/{{.Proyecto.ID}}/defectos/nuevo">Registrar otro defecto</a></p>
+<p><a href="/web/proyectos/{{.Proyecto.ID}}/defectos/nuevo">Registrar otro defecto</a> · <a href="/web/proyectos/{{.Proyecto.ID}}/defectos">Ver defectos</a></p>
 {{else}}
 {{template "error_form" .Error}}
 
