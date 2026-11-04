@@ -66,5 +66,25 @@
 </form>
 {{else}}
 <p class="vacio" role="status">Votaron todos: la ronda está cerrada.</p>
+{{with .Ronda.EstimacionAcordada}}<p role="status">Estimación acordada: {{.}}</p>{{end}}
+{{if .PuedeRegistrar}}
+{{/* HU-17: registrar el valor acordado; se puede elegir cualquiera de la escala (RN-17.2). */}}
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/rondas/{{.Ronda.ID}}/estimacion" class="formulario">
+  <label for="estimacion">Estimación acordada <span class="ayuda">(story points)</span></label>
+  <select id="estimacion" name="estimacion" required>
+    <option value="">Elegí un valor</option>
+    {{range .Valores}}<option value="{{.}}">{{.}}</option>{{end}}
+  </select>
+  <div class="acciones">
+    <button type="submit" class="boton">Registrar estimación</button>
+  </div>
+</form>
+{{end}}
+{{if .PuedeRepetirse}}
+{{/* HU-16: abrir la ronda siguiente sobre el mismo elemento (RN-16.4). */}}
+<form method="post" action="/web/proyectos/{{.ProyectoID}}/backlog/{{.Ronda.ElementoID}}/rondas" class="en-linea">
+  <button type="submit" class="boton">Nueva ronda</button>
+</form>
+{{end}}
 {{end}}
 {{end}}

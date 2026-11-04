@@ -80,10 +80,13 @@ func (r *RepositorioRondas) GuardarRonda(ctx context.Context, ronda *domain.Rond
 // BuscarRonda devuelve la ronda con sus votantes en orden, o domain.ErrRondaNoEncontrada.
 func (r *RepositorioRondas) BuscarRonda(ctx context.Context, id int64) (domain.Ronda, error) {
 	ronda := domain.Ronda{ID: id}
-	var estado string
+	var (
+		estado     string
+		estimacion sql.NullInt64
+	)
 	err := r.db.QueryRowContext(ctx,
-		`SELECT proyecto_id, elemento_id, numero, estado FROM rondas WHERE id = ?`, id).
-		Scan(&ronda.ProyectoID, &ronda.ElementoID, &ronda.Numero, &estado)
+		`SELECT proyecto_id, elemento_id, numero, estado, estimacion_acordada FROM rondas WHERE id = ?`, id).
+		Scan(&ronda.ProyectoID, &ronda.ElementoID, &ronda.Numero, &estado, &estimacion)
 	if errors.Is(err, sql.ErrNoRows) {
 		return domain.Ronda{}, domain.ErrRondaNoEncontrada
 	}
@@ -91,6 +94,10 @@ func (r *RepositorioRondas) BuscarRonda(ctx context.Context, id int64) (domain.R
 		return domain.Ronda{}, fmt.Errorf("buscar ronda %d: %w", id, err)
 	}
 	ronda.Estado = domain.EstadoRonda(estado)
+	if estimacion.Valid { // HU-17
+		valor := int(estimacion.Int64)
+		ronda.EstimacionAcordada = &valor
+	}
 
 	filas, err := r.db.QueryContext(ctx,
 		`SELECT nombre, voto FROM ronda_votantes WHERE ronda_id = ? ORDER BY orden`, id)

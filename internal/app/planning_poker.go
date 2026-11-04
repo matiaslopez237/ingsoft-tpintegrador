@@ -138,9 +138,14 @@ func (uc *ConsultarRonda) UltimaDelElemento(ctx context.Context, proyectoID, ele
 	return &res, nil
 }
 
+// lectorRonda es lo que necesita rondaDelProyecto, compartida con HU-17.
+type lectorRonda interface {
+	BuscarRonda(ctx context.Context, id int64) (domain.Ronda, error)
+}
+
 // rondaDelProyecto verifica que exista el proyecto y devuelve la ronda si es suya; una de otro
 // proyecto se trata como inexistente (RN-14.7).
-func rondaDelProyecto(ctx context.Context, proyectos LectorProyectos, rondas RepositorioRondas, proyectoID, rondaID int64) (domain.Ronda, error) {
+func rondaDelProyecto(ctx context.Context, proyectos LectorProyectos, rondas lectorRonda, proyectoID, rondaID int64) (domain.Ronda, error) {
 	if _, err := proyectos.BuscarPorID(ctx, proyectoID); err != nil {
 		return domain.Ronda{}, fmt.Errorf("buscar proyecto %d: %w", proyectoID, err)
 	}

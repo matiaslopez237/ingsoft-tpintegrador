@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"slices"
 	"strings"
 	"unicode/utf8"
 )
@@ -33,7 +34,7 @@ var (
 	ErrTituloDemasiadoLargo = errors.New("el título no puede superar los 100 caracteres")
 	ErrDescripcionVacia     = errors.New("la descripción es obligatoria")
 	ErrPrioridadInvalida    = errors.New("la prioridad debe ser Alta, Media o Baja")
-	ErrStoryPointsInvalidos = errors.New("los story points deben ser un entero positivo")
+	ErrStoryPointsInvalidos = errors.New("los story points deben ser 1, 2, 3, 5, 8, 13 o 21") // HU-13
 	ErrSinCriterios         = errors.New("debe haber al menos un criterio de aceptación")
 	ErrCriterioVacio        = errors.New("los criterios de aceptación no pueden estar vacíos")
 	ErrTituloDuplicado      = errors.New("ya existe un elemento con ese título en el proyecto")
@@ -53,7 +54,17 @@ type ElementoBacklog struct {
 	StoryPoints *int // nil: todavía sin estimar (RN-05.6)
 	Criterios   []string
 	SprintID    *int64 // nil: sin asignar a un sprint todavía (HU-09)
+	// HorasEstimadas es un dato propio, no se deriva de los story points. nil: sin estimar en horas
+	// (RN-19.1). Se carga con la edición (HU-06): NuevoElementoBacklog no la recibe (RN-19.3).
+	HorasEstimadas *float64
 }
+
+// escalaStoryPoints es la escala de Fibonacci de los story points (HU-13, RN-13.1).
+var escalaStoryPoints = []int{1, 2, 3, 5, 8, 13, 21}
+
+// EscalaStoryPoints devuelve una copia de la escala, en orden, para las listas de las pantallas.
+// Implementa HU-13 (RN-13.4).
+func EscalaStoryPoints() []int { return slices.Clone(escalaStoryPoints) }
 
 // NuevoElementoBacklog valida los datos y devuelve un elemento en estado Pendiente, todavía sin ID.
 // Los errores se informan en el orden de la tabla de la spec.
@@ -71,7 +82,7 @@ func NuevoElementoBacklog(proyectoID int64, titulo, descripcion string, priorida
 		return ElementoBacklog{}, ErrDescripcionVacia
 	case !prioridadValida(prioridad):
 		return ElementoBacklog{}, ErrPrioridadInvalida
-	case storyPoints != nil && *storyPoints <= 0:
+	case storyPoints != nil && !slices.Contains(escalaStoryPoints, *storyPoints):
 		return ElementoBacklog{}, ErrStoryPointsInvalidos
 	case len(criterios) == 0:
 		return ElementoBacklog{}, ErrSinCriterios
@@ -85,19 +96,25 @@ func NuevoElementoBacklog(proyectoID int64, titulo, descripcion string, priorida
 		}
 	}
 
-	e := ElementoBacklog{
+	return ElementoBacklog{
 		ProyectoID:  proyectoID,
 		Titulo:      titulo,
 		Descripcion: descripcion,
 		Prioridad:   prioridad,
 		Estado:      EstadoPendiente,
+		StoryPoints: copiarPuntero(storyPoints),
 		Criterios:   recortados,
+	}, nil
+}
+
+// copiarPuntero devuelve un puntero nuevo con el mismo valor (nil si p es nil), para que el elemento
+// no comparta memoria con lo que recibió. [T any] la hace genérica: sirve para *int, *int64 y *float64.
+func copiarPuntero[T any](p *T) *T {
+	if p == nil {
+		return nil
 	}
-	if storyPoints != nil {
-		sp := *storyPoints // copia: el elemento no comparte el puntero recibido
-		e.StoryPoints = &sp
-	}
-	return e, nil
+	copia := *p
+	return &copia
 }
 
 func prioridadValida(p Prioridad) bool {

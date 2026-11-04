@@ -25,12 +25,6 @@ const (
 	RondaCerrada EstadoRonda = "Cerrada"
 )
 
-// valoresVoto es la escala de Fibonacci del Planning Poker (RN-14.4).
-var valoresVoto = []int{1, 2, 3, 5, 8, 13, 21}
-
-// ValoresVoto devuelve una copia de la escala, en orden, para las opciones de la pantalla.
-func ValoresVoto() []int { return slices.Clone(valoresVoto) }
-
 // Votante es un integrante convocado a la ronda. Voto queda en nil hasta que vota.
 type Votante struct {
 	Nombre string
@@ -46,6 +40,8 @@ type Ronda struct {
 	Numero     int // 1, 2, 3… por elemento (RN-14.1)
 	Estado     EstadoRonda
 	Votantes   []Votante
+	// EstimacionAcordada es lo que el equipo acordó en esta ronda (HU-17); nil si no se registró.
+	EstimacionAcordada *int
 }
 
 // NuevaRonda abre una ronda sobre el elemento, con los integrantes del proyecto como votantes.
@@ -83,7 +79,7 @@ func (r *Ronda) Votar(integrante string, valor int) error {
 	switch {
 	case i < 0:
 		return ErrNoEsVotante
-	case !slices.Contains(valoresVoto, valor):
+	case !slices.Contains(escalaStoryPoints, valor): // la escala de los story points (RN-14.4, RN-13.4)
 		return ErrVotoInvalido
 	}
 	r.Votantes[i].Voto = &valor
@@ -109,6 +105,8 @@ type ResumenRonda struct {
 	Estado     EstadoRonda
 	Votantes   []VotanteResumen
 	Revelacion *Revelacion // nil mientras la ronda está abierta (HU-15)
+	// EstimacionAcordada es lo que se acordó en esta ronda (HU-17); nil si no se registró.
+	EstimacionAcordada *int
 }
 
 // Resumen devuelve los datos de la ronda que se pueden mostrar: los votos, solo si está cerrada.
@@ -122,6 +120,10 @@ func (r Ronda) Resumen() ResumenRonda {
 		Estado: r.Estado, Votantes: votantes}
 	if rev, err := r.Revelar(); err == nil {
 		res.Revelacion = &rev
+	}
+	if r.EstimacionAcordada != nil { // una copia: el resumen no comparte memoria con la ronda
+		v := *r.EstimacionAcordada
+		res.EstimacionAcordada = &v
 	}
 	return res
 }

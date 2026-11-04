@@ -23,18 +23,26 @@ type eliminadorElementos interface {
 }
 
 // pedidoEditarElemento es el JSON de PATCH /proyectos/{id}/backlog/{elementoID}. Un campo ausente
-// no cambia. story_points es json.RawMessage para distinguir "ausente" (nil) de null (quitar la estimación).
+// no cambia. story_points y horas_estimadas son json.RawMessage para distinguir "ausente" (nil) de
+// null (quitar la estimación).
 type pedidoEditarElemento struct {
-	Titulo      *string         `json:"titulo"`
-	Descripcion *string         `json:"descripcion"`
-	Prioridad   *string         `json:"prioridad"`
-	StoryPoints json.RawMessage `json:"story_points"`
-	Criterios   *[]string       `json:"criterios"`
-	Estado      *string         `json:"estado"`
+	Titulo         *string         `json:"titulo"`
+	Descripcion    *string         `json:"descripcion"`
+	Prioridad      *string         `json:"prioridad"`
+	StoryPoints    json.RawMessage `json:"story_points"`
+	Criterios      *[]string       `json:"criterios"`
+	Estado         *string         `json:"estado"`
+	HorasEstimadas json.RawMessage `json:"horas_estimadas"` // HU-19
 }
 
-// erroresDeValidacionEdicion son los errores de HU-06 que se responden como 400.
-var erroresDeValidacionEdicion = append([]error{domain.ErrSinCambios, domain.ErrEstadoElementoInvalido}, erroresDeValidacionBacklog...)
+// erroresDeValidacionEdicion son los errores de HU-06 y HU-19 que se responden como 400.
+var erroresDeValidacionEdicion = append([]error{
+	domain.ErrSinCambios,
+	domain.ErrEstadoElementoInvalido,
+	domain.ErrHorasInvalidas,
+	domain.ErrHorasNoMultiploMediaHora,
+	domain.ErrHorasEstimadasExcedenMaximo,
+}, erroresDeValidacionBacklog...)
 
 // RegistrarEditarEliminarElementoBacklog agrega las rutas de HU-06 al mux.
 func RegistrarEditarEliminarElementoBacklog(mux *http.ServeMux, editar editorElementos, eliminar eliminadorElementos) {
@@ -100,7 +108,8 @@ func handlerEditarElemento(uc editorElementos) http.HandlerFunc {
 	}
 }
 
-// aCambios traduce el JSON a los cambios del dominio. story_points en null quita la estimación.
+// aCambios traduce el JSON a los cambios del dominio. story_points y horas_estimadas en null quitan
+// la estimación.
 func (p pedidoEditarElemento) aCambios() (domain.CambiosElemento, error) {
 	c := domain.CambiosElemento{Titulo: p.Titulo, Descripcion: p.Descripcion, Criterios: p.Criterios}
 	if p.Prioridad != nil {
@@ -119,6 +128,16 @@ func (p pedidoEditarElemento) aCambios() (domain.CambiosElemento, error) {
 				return domain.CambiosElemento{}, errors.New("story_points debe ser un entero o null")
 			}
 			c.StoryPoints = &sp
+		}
+	}
+	if p.HorasEstimadas != nil {
+		c.CambiarHorasEstimadas = true
+		if !bytes.Equal(p.HorasEstimadas, []byte("null")) {
+			var horas float64
+			if err := json.Unmarshal(p.HorasEstimadas, &horas); err != nil {
+				return domain.CambiosElemento{}, errors.New("horas_estimadas debe ser un número o null")
+			}
+			c.HorasEstimadas = &horas
 		}
 	}
 	return c, nil

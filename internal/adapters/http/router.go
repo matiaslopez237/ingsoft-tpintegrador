@@ -31,6 +31,10 @@ type CasosDeUso struct {
 	Votar                    votadorRondas             // HU-14
 	ConsultarRonda           consultorRondas           // HU-14
 	ListarSprintsAnteriores  listadorSprints           // HU-12
+	ConsultarVelocidad       consultorVelocidad        // HU-22
+	ListarRondas             historiadorRondas         // HU-16
+	RegistrarEstimacion      registradorEstimacion     // HU-17
+	CompararEsfuerzo         comparadorEsfuerzo        // HU-19
 	ActualizarEstadoDefecto  actualizadorEstadoDefecto // HU-21
 	ListarDefectos           listadorDefectos          // HU-21
 }
@@ -55,6 +59,10 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarCompletar(mux, cu.CompletarHistoria)
 	RegistrarPlanningPoker(mux, cu.IniciarRonda, cu.Votar, cu.ConsultarRonda)
 	RegistrarSprintsAnteriores(mux, cu.ListarSprintsAnteriores)
+	RegistrarVelocidad(mux, cu.ConsultarVelocidad)
+	RegistrarHistorialRondas(mux, cu.ListarRondas)
+	RegistrarEstimacionAcordada(mux, cu.RegistrarEstimacion)
+	RegistrarCompararEsfuerzo(mux, cu.CompararEsfuerzo)
 	RegistrarActualizarEstadoDefecto(mux, cu.ActualizarEstadoDefecto)
 	RegistrarListarDefectos(mux, cu.ListarDefectos)
 	RegistrarPantallas(mux, cu)

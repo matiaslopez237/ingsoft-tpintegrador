@@ -23,7 +23,9 @@ type consultorElementos interface {
 
 // formEdicionElemento son los campos del formulario del elemento, como texto. Los criterios van uno por línea.
 type formEdicionElemento struct {
-	Titulo, Descripcion, Prioridad, StoryPoints, Criterios, Estado string
+	Titulo, Descripcion, Prioridad, StoryPoints, Criterios, Estado, HorasEstimadas string
+	// HorasEnviadas indica que el pedido trae el campo horas_estimadas: ausente no cambia las horas.
+	HorasEnviadas bool
 }
 
 type datosEdicionElemento struct {
@@ -33,7 +35,10 @@ type datosEdicionElemento struct {
 	Error                  string
 	Prioridades            []domain.Prioridad
 	Estados                []domain.EstadoElemento
-	Poker                  *datosPokerElemento // nil si la aplicación no tiene Planning Poker (HU-14)
+	OpcionesStoryPoints    []opcionStoryPoints  // HU-13
+	Poker                  *datosPokerElemento  // nil si la aplicación no tiene Planning Poker (HU-14)
+	Esfuerzo               datosSeccionEsfuerzo // HU-18: tiene su propio formulario y su propio error
+	Comparacion            datosComparacion     // HU-19: siempre con los valores guardados
 }
 
 // registrarPantallasElemento agrega la pantalla para ver, editar y eliminar un elemento.
@@ -55,7 +60,9 @@ func (p *pantallas) elemento(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := aFormElemento(e)
-	p.mostrarElemento(w, r, http.StatusOK, pid, eid, f, f, "")
+	esfuerzo := p.seccionEsfuerzoInicial()
+	esfuerzo.Registrado = r.URL.Query().Get("esfuerzo") == "registrado" // HU-18: confirmación tras la redirección
+	p.mostrarElemento(w, r, http.StatusOK, pid, eid, f, f, "", esfuerzo)
 }
 
 func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
@@ -80,7 +87,7 @@ func (p *pantallas) editarElemento(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if mensaje, ok := mensajeDeValidacionElemento(err); ok {
-			p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, original, mensaje)
+			p.mostrarElemento(w, r, http.StatusBadRequest, pid, eid, f, original, mensaje, p.seccionEsfuerzoInicial())
 			return
 		}
 		p.fallaInterna(w, "editar elemento", err)
@@ -106,7 +113,7 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		f := aFormElemento(e)
-		p.mostrarElemento(w, r, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err))
+		p.mostrarElemento(w, r, http.StatusConflict, pid, eid, f, f, mensajeDeEliminacion(err), p.seccionEsfuerzoInicial())
 	default:
 		p.errorDeElemento(w, err)
 	}
@@ -114,15 +121,33 @@ func (p *pantallas) eliminarElemento(w http.ResponseWriter, r *http.Request) {
 
 // --- Ayudantes ---
 
-func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64, f, original formEdicionElemento, mensaje string) {
+// mostrarElemento renderiza la pantalla. Consulta el proyecto por los integrantes del desplegable
+// de esfuerzo (HU-18), también cuando vuelve con un error de editar o eliminar, la última ronda
+// para la sección de Planning Poker (HU-14) y la comparación de esfuerzo (HU-19), que se lee de lo
+// guardado y no de lo que se acaba de tipear.
+func (p *pantallas) mostrarElemento(w http.ResponseWriter, r *http.Request, status int, pid, eid int64,
+	f, original formEdicionElemento, mensaje string, esfuerzo datosSeccionEsfuerzo) {
+	proyecto, err := p.cu.ConsultarProyecto.Ejecutar(r.Context(), pid)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
 	poker, err := p.pokerDelElemento(r, pid, eid, original.Estado)
 	if err != nil {
 		p.errorDeElemento(w, err)
 		return
 	}
+	comparacion, err := p.cu.CompararEsfuerzo.Ejecutar(r.Context(), pid, eid)
+	if err != nil {
+		p.errorDeElemento(w, err)
+		return
+	}
+	esfuerzo.Integrantes = proyecto.Integrantes
 	p.renderizar(w, status, "elemento.html", datosEdicionElemento{
 		ProyectoID: pid, ElementoID: eid, Form: f, Original: original, Error: mensaje,
-		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker,
+		Prioridades: prioridadesElemento, Estados: estadosElemento, Poker: poker, Esfuerzo: esfuerzo,
+		Comparacion:         vistaComparacion(comparacion),
+		OpcionesStoryPoints: opcionesStoryPoints(f.StoryPoints),
 	})
 }
 
@@ -135,26 +160,20 @@ func (p *pantallas) idsElemento(w http.ResponseWriter, r *http.Request) (int64, 
 	return pid, eid, true
 }
 
-// errorDeElemento muestra la página 404 si el elemento no existe en el proyecto, o la de falla interna.
+// errorDeElemento muestra la página 404 si no existe el proyecto o el elemento en el proyecto, o la
+// de falla interna.
 func (p *pantallas) errorDeElemento(w http.ResponseWriter, err error) {
-	if errors.Is(err, domain.ErrElementoNoEncontrado) {
-		p.renderizar(w, http.StatusNotFound, "error.html", datosError{domain.ErrElementoNoEncontrado.Error()})
-		return
+	for _, noEncontrado := range []error{domain.ErrProyectoNoEncontrado, domain.ErrElementoNoEncontrado} {
+		if errors.Is(err, noEncontrado) {
+			p.renderizar(w, http.StatusNotFound, "error.html", datosError{noEncontrado.Error()})
+			return
+		}
 	}
 	p.fallaInterna(w, "elemento del backlog", err)
 }
 
 func mensajeDeValidacionElemento(err error) (string, bool) {
-	var ef errFormulario
-	if errors.As(err, &ef) {
-		return ef.mensaje, true
-	}
-	for _, e := range erroresDeValidacionEdicion {
-		if errors.Is(err, e) {
-			return e.Error(), true
-		}
-	}
-	return "", false
+	return formMensajeDeErrorConocido(err, erroresDeValidacionEdicion)
 }
 
 func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
@@ -165,6 +184,9 @@ func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
 	if e.StoryPoints != nil {
 		f.StoryPoints = strconv.Itoa(*e.StoryPoints)
 	}
+	if e.HorasEstimadas != nil {
+		f.HorasEstimadas = strconv.FormatFloat(*e.HorasEstimadas, 'f', -1, 64) // con punto: lo exige el input numérico
+	}
 	return f
 }
 
@@ -172,13 +194,16 @@ func aFormElemento(e domain.ElementoBacklog) formEdicionElemento {
 // conOriginal es false si el pedido no trae esos campos (no viene de la pantalla).
 func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOriginal bool) {
 	leer := func(prefijo string) formEdicionElemento {
+		_, horasEnviadas := r.PostForm[prefijo+"horas_estimadas"]
 		return formEdicionElemento{
-			Titulo:      r.PostFormValue(prefijo + "titulo"),
-			Descripcion: r.PostFormValue(prefijo + "descripcion"),
-			Prioridad:   r.PostFormValue(prefijo + "prioridad"),
-			StoryPoints: r.PostFormValue(prefijo + "story_points"),
-			Criterios:   r.PostFormValue(prefijo + "criterios"),
-			Estado:      r.PostFormValue(prefijo + "estado"),
+			Titulo:         r.PostFormValue(prefijo + "titulo"),
+			Descripcion:    r.PostFormValue(prefijo + "descripcion"),
+			Prioridad:      r.PostFormValue(prefijo + "prioridad"),
+			StoryPoints:    r.PostFormValue(prefijo + "story_points"),
+			Criterios:      r.PostFormValue(prefijo + "criterios"),
+			Estado:         r.PostFormValue(prefijo + "estado"),
+			HorasEstimadas: r.PostFormValue(prefijo + "horas_estimadas"),
+			HorasEnviadas:  horasEnviadas,
 		}
 	}
 	_, conOriginal = r.PostForm["original_titulo"]
@@ -188,7 +213,9 @@ func leerFormElemento(r *http.Request) (f, original formEdicionElemento, conOrig
 // cambiosDeFormElemento arma la edición con los campos que cambiaron respecto de los originales,
 // para no pisar ediciones simultáneas (HU-06, sección 5; lección de DEF-01). Si el pedido no trae
 // los originales (conOriginal en false), se envían todos los campos, como cambiosDeForm en DEF-01.
-// Story points vacío quita la estimación; los criterios van uno por línea y se ignoran las vacías.
+// Story points u horas estimadas vacíos quitan la estimación; los criterios van uno por línea y se
+// ignoran las vacías. Las horas estimadas son la excepción: si el campo no vino en el pedido, no se
+// envían aunque falten los originales, para que un POST incompleto no las borre.
 func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (domain.CambiosElemento, error) {
 	cambio := func(nuevo, viejo string) bool { return !conOriginal || nuevo != viejo }
 	var c domain.CambiosElemento
@@ -211,6 +238,16 @@ func cambiosDeFormElemento(f, original formEdicionElemento, conOriginal bool) (d
 				return domain.CambiosElemento{}, errFormulario{"story_points debe ser un número entero"}
 			}
 			c.StoryPoints = &n
+		}
+	}
+	if f.HorasEnviadas && cambio(strings.TrimSpace(f.HorasEstimadas), strings.TrimSpace(original.HorasEstimadas)) {
+		c.CambiarHorasEstimadas = true
+		if s := strings.TrimSpace(f.HorasEstimadas); s != "" {
+			horas, err := strconv.ParseFloat(s, 64) // NaN e Inf pasan: los rechaza el dominio (RN-19.2)
+			if err != nil {
+				return domain.CambiosElemento{}, errFormulario{"las horas estimadas deben ser un número"}
+			}
+			c.HorasEstimadas = &horas
 		}
 	}
 	// Los criterios se comparan como lista: el navegador envía el textarea con saltos CRLF.
