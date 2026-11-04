@@ -116,7 +116,7 @@ El bloque también se muestra cuando estas pantallas vuelven con el error de un 
 - **Contexto:** los handlers JSON pasan a los casos de uso el contexto del pedido, y los casos de uso se lo pasan al lector de horas, para que cancelar el pedido corte la consulta.
 - **Sin persistencia nueva:** no hay tablas, columnas ni migraciones.
 - **Rutas y pantallas:** `net/http` (ADR-0001), SQLite (ADR-0002) y `html/template` (ADR-0003). Las dos rutas JSON se registran con `RegistrarConsultarHoras` en `consultar_horas_handler.go` y se suman a `NuevoRouter`, a `CasosDeUso` y a `router_test.go`. Los dobles de `pantallas_test.go` también tienen que sumar los dos casos de uso, porque las dos pantallas los consultan siempre. El formato reutiliza `textoHoras`, `textoPorcentaje`, `conSigno` y `textoSinEstimar` de HU-19. La pantalla no calcula nada.
-- **Dependencia:** usa `CompararEsfuerzo` y `HorasEstimadas` de HU-19, que todavía no están en `main`. Esta rama sale de `hu-19-comparar-esfuerzo`, así que su PR se mergea después del de HU-19.
+- **Dependencia:** usa `CompararEsfuerzo` y `HorasEstimadas` de HU-19, que se mergeó a `main` (PR #297). Esta rama salió de `hu-19-comparar-esfuerzo` y ya se integró con `main`.
 - **Coordinación:** HU-22 (rama `hu-22-metricas-sprint`) usa la ruta `GET /proyectos/{id}/velocidad` y la pantalla de sprints anteriores, así que no se pisa con estas rutas ni con estas pantallas.
 - **Fuera de alcance:**
   - **Para otras historias:** gráficos del dashboard (HU-25) y reportes y PDF (HU-26).
@@ -210,3 +210,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-03, abiertas a objeción en el 
 - 2026-11-03: ajustada a la pantalla implementada, sin cambiar reglas ni criterios: el bloque se llama "Horas y desviación" y muestra también la cantidad de elementos. La spec sigue en borrador.
 - 2026-11-03: el aviso de elementos sin estimar y sin horas reales solo los cuenta, sin hablar de 0 h. La spec sigue en borrador.
 - 2026-11-03: se documentan en la sección 5 tres cosas que el código ya hacía y los tests verifican: el orden de las filas, el paso del contexto y que `TotalizarHoras` no modifica lo que recibe. La spec sigue en borrador.
+- 2026-11-04: se actualiza la dependencia: HU-19 se mergeó a `main` (PR #297) y HU-23 ya se integró con `main`. No cambia ninguna regla, criterio ni decisión. La spec sigue en borrador.

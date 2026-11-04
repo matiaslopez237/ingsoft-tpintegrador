@@ -31,7 +31,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
-| HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Borrador; P-1 a P-8 abiertas a objeción en el PR; P-9 a P-12 pendientes del equipo) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (365/365 en el BDD completo; pasos: 1927/1927) |
+| HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Borrador; P-1 a P-8 abiertas a objeción en el PR; P-9 a P-12 pendientes del equipo) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 
 ---
 
@@ -1885,7 +1885,7 @@ Ninguno. HU-23 reutiliza `ErrProyectoNoEncontrado` (HU-01) y `ErrSprintNoEncontr
 
 ### Commits
 
-Salen de `git log hu-19-comparar-esfuerzo..HEAD`, en orden. La rama sale de HU-19, que todavía no está en `main`.
+Salen de `git log 4209a72..6be9cf9`, en orden: desde que la rama salió de HU-19 hasta antes de integrar `main`. La última fila es del merge con `main`. HU-19 ya entró a `main` (PR #297), y `hu-19-comparar-esfuerzo..HEAD` ya no sirve para este listado: después de ese merge (`f9d513b`) también incluye commits de HU-13, HU-21 y HU-22.
 
 | Ciclo | Commit | Etapa |
 |---|---|---|
@@ -1907,7 +1907,10 @@ Salen de `git log hu-19-comparar-esfuerzo..HEAD`, en orden. La rama sale de HU-1
 | Revisión: otro proyecto en la pantalla | `70f5631` test(HU-23): pantalla del sprint con un sprint de otro proyecto | — (sin RED real, ver abajo) |
 | Revisión: datos de CA-23.2 en HTTP | `d9a38c1` test(HU-23): las rutas de horas prueban los datos de CA-23.2 con la misma traza | — (sin RED real, ver abajo) |
 | Revisión: trazas | `6aba6af` test(HU-23): trazas y comentarios que citan lo que cada test verifica | — (solo comentarios) |
-| Trazabilidad | este commit | — |
+| Trazabilidad | `6be9cf9` docs(trazabilidad): HU-23 | — |
+| Integración con `main`: test ajustado | `f9d513b` `TestPantallasHoras_NoApareceEnOtrasPantallas` carga `ConsultarVelocidad`, resuelto dentro del merge | — (sin RED real: una línea de preparación, sin cambiar aserciones) |
+
+**Merges de la rama, que no son de HU-23:** `f9d513b` (trae `origin/main`: HU-19, HU-13, HU-21 y HU-22).
 
 **Commits que el filtro `git log --grep="(HU-23)"` no encuentra**, porque usan el prefijo `test(bdd):`: `0519df5` (RED de los steps) y `538b2d8` (sistema SQLite).
 
@@ -1976,10 +1979,12 @@ Ninguna quedó en un commit. Se aplicaron en una copia descartable del repo. En 
 - **Cobertura de `leerHoras`: 84,6 %.** Faltan las ramas de error de `Scan` y `rows.Err()`, que no se pueden provocar sin un driver simulado. El resto del código nuevo de HU-23 está al 100 %.
 - **`TestRepositorioEsfuerzo_HorasDeProyecto_OrdenaPorElemento`** detecta el orden descendente, pero no que falte el `ORDER BY` (M14). Los ID siguen siempre el orden de creación, así que no hay datos que lo distingan.
 - **La conexión de `cmd/server/main.go` no tiene test automático:** solo el humo. Si faltara, el servidor fallaría al recibir el pedido.
-- **BDD completo:** 280 a 293 s en las últimas corridas. Sube porque cada escenario de cualquier historia crea una base más, ya que los hooks de todas las historias corren siempre.
+- **BDD completo:** 387 a 403 s en las tres corridas tras integrar `main`, con 407 escenarios (antes, 280 a 293 s con 365). Sube porque cada escenario de cualquier historia crea una base más, ya que los hooks de todas las historias corren siempre.
 - **Primer test de `internal/adapters/http` que usa `persistencia`:** `TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404`, para usar casos de uso y SQLite reales. Solo afecta al test.
-- **Al integrar con `main`:** repetir el cruce de regex de pasos, porque HU-21 y HU-22 están en otras ramas y godog rechaza los pasos ambiguos sin que el compilador lo detecte. Todas las regex de HU-23 llevan el texto `HU-23`, así que solo podría chocar una regex muy amplia de otra historia.
-- **Depende del PR de HU-19:** usa `CompararEsfuerzo` y `HorasEstimadas`, que todavía no están en `main`. Hay que mergear HU-19 primero y traer `main` después.
+- **Resuelto, cruce de regex al integrar con `main`:** las 407 regex de `test/bdd/*_steps_test.go`, con el `regexp` de Go, contra los 2130 pasos de los 407 escenarios, con los Outline expandidos por el parser de Gherkin de godog: 0 ambiguos, 0 indefinidos y ninguna regex sin usar. El BDD completo, con `Strict: true`, lo confirma.
+- **Resuelto, dependencia del PR de HU-19:** HU-19 ya entró a `main` (PR #297), y esta rama trae `CompararEsfuerzo` y `HorasEstimadas` desde ahí con el merge de `origin/main` (`f9d513b`), junto con HU-13, HU-21 y HU-22.
+- **Test ajustado al integrar con `main` (`f9d513b`):** HU-22 hizo que la pantalla de sprints anteriores consulte `ConsultarVelocidad`, y `TestPantallasHoras_NoApareceEnOtrasPantallas` quedaba con ese campo en `nil` y entraba en panic. Se le cargó `consultorVelocidadFalso`, sin cambiar sus aserciones.
+- **Humo repetido al integrar con `main`:** con el servidor real y una base temporal, por curl. Las rutas de horas, de velocidad y de defectos responden 200, y `id="total-horas"` aparece una vez en cada detalle, sin ids repetidos. Tampoco es una prueba en navegador.
 - `mostrarSprintDetalle` y `mostrarDetalle` consultan el proyecto y el sprint, y los casos de uso de horas los vuelven a consultar: son lecturas de más, sin consecuencias prácticas.
 - Los puntos planificados de un sprint cerrado (RN-11.6) incluyen lo no terminado, y estas horas no (P-3): no se comparan entre sí.
 
