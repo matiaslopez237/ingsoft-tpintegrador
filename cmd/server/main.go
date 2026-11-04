@@ -63,6 +63,7 @@ func main() {
 		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                            // HU-14
 		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas),      // HU-14
 		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),         // HU-12
+		ConsultarVelocidad:      app.NuevoConsultarVelocidad(repoProyectos, repoSprints),              // HU-22
 		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),        // HU-16
 		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas), // HU-17
 		CompararEsfuerzo:        app.NuevoCompararEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo),  // HU-19

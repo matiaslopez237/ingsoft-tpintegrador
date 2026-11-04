@@ -26,6 +26,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Borrador, pendiente de aprobación en el PR) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
 | HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
 | HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
+| HU-22 Calcular story points y velocidad del equipo | ✓ (Aprobada) | 6/9 (CA-22.1 ya la cubre HU-12; CA-22.7 y CA-22.8 se cubren con tests del handler y de la pantalla) | 9/9 | ✓ | RED → GREEN ×6 | ✓ 9/9 escenarios |
 | HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
@@ -1257,6 +1258,61 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 
 ---
 
+## HU-22: Calcular story points y velocidad del equipo
+
+- **Issue:** [#33](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/33) · Sprint 3 · 5 SP
+- **Spec:** [docs/specs/HU-22-calcular-velocidad.md](specs/HU-22-calcular-velocidad.md)
+- **Feature:** [features/HU-22-calcular-velocidad.feature](../features/HU-22-calcular-velocidad.feature) (steps en [test/bdd/hu22_steps_test.go](../test/bdd/hu22_steps_test.go))
+- **Alcance real:** HU-11 ya calcula y guarda los puntos planificados y completados de cada Sprint al cerrarlo (RN-11.6), y HU-12 ya los muestra (pantalla y JSON). HU-22 agrega solo la **velocidad** (el promedio de puntos completados entre los últimos 3 Sprints cerrados); no agrega persistencia nueva.
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-22.1 Planificados vs. completados de un Sprint | RN-22.1 | No va acá: ya lo cubren el endpoint y la pantalla de HU-12 | `TestSprintsAnteriores_ConservaLosDatos` (HU-12) | Ya implementado por HU-11 y HU-12; HU-22 no agrega código |
+| CA-22.2 Velocidad = promedio de los cerrados | RN-22.2 | La velocidad es el promedio de los puntos completados de los sprints cerrados `@normal` · Un sprint todavía abierto no cuenta `@alternativo` · Solo cuentan los sprints cerrados del proyecto consultado `@alternativo` | `TestVelocidad`, `TestVelocidad_NoFiltraPorEstado`, `TestConsultarVelocidad_PromedioDeLosCerrados` | `domain.Velocidad`, `app.ConsultarVelocidad` |
+| CA-22.3 Sin sprints cerrados, sin velocidad | RN-22.3 | Un proyecto sin ningún sprint no tiene velocidad `@limite` · Un proyecto con sprints, pero ninguno cerrado, no tiene velocidad `@alternativo` | `TestVelocidad` (caso "sin sprints cerrados"), `TestConsultarVelocidad_SinCerrados_NoHayDatos` | `domain.Velocidad` |
+| CA-22.4 Con decimales | RN-22.4 | La velocidad se informa con decimales cuando no divide exacto `@limite` | `TestVelocidad` (caso decimales), `TestConsultarVelocidad_ConDecimales` | `domain.Velocidad` |
+| CA-22.5 Un sprint en 0 da velocidad 0, no "sin datos" | RN-22.2, RN-22.3 | Un único sprint cerrado con 0 puntos completados da velocidad 0, no "sin datos" `@limite` | `TestVelocidad` (caso 0), `TestConsultarVelocidad_UnSoloSprintEnCero_DaVelocidadCero` | `domain.Velocidad` |
+| CA-22.6 Proyecto inexistente | — (error reutilizado) | No se puede consultar la velocidad de un proyecto que no existe `@error` | `TestConsultarVelocidad_ProyectoInexistente_RetornaError` | `app.ConsultarVelocidad` |
+| CA-22.7 Respuesta HTTP | — | No va acá (como CA-18.15): se cubre con tests del adaptador | `TestGetVelocidad_*` (5 tests) | `internal/adapters/http/velocidad_handler.go` |
+| CA-22.8 Pantalla | Restricciones | No va acá (como CA-06.10): se cubre con tests de la pantalla | `TestPantallaSprintsAnteriores_ConSprintsCerrados_MuestraLaVelocidad`, `TestPantallaSprintsAnteriores_SinSprintsCerrados_AvisaSinVelocidad` | `pantallas_sprints.go` (`sprintsAnteriores`, `formatearVelocidad`), `web/plantillas/sprints_anteriores.html` |
+| CA-22.9 Solo los últimos 3 sprints cerrados entran en el promedio | RN-22.2 | Con más de 3 sprints cerrados, solo se promedian los 3 más recientes `@limite` | `TestVelocidad` (caso ventana) | `domain.Velocidad` (`VentanaVelocidad`) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/sprint_historial.go](../internal/domain/sprint_historial.go) (`Velocidad`, `VentanaVelocidad`, junto a `SprintsAnteriores` de HU-12) | [sprint_historial_test.go](../internal/domain/sprint_historial_test.go) |
+| Caso de uso | [internal/app/consultar_velocidad.go](../internal/app/consultar_velocidad.go) | [consultar_velocidad_test.go](../internal/app/consultar_velocidad_test.go) |
+| HTTP (JSON) | [internal/adapters/http/velocidad_handler.go](../internal/adapters/http/velocidad_handler.go) (`GET /proyectos/{id}/velocidad`) | [velocidad_handler_test.go](../internal/adapters/http/velocidad_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_sprints.go](../internal/adapters/http/pantallas_sprints.go) (reutiliza la pantalla de HU-12), [web/plantillas/sprints_anteriores.html](../internal/adapters/http/web/plantillas/sprints_anteriores.html) | [pantallas_sprints_anteriores_test.go](../internal/adapters/http/pantallas_sprints_anteriores_test.go) |
+| BDD | [test/bdd/hu22_sistema_test.go](../test/bdd/hu22_sistema_test.go), [hu22_steps_test.go](../test/bdd/hu22_steps_test.go) | 9 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 22.1 Spec | `c9c046b` docs(HU-22): [22.1] spec SDD | — |
+| 22.2 Escenarios BDD | `60c2c24` test(HU-22): [22.2] escenarios BDD | — |
+| 22.3 Steps godog | `7f9c2ad` test(HU-22): [22.3][RED] steps (en rojo) | BDD en rojo |
+| 22.4 Velocidad (dominio) | `457d6a3` [RED] → `7577e40` [GREEN] | **RED → GREEN** |
+| 22.5 Caso de uso ConsultarVelocidad | `d327cbb` [RED] → `28771ad` [GREEN] | **RED → GREEN** |
+| Conectar los escenarios BDD con el caso de uso real | `9370946` | BDD en verde |
+| 22.7 HTTP | `56dfdb1` [RED] → `9dedf2a` [GREEN] | **RED → GREEN** |
+| 22.8 Pantalla (sumada a la de HU-12) | `372945a` [RED] → `203fb56` [GREEN] | **RED → GREEN** |
+| 22.9 Revisión y trazabilidad | `83f6053` | — |
+| 22.10 Corrección de la revisión del PR (ventana de 3) | `a107acb` (spec) → `b1c51c1` (BDD) → `c4a7558` [RED] → `3514f64` [GREEN] | **RED → GREEN** |
+
+### Huecos
+
+- ~~La spec está en Borrador, P-1 pendiente de confirmar~~: resuelto el 2026-11-02. Matías López (Agile Enabler) pidió en la revisión del PR que la velocidad promedie solo los últimos 3 Sprints cerrados (ventana móvil), no todos; se corrigió la spec (RN-22.2, CA-22.9 nuevo) y el código (tarea 22.10). Spec Aprobada.
+- No hay pantalla nueva: la velocidad se agregó a la pantalla ya existente de HU-12 (`/web/proyectos/{id}/sprints/anteriores`), como se acordó al refinar la historia.
+- Revisión con el agente `go-reviewer` (tarea 22.9): sin hallazgos bloqueantes. Confirmó la lógica del promedio, la distinción `null` vs. `0` (RN-22.3) y que no hay lógica de negocio en los adaptadores. Notas menores sin cambios: el handler de la pantalla repite la consulta del proyecto y de los sprints por usar dos casos de uso separados (`ListarSprintsAnteriores` y `ConsultarVelocidad`), que es la separación que pide la propia spec; y el ejemplo de la spec (`6.0` en vez de `6`) se corrigió en ese commit.
+- `sprints_cerrados` en la respuesta JSON y en `VelocidadProyecto.SprintsCerrados` es cuántos Sprints entraron en el promedio (hasta 3), no el total de Sprints cerrados del proyecto: se aclaró explícitamente en la spec (sección 3) y en el comentario del campo, porque con la ventana podían confundirse los dos números (tarea 22.10).
+
+---
+
 ## HU-16: Repetir una ronda de votación
 
 - **Issue:** #27 · Sprint 3 · 2 SP
@@ -1310,7 +1366,7 @@ Sin CA propio: `TestSprintsAnteriores_NoModificaLaLista` (ordenar no altera la l
 | BDD conectado al caso de uso | `35e6f9e` | BDD en verde salvo la pantalla |
 | 16.7 Endpoint JSON | `cac55e2` [RED] → `aa49944` [GREEN] | **RED → GREEN** |
 | 16.8 Pantalla | `96cf6f9` [RED] → `0485622` [GREEN] | **RED → GREEN**; BDD 8/8 |
-| 16.9 Revisión y trazabilidad | este commit | — |
+| 16.9 Revisión y trazabilidad | `c391460` | — |
 
 ### Huecos
 
