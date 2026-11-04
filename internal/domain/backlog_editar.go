@@ -9,6 +9,24 @@ var ErrElementoConEsfuerzo = errors.New("no se puede eliminar un elemento con es
 // ErrElementoConDefectos: no se elimina un elemento con defectos registrados (HU-20). DEF-02, RN-06.10.
 var ErrElementoConDefectos = errors.New("no se puede eliminar un elemento con defectos registrados")
 
+// HorasEstimadasMaximas es el tope de las horas estimadas de un elemento (RN-19.2).
+const HorasEstimadasMaximas = 1000
+
+// ErrHorasEstimadasExcedenMaximo: HU-19 (spec, sección 7). Los demás errores de las horas estimadas
+// son los de HU-18.
+var ErrHorasEstimadasExcedenMaximo = errors.New("las horas estimadas no pueden superar las 1000 horas")
+
+// validarHorasEstimadas aplica RN-19.2 en este orden: > 0, múltiplo de 0,5 y máximo 1000.
+func validarHorasEstimadas(horas float64) error {
+	if err := validarMediasHoras(horas); err != nil {
+		return err
+	}
+	if horas > HorasEstimadasMaximas { // también +Inf, que sí pasa la comprobación del múltiplo
+		return ErrHorasEstimadasExcedenMaximo
+	}
+	return nil
+}
+
 // CambiosElemento son los datos de una edición parcial de un elemento (HU-06, RN-06.1).
 // Un campo en nil no se envía y conserva su valor.
 type CambiosElemento struct {
@@ -22,17 +40,21 @@ type CambiosElemento struct {
 	// Criterios, si se envía, reemplaza la lista completa.
 	Criterios *[]string
 	Estado    *EstadoElemento
+	// CambiarHorasEstimadas indica que se envían las horas estimadas. Con HorasEstimadas en nil, el
+	// elemento queda sin estimar en horas (RN-19.3).
+	CambiarHorasEstimadas bool
+	HorasEstimadas        *float64
 }
 
 func (c CambiosElemento) vacios() bool {
 	return c.Titulo == nil && c.Descripcion == nil && c.Prioridad == nil && !c.CambiarStoryPoints &&
-		c.Criterios == nil && c.Estado == nil
+		c.Criterios == nil && c.Estado == nil && !c.CambiarHorasEstimadas
 }
 
 // Editar devuelve una copia del elemento con los cambios aplicados; el original no cambia.
-// Valida el resultado con las mismas reglas que al crear (NuevoElementoBacklog) y después el
-// estado. La unicidad del título se verifica en el caso de uso, como en HU-05.
-// Implementa HU-06 (RN-06.1 a RN-06.5, RN-06.9).
+// Valida el resultado con las mismas reglas que al crear (NuevoElementoBacklog), después el estado y
+// por último las horas estimadas, si se enviaron. La unicidad del título se verifica en el caso de
+// uso, como en HU-05. Implementa HU-06 (RN-06.1 a RN-06.5, RN-06.9) y HU-19 (RN-19.2, RN-19.3).
 func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	if c.vacios() {
 		return ElementoBacklog{}, ErrSinCambios
@@ -77,7 +99,19 @@ func (e ElementoBacklog) Editar(c CambiosElemento) (ElementoBacklog, error) {
 	if !estadoElementoValido(estado) {
 		return ElementoBacklog{}, ErrEstadoElementoInvalido
 	}
+	horasEstimadas := e.HorasEstimadas
+	if c.CambiarHorasEstimadas {
+		horasEstimadas = c.HorasEstimadas
+		if horasEstimadas != nil {
+			if err := validarHorasEstimadas(*horasEstimadas); err != nil {
+				return ElementoBacklog{}, err
+			}
+		}
+	}
 	editado.ID = e.ID
 	editado.Estado = estado
+	// NuevoElementoBacklog no recibe el sprint ni las horas estimadas: sin esto, la copia los perdería.
+	editado.SprintID = copiarPuntero(e.SprintID)
+	editado.HorasEstimadas = copiarPuntero(horasEstimadas)
 	return editado, nil
 }

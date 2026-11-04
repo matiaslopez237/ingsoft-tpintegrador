@@ -12,6 +12,7 @@
   <input type="hidden" name="original_story_points" value="{{.Original.StoryPoints}}">
   <input type="hidden" name="original_criterios" value="{{.Original.Criterios}}">
   <input type="hidden" name="original_estado" value="{{.Original.Estado}}">
+  <input type="hidden" name="original_horas_estimadas" value="{{.Original.HorasEstimadas}}">
 
   <label for="titulo">Título</label>
   <input id="titulo" name="titulo" type="text" maxlength="100" value="{{.Form.Titulo}}" required>
@@ -28,6 +29,10 @@
   <select id="story_points" name="story_points">
     {{range .OpcionesStoryPoints}}<option value="{{.Valor}}"{{if .Elegida}} selected{{end}}>{{.Etiqueta}}</option>{{end}}
   </select>
+
+  {{/* HU-19: sin min ni max, los límites quedan en el dominio y sus mensajes se ven acá. */}}
+  <label for="horas_estimadas">Horas estimadas <span class="ayuda">(vacío: sin estimar)</span></label>
+  <input id="horas_estimadas" name="horas_estimadas" type="number" step="0.5" value="{{.Form.HorasEstimadas}}">
 
   <label for="criterios">Criterios de aceptación <span class="ayuda">(uno por línea)</span></label>
   <textarea id="criterios" name="criterios" rows="4" required>{{.Form.Criterios}}</textarea>
@@ -93,6 +98,17 @@
       <button type="submit" class="boton">Registrar esfuerzo</button>
     </div>
   </form>
+</section>
+
+{{/* HU-19: justo después de registrar, para ver el total sin moverse de la sección. */}}
+<section id="comparacion" aria-labelledby="titulo-comparacion">
+  <h2 id="titulo-comparacion">Esfuerzo estimado y real</h2>
+  <dl class="datos">
+    <dt>Horas estimadas</dt><dd>{{.Comparacion.HorasEstimadas}}</dd>
+    <dt>Horas reales</dt><dd>{{.Comparacion.HorasReales}}</dd>
+    <dt>Desviación en horas</dt><dd>{{.Comparacion.DesviacionHoras}}</dd>
+    <dt>Desviación en porcentaje</dt><dd>{{.Comparacion.DesviacionPorcentaje}}</dd>
+  </dl>
 </section>
 
 <details class="confirmar">

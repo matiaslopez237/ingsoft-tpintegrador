@@ -87,6 +87,7 @@ func nuevoSistemaEdicionBacklog() (sistemaEdicionBacklog, error) {
 		EditarElementoBacklog:    s.editar,
 		EliminarElementoBacklog:  s.eliminar,
 		ConsultarElementoBacklog: app.NuevoConsultarElementoBacklog(backlog),
+		CompararEsfuerzo:         app.NuevoCompararEsfuerzo(proyectos, backlog, persistencia.NuevoRepositorioEsfuerzo(db)), // HU-19: la pantalla del elemento lo consulta
 	}))
 	s.cliente = s.servidor.Client()
 	s.cliente.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }

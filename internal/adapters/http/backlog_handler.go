@@ -27,14 +27,15 @@ type pedidoCrearElemento struct {
 }
 
 type respuestaElemento struct {
-	ID          int64    `json:"id"`
-	ProyectoID  int64    `json:"proyecto_id"`
-	Titulo      string   `json:"titulo"`
-	Descripcion string   `json:"descripcion"`
-	Prioridad   string   `json:"prioridad"`
-	Estado      string   `json:"estado"`
-	StoryPoints *int     `json:"story_points"`
-	Criterios   []string `json:"criterios"`
+	ID             int64    `json:"id"`
+	ProyectoID     int64    `json:"proyecto_id"`
+	Titulo         string   `json:"titulo"`
+	Descripcion    string   `json:"descripcion"`
+	Prioridad      string   `json:"prioridad"`
+	Estado         string   `json:"estado"`
+	StoryPoints    *int     `json:"story_points"`
+	Criterios      []string `json:"criterios"`
+	HorasEstimadas *float64 `json:"horas_estimadas"` // null: sin estimar en horas (HU-19)
 }
 
 // erroresDeValidacionBacklog son los errores de HU-05 que se responden como 400.

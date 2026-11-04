@@ -664,14 +664,16 @@ func idsDuplicados(cuerpo string) []string {
 	return duplicados
 }
 
-// Traza: HU-18 sección 9 y HU-14 CA-14.9: las dos secciones conviven en la pantalla del elemento, en
-// orden (edición, Planning Poker, esfuerzo, eliminar), sin ids repetidos ni formularios anidados.
+// Traza: HU-18 sección 9, HU-14 CA-14.9 y HU-19 CA-19.18: las secciones conviven en la pantalla del
+// elemento, en orden (edición, Planning Poker, esfuerzo, comparación, eliminar), sin ids repetidos ni
+// formularios anidados.
 func TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos(t *testing.T) {
 	const (
 		formEditar    = "form " + rutaElementoWeb + "/editar"
 		poker         = "section titulo-poker"
 		esfuerzo      = "section esfuerzo"
 		formRegistrar = esfuerzo + " > form " + rutaEsfuerzoWeb + "#esfuerzo"
+		comparacion   = "section comparacion"
 		eliminar      = "details confirmar"
 		formEliminar  = eliminar + " > form " + rutaElementoWeb + "/eliminar"
 	)
@@ -681,10 +683,10 @@ func TestPantallaElemento_PlanningPokerYEsfuerzo_Juntos(t *testing.T) {
 		want   []string
 	}{
 		{"sin ronda: botón para iniciar", nuevoPokerFalso(), []string{
-			formEditar, poker, poker + " > form " + rutaElementoWeb + "/rondas", esfuerzo, formRegistrar, eliminar, formEliminar,
+			formEditar, poker, poker + " > form " + rutaElementoWeb + "/rondas", esfuerzo, formRegistrar, comparacion, eliminar, formEliminar,
 		}},
 		{"con ronda abierta: enlace, sin formulario", conRonda(t), []string{
-			formEditar, poker, esfuerzo, formRegistrar, eliminar, formEliminar,
+			formEditar, poker, esfuerzo, formRegistrar, comparacion, eliminar, formEliminar,
 		}},
 	}
 	for _, tt := range tests {

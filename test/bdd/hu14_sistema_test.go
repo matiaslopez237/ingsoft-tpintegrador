@@ -81,6 +81,7 @@ func nuevoSistemaPlanningPoker() (sistemaPlanningPoker, error) {
 		EditarElementoBacklog:    s.editar,
 		EliminarElementoBacklog:  app.NuevoEliminarElementoBacklog(backlog),
 		ConsultarElementoBacklog: app.NuevoConsultarElementoBacklog(backlog),
+		CompararEsfuerzo:         app.NuevoCompararEsfuerzo(proyectos, backlog, persistencia.NuevoRepositorioEsfuerzo(db)), // HU-19: la pantalla del elemento lo consulta
 		IniciarRonda:             s.iniciar,
 		Votar:                    s.votar,
 		ConsultarRonda:           s.consultar,

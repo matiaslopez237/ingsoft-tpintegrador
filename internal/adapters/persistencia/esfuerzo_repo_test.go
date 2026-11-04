@@ -12,8 +12,11 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// El adaptador tiene que cumplir el puerto del caso de uso (se verifica al compilar).
-var _ app.RepositorioEsfuerzo = (*RepositorioEsfuerzo)(nil)
+// El adaptador tiene que cumplir los puertos de los casos de uso (se verifica al compilar).
+var (
+	_ app.RepositorioEsfuerzo = (*RepositorioEsfuerzo)(nil)
+	_ app.LectorHorasReales   = (*RepositorioEsfuerzo)(nil)
+)
 
 // baseEsfuerzo es una base SQLite real con un proyecto, la integrante "Ana" y el elemento "Login".
 type baseEsfuerzo struct {
@@ -195,5 +198,123 @@ func TestRepositorioEsfuerzo_QuitarAlIntegrante_ConservaSusRegistros(t *testing.
 	}
 	if got.Integrante != "Ana" {
 		t.Errorf("Integrante = %q, se esperaba \"Ana\"", got.Integrante)
+	}
+}
+
+// registrarHoras guarda un registro directo en la base del elemento y lo deja a nombre del integrante.
+func (b baseEsfuerzo) registrarHoras(t *testing.T, elementoID int64, integrante string, dia int, horas float64) {
+	t.Helper()
+	fecha := time.Date(2026, time.October, dia, 0, 0, 0, 0, time.Local)
+	hoy := time.Date(2026, time.October, 31, 12, 0, 0, 0, time.Local)
+	r, err := domain.NuevoRegistroEsfuerzo(b.proyectoID, elementoID, integrante, fecha, "Desarrollo", horas, hoy)
+	if err != nil {
+		t.Fatalf("crear registro de prueba: %v", err)
+	}
+	if err := b.repo.GuardarRegistro(context.Background(), &r); err != nil {
+		t.Fatalf("guardar registro de prueba: %v", err)
+	}
+}
+
+// horasReales lee las horas del elemento y falla el test si hay un error.
+func (b baseEsfuerzo) horasReales(t *testing.T, elementoID int64) float64 {
+	t.Helper()
+	got, err := b.repo.HorasRealesDeElemento(context.Background(), elementoID)
+	if err != nil {
+		t.Fatalf("horas reales del elemento %d: %v", elementoID, err)
+	}
+	return got
+}
+
+// Traza: HU-19 CA-19.5, CA-19.6 (RN-19.4: sin registros son 0 horas, y no es un error)
+func TestRepositorioEsfuerzo_HorasReales_SinRegistros_DaCero(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t)
+
+	if got := b.horasReales(t, b.elementoID); got != 0 {
+		t.Errorf("horas reales = %v, se esperaba 0", got)
+	}
+}
+
+// Traza: HU-19 CA-19.1 (RN-19.4: de cualquier integrante y fecha)
+func TestRepositorioEsfuerzo_HorasReales_SumaIntegrantesYFechasDistintos(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t)
+	if err := b.proyectos.AgregarIntegrante(context.Background(), b.proyectoID, domain.Integrante{Nombre: "Beto", Roles: []string{"Tester"}}); err != nil {
+		t.Fatal(err)
+	}
+	b.registrarHoras(t, b.elementoID, "Ana", 20, 2)
+	b.registrarHoras(t, b.elementoID, "Beto", 21, 0.5)
+	b.registrarHoras(t, b.elementoID, "Ana", 21, 1.5)
+
+	if got := b.horasReales(t, b.elementoID); got != 4 {
+		t.Errorf("horas reales = %v, se esperaba 4", got)
+	}
+}
+
+// Traza: HU-19 CA-19.1 (RN-19.4; sección 5): se suman enteros, y una suma impar de medias horas conserva el 0,5.
+func TestRepositorioEsfuerzo_HorasReales_ConservaLaMediaHora(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t)
+	b.registrarHoras(t, b.elementoID, "Ana", 20, 0.5)
+	b.registrarHoras(t, b.elementoID, "Ana", 20, 1)
+
+	if got := b.horasReales(t, b.elementoID); got != 1.5 {
+		t.Errorf("horas reales = %v, se esperaba 1,5", got)
+	}
+}
+
+// Traza: HU-19 CA-19.11 (RN-19.4: el tope de 24 h es por registro, no para la suma)
+func TestRepositorioEsfuerzo_HorasReales_LaSumaPuedeSuperar24(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t)
+	b.registrarHoras(t, b.elementoID, "Ana", 20, 24)
+	b.registrarHoras(t, b.elementoID, "Ana", 21, 24)
+	b.registrarHoras(t, b.elementoID, "Ana", 22, 8)
+
+	if got := b.horasReales(t, b.elementoID); got != 56 {
+		t.Errorf("horas reales = %v, se esperaba 56", got)
+	}
+}
+
+// Traza: HU-19 CA-19.11 (RN-19.4)
+func TestRepositorioEsfuerzo_HorasReales_NoSumaOtroElemento(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t)
+	otro := elementoDePrueba(t, b.proyectoID, "Reportes", nil)
+	if err := NuevoRepositorioBacklog(b.db).GuardarElemento(context.Background(), &otro); err != nil {
+		t.Fatal(err)
+	}
+	b.registrarHoras(t, b.elementoID, "Ana", 20, 2)
+	b.registrarHoras(t, otro.ID, "Ana", 20, 5)
+
+	if got := b.horasReales(t, b.elementoID); got != 2 {
+		t.Errorf("horas reales del elemento = %v, se esperaba 2", got)
+	}
+	if got := b.horasReales(t, otro.ID); got != 5 {
+		t.Errorf("horas reales del otro elemento = %v, se esperaba 5", got)
+	}
+}
+
+// Traza: HU-19 CA-19.11 (RN-19.4, RN-18.3)
+func TestRepositorioEsfuerzo_HorasReales_IntegranteQuitado_SigueSumando(t *testing.T) {
+	ctx := context.Background()
+	b := nuevaBaseEsfuerzo(t)
+	if err := b.proyectos.AgregarIntegrante(ctx, b.proyectoID, domain.Integrante{Nombre: "Beto", Roles: []string{"Tester"}}); err != nil {
+		t.Fatal(err)
+	}
+	b.registrarHoras(t, b.elementoID, "Ana", 20, 2)
+	b.registrarHoras(t, b.elementoID, "Beto", 20, 3)
+
+	if err := b.proyectos.QuitarIntegrante(ctx, b.proyectoID, "Beto"); err != nil {
+		t.Fatalf("quitar integrante (HU-03): %v", err)
+	}
+
+	if got := b.horasReales(t, b.elementoID); got != 5 {
+		t.Errorf("horas reales = %v, se esperaba 5", got)
+	}
+}
+
+// El caso de uso ya verificó el elemento; si no existe, la consulta da 0 y no un error (spec, sección 5).
+// Traza: HU-19 CA-19.5 (RN-19.4; sección 5: consulta de horas reales)
+func TestRepositorioEsfuerzo_HorasReales_ElementoInexistente_DaCero(t *testing.T) {
+	b := nuevaBaseEsfuerzo(t)
+
+	if got := b.horasReales(t, 999); got != 0 {
+		t.Errorf("horas reales = %v, se esperaba 0", got)
 	}
 }

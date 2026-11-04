@@ -35,6 +35,10 @@ func AbrirDB(ruta string) (*sql.DB, error) {
 		db.Close()
 		return nil, fmt.Errorf("migrar columnas de puntos de sprints: %w", err)
 	}
+	if err := migrarHorasEstimadas(db); err != nil {
+		db.Close()
+		return nil, fmt.Errorf("migrar columna medias_horas_estimadas: %w", err)
+	}
 	if err := migrarEstimacionAcordada(db); err != nil {
 		db.Close()
 		return nil, fmt.Errorf("migrar columna estimacion_acordada: %w", err)
@@ -79,15 +83,17 @@ CREATE TABLE IF NOT EXISTS integrante_roles (
 
 -- HU-05. titulo_clave = domain.ClaveNombre(titulo): garantiza RN-05.3 también en la base.
 -- story_points NULL: elemento sin estimar (RN-05.6).
+-- HU-19. medias_horas_estimadas = horas * 2, como en registros_esfuerzo; NULL: sin estimar (RN-19.1).
 CREATE TABLE IF NOT EXISTS backlog_elementos (
-	id           INTEGER PRIMARY KEY AUTOINCREMENT,
-	proyecto_id  INTEGER NOT NULL REFERENCES proyectos (id),
-	titulo       TEXT    NOT NULL,
-	titulo_clave TEXT    NOT NULL,
-	descripcion  TEXT    NOT NULL,
-	prioridad    TEXT    NOT NULL,
-	estado       TEXT    NOT NULL,
-	story_points INTEGER,
+	id                     INTEGER PRIMARY KEY AUTOINCREMENT,
+	proyecto_id            INTEGER NOT NULL REFERENCES proyectos (id),
+	titulo                 TEXT    NOT NULL,
+	titulo_clave           TEXT    NOT NULL,
+	descripcion            TEXT    NOT NULL,
+	prioridad              TEXT    NOT NULL,
+	estado                 TEXT    NOT NULL,
+	story_points           INTEGER,
+	medias_horas_estimadas INTEGER,
 	UNIQUE (proyecto_id, titulo_clave)
 );
 
@@ -185,6 +191,15 @@ func migrarPuntosDeSprint(db *sql.DB) error {
 	return agregarColumnas(db, "sprints", map[string]string{
 		"puntos_planificados": "INTEGER NOT NULL DEFAULT 0",
 		"puntos_completados":  "INTEGER NOT NULL DEFAULT 0",
+	})
+}
+
+// migrarHorasEstimadas agrega a backlog_elementos la columna de HU-19 si todavía no existe, por el
+// mismo motivo que migrarSprintID. Los elementos que ya estaban quedan sin estimar (CA-19.16). Es
+// seguro llamarla en cada arranque.
+func migrarHorasEstimadas(db *sql.DB) error {
+	return agregarColumnas(db, "backlog_elementos", map[string]string{
+		"medias_horas_estimadas": "INTEGER",
 	})
 }
 
