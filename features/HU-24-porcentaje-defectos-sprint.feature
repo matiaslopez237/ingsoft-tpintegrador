@@ -64,7 +64,7 @@ Feature: Calcular el porcentaje de story points completados y los defectos por S
   @CA-24.6 @alternativo
   Scenario: Un sprint abierto no aparece en la calidad de los sprints
     Given "Alfa" tiene un sprint cerrado con 5 puntos planificados y 5 completados
-    And "Alfa" tiene un sprint abierto
+    And "Alfa" tiene un sprint todavía abierto
     When consulto la calidad de los sprints de "Alfa"
     Then solo aparece 1 sprint en la calidad
 

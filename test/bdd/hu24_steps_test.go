@@ -72,7 +72,7 @@ func registrarStepsHU24(ctx *godog.ScenarioContext) {
 	// Given
 	ctx.Step(`^el proyecto "([^"]*)" para la calidad del sprint$`, w.proyectoParaCalidad)
 	ctx.Step(`^"([^"]*)" tiene (?:un|otro) sprint cerrado con (\d+) puntos planificados y (\d+) completados$`, w.tieneSprintCerrado)
-	ctx.Step(`^"([^"]*)" tiene un sprint abierto$`, w.tieneSprintAbierto)
+	ctx.Step(`^"([^"]*)" tiene un sprint todavía abierto$`, w.tieneSprintAbierto)
 	ctx.Step(`^se detect(?:ó|aron) (\d+) defectos? en el sprint (\d+) de "([^"]*)"$`, w.detectaronDefectos)
 	ctx.Step(`^se detectó un defecto en "([^"]*)" sin ningún sprint$`, w.detectoDefectoSinSprint)
 	ctx.Step(`^se resolvió un defecto en el sprint (\d+) de "([^"]*)", y después se cerró$`, w.resolvioYCerroDefecto)
