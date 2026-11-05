@@ -120,7 +120,7 @@ Sprints de 2 días (el Sprint 3, de 3, porque la entrega se postergó). Al cerra
 |---|---|---|---|---|
 | HU-22 | Como Scrum Master, quiero ver los story points planificados, completados y la velocidad del equipo por Sprint, para medir el rendimiento. | 5 | 5 | 3 |
 | HU-23 | Como Scrum Master, quiero ver las horas estimadas, las horas reales y su desviación, para evaluar la planificación. | 5 | 3 | 3 |
-| HU-24 | Como Scrum Master, quiero ver el porcentaje de historias completadas y la cantidad de defectos detectados/resueltos, para evaluar la calidad del Sprint. | 5 | 3 | 4 |
+| HU-24 | Como Scrum Master, quiero ver el porcentaje de story points completados y la cantidad de defectos detectados/resueltos, para evaluar la calidad del Sprint. | 5 | 3 | 4 |
 
 **Subtotal: 11 pts**
 
