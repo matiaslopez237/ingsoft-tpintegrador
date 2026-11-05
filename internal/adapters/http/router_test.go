@@ -49,6 +49,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		ConsultarHorasSprint:     &consultorHorasSprintFalso{},
 		ActualizarEstadoDefecto:  &actualizadorEstadoDefectoFalso{},
 		ListarDefectos:           &listadorDefectosFalso{},
+		ConsultarCalidadSprints:  &consultorCalidadSprintsFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -84,6 +85,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/defectos/1/iniciar", ""},                                                                             // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/resolver", ""},                                                                            // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/cerrar", ""},                                                                              // HU-21
+		{http.MethodGet, "/proyectos/1/calidad", ""},                                                                                         // HU-24
 		{http.MethodGet, "/", ""},                                                                                                            // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                                                                                               // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                                                                                          // HU-30
