@@ -130,6 +130,29 @@ La pantalla del sprint (`GET /web/proyectos/1/sprints/2`) llama al mismo caso de
 
 El CI corre todo con `-race` y exige una cobertura mínima del 80 % (ADR-0004).
 
+## Decisiones técnicas
+
+Las decisiones de arquitectura están en [`docs/adr/`](adr/), una por archivo, con el contexto, las alternativas y las consecuencias.
+
+| Tema | Decisión | Registro |
+|---|---|---|
+| Lenguaje | Go (la versión está en `go.mod`). El núcleo y las reglas de negocio van en Go, como pide la cátedra. | Enunciado del TP |
+| Rutas HTTP | `net/http` de la biblioteca estándar, sin framework. | [ADR-0001](adr/0001-framework-web.md) |
+| Persistencia | SQLite con `modernc.org/sqlite`, sin CGO, en un solo archivo. | [ADR-0002](adr/0002-persistencia.md) |
+| Interfaz | Páginas generadas en el servidor con `html/template` y un CSS propio, sin JavaScript hasta ahora. | [ADR-0003](adr/0003-interfaz-web.md) |
+| CI/CD | GitHub Actions con `-race` y cobertura mínima del 80 %, `main` protegida y despliegue en Render. El despliegue todavía no está activo: falta configurar Render. | [ADR-0004](adr/0004-ci-cd.md) |
+| Organización del código | Arquitectura hexagonal: dominio, casos de uso y adaptadores (este documento). | [`CLAUDE.md`](../CLAUDE.md) |
+| BDD | Escenarios en Gherkin automatizados con godog. | [`CLAUDE.md`](../CLAUDE.md) |
+
+**Pendientes del Sprint 4:**
+- **ADR-0005, gráficos del Dashboard** (HU-25, tarea 25.1): tiene que respetar la política de seguridad de las pantallas, que bloquea scripts de otros sitios y scripts en línea.
+- **ADR-0006, exportar a PDF** (HU-27, tarea 27.1): la librería tiene que funcionar en Render sin dependencias del sistema.
+
+**Decisiones de diseño que salen de las specs y valen para todo el sistema:**
+- **Sin usuarios ni sesiones:** cualquiera que llegue a una ruta puede usarla, y no se controla qué rol hace cada acción. Por eso los formularios se protegen comprobando el origen y no con un token.
+- **Horas en medias horas enteras** (HU-18 y HU-19), para que las sumas sean exactas.
+- **Los errores de dominio llevan el mensaje que ve el usuario:** las pantallas y la API lo muestran tal cual, salvo las fallas internas, que solo van al log.
+
 ## Dónde va cada cosa al sumar una historia
 
 1. Spec en `docs/specs/HU-XX-*.md` y escenarios en `features/HU-XX-*.feature`.

@@ -50,3 +50,5 @@ Páginas HTML generadas en el servidor con `html/template`, el paquete estándar
 ## Notes
 
 Decidido por el equipo al planificar el Sprint 2 (2026-10-25). Lo implementa primero HU-30 (interfaz web base), que bloquea las pantallas de las demás historias.
+
+**Actualización 2026-11-05 (HU-29):** las pantallas responden con `Content-Security-Policy: default-src 'self'`, que bloquea scripts y estilos de otros sitios o escritos dentro de la página. Hasta el Sprint 3 la interfaz no usa JavaScript. La forma de dibujar los gráficos del Dashboard se decide en el ADR-0005 (HU-25, tarea 25.1), y tiene que respetar esa política.
