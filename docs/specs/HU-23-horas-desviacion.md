@@ -1,8 +1,8 @@
 # HU-23: Horas estimadas, reales y desviación de un sprint o proyecto
 
 **Historia:** Como Scrum Master, quiero ver las horas estimadas, las horas reales y su desviación, para evaluar la planificación.
-**Issue:** #34  ·  **Sprint:** 3  ·  **Story points:** 3 (según el planning y el Product Backlog; la issue dice 5, ver "Preguntas abiertas")
-**Estado de la spec:** Borrador
+**Issue:** #34  ·  **Sprint:** 3  ·  **Story points:** 3
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Mostrar, para un sprint o para un proyecto completo, cuántas horas se estimaron, cuántas se trabajaron y cuánto se desvió la planificación, en horas y en porcentaje. HU-19 hace esa comparación para un elemento; esta historia suma los elementos y aplica el mismo cálculo (`domain.CompararEsfuerzo`) sobre las sumas. No guarda datos nuevos: las horas estimadas y los registros de esfuerzo ya existen (HU-19 y HU-18).
@@ -199,11 +199,15 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-03, abiertas a objeción en el 
 - **P-7 — Horas:** reales en medias horas enteras y estimadas con paso de 0,5 h, como en HU-18 y HU-19. La suma es exacta (sección 5).
 - **P-8 — Reutilización del dominio:** `CompararEsfuerzo` no cambia. `TotalHoras` es un tipo nuevo porque `ComparacionEsfuerzo.HorasReales` serían solo las de los elementos estimados y no alcanza para informar el total ni los elementos sin estimar.
 
+## Decisiones confirmadas por el equipo
+Confirmadas por Matías López (Agile Enabler) el 2026-11-04, en la revisión del PR #298. P-1 a P-8 no tuvieron objeciones.
+- **P-9 — Story points:** son 3, como dicen el planning y el Product Backlog.
+- **P-10 — Opción A de P-3:** alcanza. Un sprint cuenta por el `SprintID` actual (RN-23.7, RN-23.8) y los totales no se congelan (RN-23.9).
+- **P-11 — Texto de HU-19:** se corrigió la frase de RN-19.8 y P-4. Desde HU-23 no llega un estimado 0 (RN-23.6); la rama queda como defensa.
+- **P-12 — Totales en la lista de sprints:** quedan fuera de esta historia. Se define en el dashboard (HU-25).
+
 ## Preguntas abiertas
-- **P-9 — Story points: ¿3 o 5?** La issue #34 dice 5. El planning del Sprint 3 dice 3, y el Product Backlog tiene 5 como estimación inicial y 3 en la columna de puntos, así que parece que la issue quedó desactualizada. La spec usa 3. **Falta que el equipo lo confirme y actualice la issue**: cambia el compromiso del sprint, que suma 28 con 3 puntos.
-- **P-10 — ¿Alcanza la opción A de P-3 para el equipo?** La pregunta la dejó abierta el planning. Si alguien necesita que un sprint cerrado muestre las horas de lo que no se terminó, hay que elegir B, C o D, que tocan HU-09 o HU-11 y agrandan la historia.
-- **P-11 — Texto de HU-19 a corregir.** RN-19.8 y P-4 de HU-19 dicen que HU-23 le va a pasar sumas que pueden dar 0. Con RN-23.6 no pasa: sin estimaciones se pasa `nil`, y con estimaciones la suma es mayor a 0. La rama de estimado 0 sigue siendo correcta y queda como defensa. **Propuesta:** corregir esa frase de HU-19 cuando se apruebe esta spec; no se toca en este cambio.
-- **P-12 — ¿Mostrar los totales también en la lista de sprints?** Quedan fuera por P-6. Si el Scrum Master quiere comparar sprints de un vistazo, podría resolverlo el dashboard (HU-25); hay que definirlo en esa historia.
+Ninguna.
 
 ## Historial
 - 2026-11-03: creada (borrador). Decisiones P-1 a P-8 tomadas por el autor, abiertas a objeción en el PR; P-9 a P-12, pendientes del equipo.
@@ -211,3 +215,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-03, abiertas a objeción en el 
 - 2026-11-03: el aviso de elementos sin estimar y sin horas reales solo los cuenta, sin hablar de 0 h. La spec sigue en borrador.
 - 2026-11-03: se documentan en la sección 5 tres cosas que el código ya hacía y los tests verifican: el orden de las filas, el paso del contexto y que `TotalizarHoras` no modifica lo que recibe. La spec sigue en borrador.
 - 2026-11-04: se actualiza la dependencia: HU-19 se mergeó a `main` (PR #297) y HU-23 ya se integró con `main`. No cambia ninguna regla, criterio ni decisión. La spec sigue en borrador.
+- 2026-11-04: Matías confirma P-9 a P-12 y aprueba la spec, que pasa a Implementada. La aclaración de la pantalla cambia a "Los que salieron de él", porque un elemento `Hecho` reasignado a otro sprint tampoco cuenta y no volvió al backlog (RN-23.8).
