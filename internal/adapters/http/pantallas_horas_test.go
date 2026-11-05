@@ -196,7 +196,7 @@ func TestPantallasHoras_AclaracionDelSprintCerrado(t *testing.T) {
 		return []domain.Sprint{s}, nil
 	})
 	seccionContiene(t, seccionHoras(t, pedirPantalla(t, cerrado, http.MethodGet, rutaSprintDetalle, nil)),
-		textoSprintCerrado, "Los que volvieron al backlog al cerrarlo no suman acá, pero sí en el total del proyecto.")
+		textoSprintCerrado, "Los que salieron de él no suman acá, pero sí en el total del proyecto.")
 
 	abierto := casosConHoras(estimado(8, 10))
 	seccionNoContiene(t, seccionHoras(t, pedirPantalla(t, abierto, http.MethodGet, rutaSprintDetalle, nil)), textoSprintCerrado)
