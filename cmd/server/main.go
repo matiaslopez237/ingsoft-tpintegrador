@@ -34,7 +34,7 @@ func main() {
 	repoBacklog := persistencia.NuevoRepositorioBacklog(db)
 	repoSprints := persistencia.NuevoRepositorioSprints(db)
 	repoRondas := persistencia.NuevoRepositorioRondas(db)     // HU-14
-	repoEsfuerzo := persistencia.NuevoRepositorioEsfuerzo(db) // HU-18 y HU-19
+	repoEsfuerzo := persistencia.NuevoRepositorioEsfuerzo(db) // HU-18, HU-19 y HU-23
 	repoDefectos := persistencia.NuevoRepositorioDefectos(db) // HU-20/HU-21
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		CrearProyecto:            app.NuevoCrearProyecto(repoProyectos),
@@ -59,14 +59,16 @@ func main() {
 		CompletarHistoria:  app.NuevoCompletarHistoria(repoProyectos, repoBacklog), // HU-10
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-20, RN-20.5).
 		RegistrarDefecto:        app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints, repoDefectos, time.Now),
-		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),        // HU-14
-		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                            // HU-14
-		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas),      // HU-14
-		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),         // HU-12
-		ConsultarVelocidad:      app.NuevoConsultarVelocidad(repoProyectos, repoSprints),              // HU-22
-		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),        // HU-16
-		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas), // HU-17
-		CompararEsfuerzo:        app.NuevoCompararEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo),  // HU-19
+		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),           // HU-14
+		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),                               // HU-14
+		ConsultarRonda:          app.NuevoConsultarRonda(repoProyectos, repoBacklog, repoRondas),         // HU-14
+		ListarSprintsAnteriores: app.NuevoListarSprintsAnteriores(repoProyectos, repoSprints),            // HU-12
+		ConsultarVelocidad:      app.NuevoConsultarVelocidad(repoProyectos, repoSprints),                 // HU-22
+		ListarRondas:            app.NuevoListarRondas(repoProyectos, repoBacklog, repoRondas),           // HU-16
+		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas),    // HU-17
+		CompararEsfuerzo:        app.NuevoCompararEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo),     // HU-19
+		ConsultarHorasProyecto:  app.NuevoConsultarHorasProyecto(repoProyectos, repoEsfuerzo),            // HU-23
+		ConsultarHorasSprint:    app.NuevoConsultarHorasSprint(repoProyectos, repoSprints, repoEsfuerzo), // HU-23
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-21, RN-21.5).
 		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, time.Now),
 		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos), // HU-21

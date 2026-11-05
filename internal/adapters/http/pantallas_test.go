@@ -83,6 +83,9 @@ func casosFalsos() CasosDeUso {
 		QuitarIntegrante: quitarFunc(func(context.Context, app.DatosQuitarIntegrante) error { return nil }),
 		AgregarRol:       rolFunc(func(context.Context, app.DatosRol) error { return domain.ErrRolDuplicado }),
 		CompararEsfuerzo: &comparadorEsfuerzoFalso{}, // HU-19: la pantalla del elemento siempre lo consulta
+		// HU-23: los detalles del proyecto y del sprint siempre las consultan.
+		ConsultarHorasProyecto: &consultorHorasProyectoFalso{},
+		ConsultarHorasSprint:   &consultorHorasSprintFalso{},
 	}
 }
 

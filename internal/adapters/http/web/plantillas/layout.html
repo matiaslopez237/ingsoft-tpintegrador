@@ -24,3 +24,16 @@
 </html>{{end}}
 
 {{define "error_form"}}{{if .}}<p class="alerta" role="alert">{{.}}</p>{{end}}{{end}}
+
+{{/* HU-23: el mismo bloque en los detalles del sprint y del proyecto. */}}
+{{define "bloque_horas"}}<section id="total-horas" aria-labelledby="titulo-total-horas">
+  <h2 id="titulo-total-horas">Horas y desviación</h2>
+  <dl class="datos">
+    <dt>Elementos</dt><dd>{{.Elementos}}</dd>
+    <dt>Horas estimadas</dt><dd>{{.HorasEstimadas}}</dd>
+    <dt>Horas reales</dt><dd>{{.HorasReales}}</dd>
+    <dt>Desviación en horas</dt><dd>{{.DesviacionHoras}}</dd>
+    <dt>Desviación en porcentaje</dt><dd>{{.DesviacionPorcentaje}}</dd>
+  </dl>
+  {{range .Avisos}}<p class="ayuda">{{.}}</p>{{end}}
+</section>{{end}}

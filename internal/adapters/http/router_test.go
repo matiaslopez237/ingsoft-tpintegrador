@@ -45,6 +45,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		ListarRondas:             &historialRondasFalso{},
 		RegistrarEstimacion:      &registradorEstimacionFalso{},
 		CompararEsfuerzo:         &comparadorEsfuerzoFalso{},
+		ConsultarHorasProyecto:   &consultorHorasProyectoFalso{},
+		ConsultarHorasSprint:     &consultorHorasSprintFalso{},
 		ActualizarEstadoDefecto:  &actualizadorEstadoDefectoFalso{},
 		ListarDefectos:           &listadorDefectosFalso{},
 	})
@@ -76,6 +78,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/proyectos/1/sprints/anteriores", ""},                                                                              // HU-12
 		{http.MethodGet, "/proyectos/1/velocidad", ""},                                                                                       // HU-22
 		{http.MethodGet, "/proyectos/1/backlog/1/esfuerzo/comparacion", ""},                                                                  // HU-19
+		{http.MethodGet, "/proyectos/1/horas", ""},                                                                                           // HU-23
+		{http.MethodGet, "/proyectos/1/sprints/1/horas", ""},                                                                                 // HU-23
 		{http.MethodGet, "/proyectos/1/defectos", ""},                                                                                        // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/iniciar", ""},                                                                             // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/resolver", ""},                                                                            // HU-21

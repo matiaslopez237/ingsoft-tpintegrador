@@ -10,8 +10,7 @@ import (
 // RepositorioCierre es el puerto de persistencia de HU-11. Es angosto a propósito: no se ensancha
 // RepositorioSprints de HU-08 (spec HU-11, sección 5).
 type RepositorioCierre interface {
-	// BuscarSprintPorID devuelve domain.ErrSprintNoEncontrado si no existe.
-	BuscarSprintPorID(ctx context.Context, id int64) (domain.Sprint, error)
+	LectorSprintPorID // BuscarSprintPorID (de HU-23): devuelve domain.ErrSprintNoEncontrado si no existe.
 	// CerrarSprint deja el sprint guardado en Cerrado solo si sigue Abierto; si otro pedido lo
 	// cerró en el medio, devuelve domain.ErrSprintYaCerrado (spec HU-11, sección 5, P-8). Persiste
 	// siempre el estado Cerrado (RN-11.1) y del sprint usa solo el ID: no copia s.Estado ni otros

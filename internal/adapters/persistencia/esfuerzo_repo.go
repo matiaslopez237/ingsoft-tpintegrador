@@ -11,8 +11,8 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// RepositorioEsfuerzo implementa app.RepositorioEsfuerzo y app.LectorHorasReales sobre SQLite.
-// Implementa HU-18 (RN-18.3, RN-18.10) y HU-19 (RN-19.4).
+// RepositorioEsfuerzo implementa app.RepositorioEsfuerzo, app.LectorHorasReales y app.LectorHoras sobre
+// SQLite. Implementa HU-18 (RN-18.3, RN-18.10), HU-19 (RN-19.4) y HU-23 (horas_repo.go).
 type RepositorioEsfuerzo struct {
 	db *sql.DB
 }

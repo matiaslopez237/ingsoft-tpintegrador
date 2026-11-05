@@ -11,6 +11,8 @@
   <dt>Estado</dt><dd><span class="estado">{{.Sprint.Estado}}</span></dd>
 </dl>
 
+{{template "bloque_horas" .Horas}}
+
 <section aria-labelledby="titulo-asignados">
   <h2 id="titulo-asignados">Elementos del Sprint Backlog</h2>
   {{template "error_form" .Error}}

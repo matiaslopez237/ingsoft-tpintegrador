@@ -21,20 +21,26 @@ type datosComparacion struct {
 
 // vistaComparacion da formato a la comparación. Implementa HU-19 (CA-19.18, sección 3).
 func vistaComparacion(c domain.ComparacionEsfuerzo) datosComparacion {
-	v := datosComparacion{
-		HorasEstimadas: textoSinEstimar, HorasReales: textoHoras(c.HorasReales),
-		DesviacionHoras: textoSinEstimar, DesviacionPorcentaje: textoSinEstimar,
+	v := datosComparacion{HorasEstimadas: textoSinEstimar, HorasReales: textoHoras(c.HorasReales)}
+	if !c.SinEstimar() {
+		v.HorasEstimadas = textoHoras(*c.HorasEstimadas)
 	}
-	if c.SinEstimar() {
-		return v
-	}
-	v.HorasEstimadas = textoHoras(*c.HorasEstimadas)
-	v.DesviacionHoras = conSigno(*c.DesviacionHoras, textoHoras(*c.DesviacionHoras))
-	v.DesviacionPorcentaje = textoSinPorcentaje
-	if c.DesviacionPorcentaje != nil {
-		v.DesviacionPorcentaje = conSigno(*c.DesviacionPorcentaje, textoPorcentaje(*c.DesviacionPorcentaje))
-	}
+	v.DesviacionHoras, v.DesviacionPorcentaje = textosDesviacion(c.DesviacionHoras, c.DesviacionPorcentaje)
 	return v
+}
+
+// textosDesviacion da formato a las dos desviaciones, para la comparación de HU-19 y el total de HU-23.
+// Sin desviación en horas no hay estimación (RN-19.7, RN-23.6); con ella y sin porcentaje, el estimado
+// es 0 (RN-19.8).
+func textosDesviacion(horas, porcentaje *float64) (enHoras, enPorcentaje string) {
+	if horas == nil {
+		return textoSinEstimar, textoSinEstimar
+	}
+	enHoras = conSigno(*horas, textoHoras(*horas))
+	if porcentaje == nil {
+		return enHoras, textoSinPorcentaje
+	}
+	return enHoras, conSigno(*porcentaje, textoPorcentaje(*porcentaje))
 }
 
 // textoHoras muestra las horas con coma decimal: 7,5 h.

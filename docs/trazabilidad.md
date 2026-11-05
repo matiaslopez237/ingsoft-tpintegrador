@@ -31,6 +31,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
+| HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 
 ---
 
@@ -1795,6 +1796,215 @@ Los dos que sobreviven no son un hueco del test: `<textarea>` y `<title>` son co
 - `TestRepositorioSprints_CerrarSprint_SimultaneoConCompletados_QuedaCoherente` (HU-11) creaba historias con 1 a 8 story points; ahora usa valores de la escala.
 - **Escala unificada con HU-14 (revisión del PR #288):** después de traer `main`, los votos de HU-14 usan `EscalaStoryPoints()` y se quitó `ValoresVoto`: hay una sola escala en el dominio (RN-13.4). Commit `55ba3cf` [REFACTOR], con `TestVotar_UsaLaEscalaDeLosStoryPoints`.
 - Revisión con el agente `go-reviewer` (tarea 13.9): sin hallazgos críticos ni altos; confirmó que `Editar` no comparte el puntero de los story points y que un valor anterior a la escala no se valida si no se envía, pero sí si se envía. Se agregó el test de punta a punta que sugirió (`TestPantallaElemento_GuardarConValorAnteriorALaEscala_NoEnviaLosStoryPoints`, `e5fcbd3`). Dos observaciones bajas sin cambios: en el alta, un POST armado a mano con un valor fuera de la escala se vuelve a mostrar marcado (el dominio igual lo rechaza), y si una edición de 4 a 5 falla por otro error, la lista ya no ofrece el 4.
+
+---
+
+## HU-23: Horas estimadas, reales y desviación de un sprint o proyecto
+
+- **Issue:** #34 · Sprint 3 · 3 SP según el planning y el Product Backlog; la issue dice 5 (P-9)
+- **Spec:** [docs/specs/HU-23-horas-desviacion.md](specs/HU-23-horas-desviacion.md)
+- **Feature:** [features/HU-23-horas-desviacion.feature](../features/HU-23-horas-desviacion.feature) (steps en [test/bdd/hu23_steps_test.go](../test/bdd/hu23_steps_test.go), sobre SQLite real en [hu23_sistema_test.go](../test/bdd/hu23_sistema_test.go))
+- **Rutas HTTP:** `GET /proyectos/{id}/horas` y `GET /proyectos/{id}/sprints/{sprintID}/horas`.
+- **Pantallas:** bloque "Horas y desviación" en `GET /web/proyectos/{id}/sprints/{sprintID}` (HU-09) y `GET /web/proyectos/{id}` (HU-30).
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-23.1 Horas de un sprint | RN-23.1, RN-23.2, RN-23.3, RN-23.4, RN-23.7 | La desviación de un sprint se calcula sobre la suma de sus elementos `@normal` (8/10 y 4/3) | `TestTotalizarHoras`, `TestTotalizarHoras_ReutilizaCompararEsfuerzo`, `TestConsultarHorasSprint_DevuelveElTotalDeLosElementosDelSprint`, `TestRepositorioEsfuerzo_HorasDeProyecto_SumaIntegrantesYFechas_UnaFilaPorElemento`, `TestRepositorioEsfuerzo_HorasDeSprint_SoloLosElementosDelSprint`, `TestGetHorasSprint_Devuelve200ConElTotal`, `TestGetHorasProyecto_Devuelve200ConElTotal` | `total_horas.go` (`TotalizarHoras`), `consultar_horas.go` (`ConsultarHorasSprint`), `horas_repo.go` (`HorasDeSprint`) |
+| CA-23.2 Horas de un proyecto | RN-23.1, RN-23.4, RN-23.10 | Las horas de un proyecto incluyen los elementos con sprint y sin sprint `@normal` | `TestTotalizarHoras`, `TestConsultarHorasProyecto_DevuelveElTotalDeLosElementosDelProyecto`, `TestRepositorioEsfuerzo_HorasDeProyecto_IncluyeConYSinSprint_NoMezclaOtroProyecto`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `total_horas.go`, `consultar_horas.go` (`ConsultarHorasProyecto`), `horas_repo.go` (`HorasDeProyecto`) |
+| CA-23.3 Sobre las sumas | RN-23.4 | Outline de la suma `@normal` (10/20 y 90/90) | `TestTotalizarHoras`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `total_horas.go` (una sola llamada a `CompararEsfuerzo`) |
+| CA-23.4 Redondeo | RN-23.4 | Outline de la suma `@limite` (33,3, 1,3 y −1,3) | `TestTotalizarHoras`, `TestTotalizarHoras_NuncaDevuelveCeroNegativo`, `TestRepositorioEsfuerzo_HorasDeProyecto_ConservaLasMediasHoras`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal`, `TestGetHoras_NuncaEscribeCeroNegativo` | `comparacion_esfuerzo.go` (HU-19, sin cambios), `horas_repo.go` (`desdeMediasHoras`) |
+| CA-23.5 Desvíos que se compensan | RN-23.4 | Outline de la suma `@limite` (8/10 y 8/6) | `TestTotalizarHoras`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `total_horas.go` |
+| CA-23.6 Elementos sin estimar | RN-23.2, RN-23.3, RN-23.5 | Un elemento sin estimar suma a las reales y no a la desviación `@alternativo` · Las horas de un elemento sin estimar no compensan la desviación de otro estimado `@limite` | `TestTotalizarHoras`, `TestConsultarHoras_ConElementosSinEstimar_LosPasaAlDominio`, `TestRepositorioEsfuerzo_HorasDeProyecto_EstimadoYSinEstimar`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `total_horas.go` (`HorasRealesSinEstimar`), `horas_repo.go` (`desdeMediasHorasEstimadas`) |
+| CA-23.7 Ninguno estimado | RN-23.6 | Un sprint sin ningún elemento estimado informa sus reales y ninguna desviación `@alternativo` | `TestTotalizarHoras`, `TestConsultarHoras_SinElementos_NoEsUnError`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `total_horas.go` (`SinEstimar`, se pasa `nil`) |
+| CA-23.8 Sin elementos | RN-23.6 | Un sprint sin elementos informa todo en 0 `@limite` · Un proyecto sin elementos informa todo en 0 `@limite` | `TestTotalizarHoras`, `TestConsultarHoras_SinElementos_NoEsUnError`, `TestRepositorioEsfuerzo_HorasDeProyecto_SinElementos_ListaVacia`, `TestRepositorioEsfuerzo_HorasDeSprint_SinElementos_ListaVacia`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `total_horas.go`, `horas_repo.go` |
+| CA-23.9 Sin esfuerzo | RN-23.2, RN-23.3 | Un elemento estimado y sin esfuerzo suma a las estimadas `@limite` | `TestTotalizarHoras`, `TestRepositorioEsfuerzo_HorasDeProyecto_ElementoSinRegistros_ApareceConCero`, `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal` | `horas_repo.go` (`LEFT JOIN`, `COALESCE`) |
+| CA-23.10 Cierre del sprint | RN-23.7, RN-23.8, RN-23.10 | Al cerrar un sprint solo cuentan en él los elementos que siguen asignados `@alternativo` · El proyecto sigue contando las horas de un elemento devuelto al backlog `@alternativo` · Las horas de un elemento devuelto al backlog pasan al sprint donde se replanifica `@alternativo` · Un elemento Hecho reasignado deja de contar en el sprint cerrado `@limite` · Un elemento Hecho reasignado cuenta en el sprint nuevo `@limite` · El elemento devuelto y el Hecho reasignado suman juntos en el sprint nuevo `@limite` | `TestRepositorioEsfuerzo_HorasDeSprint_TrasElCierre_SoloLoQueSigueAsignado` | `horas_repo.go` (`e.sprint_id = ?`) |
+| CA-23.11 Valores actuales | RN-23.9 | Los totales de un sprint cerrado reflejan los valores actuales `@alternativo` | ✗ Ningún test Go lo cita: solo BDD | `horas_repo.go` (se calcula al consultar) |
+| CA-23.12 Qué suma | RN-23.3, RN-23.7, RN-23.9 | Suman los registros de los elementos del sprint y no los de otros elementos `@alternativo` | `TestRepositorioEsfuerzo_HorasDeProyecto_NoMezclaLosRegistrosDeOtroElemento`, `TestRepositorioEsfuerzo_HorasDeProyecto_IncluyeConYSinSprint_NoMezclaOtroProyecto`, `TestRepositorioEsfuerzo_HorasDeSprint_SoloLosElementosDelSprint`, `TestRepositorioEsfuerzo_HorasDeSprint_NoFiltraPorFechaNiPorIntegrante` | `horas_repo.go` (`reg.elemento_id = e.id`, sin filtro de fecha) |
+| CA-23.13 Cualquier estado | RN-23.12 | Se consultan las horas de un sprint Abierto en un proyecto que no está Activo `@alternativo` (4 ejemplos) | `TestConsultarHoras_CualquierEstadoDeSprintYProyecto` | `consultar_horas.go` (no mira estados) |
+| CA-23.14 Proyecto inexistente | RN-23.11 | No se consultan las horas de un proyecto que no existe `@error` · No se consultan las horas de un sprint desde un proyecto que no existe `@error` | `TestConsultarHorasSprint_ValidacionFallida_RetornaErrorYNoConsultaHoras`, `TestConsultarHorasProyecto_ProyectoInexistente_RetornaErrorYNoConsultaHoras`, `TestConsultarHorasSprint_ProyectoInexistente_NoBuscaElSprint`, `TestGetHoras_NoEncontrado_Devuelve404`, `TestPantallasHoras_NoEncontrados_Devuelven404`, `TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras` | `consultar_horas.go`, `consultar_horas_handler.go` (`responderErrorHoras`), `pantallas_horas.go` (`errorDeHoras`) |
+| CA-23.15 Sprint inexistente o de otro proyecto | RN-23.11 | No se consultan las horas de un sprint que no existe `@error` · Un sprint de otro proyecto se trata como inexistente `@error` | `TestConsultarHorasSprint_ValidacionFallida_RetornaErrorYNoConsultaHoras`, `TestGetHoras_NoEncontrado_Devuelve404`, `TestPantallasHoras_NoEncontrados_Devuelven404`, `TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras`, `TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404` | `consultar_horas.go` (`s.ProyectoID != proyectoID`), `pantallas_asignacion.go` (`buscarSprint`) |
+| CA-23.16 Respuestas HTTP | Secciones 3 y 7 | **Sin escenario BDD a propósito:** los escenarios prueban el núcleo y no pasan por HTTP. Se cubre con los tests del handler. | `TestGetHorasProyecto_Devuelve200ConElTotal`, `TestGetHorasSprint_Devuelve200ConElTotal`, `TestGetHoras_NuncaEscribeCeroNegativo`, `TestGetHoras_RespondeJSON`, `TestGetHoras_NoEncontrado_Devuelve404`, `TestGetHoras_IDInvalido_Devuelve400`, `TestGetHoras_FallaInterna_Devuelve500SinDetalle` | `consultar_horas_handler.go`, `router.go`, `cmd/server/main.go` |
+| CA-23.17 Pantalla del sprint | Sección 3 | **Sin escenario BDD a propósito:** es la pantalla. Se cubre con tests del adaptador (`httptest`). | `TestPantallasHoras_MuestranLosValores`, `TestPantallasHoras_ElBloqueVaAntesDeLaPrimeraSeccion`, `TestPantallasHoras_NoRompenLoQueYaMostraban`, `TestPantallasHoras_ElBloqueEsDeSoloLectura`, `TestPantallasHoras_NoApareceEnOtrasPantallas`, `TestPantallasHoras_AclaracionDelSprintCerrado`, `TestPantallasHoras_ConsultanConLosIDsDeLaRuta`, `TestPantallasHoras_AlVolverConError_SigueElBloque`, `TestPantallasHoras_NoEncontrados_Devuelven404`, `TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras`, `TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404`, `TestPantallasHoras_FallaInterna_Devuelve500SinDetalle`, `TestPantallasHoras_LosValoresSeEscapan` | `pantallas_horas.go` (`vistaHoras`, `avisoSinEstimar`), `pantallas_asignacion.go` (`mostrarSprintDetalle`), `layout.html` (`bloque_horas`), `sprint_detalle.html` |
+| CA-23.18 Pantalla del proyecto | Sección 3 | **Sin escenario BDD a propósito:** es la pantalla. Se cubre con tests del adaptador (`httptest`). | `TestPantallasHoras_MuestranLosValores`, `TestPantallasHoras_ElBloqueVaAntesDeLaPrimeraSeccion`, `TestPantallasHoras_NoRompenLoQueYaMostraban`, `TestPantallasHoras_ElBloqueEsDeSoloLectura`, `TestPantallasHoras_NoApareceEnOtrasPantallas`, `TestPantallasHoras_AclaracionDelSprintCerrado`, `TestPantallasHoras_ConsultanConLosIDsDeLaRuta`, `TestPantallasHoras_AlVolverConError_SigueElBloque`, `TestPantallasHoras_NoEncontrados_Devuelven404`, `TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras`, `TestPantallasHoras_FallaInterna_Devuelve500SinDetalle`, `TestPantallasHoras_LosValoresSeEscapan` | `pantallas_horas.go`, `pantallas.go` (`mostrarDetalle`), `layout.html` (`bloque_horas`), `proyecto_detalle.html` |
+
+Los tests se listan según su etiqueta `Traza`. Los escenarios de CA-23.1, CA-23.3, CA-23.4 y CA-23.5 son ejemplos de un mismo `Scenario Outline`, con el tag en cada bloque `Examples`.
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Tests con la etiqueta (ejemplos) | Código |
+|---|---|---|---|
+| RN-23.1 Se consulta por sprint o por proyecto | CA-23.1, CA-23.2 | `TestConsultarHorasSprint_DevuelveElTotalDeLosElementosDelSprint`, `TestConsultarHorasProyecto_DevuelveElTotalDeLosElementosDelProyecto` | `total_horas.go` (`TotalHoras`), `consultar_horas.go` |
+| RN-23.2 Estimadas: suma de los estimados; los story points no cuentan | CA-23.1, CA-23.6, CA-23.9 | `TestTotalizarHoras`, `TestRepositorioEsfuerzo_HorasDeProyecto_EstimadoYSinEstimar`, `TestRepositorioEsfuerzo_Horas_ElementoConStoryPointsYSinHoras_SigueSinEstimar` | `total_horas.go` |
+| RN-23.3 Reales: suma de todos los elementos, de cualquier integrante y fecha | CA-23.1, CA-23.6, CA-23.9, CA-23.12 | `TestTotalizarHoras`, `TestRepositorioEsfuerzo_HorasDeProyecto_NoMezclaLosRegistrosDeOtroElemento`, `TestRepositorioEsfuerzo_HorasDeSprint_NoFiltraPorFechaNiPorIntegrante` | `total_horas.go`, `horas_repo.go` |
+| RN-23.4 Una sola desviación, sobre las sumas | CA-23.1, CA-23.2, CA-23.3, CA-23.4, CA-23.5 | `TestTotalizarHoras`, `TestTotalizarHoras_ReutilizaCompararEsfuerzo`, `TestPantallasHoras_MuestranLosValores` | `total_horas.go` (`CompararEsfuerzo` de HU-19) |
+| RN-23.5 La desviación compara solo a los elementos estimados | CA-23.6 | `TestTotalizarHoras`, `TestTotalizarHoras_ReutilizaCompararEsfuerzo`, `TestConsultarHoras_ConElementosSinEstimar_LosPasaAlDominio`, `TestPantallasHoras_MuestranLosValores` | `total_horas.go`, `pantallas_horas.go` (`avisoSinEstimar`) |
+| RN-23.6 Sin estimados no es un error: 0 estimadas y sin desviación (`nil`, no 0) | CA-23.7, CA-23.8 | `TestTotalizarHoras`, `TestConsultarHoras_SinElementos_NoEsUnError`, `TestRepositorioEsfuerzo_HorasDeProyecto_SinElementos_ListaVacia`, `TestPantallasHoras_MuestranLosValores` | `total_horas.go` (`SinEstimar`) |
+| RN-23.7 Elementos del sprint: los que hoy tienen ese `SprintID` | CA-23.1, CA-23.10, CA-23.12 | `TestConsultarHorasSprint_DevuelveElTotalDeLosElementosDelSprint`, `TestRepositorioEsfuerzo_HorasDeSprint_SoloLosElementosDelSprint`, `TestRepositorioEsfuerzo_HorasDeSprint_TrasElCierre_SoloLoQueSigueAsignado`, `TestRepositorioEsfuerzo_HorasDeSprint_ElementoQuitado_DejaDeContar` | `horas_repo.go` |
+| RN-23.8 Un elemento devuelto al backlog deja de contar en el sprint cerrado (limitación, P-3) | CA-23.10 | `TestRepositorioEsfuerzo_HorasDeSprint_TrasElCierre_SoloLoQueSigueAsignado`, `TestPantallasHoras_AclaracionDelSprintCerrado` | `horas_repo.go`, `pantallas_horas.go` (`textoAclaracionSprintCerrado`) |
+| RN-23.9 Valores actuales: sin congelar al cerrar y sin mirar la fecha | CA-23.11, CA-23.12 | `TestRepositorioEsfuerzo_HorasDeSprint_NoFiltraPorFechaNiPorIntegrante` | `horas_repo.go` |
+| RN-23.10 Proyecto: todos sus elementos, con sprint o sin él | CA-23.2, CA-23.10 | `TestConsultarHorasProyecto_DevuelveElTotalDeLosElementosDelProyecto`, `TestRepositorioEsfuerzo_HorasDeProyecto_IncluyeConYSinSprint_NoMezclaOtroProyecto`, `TestRepositorioEsfuerzo_HorasDeSprint_TrasElCierre_SoloLoQueSigueAsignado` | `horas_repo.go`, `consultar_horas.go` |
+| RN-23.11 El proyecto existe y el sprint es suyo | CA-23.14, CA-23.15 | `TestConsultarHorasSprint_ValidacionFallida_RetornaErrorYNoConsultaHoras`, `TestConsultarHorasProyecto_ProyectoInexistente_RetornaErrorYNoConsultaHoras`, `TestGetHoras_NoEncontrado_Devuelve404`, `TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404` | `consultar_horas.go` |
+| RN-23.12 Se consulta en cualquier estado | CA-23.13 | `TestConsultarHoras_CualquierEstadoDeSprintYProyecto` | `consultar_horas.go` (no mira estados) |
+
+### Tests sin CA propio
+
+Llevan `Traza: HU-23 (sección N: ...)`, porque verifican lo que la spec dice en una sección y ningún CA lo menciona. `grep "CA-23\."` no los encuentra; `grep "HU-23"`, sí. Se listan a mano:
+
+| Test | Traza | Qué verifica |
+|---|---|---|
+| `TestTotalizarHoras_NoModificaLosElementos` | Sección 5: cálculo en el dominio | No modifica lo que recibe |
+| `TestConsultarHoras_ElLectorRecibeElContextoDelPedido` | Sección 5: contexto | El lector recibe el contexto del pedido |
+| `TestGetHoras_ElCasoDeUsoRecibeElContextoDelPedido` | Sección 5: contexto | El caso de uso recibe el contexto del pedido |
+| `TestConsultarHoras_FallaDeInfraestructura_SePropaga` | Sección 7: falla interna al consultar | Las búsquedas devuelven el error tal cual; el lector de horas lo envuelve con `%w` |
+| `TestRepositorioEsfuerzo_HorasDeProyecto_OrdenaPorElemento` | Sección 5: puerto de lectura | Filas ordenadas por el id del elemento |
+| `TestRepositorioEsfuerzo_Horas_ElementoConStoryPointsYSinHoras_SigueSinEstimar` | Sección 6 (RN-23.2) | Los story points no se convierten en horas |
+| `TestRepositorioEsfuerzo_HorasDeSprint_ElementoQuitado_DejaDeContar` | Sección 6 (RN-23.7, RN-23.10) | Quitar un elemento de un sprint abierto, con el caso de uso de HU-09 |
+| `TestRepositorioEsfuerzo_HorasDeProyecto_ElementoEliminado_DejaDeSumar` | Sección 6 (RN-23.2, RN-23.10) | Eliminar un elemento sin esfuerzo, con el caso de uso de HU-06 |
+
+Sin etiqueta `Traza` de HU-23, porque son tests compartidos que suman casos:
+- Una base cerrada da error y no pánico: `TestRepositorios_BaseCerrada_DevuelvenElError` (suma dos casos, marcados `// HU-23`).
+- Las rutas están registradas: `TestNuevoRouter_RegistraTodasLasRutas` (suma dos rutas).
+
+### Errores nuevos
+
+Ninguno. HU-23 reutiliza `ErrProyectoNoEncontrado` (HU-01) y `ErrSprintNoEncontrado` (HU-09). No usa `ErrSprintDeOtroProyecto` de HU-09: un sprint de otro proyecto se trata como inexistente (RN-23.11). El mensaje de la falla interna, "error interno al consultar las horas", vive en el adaptador.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/total_horas.go](../internal/domain/total_horas.go) (`HorasElemento`, `TotalHoras`, `SinEstimar`, `TotalizarHoras`; reutiliza `CompararEsfuerzo` de HU-19) | [total_horas_test.go](../internal/domain/total_horas_test.go) |
+| Casos de uso y puertos | [internal/app/consultar_horas.go](../internal/app/consultar_horas.go) (`ConsultarHorasProyecto`, `ConsultarHorasSprint`, puertos `LectorHoras` y `LectorSprintPorID`; reutiliza `LectorProyectos` de HU-04) | [consultar_horas_test.go](../internal/app/consultar_horas_test.go) |
+| Persistencia | [internal/adapters/persistencia/horas_repo.go](../internal/adapters/persistencia/horas_repo.go) (`HorasDeProyecto`, `HorasDeSprint`, `leerHoras`) | [horas_repo_test.go](../internal/adapters/persistencia/horas_repo_test.go), [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) |
+| Endpoints JSON | [internal/adapters/http/consultar_horas_handler.go](../internal/adapters/http/consultar_horas_handler.go) (`RegistrarConsultarHoras`, `responderErrorHoras`), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [consultar_horas_handler_test.go](../internal/adapters/http/consultar_horas_handler_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| Pantallas y plantillas | [internal/adapters/http/pantallas_horas.go](../internal/adapters/http/pantallas_horas.go) (`vistaHoras`, `avisoSinEstimar`, `errorDeHoras`), [pantallas_comparacion.go](../internal/adapters/http/pantallas_comparacion.go) (`textosDesviacion`), [pantallas.go](../internal/adapters/http/pantallas.go) (`mostrarDetalle`), [pantallas_asignacion.go](../internal/adapters/http/pantallas_asignacion.go) (`mostrarSprintDetalle`), [layout.html](../internal/adapters/http/web/plantillas/layout.html), [proyecto_detalle.html](../internal/adapters/http/web/plantillas/proyecto_detalle.html), [sprint_detalle.html](../internal/adapters/http/web/plantillas/sprint_detalle.html) | [pantallas_horas_test.go](../internal/adapters/http/pantallas_horas_test.go), [pantallas_test.go](../internal/adapters/http/pantallas_test.go) |
+| BDD | [features/HU-23-horas-desviacion.feature](../features/HU-23-horas-desviacion.feature), [test/bdd/hu23_steps_test.go](../test/bdd/hu23_steps_test.go), [hu23_sistema_test.go](../test/bdd/hu23_sistema_test.go) (SQLite real), [bdd_test.go](../test/bdd/bdd_test.go); cableado de `ConsultarHorasProyecto` en [hu30_sistema_test.go](../test/bdd/hu30_sistema_test.go) | 29 escenarios y 240 pasos en verde |
+
+### Commits
+
+Salen de `git log 4209a72..6be9cf9`, en orden: desde que la rama salió de HU-19 hasta antes de integrar `main`. La última fila es del merge con `main`. HU-19 ya entró a `main` (PR #297), y `hu-19-comparar-esfuerzo..HEAD` ya no sirve para este listado: después de ese merge (`f9d513b`) también incluye commits de HU-13, HU-21 y HU-22.
+
+| Ciclo | Commit | Etapa |
+|---|---|---|
+| Spec | `62200c5` docs(HU-23): spec SDD de comparar horas y desviación de un sprint o proyecto | — |
+| BDD en rojo: feature | `e0b773f` test(HU-23): [RED] escenarios BDD del feature | BDD en rojo (28 escenarios y 227 pasos indefinidos) |
+| BDD en rojo: steps | `0519df5` test(bdd): [RED] steps y sistema en memoria de HU-23 | BDD en rojo, por compilación |
+| Dominio | `2637cad` [RED] → `e2b9766` [GREEN] → `18e761e` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Casos de uso | `b691bb0` [RED] → `55a8a43` [GREEN] → `cba036b` [REFACTOR] | **RED → GREEN → REFACTOR**; los 28 escenarios de entonces pasan con el sistema en memoria |
+| Contexto en el caso de uso | `3813f25` test(HU-23): el lector de horas recibe el contexto del pedido | — (sin RED real, ver abajo) |
+| Persistencia | `638c6c8` [RED] → `438bdb4` [GREEN] → `c55a522` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| BDD sobre SQLite | `538b2d8` test(bdd): HU-23 sistema SQLite real | BDD en verde |
+| Endpoints JSON | `fc9a805` [RED] → `719a47f` [GREEN] → `b927ca0` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Pantallas | `bb380c7` [RED] → `91a31d1` [GREEN] → `cb719c6` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Spec: título del bloque | `0642f62` docs(HU-23): spec ajustada al bloque "Horas y desviación" | — |
+| Aviso corto | `72baffb` [RED] → `2eec66a` [GREEN] | **RED → GREEN**; el GREEN incluye el ajuste de la spec |
+| Spec: orden, contexto y no modificar | `6e246ec` docs(HU-23): spec con el orden de las filas, el contexto y que totalizar no modifica | — |
+| Revisión: CA-23.10 | `d6c808d` test(HU-23): escenario de CA-23.10 con los dos elementos juntos en el sprint nuevo | — (sin RED real, ver abajo) |
+| Revisión: sección 6 | `e5d8e46` test(HU-23): casos de la sección 6 con SQLite real | — (sin RED real, ver abajo) |
+| Revisión: otro proyecto en la pantalla | `70f5631` test(HU-23): pantalla del sprint con un sprint de otro proyecto | — (sin RED real, ver abajo) |
+| Revisión: datos de CA-23.2 en HTTP | `d9a38c1` test(HU-23): las rutas de horas prueban los datos de CA-23.2 con la misma traza | — (sin RED real, ver abajo) |
+| Revisión: trazas | `6aba6af` test(HU-23): trazas y comentarios que citan lo que cada test verifica | — (solo comentarios) |
+| Trazabilidad | `6be9cf9` docs(trazabilidad): HU-23 | — |
+| Revisión: aclaración del sprint cerrado | `cff999d` test(HU-23): [RED] la aclaración del sprint cerrado incluye los elementos reasignados | Test de la pantalla en rojo |
+| Revisión: aclaración del sprint cerrado | `c685c06` feat(HU-23): [GREEN] aclaración del sprint cerrado para todo elemento que salió de él | Test de la pantalla y BDD de HU-23 en verde |
+| Spec: decisiones confirmadas | `69736ef` docs(HU-23): P-9 a P-12 confirmadas y spec implementada; corrige RN-19.8 de HU-19 | — |
+| Integración con `main`: test ajustado | `f9d513b` `TestPantallasHoras_NoApareceEnOtrasPantallas` carga `ConsultarVelocidad`, resuelto dentro del merge | — (sin RED real: una línea de preparación, sin cambiar aserciones) |
+
+**Merges de la rama, que no son de HU-23:** `f9d513b` (trae `origin/main`: HU-19, HU-13, HU-21 y HU-22).
+
+**Commits que el filtro `git log --grep="(HU-23)"` no encuentra**, porque usan el prefijo `test(bdd):`: `0519df5` (RED de los steps) y `538b2d8` (sistema SQLite).
+
+**Commits sin etapa TDD:** `3813f25`, `d6c808d`, `e5d8e46`, `70f5631`, `d9a38c1` y `6aba6af` (tests sin RED real), y `62200c5`, `0642f62` y `6e246ec` (spec).
+
+### Evidencia: mutaciones manuales
+
+Ninguna quedó en un commit. Se aplicaron en una copia descartable del repo. En total, 104 mutantes: 96 murieron y 8 sobrevivieron. De esos 8, M13 de los casos de uso murió después, con `3813f25`; los otros 7 siguen sobreviviendo, por los motivos de la tabla.
+
+| Capa | Mutantes | Murieron | Sobrevivieron y por qué |
+|---|---|---|---|
+| Dominio (`total_horas.go`) | 14 | 12 | M5 (`SinEstimar` con `<=`) y M14 (desviación como suma por elemento): **equivalentes** |
+| Casos de uso (`consultar_horas.go`) | 13 | 12 | M13 (`context.Background()` al lector): sobrevivió en la primera tanda; lo mata `3813f25` |
+| Contexto, comprobación de `3813f25` | 2 | 2 | — (M13 en el sprint y en el proyecto) |
+| Persistencia (`horas_repo.go`) | 15 | 13 | M14 (sin `ORDER BY`): SQLite ya devuelve las filas ordenadas. M15 (sin `rows.Err()`): no se puede provocar sin un driver simulado |
+| Endpoints JSON | 20 | 19 | M20 (sin el log del 500): no cambia lo que ve el cliente |
+| Pantallas | 25 | 25 | — |
+| Aviso corto | 5 | 5 | — |
+| Comprobación de la revisión | 10 | 8 | P1 (la lista de sprints no filtra) y P2 (el caso de uso no valida el proyecto): se cubren entre sí. P3, con las dos protecciones quitadas, muere |
+
+**Lo que detectan los que más importan:**
+
+| Mutación | Fallan |
+|---|---|
+| Sumar las reales sin estimar a la desviación | `TestTotalizarHoras`, `TestTotalizarHoras_ReutilizaCompararEsfuerzo` |
+| Pasar 0 en vez de `nil` | `TestTotalizarHoras` |
+| Promediar los porcentajes | `TestTotalizarHoras`, `TestTotalizarHoras_NuncaDevuelveCeroNegativo`, `TestTotalizarHoras_ReutilizaCompararEsfuerzo` |
+| No validar que el sprint sea del proyecto | `TestConsultarHorasSprint_ValidacionFallida_RetornaErrorYNoConsultaHoras` |
+| `LEFT JOIN` → `JOIN` | `TestRepositorioEsfuerzo_HorasDeProyecto_ElementoSinRegistros_ApareceConCero`, `TestRepositorioEsfuerzo_HorasDeSprint_SoloLosElementosDelSprint` |
+| Filtrar por las fechas del sprint | `TestRepositorioEsfuerzo_HorasDeSprint_NoFiltraPorFechaNiPorIntegrante` |
+| Sacar `sprint_id` de la respuesta | `TestGetHorasSprint_Devuelve200ConElTotal` |
+| Filtrar el texto interno en el 500 | `TestGetHoras_FallaInterna_Devuelve500SinDetalle` |
+| Desviación como `template.HTML` | `TestPantallasHoras_LosValoresSeEscapan` |
+| Bloque solo en una de las dos pantallas | `TestPantallasHoras_ElBloqueVaAntesDeLaPrimeraSeccion` y otros |
+| El sprint devuelve una sola fila, dentro de `@CA-23.10` | Solo el escenario "El elemento devuelto y el Hecho reasignado suman juntos en el sprint nuevo" |
+
+**Cruce de pasos BDD:** un programa temporal, que no está en el repo, cruzó las 367 regex con los pasos de todos los `.feature` de esta rama: 0 pasos con más de una regex y 0 cruces entre HU-23 y otras historias. Plantando un paso duplicado, lo detectaron ese programa y godog.
+
+**Prueba de humo:** `cmd/server` con una base temporal y `curl`, para las dos rutas JSON y las dos pantallas, también después de sus refactors. No se repitió después del aviso corto ni de los tests de la revisión.
+
+### Etapas sin RED real
+
+- **Tests agregados con el código ya correcto** (lo dice cada mensaje de commit):
+  - `3813f25`: `TestConsultarHoras_ElLectorRecibeElContextoDelPedido`
+  - `d6c808d`: el escenario "El elemento devuelto y el Hecho reasignado suman juntos en el sprint nuevo"
+  - `e5d8e46`: los tres tests de la sección 6
+  - `70f5631`: `TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404`
+  - `d9a38c1`: el caso 32 / 28 de `casosHoras`
+  - `6aba6af`: solo comentarios
+- **RED por compilación:** `0519df5`, `2637cad`, `b691bb0`, `638c6c8` y `fc9a805`. No se pudieron ver fallar las aserciones en esos commits. Para `0519df5` se usó un stub temporal, sin commitear: fallaron los 28 escenarios de HU-23 y pasaron los 336 de las demás historias.
+- **RED por comportamiento:** en estos commits, los siguientes tests nuevos ya pasaban:
+  - `bb380c7`: `TestPantallasHoras_NoRompenLoQueYaMostraban`, `TestPantallasHoras_NoApareceEnOtrasPantallas`, `TestPantallasHoras_RutaInvalidaOInexistente_NoConsultaLasHoras`; fijan lo que no debía cambiar
+  - `72baffb`: los casos que ya existían de `TestPantallasHoras_MuestranLosValores`; fallan solo los seis subcasos nuevos (tres por pantalla)
+- **Spec después del código:** el `ORDER BY` y el paso del contexto entraron con `438bdb4` y `719a47f`, y la spec los documentó recién en `6e246ec`. El bloque se implementó como "Horas y desviación" en `91a31d1`, y la spec se ajustó en `0642f62`.
+
+### Huecos
+
+- **CA-23.11 no tiene test Go:** solo el escenario BDD, que corre sobre SQLite real. Cumple con el BDD, pero no aparece si se busca por test.
+- **Sin lector de pantalla:** las pantallas se probaron con tests y, en la revisión del PR #298, en un navegador con el servidor real. No se probaron con un lector de pantalla.
+- **El contexto en las pantallas no tiene test:** lo pasan, pero solo los handlers JSON y los casos de uso lo verifican. La nota de la sección 5 habla solo de esos dos.
+- **Cobertura de `leerHoras`: 84,6 %.** Faltan las ramas de error de `Scan` y `rows.Err()`, que no se pueden provocar sin un driver simulado. El resto del código nuevo de HU-23 está al 100 %.
+- **`TestRepositorioEsfuerzo_HorasDeProyecto_OrdenaPorElemento`** detecta el orden descendente, pero no que falte el `ORDER BY` (M14). Los ID siguen siempre el orden de creación, así que no hay datos que lo distingan.
+- **La conexión de `cmd/server/main.go` no tiene test automático:** solo el humo. Si faltara, el servidor fallaría al recibir el pedido.
+- **BDD completo:** 387 a 403 s en las tres corridas tras integrar `main`, con 407 escenarios (antes, 280 a 293 s con 365). Sube porque cada escenario de cualquier historia crea una base más, ya que los hooks de todas las historias corren siempre.
+- **Primer test de `internal/adapters/http` que usa `persistencia`:** `TestPantallaHorasSprint_SprintDeOtroProyecto_Devuelve404`, para usar casos de uso y SQLite reales. Solo afecta al test.
+- **Resuelto, cruce de regex al integrar con `main`:** las 407 regex de `test/bdd/*_steps_test.go`, con el `regexp` de Go, contra los 2130 pasos de los 407 escenarios, con los Outline expandidos por el parser de Gherkin de godog: 0 ambiguos, 0 indefinidos y ninguna regex sin usar. El BDD completo, con `Strict: true`, lo confirma.
+- **Resuelto, dependencia del PR de HU-19:** HU-19 ya entró a `main` (PR #297), y esta rama trae `CompararEsfuerzo` y `HorasEstimadas` desde ahí con el merge de `origin/main` (`f9d513b`), junto con HU-13, HU-21 y HU-22.
+- **Test ajustado al integrar con `main` (`f9d513b`):** HU-22 hizo que la pantalla de sprints anteriores consulte `ConsultarVelocidad`, y `TestPantallasHoras_NoApareceEnOtrasPantallas` quedaba con ese campo en `nil` y entraba en panic. Se le cargó `consultorVelocidadFalso`, sin cambiar sus aserciones.
+- **Humo repetido al integrar con `main`:** con el servidor real y una base temporal, por curl. Las rutas de horas, de velocidad y de defectos responden 200, y `id="total-horas"` aparece una vez en cada detalle, sin ids repetidos. Tampoco es una prueba en navegador.
+- `mostrarSprintDetalle` y `mostrarDetalle` consultan el proyecto y el sprint, y los casos de uso de horas los vuelven a consultar: son lecturas de más, sin consecuencias prácticas.
+- Los puntos planificados de un sprint cerrado (RN-11.6) incluyen lo no terminado, y estas horas no (P-3): no se comparan entre sí.
+
+### Para revisar
+
+Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores en la PR.
+
+| Archivo | Historia | Cambio |
+|---|---|---|
+| [internal/app/cerrar_sprint.go](../internal/app/cerrar_sprint.go) | HU-11 | Solo el puerto: `RepositorioCierre` incluye `LectorSprintPorID`, con los mismos métodos |
+| [pantallas.go](../internal/adapters/http/pantallas.go) | HU-30 | Campo `Horas` y consulta en `mostrarDetalle` |
+| [pantallas_asignacion.go](../internal/adapters/http/pantallas_asignacion.go) | HU-09 | Campo `Horas`, consulta y aclaración en `mostrarSprintDetalle` |
+| [layout.html](../internal/adapters/http/web/plantillas/layout.html) | HU-30 | Plantilla compartida `bloque_horas` |
+| [proyecto_detalle.html](../internal/adapters/http/web/plantillas/proyecto_detalle.html) | HU-30 | Incluye el bloque |
+| [sprint_detalle.html](../internal/adapters/http/web/plantillas/sprint_detalle.html) | HU-09 | Incluye el bloque |
+| [pantallas_comparacion.go](../internal/adapters/http/pantallas_comparacion.go) | HU-19 | Extracción de `textosDesviacion`, sin cambiar el comportamiento |
+| [esfuerzo_repo.go](../internal/adapters/persistencia/esfuerzo_repo.go) | HU-18 y HU-19 | Solo el comentario del tipo |
+| [base_cerrada_test.go](../internal/adapters/persistencia/base_cerrada_test.go) | Compartido | Dos casos |
+| [router.go](../internal/adapters/http/router.go), [router_test.go](../internal/adapters/http/router_test.go), [cmd/server/main.go](../cmd/server/main.go) | Compartidos | Cableado y dos rutas; el diff se ve mayor por la realineación de `gofmt` |
+| [pantallas_test.go](../internal/adapters/http/pantallas_test.go) | HU-30 | Dos dobles en `casosFalsos` |
+| [test/bdd/bdd_test.go](../test/bdd/bdd_test.go) | Compartido | Registra `registrarStepsHU23` |
+| [test/bdd/hu30_sistema_test.go](../test/bdd/hu30_sistema_test.go) | HU-30 | `ConsultarHorasProyecto`, porque ese sistema abre el detalle del proyecto |
 
 ---
 

@@ -30,6 +30,7 @@ type (
 		Asignados   []vistaElementoBacklog
 		Disponibles []vistaElementoBacklog
 		Error       string
+		Horas       datosHoras // HU-23
 	}
 )
 
@@ -159,8 +160,17 @@ func (p *pantallas) mostrarSprintDetalle(w http.ResponseWriter, r *http.Request,
 		p.errorDeConsulta(w, err)
 		return
 	}
+	total, err := p.cu.ConsultarHorasSprint.Ejecutar(r.Context(), id, sprintID)
+	if err != nil {
+		p.errorDeHoras(w, err)
+		return
+	}
 
 	abierto := sprint.Estado == domain.SprintAbierto
+	horas := vistaHoras(total)
+	if !abierto {
+		horas.Avisos = append(horas.Avisos, textoAclaracionSprintCerrado) // RN-23.8
+	}
 	var asignados, disponibles []vistaElementoBacklog
 	for _, e := range elementos {
 		v := vistaElementoBacklog{ID: e.ID, Titulo: e.Titulo, Estado: string(e.Estado),
@@ -175,7 +185,7 @@ func (p *pantallas) mostrarSprintDetalle(w http.ResponseWriter, r *http.Request,
 
 	p.renderizar(w, status, "sprint_detalle.html", datosSprintDetalle{
 		Proyecto: aVistaProyecto(proyecto), Sprint: aVistaSprint(sprint), Abierto: abierto,
-		Asignados: asignados, Disponibles: disponibles, Error: mensaje,
+		Asignados: asignados, Disponibles: disponibles, Error: mensaje, Horas: horas,
 	})
 }
 

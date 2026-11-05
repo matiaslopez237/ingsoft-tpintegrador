@@ -16,6 +16,8 @@
   <dt>Fin</dt><dd>{{if .Proyecto.FechaFin}}{{.Proyecto.FechaFin}}{{else}}Sin fecha de fin{{end}}</dd>
 </dl>
 
+{{template "bloque_horas" .Horas}}
+
 <section aria-labelledby="titulo-integrantes">
   <h2 id="titulo-integrantes">Integrantes</h2>
   {{template "error_form" .Error}}
