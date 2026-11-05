@@ -44,3 +44,31 @@ func Velocidad(cerrados []Sprint) (velocidad float64, cantidad int, hayDatos boo
 	}
 	return float64(total) / float64(len(ventana)), len(ventana), true
 }
+
+// PorcentajeCompletado calcula qué porcentaje de los PuntosPlanificados de un Sprint se completó
+// (RN-24.1): PuntosCompletados / PuntosPlanificados × 100, con decimales, puede superar 100 si se
+// completó más de lo planificado. Si PuntosPlanificados es 0, hayPorcentaje es false y porcentaje no
+// significa nada (RN-24.2): 0% sería un dato real (se planificó algo y no se completó nada),
+// distinto de "no se planificó nada". Implementa HU-24 (RN-24.1, RN-24.2).
+func PorcentajeCompletado(s Sprint) (porcentaje float64, hayPorcentaje bool) {
+	if s.PuntosPlanificados == 0 {
+		return 0, false
+	}
+	return float64(s.PuntosCompletados) / float64(s.PuntosPlanificados) * 100, true
+}
+
+// ContarDefectosDeSprint cuenta, entre los defectos recibidos, cuántos tienen a sprintID como
+// Sprint de detección (RN-24.3) y cuántos lo tienen como Sprint de resolución (RN-24.4), sin
+// importar el estado actual de cada defecto. Un defecto sin Sprint asignado (SprintDeteccionID o
+// SprintResolucionID nil) no cuenta en ningún Sprint. Implementa HU-24 (RN-24.3, RN-24.4).
+func ContarDefectosDeSprint(defectos []Defecto, sprintID int64) (detectados, resueltos int) {
+	for _, d := range defectos {
+		if d.SprintDeteccionID != nil && *d.SprintDeteccionID == sprintID {
+			detectados++
+		}
+		if d.SprintResolucionID != nil && *d.SprintResolucionID == sprintID {
+			resueltos++
+		}
+	}
+	return detectados, resueltos
+}
