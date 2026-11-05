@@ -140,7 +140,7 @@ Las decisiones de arquitectura están en [`docs/adr/`](adr/), una por archivo, c
 | Rutas HTTP | `net/http` de la biblioteca estándar, sin framework. | [ADR-0001](adr/0001-framework-web.md) |
 | Persistencia | SQLite con `modernc.org/sqlite`, sin CGO, en un solo archivo. | [ADR-0002](adr/0002-persistencia.md) |
 | Interfaz | Páginas generadas en el servidor con `html/template` y un CSS propio, sin JavaScript hasta ahora. | [ADR-0003](adr/0003-interfaz-web.md) |
-| CI/CD | GitHub Actions con `-race` y cobertura mínima del 80 %, `main` protegida y despliegue en Render. El despliegue todavía no está activo: falta configurar Render. | [ADR-0004](adr/0004-ci-cd.md) |
+| CI/CD | GitHub Actions con `-race` y cobertura mínima del 80 %, `main` protegida y despliegue en Render (https://ingsoft-tpintegrador.onrender.com) después de cada merge con el CI en verde. | [ADR-0004](adr/0004-ci-cd.md) |
 | Organización del código | Arquitectura hexagonal: dominio, casos de uso y adaptadores (este documento). | [`CLAUDE.md`](../CLAUDE.md) |
 | BDD | Escenarios en Gherkin automatizados con godog. | [`CLAUDE.md`](../CLAUDE.md) |
 

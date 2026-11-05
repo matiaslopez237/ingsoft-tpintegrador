@@ -8,6 +8,8 @@ Aplicación web en **Go** para estimar, planificar, seguir y medir proyectos de 
 
 Metodología: Scrum · SDD · BDD (godog) · TDD.
 
+**Versión publicada:** <https://ingsoft-tpintegrador.onrender.com>. Está en el plan gratuito de Render: si nadie la usó en un rato, la primera visita tarda cerca de un minuto, y los datos se borran en cada despliegue.
+
 ## Puesta en marcha
 
 **Requisitos:** Go, en la versión que indica `go.mod`, y Git. No hace falta instalar una base de datos ni un compilador de C: SQLite viene incluido en el programa ([ADR-0002](docs/adr/0002-persistencia.md)).
@@ -73,7 +75,7 @@ gofmt -l .                                    # tiene que no listar nada
 
 Cada PR a `main` corre el CI: build, `go vet`, `gofmt` y los tests unitarios y BDD, con `-race` y una cobertura mínima del 80 %. `main` está protegida: hace falta un PR, una aprobación y el CI en verde.
 
-Al mergear a `main`, el pipeline pide el despliegue a Render. **El despliegue todavía no está activo:** falta crear el servicio en Render y cargar el secret `RENDER_DEPLOY_HOOK_URL`. Detalle en [ADR-0004](docs/adr/0004-ci-cd.md).
+Al mergear a `main`, si el CI pasa, el pipeline despliega en Render (https://ingsoft-tpintegrador.onrender.com) con el *deploy hook* guardado en el secret `RENDER_DEPLOY_HOOK_URL`. Detalle en [ADR-0004](docs/adr/0004-ci-cd.md).
 
 ## Trabajar con Claude Code
 
