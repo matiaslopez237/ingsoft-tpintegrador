@@ -10,7 +10,7 @@ import (
 
 // textoAclaracionSprintCerrado explica qué cuenta en un sprint Cerrado (RN-23.8).
 const textoAclaracionSprintCerrado = "Solo cuentan los elementos que siguen en este sprint. " +
-	"Los que volvieron al backlog al cerrarlo no suman acá, pero sí en el total del proyecto."
+	"Los que salieron de él no suman acá, pero sí en el total del proyecto."
 
 // datosHoras es el bloque "Horas y desviación" de los detalles del sprint y del proyecto (HU-23): solo
 // texto ya formateado. Los números los calcula el dominio.

@@ -82,7 +82,7 @@ El bloque muestra:
 - Con `SinEstimar()`, las dos desviaciones muestran "Sin estimar". Las horas estimadas muestran `0 h` y las reales, su valor.
 - Con elementos sin estimar, un aviso: "1 de 2 elementos sin estimar: sus 5 h están en las horas reales, pero no en la desviación." Si esos elementos no tienen horas reales, solo los cuenta: "1 de 2 elementos sin estimar."
 - Sin elementos, además de lo anterior: "Todavía no hay elementos." (`0 h` en estimadas y reales).
-- **Solo en un sprint `Cerrado`,** una aclaración: "Solo cuentan los elementos que siguen en este sprint. Los que volvieron al backlog al cerrarlo no suman acá, pero sí en el total del proyecto." (RN-23.8)
+- **Solo en un sprint `Cerrado`,** una aclaración: "Solo cuentan los elementos que siguen en este sprint. Los que salieron de él no suman acá, pero sí en el total del proyecto." (RN-23.8)
 
 El bloque también se muestra cuando estas pantallas vuelven con el error de un formulario (`mostrarSprintDetalle`, `mostrarDetalle`).
 
