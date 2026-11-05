@@ -1,8 +1,6 @@
 # Sprint 4 — Planning
 
-> **Borrador.** El reparto, las fechas y las preguntas de abajo se confirman en la planning.
-
-**Fechas:** del 5 al 8 de noviembre de 2026 (4 días). La fecha de entrega del TP sigue a confirmar.
+**Fechas:** del 5 al 8 de noviembre de 2026 (4 días), confirmadas por Matías el 2026-11-04. La fecha de entrega del TP sigue a confirmar.
 **Sprint Goal:** ver el avance del proyecto de un vistazo, compartirlo en un reporte en PDF y dejar el sistema documentado para la entrega.
 **Compromiso:** 25 story points (velocidad del Sprint 3: 28 puntos, si se confirma en la review que se terminaron todas las historias).
 
@@ -22,7 +20,7 @@ El orden es la prioridad: si al final del sprint no se llega con todo, quedan af
 
 ## Reparto propuesto
 
-Es una propuesta para discutir en la planning, siguiendo lo que hizo cada uno en los sprints anteriores:
+Es una propuesta de Matías, siguiendo lo que hizo cada uno en los sprints anteriores. Cada uno la confirma al asignarse sus historias, y se puede cambiar:
 
 | Responsable | Historias | Pts | Por qué |
 |---|---|---|---|
@@ -35,7 +33,7 @@ Es una propuesta para discutir en la planning, siguiendo lo que hizo cada uno en
 
 ## Tareas
 
-Se cargan como sub-issues en GitHub cuando se confirme este borrador. Son 44 en total.
+Están cargadas como sub-issues en GitHub, 44 en total.
 
 | Historia | Tareas |
 |---|---|
@@ -54,7 +52,7 @@ Se cargan como sub-issues en GitHub cuando se confirme este borrador. Son 44 en 
 
 ## Preguntas que tiene que resolver la spec antes de programar
 
-- **HU-24, porcentaje de historias:** el criterio pide calcularlo "sobre el total planificado", pero el cierre (HU-11) guarda solo los **puntos** planificados y completados, y les saca el sprint a las historias sin terminar. Hoy un sprint cerrado no sabe cuántas historias tenía. Opciones: guardar también las cantidades al cerrar (los sprints ya cerrados no las tendrían) o calcular el porcentaje sobre puntos.
+- **HU-24, porcentaje (decidido por Matías el 2026-11-04):** se calcula **sobre puntos**, con los planificados y completados que guarda el cierre (RN-11.6). El cierre (HU-11) no guarda cuántas historias tenía el sprint, y este cálculo no lo toca y sirve para los sprints ya cerrados. La spec lo aclara, porque el criterio de la issue habla de historias, y define qué se muestra en un sprint abierto y en uno sin puntos planificados.
 - **HU-24, defectos:** los defectos ya guardan el sprint de detección y el de resolución (RN-20.5, RN-21.5). Hay que definir qué se muestra si un defecto no tiene sprint.
 - **HU-25, métricas:** el criterio pide al menos 3 gráficas. Hay que elegir cuáles (por ejemplo, velocidad, horas estimadas contra reales y defectos) y desde qué pantalla se entra ("sin pasos adicionales desde la vista principal").
 - **HU-25, gráficos:** la decisión va en un ADR. Las pantallas tienen `Content-Security-Policy: default-src 'self'`, que bloquea scripts de CDN, scripts en línea y estilos en línea. Propuesta para evaluar: generar SVG desde las plantillas de Go, sin JavaScript ni dependencias. La alternativa es una librería de JavaScript servida desde `web/static`.
