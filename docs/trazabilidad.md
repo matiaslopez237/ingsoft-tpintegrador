@@ -31,7 +31,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
-| HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Borrador; P-1 a P-8 abiertas a objeción en el PR; P-9 a P-12 pendientes del equipo) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
+| HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 
 ---
 
@@ -1908,6 +1908,9 @@ Salen de `git log 4209a72..6be9cf9`, en orden: desde que la rama salió de HU-19
 | Revisión: datos de CA-23.2 en HTTP | `d9a38c1` test(HU-23): las rutas de horas prueban los datos de CA-23.2 con la misma traza | — (sin RED real, ver abajo) |
 | Revisión: trazas | `6aba6af` test(HU-23): trazas y comentarios que citan lo que cada test verifica | — (solo comentarios) |
 | Trazabilidad | `6be9cf9` docs(trazabilidad): HU-23 | — |
+| Revisión: aclaración del sprint cerrado | `cff999d` test(HU-23): [RED] la aclaración del sprint cerrado incluye los elementos reasignados | Test de la pantalla en rojo |
+| Revisión: aclaración del sprint cerrado | `c685c06` feat(HU-23): [GREEN] aclaración del sprint cerrado para todo elemento que salió de él | Test de la pantalla y BDD de HU-23 en verde |
+| Spec: decisiones confirmadas | `69736ef` docs(HU-23): P-9 a P-12 confirmadas y spec implementada; corrige RN-19.8 de HU-19 | — |
 | Integración con `main`: test ajustado | `f9d513b` `TestPantallasHoras_NoApareceEnOtrasPantallas` carga `ConsultarVelocidad`, resuelto dentro del merge | — (sin RED real: una línea de preparación, sin cambiar aserciones) |
 
 **Merges de la rama, que no son de HU-23:** `f9d513b` (trae `origin/main`: HU-19, HU-13, HU-21 y HU-22).
@@ -1968,13 +1971,8 @@ Ninguna quedó en un commit. Se aplicaron en una copia descartable del repo. En 
 
 ### Huecos
 
-- La spec sigue en **Borrador**. Las decisiones **P-1 a P-8** están tomadas por el autor y abiertas a objeción en el PR.
-- **P-9:** la issue #34 dice 5 story points; el planning y el Product Backlog, 3. Falta que el equipo lo confirme y actualice la issue.
-- **P-10:** un sprint cuenta por el `SprintID` actual, así que las horas de un elemento devuelto al backlog dejan de contar en el sprint cerrado (RN-23.8). Sí cuentan en el proyecto, y la pantalla lo aclara.
-- **P-11:** al aprobar la spec, corregir la frase de RN-19.8 y P-4 de HU-19 que dice que las sumas de HU-23 pueden dar 0. Con RN-23.6 se pasa `nil`, y esa rama no se alcanza desde HU-23.
-- **P-12:** falta decidir si los totales van también en la lista de sprints o en el dashboard (HU-25).
 - **CA-23.11 no tiene test Go:** solo el escenario BDD, que corre sobre SQLite real. Cumple con el BDD, pero no aparece si se busca por test.
-- **Sin prueba visual:** las pantallas **no se probaron en un navegador** ni con un lector de pantalla: se probaron con tests y con curl.
+- **Sin lector de pantalla:** las pantallas se probaron con tests y, en la revisión del PR #298, en un navegador con el servidor real. No se probaron con un lector de pantalla.
 - **El contexto en las pantallas no tiene test:** lo pasan, pero solo los handlers JSON y los casos de uso lo verifican. La nota de la sección 5 habla solo de esos dos.
 - **Cobertura de `leerHoras`: 84,6 %.** Faltan las ramas de error de `Scan` y `rows.Err()`, que no se pueden provocar sin un driver simulado. El resto del código nuevo de HU-23 está al 100 %.
 - **`TestRepositorioEsfuerzo_HorasDeProyecto_OrdenaPorElemento`** detecta el orden descendente, pero no que falte el `ORDER BY` (M14). Los ID siguen siempre el orden de creación, así que no hay datos que lo distingan.
