@@ -154,6 +154,10 @@ type vistaSprintAnterior struct {
 	Numero                          int
 	FechaInicio, FechaFin, Objetivo string
 	Planificados, Completados       int
+	HayPorcentaje                   bool   // false: el sprint se cerró sin puntos planificados (HU-24, RN-24.2)
+	PorcentajeCompletado            string // ya formateado, solo si HayPorcentaje
+	DefectosDetectados              int
+	DefectosResueltos               int
 }
 
 type datosSprintsAnteriores struct {
@@ -164,7 +168,8 @@ type datosSprintsAnteriores struct {
 }
 
 // sprintsAnteriores muestra el historial de sprints cerrados del proyecto, en el orden que da el
-// caso de uso, con la velocidad del equipo. Implementa HU-12 (CA-12.7) y HU-22 (CA-22.8).
+// caso de uso, con la velocidad del equipo y la calidad de cada sprint. Implementa HU-12 (CA-12.7),
+// HU-22 (CA-22.8) y HU-24 (CA-24.9).
 func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 	id, ok := p.idDeRuta(w, r)
 	if !ok {
@@ -185,13 +190,30 @@ func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 		p.errorDeConsulta(w, err)
 		return
 	}
+	calidad, err := p.cu.ConsultarCalidadSprints.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.errorDeConsulta(w, err)
+		return
+	}
+	calidadPorSprint := make(map[int64]app.CalidadSprint, len(calidad))
+	for _, c := range calidad {
+		calidadPorSprint[c.Sprint.ID] = c
+	}
 	vistas := make([]vistaSprintAnterior, len(sprints))
 	for i, s := range sprints {
-		vistas[i] = vistaSprintAnterior{
+		v := vistaSprintAnterior{
 			ID: s.ID, Numero: s.Numero,
 			FechaInicio: s.FechaInicio.Format(time.DateOnly), FechaFin: s.FechaFin.Format(time.DateOnly),
 			Objetivo: s.Objetivo, Planificados: s.PuntosPlanificados, Completados: s.PuntosCompletados,
 		}
+		if c, ok := calidadPorSprint[s.ID]; ok {
+			v.DefectosDetectados, v.DefectosResueltos = c.DefectosDetectados, c.DefectosResueltos
+			if c.HayPorcentaje {
+				v.HayPorcentaje = true
+				v.PorcentajeCompletado = formatearPorcentaje(c.PorcentajeCompletado)
+			}
+		}
+		vistas[i] = v
 	}
 	datos := datosSprintsAnteriores{Proyecto: aVistaProyecto(proyecto), Sprints: vistas}
 	if velocidad.HayDatos {
@@ -205,4 +227,10 @@ func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 // la interfaz (spec HU-22, P-2: es un detalle de la plantilla, no una regla de negocio).
 func formatearVelocidad(v float64) string {
 	return strings.Replace(strconv.FormatFloat(v, 'f', 1, 64), ".", ",", 1)
+}
+
+// formatearPorcentaje muestra el porcentaje completado sin ceros de más (75%, no 75,0%), con coma
+// cuando tiene decimales (spec HU-24, P-3: detalle de la plantilla, no una regla de negocio).
+func formatearPorcentaje(v float64) string {
+	return strings.Replace(strconv.FormatFloat(v, 'f', -1, 64), ".", ",", 1) + "%"
 }

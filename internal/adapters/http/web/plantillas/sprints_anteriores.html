@@ -19,7 +19,12 @@
 <table>
   <caption class="oculto">Sprints cerrados, del más reciente al más antiguo</caption>
   <thead>
-    <tr><th scope="col">N.º</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Sprint Goal</th><th scope="col">Puntos planificados</th><th scope="col">Puntos completados</th><th scope="col"><span class="oculto">Detalle</span></th></tr>
+    <tr>
+      <th scope="col">N.º</th><th scope="col">Inicio</th><th scope="col">Fin</th><th scope="col">Sprint Goal</th>
+      <th scope="col">Puntos planificados</th><th scope="col">Puntos completados</th><th scope="col">% completado</th>
+      <th scope="col">Defectos detectados</th><th scope="col">Defectos resueltos</th>
+      <th scope="col"><span class="oculto">Detalle</span></th>
+    </tr>
   </thead>
   <tbody>
     {{range .Sprints}}
@@ -30,6 +35,9 @@
       <td>{{.Objetivo}}</td>
       <td>{{.Planificados}}</td>
       <td>{{.Completados}}</td>
+      <td>{{if .HayPorcentaje}}{{.PorcentajeCompletado}}{{else}}—{{end}}</td>
+      <td>{{.DefectosDetectados}}</td>
+      <td>{{.DefectosResueltos}}</td>
       <td><a href="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{.ID}}" aria-label="Ver detalle del sprint {{.Numero}}">Ver detalle</a></td>
     </tr>
     {{end}}
