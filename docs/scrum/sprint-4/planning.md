@@ -10,7 +10,7 @@ El orden es la prioridad: si al final del sprint no se llega con todo, quedan af
 
 | # | Historia | Pts | Depende de | Responsable (propuesta) |
 |---|---|---|---|---|
-| 1 | HU-24 Porcentaje de historias completadas y defectos | 3 | HU-11 ✓, HU-20 ✓, HU-21 ✓ | Eze |
+| 1 | HU-24 Porcentaje de story points completados y defectos | 3 | HU-11 ✓, HU-20 ✓, HU-21 ✓ | Eze |
 | 2 | HU-25 Dashboard con el estado del proyecto y gráficos | 8 | HU-22 ✓, HU-23 ✓, HU-24 | Nico |
 | 3 | HU-26 Reporte de un proyecto o sprint | 5 | HU-19 ✓, HU-22 ✓, HU-23 ✓, HU-24 | Eze |
 | 4 | HU-27 Exportar el reporte a PDF | 5 | HU-26 | Lucas |
@@ -52,7 +52,7 @@ Están cargadas como sub-issues en GitHub, 44 en total.
 
 ## Preguntas que tiene que resolver la spec antes de programar
 
-- **HU-24, porcentaje (decidido por Matías el 2026-11-04):** se calcula **sobre puntos**, con los planificados y completados que guarda el cierre (RN-11.6). El cierre (HU-11) no guarda cuántas historias tenía el sprint, y este cálculo no lo toca y sirve para los sprints ya cerrados. La spec lo aclara, porque el criterio de la issue habla de historias, y define qué se muestra en un sprint abierto y en uno sin puntos planificados.
+- **HU-24, porcentaje (decidido por Matías el 2026-11-04):** se calcula **sobre puntos**, con los planificados y completados que guarda el cierre (RN-11.6). Este cálculo no toca el cierre (HU-11) y sirve para los sprints ya cerrados. La spec define qué se muestra en un sprint abierto y en uno sin puntos planificados.
 - **HU-24, defectos:** los defectos ya guardan el sprint de detección y el de resolución (RN-20.5, RN-21.5). Hay que definir qué se muestra si un defecto no tiene sprint.
 - **HU-25, métricas:** el criterio pide al menos 3 gráficas. Hay que elegir cuáles (por ejemplo, velocidad, horas estimadas contra reales y defectos) y desde qué pantalla se entra ("sin pasos adicionales desde la vista principal").
 - **HU-25, gráficos:** la decisión va en un ADR. Las pantallas tienen `Content-Security-Policy: default-src 'self'`, que bloquea scripts de CDN, scripts en línea y estilos en línea. Propuesta para evaluar: generar SVG desde las plantillas de Go, sin JavaScript ni dependencias. La alternativa es una librería de JavaScript servida desde `web/static`.
