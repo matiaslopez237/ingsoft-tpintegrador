@@ -140,6 +140,7 @@ func TestCargar_AplicaLosPasosEnOrdenConElRelojDeCadaDia(t *testing.T) {
 	}
 
 	rs, _ := q.rondas.Ejecutar(ctx, p.ID, dos.ID)
+	slices.SortFunc(rs, func(a, b domain.ResumenRonda) int { return a.Numero - b.Numero }) // el historial viene de la más nueva a la más vieja
 	if len(rs) != 2 || rs[1].EstimacionAcordada == nil || *rs[1].EstimacionAcordada != 2 {
 		t.Errorf("rondas de HU-02 = %+v, se esperaban 2, la última con 2 acordado", rs)
 	}
