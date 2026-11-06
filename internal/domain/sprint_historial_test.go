@@ -202,9 +202,12 @@ func TestPorcentajeCompletado(t *testing.T) {
 		wantHayPorcentaje bool
 	}{
 		{name: "CA-24.1: porcentaje exacto", planificados: 8, completados: 6, wantPorcentaje: 75, wantHayPorcentaje: true},
-		{name: "CA-24.1: puede superar el 100%", planificados: 4, completados: 6, wantPorcentaje: 150, wantHayPorcentaje: true},
+		// No pasa con los datos reales de ResumirCierre (HU-11, RN-11.6): PuntosCompletados siempre es
+		// un subconjunto de PuntosPlanificados. Documenta que la función, al ser pura, no lo valida.
+		{name: "no ocurre con datos reales, pero la función no lo impide", planificados: 4, completados: 6, wantPorcentaje: 150, wantHayPorcentaje: true},
 		{name: "CA-24.1: 0 completados sobre planificados da 0%, no 'sin datos'", planificados: 5, completados: 0, wantPorcentaje: 0, wantHayPorcentaje: true},
 		{name: "CA-24.1: completados igual a planificados da 100%", planificados: 5, completados: 5, wantPorcentaje: 100, wantHayPorcentaje: true},
+		{name: "CA-24.1: se redondea a un decimal, con los medios alejándose de cero", planificados: 3, completados: 2, wantPorcentaje: 66.7, wantHayPorcentaje: true},
 		{name: "CA-24.2: sin puntos planificados, el porcentaje queda indefinido", planificados: 0, completados: 0, wantHayPorcentaje: false},
 	}
 	for _, tt := range tests {
