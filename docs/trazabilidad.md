@@ -32,6 +32,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
+| HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
 
 ---
 
@@ -2005,6 +2006,37 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 | [pantallas_test.go](../internal/adapters/http/pantallas_test.go) | HU-30 | Dos dobles en `casosFalsos` |
 | [test/bdd/bdd_test.go](../test/bdd/bdd_test.go) | Compartido | Registra `registrarStepsHU23` |
 | [test/bdd/hu30_sistema_test.go](../test/bdd/hu30_sistema_test.go) | HU-30 | `ConsultarHorasProyecto`, porque ese sistema abre el detalle del proyecto |
+
+---
+
+## HU-29: Documentación técnica del proyecto
+
+- **Issue:** [#40](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/40) · Sprint 4 · 2 SP
+- **Tareas:** 29.1 [#357](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/357), 29.2 [#358](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/358), 29.3 [#359](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/359), 29.4 [#360](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/360)
+- **Sin spec, BDD ni TDD:** es una historia de documentación y no agrega funcionalidad ni reglas de negocio. SDD, BDD y TDD se aplican a la funcionalidad (`CLAUDE.md`). Los criterios de aceptación se verifican en la revisión del PR.
+
+### Criterios de aceptación
+
+| Criterio (issue #40) | Dónde se cumple | Cómo se verificó |
+|---|---|---|
+| Describe la arquitectura general | [docs/arquitectura.md](arquitectura.md): capas, puertos y adaptadores, cómo viaja un pedido, tests por capa y dónde va cada cosa al sumar una historia | Se cotejó contra el código: `go list` confirma que el dominio solo usa la biblioteca estándar y que `internal/app` solo depende del dominio, y existen todos los nombres citados |
+| Documenta decisiones técnicas relevantes (stack, persistencia, etc.) | Sección "Decisiones técnicas" de [docs/arquitectura.md](arquitectura.md), que enlaza los ADR; [ADR-0002](adr/0002-persistencia.md), [ADR-0003](adr/0003-interfaz-web.md) y [ADR-0004](adr/0004-ci-cd.md) actualizados con notas fechadas | Estado del CI, cobertura y protección de `main` leídos en GitHub; despliegue en Render probado con el pipeline del merge del PR #299 |
+| Se mantiene versionada junto al código | Todo está en el repo, en `docs/` y en el [README](../README.md) | El README se siguió paso a paso en un clon nuevo: el servidor arrancó, `/salud` y `/web/proyectos` respondieron y corrió el ejemplo de `BDD_TAGS` |
+
+### Commits
+
+| Etapa | Commit |
+|---|---|
+| 29.1 Arquitectura general | `46a1181` docs(HU-29): arquitectura general |
+| 29.2 Decisiones técnicas y ADR | `fbf95f7` docs(HU-29): decisiones técnicas y ADR al día |
+| 29.3 README | `a13c526` docs(HU-29): README y puesta en marcha |
+| Render activo | `547fd30` docs(HU-29): despliegue en Render activo |
+| 29.4 Trazabilidad | docs(trazabilidad): HU-29 |
+
+### Huecos
+
+- **Los diagramas Mermaid** de `docs/arquitectura.md` no se vieron renderizados antes del PR: GitHub los dibuja al abrirlo.
+- **Los ADR-0005 (gráficos) y 0006 (PDF)** están pendientes: los escriben HU-25 y HU-27, y la tabla de decisiones técnicas los nombra. Cuando se mergeen, hay que sumarlos a esa tabla.
 
 ---
 
