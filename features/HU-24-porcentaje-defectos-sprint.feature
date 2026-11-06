@@ -19,8 +19,10 @@ Feature: Calcular el porcentaje de story points completados y los defectos por S
     When consulto la calidad de los sprints de "Alfa"
     Then el sprint 1 tiene 75% completado
 
+  # Con los datos reales de HU-11 (RN-11.6) esto no pasa: los completados son un subconjunto de los
+  # planificados. Prueba que el cálculo no trunca ni valida esa relación, no un caso de negocio real.
   @CA-24.1 @limite
-  Scenario: El porcentaje puede superar el 100% si se completó más de lo planificado
+  Scenario: El cálculo no trunca si los completados superan los planificados
     Given "Alfa" tiene un sprint cerrado con 4 puntos planificados y 6 completados
     When consulto la calidad de los sprints de "Alfa"
     Then el sprint 1 tiene 150% completado
@@ -30,6 +32,12 @@ Feature: Calcular el porcentaje de story points completados y los defectos por S
     Given "Alfa" tiene un sprint cerrado con 5 puntos planificados y 0 completados
     When consulto la calidad de los sprints de "Alfa"
     Then el sprint 1 tiene 0% completado
+
+  @CA-24.1 @limite
+  Scenario: El porcentaje se redondea a un decimal cuando no divide exacto
+    Given "Alfa" tiene un sprint cerrado con 3 puntos planificados y 2 completados
+    When consulto la calidad de los sprints de "Alfa"
+    Then el sprint 1 tiene 66,7% completado
 
   @CA-24.2 @limite
   Scenario: Un sprint cerrado sin puntos planificados no tiene porcentaje
