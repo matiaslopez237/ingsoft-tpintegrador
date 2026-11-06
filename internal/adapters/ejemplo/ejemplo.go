@@ -138,5 +138,8 @@ func CargarSiCorresponde(ctx context.Context, cu CasosDeUso, valor string) (Resu
 	if len(proyectos) > 0 {
 		return BaseConProyectos, nil
 	}
-	return 0, nil // la carga en sí: siguiente ciclo
+	if err := cargar(ctx, cu, contenidoTP()); err != nil {
+		return 0, err
+	}
+	return Cargado, nil
 }
