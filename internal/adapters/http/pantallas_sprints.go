@@ -210,7 +210,7 @@ func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 			v.DefectosDetectados, v.DefectosResueltos = c.DefectosDetectados, c.DefectosResueltos
 			if c.HayPorcentaje {
 				v.HayPorcentaje = true
-				v.PorcentajeCompletado = formatearPorcentaje(c.PorcentajeCompletado)
+				v.PorcentajeCompletado = textoPorcentaje(c.PorcentajeCompletado)
 			}
 		}
 		vistas[i] = v
@@ -227,11 +227,4 @@ func (p *pantallas) sprintsAnteriores(w http.ResponseWriter, r *http.Request) {
 // la interfaz (spec HU-22, P-2: es un detalle de la plantilla, no una regla de negocio).
 func formatearVelocidad(v float64) string {
 	return strings.Replace(strconv.FormatFloat(v, 'f', 1, 64), ".", ",", 1)
-}
-
-// formatearPorcentaje muestra el porcentaje completado con coma y un decimal (75,0%), igual
-// criterio que textoPorcentaje de HU-19/HU-23: v ya viene redondeado a un decimal (RN-24.1,
-// domain.PorcentajeCompletado), así que la API y la pantalla siempre coinciden.
-func formatearPorcentaje(v float64) string {
-	return strings.Replace(strconv.FormatFloat(v, 'f', 1, 64), ".", ",", 1) + "%"
 }
