@@ -53,7 +53,7 @@ Los Sprints `Abierto` no entran en esta salida (mismo criterio que la pantalla d
 - Defecto todavía `Abierto` o `En progreso` → no cuenta en la columna de resueltos de ningún Sprint (`SprintResolucionID` sigue `nil` hasta que se resuelve).
 - Sprint cerrado con puntos planificados mayor a cero y puntos completados en `0` → `0%` (dato real: se planificó algo y no se completó nada; distinto del caso "sin datos" de RN-24.2).
 - Sprint cerrado con puntos completados igual a los planificados → `100%` (el máximo posible; ver sección 5, nunca se supera).
-- Sprint cerrado con un porcentaje que no redondea exacto (por ejemplo 2 de 3 puntos) → se redondea a un decimal: `66,7%`, no `66,66666666666666%`.
+- Sprint cerrado con un porcentaje que no redondea exacto (por ejemplo 1 de 16 puntos, 6,25%) → se redondea a un decimal, con los medios alejándose de cero: `6,3%`, no `6,25%` ni `6,333333333333334%`.
 - Proyecto sin ningún Sprint cerrado → lista vacía, igual que HU-12 y HU-22.
 
 ## 7. Condiciones de error
@@ -65,7 +65,7 @@ Los Sprints `Abierto` no entran en esta salida (mismo criterio que la pantalla d
 No hay más condiciones de error: es una consulta de solo lectura sin más datos de entrada que el ID del proyecto.
 
 ## 8. Criterios de aceptación
-- **CA-24.1:** Dado un Sprint `Cerrado` con 8 puntos planificados y 6 completados, cuando se consulta su calidad, entonces el porcentaje es 75; con 3 planificados y 2 completados, el porcentaje es 66,7 (redondeado a un decimal, no 66,66666666666666). (RN-24.1)
+- **CA-24.1:** Dado un Sprint `Cerrado` con 8 puntos planificados y 6 completados, cuando se consulta su calidad, entonces el porcentaje es 75; con 16 planificados y 1 completado, el porcentaje es 6,3 (redondeado a un decimal, con los medios alejándose de cero: 6,25 redondea a 6,3, no a 6,2). (RN-24.1)
 - **CA-24.2:** Dado un Sprint `Cerrado` con 0 puntos planificados, cuando se consulta su calidad, entonces el porcentaje queda indefinido (no `0`). (RN-24.2)
 - **CA-24.3:** Dado un Sprint con dos defectos cuyo `SprintDeteccionID` es el de ese Sprint y uno cuyo `SprintDeteccionID` es de otro Sprint, cuando se consulta su calidad, entonces los defectos detectados de ese Sprint son 2. (RN-24.3)
 - **CA-24.4:** Dado un Sprint con un defecto cuyo `SprintResolucionID` es el de ese Sprint y está `Cerrado`, cuando se consulta su calidad, entonces ese defecto cuenta como resuelto en ese Sprint. (RN-24.4)
