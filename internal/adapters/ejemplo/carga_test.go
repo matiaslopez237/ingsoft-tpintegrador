@@ -174,6 +174,26 @@ func sprintDe(id *int64, ss []domain.Sprint) string {
 	return "?"
 }
 
+// Traza: HU-31 CA-31.1, CA-31.9 (RN-31.1)
+func TestCargarSiCorresponde_BaseVacia_CargaElTPUnaSolaVez(t *testing.T) {
+	ctx := context.Background()
+	cu, q := casosReales(t)
+
+	got, err := CargarSiCorresponde(ctx, cu, "true")
+	if err != nil || got != Cargado {
+		t.Fatalf("primera carga = %v, %v; se esperaba Cargado sin error", got, err)
+	}
+	got, err = CargarSiCorresponde(ctx, cu, "true")
+	if err != nil || got != BaseConProyectos {
+		t.Fatalf("segunda carga = %v, %v; se esperaba BaseConProyectos sin error", got, err)
+	}
+
+	ps, _ := q.listar.Ejecutar(ctx)
+	if len(ps) != 1 || ps[0].Nombre != "Software Metrics & Estimation" {
+		t.Errorf("proyectos = %+v, se esperaba solo el del TP", ps)
+	}
+}
+
 // cerradorQueFalla simula que un caso de uso falla a mitad de la carga (CA-31.10).
 type cerradorQueFalla struct{ err error }
 
