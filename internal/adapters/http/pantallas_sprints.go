@@ -229,8 +229,9 @@ func formatearVelocidad(v float64) string {
 	return strings.Replace(strconv.FormatFloat(v, 'f', 1, 64), ".", ",", 1)
 }
 
-// formatearPorcentaje muestra el porcentaje completado sin ceros de más (75%, no 75,0%), con coma
-// cuando tiene decimales (spec HU-24, P-3: detalle de la plantilla, no una regla de negocio).
+// formatearPorcentaje muestra el porcentaje completado con coma y un decimal (75,0%), igual
+// criterio que textoPorcentaje de HU-19/HU-23: v ya viene redondeado a un decimal (RN-24.1,
+// domain.PorcentajeCompletado), así que la API y la pantalla siempre coinciden.
 func formatearPorcentaje(v float64) string {
-	return strings.Replace(strconv.FormatFloat(v, 'f', -1, 64), ".", ",", 1) + "%"
+	return strings.Replace(strconv.FormatFloat(v, 'f', 1, 64), ".", ",", 1) + "%"
 }
