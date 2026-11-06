@@ -24,7 +24,14 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
   - **Sprint 4 `Abierto`** (del 2026-11-05 al 2026-11-08), con sus historias, HU-24 y HU-29 `Hecho` y el resto sin terminar (P-3).
   - **Esfuerzo:** horas estimadas y registros de esfuerzo de los integrantes en las historias de los sprints, para que HU-19 y HU-23 muestren desviaciones.
   - **Planning Poker:** rondas con votos y estimación acordada en historias del Sprint 3, incluida una historia que necesitó una segunda ronda por diferencias.
-  - **Defectos:** DEF-01 a DEF-04, sobre las historias donde aparecieron, con sus sprints de detección y resolución y en distintos estados: los tres primeros `Cerrado` y DEF-04 sin terminar.
+  - **Defectos:** DEF-01 a DEF-04, sobre las historias donde aparecieron y con sus fechas reales, así que los sprints de detección y resolución salen de esas fechas (RN-20.5, RN-21.6):
+
+    | Defecto | Detectado | Sprint de detección | Resuelto | Sprint de resolución | Estado |
+    |---|---|---|---|---|---|
+    | DEF-01 | 26/10 | 2 | 26/10 | 2 | `Cerrado` |
+    | DEF-02 | 29/10 | 3 | 29/10 | 3 | `Cerrado` |
+    | DEF-03 | 30/10 | 3 | 1/11 | ninguno: entre el Sprint 3 y el 4 | `Cerrado` |
+    | DEF-04 | 3/11 | ninguno: entre el Sprint 3 y el 4 | — | — | `Abierto` |
 - **En cualquier otro caso** (variable apagada, valor inválido o base con algún proyecto), la base no cambia.
 - **En el log:** una línea que dice si se cargó el ejemplo o por qué no.
 - No hay rutas ni pantallas nuevas: el ejemplo se ve en las pantallas que ya existen.
@@ -65,7 +72,7 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 - **CA-31.1:** Dada una base vacía y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces existe el proyecto "Software Metrics & Estimation", `Activo`, con 4 integrantes y sus roles. (RN-31.1)
 - **CA-31.2:** Dado el ejemplo cargado, entonces el backlog tiene los elementos HU-01 a HU-31 con los story points del Product Backlog, y hay 4 sprints: del 1 al 3 `Cerrado`, con 19, 26 y 28 puntos planificados y completados, y el 4 `Abierto`. (RN-31.4)
 - **CA-31.3:** Dado el ejemplo cargado, cuando se consulta la velocidad del equipo (HU-22), entonces es el promedio de 19, 26 y 28. (RN-31.4)
-- **CA-31.4:** Dado el ejemplo cargado, cuando se consultan los defectos (HU-21), entonces están DEF-01 a DEF-04, cada uno con su sprint de detección; los tres primeros `Cerrado` con su sprint de resolución, y DEF-04 sin terminar. (RN-31.4, RN-31.5)
+- **CA-31.4:** Dado el ejemplo cargado, cuando se consultan los defectos (HU-21), entonces están DEF-01 a DEF-04 con los estados y los sprints de detección y resolución de la tabla de la sección 3. (RN-31.4, RN-31.5)
 - **CA-31.5:** Dado el ejemplo cargado, cuando se consultan las horas del proyecto (HU-23), entonces hay horas estimadas y reales y una desviación; y cuando se consulta el historial de rondas de la historia que se votó dos veces (HU-16), entonces tiene dos rondas, la última con estimación acordada. (RN-31.2, RN-31.5)
 - **CA-31.6:** Dada una base con un proyecto y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces la base no cambia. (RN-31.1)
 - **CA-31.7:** Dada una base vacía y `CARGAR_EJEMPLO` ausente, vacía o `false`, cuando arranca el servidor, entonces no se carga nada. (RN-31.1)
@@ -87,3 +94,4 @@ Ninguna.
 ## Historial
 - 2026-11-05: creada (borrador). P-1 a P-3, propuestas pendientes de confirmar por Matías. La carga automática con `CARGAR_EJEMPLO` y el uso de este TP como contenido los decidió Matías al crear la historia.
 - 2026-11-05: Matías confirma P-1 a P-3 y aprueba la spec.
+- 2026-11-05: los defectos del ejemplo usan sus fechas reales. DEF-03 se resolvió y DEF-04 se detectó entre el Sprint 3 y el 4, así que no tienen sprint de resolución y de detección, respectivamente.
