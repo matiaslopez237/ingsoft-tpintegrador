@@ -32,7 +32,7 @@ Usar SQLite como mecanismo de persistencia, a través del driver `modernc.org/sq
 ## Consequences
 
 ### Positive
-- Persistencia como un único archivo (`proyecto.db`), sin servidor aparte que instalar ni levantar.
+- Persistencia como un único archivo (`metrics.db`, configurable con la variable `DB_PATH`), sin servidor aparte que instalar ni levantar.
 - `go build` funciona en cualquier máquina sin dependencias de compilador C.
 - Soporta SQL relacional real para las consultas de métricas y reportes.
 
@@ -43,3 +43,5 @@ Usar SQLite como mecanismo de persistencia, a través del driver `modernc.org/sq
 ## Notes
 
 Confirmado por los 4 integrantes del equipo. Cierra la Tarea 0.2 de la Épica 0 (issue #82).
+
+**Actualización 2026-11-05 (HU-29):** el archivo se llama `metrics.db` y no `proyecto.db`, como decía esta decisión al principio. El esquema se crea al arrancar con `CREATE TABLE IF NOT EXISTS`, y las columnas que sumó cada historia se agregan a las bases existentes con `agregarColumnas`. Detalle en [`docs/arquitectura.md`](../arquitectura.md).
