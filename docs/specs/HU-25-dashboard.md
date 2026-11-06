@@ -35,9 +35,9 @@ Es una consulta de solo lectura. En HTTP, `proyectoID` va en la ruta.
 ## 4. Reglas de negocio
 - **RN-25.1:** El Dashboard muestra los datos vigentes del proyecto en el momento del pedido: cada vez que se abre, se calculan de nuevo a partir de lo guardado. No hay datos guardados aparte para el Dashboard ni cache.
 - **RN-25.2:** Los elementos del backlog se cuentan por su estado actual (`Pendiente`, `En progreso`, `Hecho`, HU-05/HU-10), estén o no asignados a un sprint. El total es la suma de los tres.
-- **RN-25.3:** El sprint en curso es el Sprint `Abierto` cuyas fechas incluyen `hoy`, con la misma regla que usa HU-20 para el sprint de detección de un defecto (`domain.SprintVigente`, RN-20.5). Como los sprints de un proyecto no se superponen (RN-08.5), hay como mucho uno. Ver P-1.
+- **RN-25.3:** El sprint en curso es el Sprint `Abierto` cuyas fechas incluyen `hoy`, con la misma regla que usa HU-20 para el sprint de detección de un defecto (`domain.SprintVigente`, RN-20.5). Como los sprints de un proyecto no se superponen (RN-08.5), hay como mucho uno. Un sprint `Abierto` cuyas fechas no incluyen hoy (ya vencido o todavía no empezado) no es el sprint en curso (P-1).
 - **RN-25.4:** Los puntos del sprint en curso se calculan con la regla del cierre de HU-11 (`domain.ResumirCierre`, RN-11.6) sobre los elementos que tiene asignados hoy: planificados es la suma de los story points de todos, y completados la de los que están `Hecho`; un elemento sin estimar suma 0. No se guardan: se recalculan en cada pedido (RN-25.1).
-- **RN-25.5:** Los gráficos por sprint incluyen todos los Sprints `Cerrado` del proyecto, del más antiguo al más reciente por fecha de inicio (de izquierda a derecha), y usan los valores que ya calculan HU-11, HU-22 y HU-24 sin recalcularlos. Ver P-2.
+- **RN-25.5:** Los gráficos por sprint incluyen todos los Sprints `Cerrado` del proyecto, del más antiguo al más reciente por fecha de inicio (de izquierda a derecha), sin límite de cantidad (P-2), y usan los valores que ya calculan HU-11, HU-22 y HU-24 sin recalcularlos.
 - **RN-25.6:** Al Dashboard se llega con un solo clic desde la pantalla del proyecto (HU-04), que es la vista principal de cada proyecto.
 
 ## 5. Restricciones
@@ -54,7 +54,7 @@ Es una consulta de solo lectura. En HTTP, `proyectoID` va en la ruta.
 - Sprint en curso con elementos sin estimar → suman 0 puntos (RN-11.6).
 - Sprint cerrado con 0 puntos planificados → en el gráfico de porcentaje figura "sin datos", sin barra; en el de puntos, con dos barras en 0 (RN-24.2).
 - Todos los sprints cerrados con 0 completados y 0 defectos → los gráficos se dibujan con barras en 0, sin dividir por cero al calcular la escala.
-- Muchos sprints cerrados → todos entran en los gráficos (ver P-2).
+- Muchos sprints cerrados → todos entran en los gráficos, con barras más finas (P-2).
 - Elementos o sprints de otro proyecto → no cuentan.
 
 ## 7. Condiciones de error
@@ -83,10 +83,11 @@ No hay más condiciones de error: es una consulta de solo lectura sin más datos
 - **Métricas graficadas:** puntos por sprint (con la velocidad), % completado por sprint, defectos por sprint y horas estimadas contra reales. Elegidas por Nicolás Andino el 2026-11-06.
 - **Pantalla propia** (`/web/proyectos/{id}/dashboard`) con un botón en la pantalla del proyecto, en lugar de mostrar el panel dentro de HU-04. Elegido por Nicolás Andino el 2026-11-06.
 - **Estado del proyecto:** backlog por estado y sprint en curso. Elegido por Nicolás Andino el 2026-11-06.
+- **P-1 — Sprint abierto pero vencido:** no figura como sprint en curso; la sección dice "No hay sprint en curso". Es la misma regla de HU-20 (`domain.SprintVigente`). Confirmada por Nicolás Andino el 2026-11-06.
+- **P-2 — Cantidad de sprints en los gráficos:** todos los sprints cerrados, sin límite. Confirmada por Nicolás Andino el 2026-11-06.
 
 ## Preguntas abiertas
-- **P-1 — Sprint abierto pero vencido:** con RN-25.3, un sprint `Abierto` cuya fecha de fin ya pasó no figura como sprint en curso, aunque nadie lo haya cerrado. Propuesta: dejarlo así (es la regla de HU-20), y que la sección diga "No hay sprint en curso". ¿O debería mostrarse igual, avisando que está vencido?
-- **P-2 — Cantidad de sprints en los gráficos:** RN-25.5 propone todos los sprints cerrados. Con muchos sprints, las barras quedan finas. ¿Se limita a los últimos N (por ejemplo 6)?
+Ninguna.
 
 ## Historial
-- 2026-11-06: creada (borrador).
+- 2026-11-06: creada (borrador). P-1 y P-2 confirmadas por Nicolás Andino; falta la aprobación del equipo en el PR.
