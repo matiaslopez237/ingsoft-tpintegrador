@@ -207,7 +207,7 @@ func TestPorcentajeCompletado(t *testing.T) {
 		{name: "no ocurre con datos reales, pero la función no lo impide", planificados: 4, completados: 6, wantPorcentaje: 150, wantHayPorcentaje: true},
 		{name: "CA-24.1: 0 completados sobre planificados da 0%, no 'sin datos'", planificados: 5, completados: 0, wantPorcentaje: 0, wantHayPorcentaje: true},
 		{name: "CA-24.1: completados igual a planificados da 100%", planificados: 5, completados: 5, wantPorcentaje: 100, wantHayPorcentaje: true},
-		{name: "CA-24.1: se redondea a un decimal, con los medios alejándose de cero", planificados: 3, completados: 2, wantPorcentaje: 66.7, wantHayPorcentaje: true},
+		{name: "CA-24.1: se redondea a un decimal, con los medios alejándose de cero", planificados: 16, completados: 1, wantPorcentaje: 6.3, wantHayPorcentaje: true},
 		{name: "CA-24.2: sin puntos planificados, el porcentaje queda indefinido", planificados: 0, completados: 0, wantHayPorcentaje: false},
 	}
 	for _, tt := range tests {

@@ -155,20 +155,20 @@ func TestPantallaSprintsAnteriores_MuestraElPorcentajeYLosDefectos(t *testing.T)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
 	}
-	contiene(t, rec, "75,0%", "2", "1")
+	contiene(t, rec, "75,0 %", "2", "1")
 }
 
 // Traza: HU-24 CA-24.1, CA-24.9: el porcentaje se redondea a un decimal, igual que en el JSON.
 func TestPantallaSprintsAnteriores_PorcentajeConDecimales_SeRedondeaAUnDecimal(t *testing.T) {
-	cu := casosConAnteriores([]domain.Sprint{sprintAnteriorDeAlfa(1, 1, 1, "Con decimales", 3, 2)}, nil)
+	cu := casosConAnteriores([]domain.Sprint{sprintAnteriorDeAlfa(1, 1, 1, "Con decimales", 16, 1)}, nil)
 
 	rec := pedirPantalla(t, cu, http.MethodGet, rutaAnterioresDeAlfa, nil)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
 	}
-	contiene(t, rec, "66,7%")
-	noContiene(t, rec.Body.String(), "66,66666666666666%")
+	contiene(t, rec, "6,3 %")
+	noContiene(t, rec.Body.String(), "6,25 %")
 }
 
 // Traza: HU-24 CA-24.2, CA-24.9: un sprint cerrado sin puntos planificados avisa que no hay
