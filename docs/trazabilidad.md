@@ -32,6 +32,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
+| HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
 
 ---
@@ -2006,6 +2007,74 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 | [pantallas_test.go](../internal/adapters/http/pantallas_test.go) | HU-30 | Dos dobles en `casosFalsos` |
 | [test/bdd/bdd_test.go](../test/bdd/bdd_test.go) | Compartido | Registra `registrarStepsHU23` |
 | [test/bdd/hu30_sistema_test.go](../test/bdd/hu30_sistema_test.go) | HU-30 | `ConsultarHorasProyecto`, porque ese sistema abre el detalle del proyecto |
+
+---
+
+## HU-24: Calcular % de story points completados y defectos por Sprint
+
+- **Issue:** [#35](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/35) · Sprint 4 · 3 SP
+- **Spec:** [docs/specs/HU-24-porcentaje-defectos-sprint.md](specs/HU-24-porcentaje-defectos-sprint.md)
+- **Feature:** [features/HU-24-porcentaje-defectos-sprint.feature](../features/HU-24-porcentaje-defectos-sprint.feature) (steps en [test/bdd/hu24_steps_test.go](../test/bdd/hu24_steps_test.go), sobre SQLite real en [hu24_sistema_test.go](../test/bdd/hu24_sistema_test.go))
+- **Alcance real:** HU-11 ya calcula y guarda los puntos planificados y completados de cada Sprint al cerrarlo (RN-11.6), y HU-20/HU-21 ya asignan el Sprint de detección y el de resolución de cada defecto (RN-20.5, RN-21.6). HU-24 agrega solo el **cálculo**: el porcentaje completado de cada Sprint Cerrado y el conteo de sus defectos detectados/resueltos. No agrega persistencia nueva (la tarea 24.6, adaptador de persistencia, no aplica).
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-24.1 Porcentaje = completados sobre planificados, redondeado a un decimal | RN-24.1 | El porcentaje completado son los puntos completados sobre los planificados `@normal` · Un sprint cerrado con puntos planificados y 0 completados da 0%, no "sin datos" `@limite` · El porcentaje se redondea a un decimal, con los medios alejándose de cero `@limite` (16 de 1, 6,25% → 6,3%) | `TestPorcentajeCompletado`, `TestConsultarCalidadSprints_SprintsCerrados_InformaElPorcentaje`, `TestPantallaSprintsAnteriores_PorcentajeConDecimales_SeRedondeaAUnDecimal` | `domain.PorcentajeCompletado` (usa `redondearUnDecimal` de HU-19) |
+| CA-24.2 Sin puntos planificados, sin porcentaje | RN-24.2 | Un sprint cerrado sin puntos planificados no tiene porcentaje `@limite` | `TestPorcentajeCompletado` (caso "sin puntos planificados"), `TestConsultarCalidadSprints_SinPuntosPlanificados_SinPorcentaje` | `domain.PorcentajeCompletado` |
+| CA-24.3 Defectos detectados por Sprint | RN-24.3 | Cuenta los defectos detectados en cada sprint `@normal` | `TestContarDefectosDeSprint`, `TestConsultarCalidadSprints_CuentaLosDefectosPorSprint` | `domain.ContarDefectosDeSprint` |
+| CA-24.4 Defectos resueltos por Sprint, aunque luego se cierren | RN-24.4 | Cuenta los defectos resueltos en un sprint aunque ya estén cerrados `@normal` | `TestContarDefectosDeSprint` (caso "aunque ya estén Cerrados"), `TestConsultarCalidadSprints_CuentaLosDefectosPorSprint` | `domain.ContarDefectosDeSprint` |
+| CA-24.5 Defecto sin Sprint no cuenta en ninguno | RN-24.3, RN-24.4 | Un defecto sin sprint de detección no cuenta en ningún sprint `@alternativo` | `TestContarDefectosDeSprint` (caso "sin sprint"), `TestConsultarCalidadSprints_CuentaLosDefectosPorSprint` | `domain.ContarDefectosDeSprint` |
+| CA-24.6 Solo los Sprints Cerrados | RN-24.5 | Un sprint abierto no aparece en la calidad de los sprints `@alternativo` | `TestConsultarCalidadSprints_SprintsCerrados_InformaElPorcentaje` (incluye un sprint Abierto que no aparece) | `app.ConsultarCalidadSprints` (`domain.SprintsAnteriores`) |
+| CA-24.7 Proyecto inexistente | — (error reutilizado) | No se puede consultar la calidad de los sprints de un proyecto que no existe `@error` | `TestConsultarCalidadSprints_ProyectoInexistente_RetornaError` | `app.ConsultarCalidadSprints` |
+| CA-24.8 Respuesta HTTP | Sección 3 | No va acá (como CA-22.7): se cubre con tests del adaptador | `TestGetCalidad_*` (3 tests) | `internal/adapters/http/calidad_sprints_handler.go` |
+| CA-24.9 Pantalla | Sección 3 | No va acá (como CA-22.8): se cubre con tests de la pantalla | `TestPantallaSprintsAnteriores_MuestraElPorcentajeYLosDefectos`, `TestPantallaSprintsAnteriores_SinPuntosPlanificados_AvisaSinPorcentaje` | `pantallas_sprints.go` (`sprintsAnteriores`, reutiliza `textoPorcentaje` de HU-19/HU-23), `web/plantillas/sprints_anteriores.html` |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-24.1 % = PuntosCompletados / PuntosPlanificados × 100, sin recalcular lo que ya guardó HU-11, redondeado a un decimal | CA-24.1 | `domain.PorcentajeCompletado` |
+| RN-24.2 Sin puntos planificados, el porcentaje queda indefinido (no 0%) | CA-24.2 | `domain.PorcentajeCompletado` |
+| RN-24.3 Detectados = defectos con ese Sprint como SprintDeteccionID | CA-24.3, CA-24.5 | `domain.ContarDefectosDeSprint` |
+| RN-24.4 Resueltos = defectos con ese Sprint como SprintResolucionID, sin importar el estado actual | CA-24.4, CA-24.5 | `domain.ContarDefectosDeSprint` |
+| RN-24.5 Solo se calcula para Sprints Cerrados | CA-24.6 | `app.ConsultarCalidadSprints` (reutiliza `domain.SprintsAnteriores` de HU-12) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/sprint_historial.go](../internal/domain/sprint_historial.go) (`PorcentajeCompletado`, `ContarDefectosDeSprint`, junto a `SprintsAnteriores` de HU-12 y `Velocidad` de HU-22) | [sprint_historial_test.go](../internal/domain/sprint_historial_test.go) |
+| Caso de uso | [internal/app/consultar_calidad_sprints.go](../internal/app/consultar_calidad_sprints.go) (`ConsultarCalidadSprints`, reutiliza `LectorProyectos`, `RepositorioSprints` de HU-08 y `LectorDefectos` de HU-21) | [consultar_calidad_sprints_test.go](../internal/app/consultar_calidad_sprints_test.go) |
+| HTTP (JSON) | [internal/adapters/http/calidad_sprints_handler.go](../internal/adapters/http/calidad_sprints_handler.go) (`GET /proyectos/{id}/calidad`) | [calidad_sprints_handler_test.go](../internal/adapters/http/calidad_sprints_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_sprints.go](../internal/adapters/http/pantallas_sprints.go) (reutiliza la pantalla de HU-12/HU-22), [web/plantillas/sprints_anteriores.html](../internal/adapters/http/web/plantillas/sprints_anteriores.html) | [pantallas_sprints_anteriores_test.go](../internal/adapters/http/pantallas_sprints_anteriores_test.go) |
+| BDD | [test/bdd/hu24_sistema_test.go](../test/bdd/hu24_sistema_test.go), [hu24_steps_test.go](../test/bdd/hu24_steps_test.go) | 9 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 24.1 Spec | `01f825e` docs(HU-24): spec SDD | — |
+| 24.2 Escenarios BDD | `02ada65` test(HU-24): [24.2] escenarios BDD | — |
+| 24.3 Steps de godog | `7447650` test(HU-24): [24.3][RED] steps (en rojo hasta el caso de uso) | BDD en rojo |
+| 24.4 Dominio (`PorcentajeCompletado`, `ContarDefectosDeSprint`) | `87d989e` [RED] → `09a168b` [GREEN] | **RED → GREEN** (sin REFACTOR: dos funciones cortas) |
+| 24.5 Caso de uso `ConsultarCalidadSprints` | `1c4c1a0` [RED] → `a5bac14` [GREEN] | **RED → GREEN**; BDD en verde (incluyó un fix chico: el step `"X" tiene un sprint abierto` colisionaba con el de HU-22, se distinguió como "tiene un sprint todavía abierto") |
+| 24.6 Adaptador de persistencia | No aplica: sin persistencia nueva (reutiliza `RepositorioSprints` de HU-08 y `RepositorioDefectos`/`LectorDefectos` de HU-21) | — |
+| 24.7 Adaptador HTTP (`GET .../calidad`) | `8d97166` [RED] → `189ada9` [GREEN] | **RED → GREEN** |
+| 24.8 Pantalla (sumada a la de HU-12/HU-22) | `27bbdd8` [RED] → `c4d9253` [GREEN] | **RED → GREEN**; incluyó el fix de un fixture de test (`TestPantallasHoras_NoApareceEnOtrasPantallas`) que armaba un `CasosDeUso` parcial sin `ConsultarCalidadSprints` (mismo patrón de interfaz nil de HU-21) |
+| 24.9 Revisión y trazabilidad | `1b44d60` | — |
+| 24.10 Corrección de la revisión del PR #366 (ronda 1) | `f681fa5` (spec) → `8721836` [RED] → `86a7137` [GREEN] (dominio) → `f0d11d4` [RED] → `6119967` [GREEN] (pantalla) → `3494b7e` (escenario BDD) → `e5033cf` (trazabilidad) | **RED → GREEN** ×2 |
+| Traer `main` (conflicto con HU-29, PR #365, en trazabilidad.md) | `28dfc3e` | — |
+| 24.11 Corrección de la revisión del PR #366 (ronda 2, sugerencias opcionales) | `5c05e8b` [RED] → `61bbd61` [GREEN] → `fb91f2f` (spec) | **RED → GREEN** ×1 |
+
+### Huecos
+
+- ~~La spec está en Borrador~~: resuelto el 2026-11-05. Matías López (Agile Enabler) confirmó P-1 y P-2 en la revisión del PR [#366](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/366) y pidió redondear el porcentaje a un decimal (P-3, antes abierta); se corrigió también un caso límite de la sección 6 que en realidad no puede pasar con los datos reales de HU-11 (RN-11.6). Spec Aprobada (tarea 24.10).
+- Probado manualmente en el navegador (servidor real, SQLite): proyecto con un Sprint cerrado (8 planificados, 8 completados) y un defecto detectado y resuelto en ese mismo Sprint → la pantalla de sprints anteriores mostró correctamente 100,0%, 1 defecto detectado y 1 resuelto.
+- Revisión con el agente `go-reviewer`: **Approve**, sin hallazgos bloqueantes. Confirmó que el bug de HU-21 (method value de una interfaz nil al registrar rutas) no se repite acá (tanto `RegistrarCalidadSprints` como el handler y la pantalla llaman al caso de uso recién dentro del closure, en el momento del pedido), y que no queda ningún otro `CasosDeUso` parcial en los tests existentes sin el campo `ConsultarCalidadSprints` más allá del que ya se corrigió en `pantallas_horas_test.go`. Verificó `go vet`, `gofmt` y los tests de dominio/app/HTTP; no llegó a correr la suite BDD completa por el tiempo que tarda en ese entorno, pero revisó el código BDD a mano (SQL parametrizado, cada escenario aislado en su propia base temporal) y lo encontró consistente con el patrón de HU-22.
+- ~~PR #365 (HU-29, en paralelo) también agrega su sección a este archivo~~: resuelto el 2026-11-06 al traer `main` (HU-29 se mergeó primero, PR #365): se dejaron las dos filas del resumen y las dos secciones, como estaba previsto.
+- Segunda ronda de revisión del PR #366 (2026-11-06): además de traer `main`, se aplicaron las tres sugerencias opcionales de Matías López: se sacó el escenario BDD "el cálculo no trunca si los completados superan los planificados" (imposible según la spec, sección 5; el test unitario del dominio ya documenta que la función pura no lo valida), el ejemplo de redondeo pasó de 2/3 (no es un medio) a 16/1 = 6,25% → 6,3% (un medio real, prueba "los medios alejándose de cero"), y la pantalla ahora reutiliza `textoPorcentaje` de HU-19/HU-23 en vez de un `formatearPorcentaje` propio, para que todas las pantallas de porcentaje muestren el mismo formato ("75,0 %", con espacio).
 
 ---
 

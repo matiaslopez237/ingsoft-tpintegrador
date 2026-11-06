@@ -21,10 +21,17 @@ func (f consultarVelocidadFunc) Ejecutar(ctx context.Context, id int64) (app.Vel
 	return f(ctx, id)
 }
 
-// casosConAnteriores suma a casosConSprints los casos de uso de HU-12 y HU-22, que devuelven los
-// sprints indicados (y la velocidad que les corresponde, calculada con el dominio real, igual que
-// el caso de uso de producción) para alfa (ID 7), y ErrProyectoNoEncontrado para cualquier otro.
-func casosConAnteriores(sprints []domain.Sprint, err error) CasosDeUso {
+type consultarCalidadSprintsFunc func(context.Context, int64) ([]app.CalidadSprint, error)
+
+func (f consultarCalidadSprintsFunc) Ejecutar(ctx context.Context, id int64) ([]app.CalidadSprint, error) {
+	return f(ctx, id)
+}
+
+// casosConAnteriores suma a casosConSprints los casos de uso de HU-12, HU-22 y HU-24, que devuelven
+// los sprints indicados (la velocidad y la calidad que les corresponde, calculadas con el dominio
+// real, igual que los casos de uso de producción) para alfa (ID 7), y ErrProyectoNoEncontrado para
+// cualquier otro. defectos es opcional: solo lo usan los escenarios de HU-24.
+func casosConAnteriores(sprints []domain.Sprint, err error, defectos ...domain.Defecto) CasosDeUso {
 	cu := casosConSprints(nil, nil)
 	cu.ListarSprintsAnteriores = listarSprintsFunc(func(_ context.Context, id int64) ([]domain.Sprint, error) {
 		if id != alfa.ID {
@@ -42,6 +49,25 @@ func casosConAnteriores(sprints []domain.Sprint, err error) CasosDeUso {
 		cerrados := domain.SprintsAnteriores(sprints)
 		velocidad, cantidad, hayDatos := domain.Velocidad(cerrados)
 		return app.VelocidadProyecto{Velocidad: velocidad, HayDatos: hayDatos, SprintsCerrados: cantidad}, nil
+	})
+	cu.ConsultarCalidadSprints = consultarCalidadSprintsFunc(func(_ context.Context, id int64) ([]app.CalidadSprint, error) {
+		if id != alfa.ID {
+			return nil, fmt.Errorf("buscar proyecto %d: %w", id, domain.ErrProyectoNoEncontrado)
+		}
+		if err != nil {
+			return nil, err
+		}
+		cerrados := domain.SprintsAnteriores(sprints)
+		resumen := make([]app.CalidadSprint, len(cerrados))
+		for i, s := range cerrados {
+			porcentaje, hayPorcentaje := domain.PorcentajeCompletado(s)
+			detectados, resueltos := domain.ContarDefectosDeSprint(defectos, s.ID)
+			resumen[i] = app.CalidadSprint{
+				Sprint: s, PorcentajeCompletado: porcentaje, HayPorcentaje: hayPorcentaje,
+				DefectosDetectados: detectados, DefectosResueltos: resueltos,
+			}
+		}
+		return resumen, nil
 	})
 	return cu
 }
@@ -113,6 +139,49 @@ func TestPantallaSprintsAnteriores_SinSprintsCerrados_AvisaSinVelocidad(t *testi
 		t.Fatalf("status = %d, se esperaba 200", rec.Code)
 	}
 	contiene(t, rec, "Todavía no hay datos de velocidad")
+}
+
+// Traza: HU-24 CA-24.9: cada fila muestra su porcentaje completado y sus defectos detectados y
+// resueltos.
+func TestPantallaSprintsAnteriores_MuestraElPorcentajeYLosDefectos(t *testing.T) {
+	sprint := sprintAnteriorDeAlfa(1, 1, 1, "Armar el MVP", 8, 6)
+	cu := casosConAnteriores([]domain.Sprint{sprint}, nil,
+		domain.Defecto{ProyectoID: alfa.ID, SprintDeteccionID: &sprint.ID},
+		domain.Defecto{ProyectoID: alfa.ID, SprintDeteccionID: &sprint.ID, SprintResolucionID: &sprint.ID, Estado: domain.DefectoCerrado},
+	)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaAnterioresDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "75,0 %", "2", "1")
+}
+
+// Traza: HU-24 CA-24.1, CA-24.9: el porcentaje se redondea a un decimal, igual que en el JSON.
+func TestPantallaSprintsAnteriores_PorcentajeConDecimales_SeRedondeaAUnDecimal(t *testing.T) {
+	cu := casosConAnteriores([]domain.Sprint{sprintAnteriorDeAlfa(1, 1, 1, "Con decimales", 16, 1)}, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaAnterioresDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "6,3 %")
+	noContiene(t, rec.Body.String(), "6,25 %")
+}
+
+// Traza: HU-24 CA-24.2, CA-24.9: un sprint cerrado sin puntos planificados avisa que no hay
+// porcentaje, no un 0%.
+func TestPantallaSprintsAnteriores_SinPuntosPlanificados_AvisaSinPorcentaje(t *testing.T) {
+	cu := casosConAnteriores([]domain.Sprint{sprintAnteriorDeAlfa(1, 1, 1, "Sin plan", 0, 0)}, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaAnterioresDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "<td>—</td>")
 }
 
 // Traza: HU-12 sección 7: proyecto inexistente (404), ID inválido (400) y falla interna (500, sin
