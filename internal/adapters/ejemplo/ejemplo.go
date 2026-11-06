@@ -5,6 +5,9 @@ package ejemplo
 
 import (
 	"context"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
@@ -118,5 +121,22 @@ type registradorEstimacion interface {
 // CargarSiCorresponde carga el ejemplo si valor (el de CARGAR_EJEMPLO) está activado y la base no
 // tiene proyectos (RN-31.1, RN-31.3). Implementa HU-31.
 func CargarSiCorresponde(ctx context.Context, cu CasosDeUso, valor string) (Resultado, error) {
-	return 0, nil // pendiente: tarea 31.4
+	if strings.TrimSpace(valor) == "" {
+		return OpcionApagada, nil // ausente o vacía equivale a false (sección 2)
+	}
+	activada, err := strconv.ParseBool(strings.TrimSpace(valor))
+	if err != nil {
+		return ValorInvalido, nil // RN-31.3: no es un error, solo no se carga
+	}
+	if !activada {
+		return OpcionApagada, nil
+	}
+	proyectos, err := cu.ListarProyectos.Ejecutar(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("cargar ejemplo: listar los proyectos: %w", err)
+	}
+	if len(proyectos) > 0 {
+		return BaseConProyectos, nil
+	}
+	return 0, nil // la carga en sí: siguiente ciclo
 }
