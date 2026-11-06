@@ -46,15 +46,16 @@ func Velocidad(cerrados []Sprint) (velocidad float64, cantidad int, hayDatos boo
 }
 
 // PorcentajeCompletado calcula qué porcentaje de los PuntosPlanificados de un Sprint se completó
-// (RN-24.1): PuntosCompletados / PuntosPlanificados × 100, con decimales, puede superar 100 si se
-// completó más de lo planificado. Si PuntosPlanificados es 0, hayPorcentaje es false y porcentaje no
-// significa nada (RN-24.2): 0% sería un dato real (se planificó algo y no se completó nada),
-// distinto de "no se planificó nada". Implementa HU-24 (RN-24.1, RN-24.2).
+// (RN-24.1): PuntosCompletados / PuntosPlanificados × 100, redondeado a un decimal (redondearUnDecimal,
+// igual criterio que la desviación de HU-19, RN-19.6), para que la API y la pantalla siempre
+// coincidan. Si PuntosPlanificados es 0, hayPorcentaje es false y porcentaje no significa nada
+// (RN-24.2): 0% sería un dato real (se planificó algo y no se completó nada), distinto de "no se
+// planificó nada". Implementa HU-24 (RN-24.1, RN-24.2).
 func PorcentajeCompletado(s Sprint) (porcentaje float64, hayPorcentaje bool) {
 	if s.PuntosPlanificados == 0 {
 		return 0, false
 	}
-	return float64(s.PuntosCompletados) / float64(s.PuntosPlanificados) * 100, true
+	return redondearUnDecimal(float64(s.PuntosCompletados) / float64(s.PuntosPlanificados) * 100), true
 }
 
 // ContarDefectosDeSprint cuenta, entre los defectos recibidos, cuántos tienen a sprintID como
