@@ -263,7 +263,7 @@ func TestGenerar_ParrafoLargo_ContinuaEnOtrasPaginas(t *testing.T) {
 	if len(textos) < 2 {
 		t.Fatalf("páginas = %d, se esperaban 2 o más", len(textos))
 	}
-	if !strings.Contains(compacto(strings.Join(textos, "")), compacto(parrafo)) {
+	if !strings.Contains(compacto(strings.Join(cuerpos(textos, doc.Titulo), "")), compacto(parrafo)) {
 		t.Errorf("el párrafo no se extrae completo y en orden")
 	}
 }
@@ -275,7 +275,7 @@ func TestGenerar_DocumentoMinimo(t *testing.T) {
 	if len(textos) != 1 {
 		t.Fatalf("páginas = %d, se esperaba 1", len(textos))
 	}
-	if got, want := compacto(textos[0]), compacto("Reporte vacío Emitido el 07/11/2026 a las 14:05 (hora de Argentina, UTC-3)."); got != want {
+	if got, want := compacto(cuerpos(textos, doc.Titulo)[0]), compacto("Reporte vacío Emitido el 07/11/2026 a las 14:05 (hora de Argentina, UTC-3)."); got != want {
 		t.Errorf("texto = %q, se esperaba %q", got, want)
 	}
 }
@@ -295,7 +295,7 @@ func TestGenerar_SeccionesVacias(t *testing.T) {
 	}
 	want := compacto("Vacíos Emitido el 07/11/2026 a las 14:05 (hora de Argentina, UTC-3). " +
 		"Notas Esfuerzo Defectos Defecto Severidad Sin datos. Métricas Velocidad: 8 puntos.")
-	if got := compacto(textos[0]); got != want {
+	if got := compacto(cuerpos(textos, doc.Titulo)[0]); got != want {
 		t.Errorf("texto = %q\nse esperaba %q", got, want)
 	}
 }
@@ -413,4 +413,20 @@ func TestGenerar_Determinista(t *testing.T) {
 	if bytes.Equal(generar(t, otro), primero) {
 		t.Error("con otra emisión dio los mismos bytes: la fecha del PDF no es la emisión")
 	}
+}
+
+var piePagina = regexp.MustCompile(`\s*Página \d+ de \d+\s*$`)
+
+// cuerpos devuelve el texto de cada página sin el encabezado (el título, desde la segunda) ni el pie,
+// para comparar solo el contenido del documento (RN-27.3).
+func cuerpos(textos []string, titulo string) []string {
+	var r []string
+	for i, texto := range textos {
+		texto = piePagina.ReplaceAllString(texto, "")
+		if i > 0 {
+			texto = strings.TrimSpace(strings.TrimPrefix(texto, titulo))
+		}
+		r = append(r, texto)
+	}
+	return r
 }
