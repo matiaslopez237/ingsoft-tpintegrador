@@ -86,6 +86,33 @@ func TestPantallaDashboard_MuestraElEstadoDelProyecto(t *testing.T) {
 	)
 }
 
+// Traza: HU-25 CA-25.5 (RN-23.5), revisión del PR #375: con elementos sin estimar, el gráfico de horas
+// muestra el mismo aviso que el bloque de HU-23, así se entiende por qué la desviación no sale de restar
+// las dos barras (10 h contra 18 h, pero 20,0 %).
+func TestPantallaDashboard_HorasConElementosSinEstimar_MuestraElAviso(t *testing.T) {
+	d := dashboardCompleto()
+	d.Horas = domain.TotalHoras{
+		HorasEstimadas: 10, HorasReales: 18, HorasRealesSinEstimar: 6,
+		DesviacionHoras: horasDashboard(2), DesviacionPorcentaje: horasDashboard(20),
+		Elementos: 2, ElementosSinEstimar: 1,
+	}
+	cu, _ := casosConDashboard(d, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	contiene(t, rec, "Desviación: 20,0 %",
+		`<p class="ayuda">1 de 2 elementos sin estimar: sus 6 h están en las horas reales, pero no en la desviación.</p>`)
+}
+
+// Traza: HU-25 CA-25.5: si todos los elementos están estimados, no hay aviso.
+func TestPantallaDashboard_HorasTodoEstimado_SinAviso(t *testing.T) {
+	cu, _ := casosConDashboard(dashboardCompleto(), nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	noContiene(t, rec.Body.String(), "sin estimar")
+}
+
 // Traza: HU-25 CA-25.3: sin sprint en curso lo dice, sin barra de avance.
 func TestPantallaDashboard_SinSprintEnCurso(t *testing.T) {
 	d := dashboardCompleto()
