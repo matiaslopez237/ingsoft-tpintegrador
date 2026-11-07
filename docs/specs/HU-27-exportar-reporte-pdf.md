@@ -292,6 +292,12 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 - **P-5 — Fecha de emisión:** la fija el caso de uso con un reloj inyectado, en UTC-3 fijo y con formato `dd/mm/aaaa HH:MM` (RN-27.10, sección 5). Así el PDF es determinista en los tests, la hora no depende de que Render corra en UTC, y no hace falta la base de husos horarios.
 - **P-6 — Tope de 300 caracteres por celda:** garantiza que toda fila entre en una página (RN-27.6). La alternativa, partir una fila entre páginas, complica la función de tabla del adaptador y deja filas difíciles de leer. El texto largo va en párrafos, que no tienen tope.
 - **P-7 — Ruta bajo `/web/` y errores como página HTML:** quien pide el PDF es el navegador al seguir el botón, así que un error tiene que mostrarse como página y no como JSON. No se agrega una ruta JSON.
+- **P-8 — "?" que se pierden al recortar una celda** (2026-11-07, abierta a objeción en el PR): el aviso de RN-27.9 cuenta los `?` al normalizar, antes de recortar las celdas (RN-27.6). Un `?` que después queda fuera del recorte sigue contando. Motivos:
+  - el aviso informa lo que se le hizo al texto;
+  - contar solo lo visible obligaría a volver a procesar cada celda recortada;
+  - es un caso raro: hace falta una celda de más de 300 caracteres con un emoji después del carácter 299.
+
+  No tiene test propio.
 
 ## Preguntas abiertas
 **Criterios de la historia:**
@@ -311,7 +317,7 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 **Para el equipo:**
 
 10. **ADR-0006:** confirmar la librería y la fuente para pasarlo de `proposed` a `accepted`. Esta spec depende de esa decisión: si cambia la librería, cambian la lista de RN-27.8 y la sección 5.
-11. **Decisiones P-1 a P-7:** sin objeciones hasta ahora; se confirman en el PR.
+11. **Decisiones P-1 a P-8:** sin objeciones hasta ahora; se confirman en el PR.
 
 ## Historial
 - 2026-11-07: creada (borrador). Decisiones P-1 a P-7 tomadas por el autor, abiertas a objeción en el PR. Preguntas 2 a 9 pendientes de la spec de HU-26.
@@ -327,3 +333,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
   - se detalla el orden de los pasos, y las funciones del dominio con sus archivos.
 
   No cambia ninguna regla, criterio ni decisión. La spec sigue en borrador.
+- 2026-11-07: decisión P-8 del autor, abierta a objeción en el PR: los `?` se cuentan al normalizar, antes de recortar las celdas. No cambia ninguna regla ni criterio. La spec sigue en borrador.
