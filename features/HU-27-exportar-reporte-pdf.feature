@@ -85,6 +85,20 @@ Feature: Exportar el reporte a PDF
     And el documento de HU-27 no tiene secciones
     And el archivo PDF de HU-27 tiene los bytes que devolvió el generador
 
+  # RN-27.11: un bloque sin párrafo ni tabla es un párrafo vacío; no es un error y el documento se
+  # exporta. Que no se dibuje nada lo comprueba el test del adaptador de PDF.
+  @CA-27.7 @limite
+  Scenario: Un párrafo vacío no impide exportar el reporte
+    Given el reporte de HU-27 del proyecto 3 tiene la sección "Notas" con el párrafo ""
+    And el reporte de HU-27 del proyecto 3 tiene la sección "Resumen" con el párrafo "Sprint 2 cerrado."
+    When exporto a PDF el reporte de HU-27 del proyecto 3
+    Then el documento de HU-27 tiene estas secciones, en este orden:
+      | sección |
+      | Notas   |
+      | Resumen |
+    And la sección "Notas" del documento de HU-27 tiene el párrafo ""
+    And el archivo PDF de HU-27 tiene los bytes que devolvió el generador
+
   # RN-27.8, pasos 1 a 3: lo representable queda igual, los espacios de Unicode pasan a espacio común y
   # los invisibles de formato se quitan. Nada de eso cuenta para el aviso (RN-27.9).
   Scenario Outline: Los textos que el PDF puede mostrar no se reemplazan ni generan aviso
