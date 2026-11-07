@@ -22,7 +22,7 @@ Feature: Generar reporte de proyecto o Sprint
 
   @CA-26.2 @normal
   Scenario: El reporte de un Sprint trae solo sus historias asignadas
-    Given "Alfa" tiene un sprint cerrado con 8 puntos planificados y 8 completados
+    Given "Alfa" tiene para el reporte un sprint cerrado con 8 puntos planificados y 8 completados
     And "Alfa" tiene una historia "Login" Hecha con 5 story points asignada al sprint 1
     And "Alfa" tiene una historia "Sin sprint" Pendiente con 3 story points
     When consulto el reporte del sprint 1 de "Alfa"
@@ -45,8 +45,8 @@ Feature: Generar reporte de proyecto o Sprint
 
   @CA-26.5 @normal
   Scenario: Las métricas de un proyecto traen la velocidad y una fila por sprint cerrado
-    Given "Alfa" tiene un sprint cerrado con 8 puntos planificados y 6 completados
-    And "Alfa" tiene otro sprint cerrado con 8 puntos planificados y 8 completados
+    Given "Alfa" tiene para el reporte un sprint cerrado con 8 puntos planificados y 6 completados
+    And "Alfa" tiene para el reporte otro sprint cerrado con 8 puntos planificados y 8 completados
     When consulto el reporte de "Alfa"
     Then el reporte tiene velocidad 7 sobre 2 sprints cerrados
     And el sprint 1 del reporte tiene 75% completado
@@ -60,13 +60,13 @@ Feature: Generar reporte de proyecto o Sprint
 
   @CA-26.7 @normal
   Scenario: Las métricas de un Sprint cerrado traen su porcentaje real
-    Given "Alfa" tiene un sprint cerrado con 4 puntos planificados y 3 completados
+    Given "Alfa" tiene para el reporte un sprint cerrado con 4 puntos planificados y 3 completados
     When consulto el reporte del sprint 1 de "Alfa"
     Then el sprint 1 del reporte tiene 75% completado
 
   @CA-26.8 @alternativo
   Scenario: Un Sprint abierto no tiene datos de porcentaje, pero cuenta sus defectos
-    Given "Alfa" tiene un sprint todavía abierto
+    Given "Alfa" tiene para el reporte un sprint todavía abierto
     And se detectó un defecto en el sprint 1 de "Alfa"
     When consulto el reporte del sprint 1 de "Alfa"
     Then el sprint 1 del reporte no tiene datos de porcentaje
@@ -74,8 +74,8 @@ Feature: Generar reporte de proyecto o Sprint
 
   @CA-26.9 @normal
   Scenario: El reporte de un proyecto trae todos sus defectos
-    Given "Alfa" tiene un sprint cerrado con 5 puntos planificados y 5 completados
-    And "Alfa" tiene otro sprint cerrado con 5 puntos planificados y 5 completados
+    Given "Alfa" tiene para el reporte un sprint cerrado con 5 puntos planificados y 5 completados
+    And "Alfa" tiene para el reporte otro sprint cerrado con 5 puntos planificados y 5 completados
     And se detectó un defecto en el sprint 1 de "Alfa"
     And se detectó un defecto en el sprint 2 de "Alfa"
     When consulto el reporte de "Alfa"
@@ -83,8 +83,8 @@ Feature: Generar reporte de proyecto o Sprint
 
   @CA-26.10 @alternativo
   Scenario: Un defecto detectado en un Sprint y resuelto en otro aparece en los dos reportes
-    Given "Alfa" tiene un sprint cerrado con 5 puntos planificados y 5 completados
-    And "Alfa" tiene otro sprint cerrado con 5 puntos planificados y 5 completados
+    Given "Alfa" tiene para el reporte un sprint cerrado con 5 puntos planificados y 5 completados
+    And "Alfa" tiene para el reporte otro sprint cerrado con 5 puntos planificados y 5 completados
     And se detectó un defecto en el sprint 1 de "Alfa" y se resolvió en el sprint 2
     When consulto el reporte del sprint 1 de "Alfa"
     Then el reporte tiene 1 defectos
