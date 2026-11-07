@@ -118,24 +118,37 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 - **RN-27.15 (archivo válido):** [Esencial] el cuerpo de una descarga exitosa es un PDF completo: empieza con `%PDF-`, termina con `%%EOF` (como mucho seguido de un salto de línea), se puede abrir y extraer su texto, y `Content-Length` coincide con su tamaño. Nunca se envía un PDF a medias (sección 5: se genera entero en memoria antes de responder).
 
 ## 5. Restricciones
-- **Dominio** (`internal/domain/documento_pdf.go`, sin dependencias externas):
-  - Los tipos `DocumentoPDF`, `SeccionPDF`, `BloquePDF` y `TablaPDF` de la sección 2.
-  - `NormalizarDocumento(d DocumentoPDF) (DocumentoPDF, int)`: aplica RN-27.8 a todos los textos y RN-27.6 a las celdas, y devuelve cuántos `?` insertó. Es una función pura: no modifica el documento que recibe.
-  - `(DocumentoPDF) Validar() error`: RN-27.11.
-  - `ErrDocumentoInvalido`.
-  - Son reglas de negocio y se desarrollan con TDD.
-- **Casos de uso** (`internal/app/exportar_reporte_pdf.go`): `ExportarReporteProyecto.Ejecutar(ctx, proyectoID)` y `ExportarReporteSprint.Ejecutar(ctx, proyectoID, sprintID)`. Devuelven `ArchivoPDF{Nombre string; Contenido []byte}`. Cada uno:
-  1. pide el documento a la fuente;
-  2. le pone la emisión con su reloj (inyectado, igual que `RegistrarDefecto` de HU-20);
-  3. lo normaliza, completa `Aviso` si hace falta (RN-27.9) y lo valida;
-  4. llama al generador y arma el nombre del archivo.
-- **Puertos** (definidos en `internal/app`):
+- **Dominio** (`internal/domain`, sin dependencias externas). Son reglas de negocio y se desarrollan con TDD:
+  - `documento_pdf.go`: los tipos `DocumentoPDF`, `SeccionPDF`, `BloquePDF` y `TablaPDF` de la sección 2, `ErrDocumentoInvalido` y `(DocumentoPDF) Validar() error` (RN-27.11).
+  - `documento_pdf_normalizar.go`:
+    - `NormalizarDocumento(d DocumentoPDF) (DocumentoPDF, int)`: aplica RN-27.8 a todos los textos y RN-27.6 a las celdas, y devuelve cuántos `?` insertó. Es una función pura: no modifica el documento que recibe, y deja `Emision` y `Aviso` como están.
+    - `TextoAvisoReemplazos(n int) string`: el texto de RN-27.9, vacío con `n` en 0.
+  - `documento_pdf_emision.go`: `HoraDeEmision(t time.Time) time.Time` (RN-27.10), y `NombreArchivoReporteProyecto` y `NombreArchivoReporteSprint` (RN-27.12).
+- **Casos de uso** (`internal/app/exportar_reporte_pdf.go`): `ExportarReporteProyecto.Ejecutar(ctx, proyectoID)` y `ExportarReporteSprint.Ejecutar(ctx, proyectoID, sprintID)`. Devuelven `ArchivoPDF{Nombre string; Contenido []byte}`. **La existencia del proyecto y del sprint la verifica el caso de uso, no la fuente** (RN-27.13). Cada uno, en este orden, que es el de la tabla de la sección 7:
+  1. busca el proyecto; si no existe, devuelve `ErrProyectoNoEncontrado`;
+  2. solo el del sprint: busca el sprint y devuelve `ErrSprintNoEncontrado` si no existe o si es de otro proyecto;
+  3. pide el documento a la fuente;
+  4. le pone la emisión con su reloj (inyectado, igual que `RegistrarDefecto` de HU-20);
+  5. lo normaliza, completa `Aviso` (vacío si no hubo reemplazos, aunque la fuente trajera uno; RN-27.9) y lo valida;
+  6. llama al generador y arma el nombre del archivo.
+
+  Con un error no sigue con los pasos siguientes y no devuelve ningún archivo. Los errores de los lectores salen tal cual, como en HU-23. Las fallas de la fuente y del generador se envuelven con `%w`. La fuente y el generador reciben el contexto del pedido.
+- **Puertos** (definidos en `internal/app`). Cada caso de uso recibe solo los que usa:
+
+  | Caso de uso | Puertos |
+  |---|---|
+  | `ExportarReporteProyecto` | `LectorProyectos`, `FuenteDocumentoProyecto`, `GeneradorPDF` y el reloj |
+  | `ExportarReporteSprint` | `LectorProyectos`, `LectorSprintPorID`, `FuenteDocumentoSprint`, `GeneradorPDF` y el reloj |
 
   ```go
-  // FuenteDocumentoReporte la implementa HU-26: convierte su reporte al modelo neutral.
-  // Devuelve ErrProyectoNoEncontrado o ErrSprintNoEncontrado si corresponde.
-  type FuenteDocumentoReporte interface {
+  // Se reutilizan: LectorProyectos (HU-04) y LectorSprintPorID (HU-23).
+
+  // FuenteDocumentoProyecto y FuenteDocumentoSprint las implementa HU-26 (SUPUESTO): convierten su
+  // reporte al modelo neutral. Tienen un método cada una.
+  type FuenteDocumentoProyecto interface {
   	DocumentoDeProyecto(ctx context.Context, proyectoID int64) (domain.DocumentoPDF, error)
+  }
+  type FuenteDocumentoSprint interface {
   	DocumentoDeSprint(ctx context.Context, proyectoID, sprintID int64) (domain.DocumentoPDF, error)
   }
 
@@ -145,7 +158,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
   }
   ```
 
-  Hasta que exista HU-26, los tests y los steps de godog usan una fuente de prueba.
+  Hasta que exista HU-26, los tests y los steps de godog usan una fuente de prueba. En los steps, la fuente en memoria también hace de lector de proyectos y de sprints, con los mismos datos.
 - **Huso horario:** se usa `time.FixedZone("UTC-3", -3*60*60)` y no `time.LoadLocation("America/Argentina/Buenos_Aires")`. Esta última necesita la base de husos horarios del sistema o embeber `time/tzdata`, y Render corre en UTC. Argentina no usa horario de verano desde 2009.
 - **Adaptador de PDF** (`internal/adapters/pdf`): es el único paquete que importa `fpdf`. Las reglas de uso de la librería son las del ADR-0006: fuente embebida con `go:embed`, fechas fijas con `SetCreationDate` y `SetModificationDate`, `SetCatalogSort(true)`, sin las funciones `SetDefault*`, y devolver siempre el error de `Output`. La tabla (RN-27.5) la arma una función propia del adaptador; el ancho de cada columna lo decide el adaptador y no es regla de negocio. El adaptador recibe el documento ya normalizado, pero si `fpdf` igual devuelve un error, lo devuelve (se responde como falla interna).
 - **Por qué alcanza el tope de RN-27.6:** en A4 vertical quedan unos 260 mm de alto útil. Una celda de 300 caracteres en una columna angosta, de unos 20 mm (unos 13 caracteres por línea), ocupa unas 23 líneas de unos 4,5 mm, es decir, unos 105 mm. Se comprueba en el test de la celda más larga con la columna más angosta que permita el adaptador.
@@ -308,3 +321,9 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
   - Un bloque sin párrafo ni tabla deja de ser un error, porque contradecía el caso límite "Párrafo vacío": se saca esa condición de RN-27.11 y de CA-27.11, y CA-27.7 suma el caso.
 
   No cambia ninguna otra regla ni decisión. La spec sigue en borrador.
+- 2026-11-07: la sección 5 se ajusta a los puertos que quedaron en el TDD del caso de uso:
+  - el caso de uso verifica la existencia del proyecto y del sprint con `LectorProyectos` y `LectorSprintPorID`, en vez de esperar esos errores de la fuente;
+  - `FuenteDocumentoReporte` se divide en `FuenteDocumentoProyecto` y `FuenteDocumentoSprint`, de un método cada una;
+  - se detalla el orden de los pasos, y las funciones del dominio con sus archivos.
+
+  No cambia ninguna regla, criterio ni decisión. La spec sigue en borrador.
