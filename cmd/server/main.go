@@ -71,7 +71,8 @@ func main() {
 		ConsultarHorasSprint:    app.NuevoConsultarHorasSprint(repoProyectos, repoSprints, repoEsfuerzo), // HU-23
 		// time.Now como reloj: "hoy" es el día actual en la zona del servidor (HU-21, RN-21.5).
 		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, time.Now),
-		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos), // HU-21
+		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos),                       // HU-21
+		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
 	})
 
 	puerto := os.Getenv("PORT")

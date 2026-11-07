@@ -191,3 +191,108 @@ func TestVelocidad_NoFiltraPorEstado(t *testing.T) {
 		t.Errorf("Velocidad() = %v, %d, %v; se esperaba 99, 1, true (no filtra por estado)", velocidad, cantidad, hayDatos)
 	}
 }
+
+// Traza: HU-24 CA-24.1, CA-24.2
+func TestPorcentajeCompletado(t *testing.T) {
+	tests := []struct {
+		name              string
+		planificados      int
+		completados       int
+		wantPorcentaje    float64
+		wantHayPorcentaje bool
+	}{
+		{name: "CA-24.1: porcentaje exacto", planificados: 8, completados: 6, wantPorcentaje: 75, wantHayPorcentaje: true},
+		// No pasa con los datos reales de ResumirCierre (HU-11, RN-11.6): PuntosCompletados siempre es
+		// un subconjunto de PuntosPlanificados. Documenta que la función, al ser pura, no lo valida.
+		{name: "no ocurre con datos reales, pero la función no lo impide", planificados: 4, completados: 6, wantPorcentaje: 150, wantHayPorcentaje: true},
+		{name: "CA-24.1: 0 completados sobre planificados da 0%, no 'sin datos'", planificados: 5, completados: 0, wantPorcentaje: 0, wantHayPorcentaje: true},
+		{name: "CA-24.1: completados igual a planificados da 100%", planificados: 5, completados: 5, wantPorcentaje: 100, wantHayPorcentaje: true},
+		{name: "CA-24.1: se redondea a un decimal, con los medios alejándose de cero", planificados: 16, completados: 1, wantPorcentaje: 6.3, wantHayPorcentaje: true},
+		{name: "CA-24.2: sin puntos planificados, el porcentaje queda indefinido", planificados: 0, completados: 0, wantHayPorcentaje: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := sprintCerradoCon(t, 1, tt.completados)
+			s.PuntosPlanificados = tt.planificados
+
+			porcentaje, hayPorcentaje := PorcentajeCompletado(s)
+
+			if hayPorcentaje != tt.wantHayPorcentaje {
+				t.Fatalf("hayPorcentaje = %v, se esperaba %v", hayPorcentaje, tt.wantHayPorcentaje)
+			}
+			if hayPorcentaje && porcentaje != tt.wantPorcentaje {
+				t.Errorf("PorcentajeCompletado() = %v, se esperaba %v", porcentaje, tt.wantPorcentaje)
+			}
+		})
+	}
+}
+
+// idSprintHistorial arma un puntero al ID de sprint indicado, para los defectos de prueba de
+// ContarDefectosDeSprint (SprintDeteccionID y SprintResolucionID son *int64).
+func idSprintHistorial(id int64) *int64 { return &id }
+
+// Traza: HU-24 CA-24.3 a CA-24.5
+func TestContarDefectosDeSprint(t *testing.T) {
+	tests := []struct {
+		name           string
+		defectos       []Defecto
+		sprintID       int64
+		wantDetectados int
+		wantResueltos  int
+	}{
+		{
+			name:           "sin defectos",
+			sprintID:       1,
+			wantDetectados: 0,
+			wantResueltos:  0,
+		},
+		{
+			name: "CA-24.3: cuenta los detectados en ese sprint, no los de otro",
+			defectos: []Defecto{
+				{SprintDeteccionID: idSprintHistorial(1)},
+				{SprintDeteccionID: idSprintHistorial(1)},
+				{SprintDeteccionID: idSprintHistorial(2)},
+			},
+			sprintID:       1,
+			wantDetectados: 2,
+			wantResueltos:  0,
+		},
+		{
+			name: "CA-24.4: cuenta los resueltos en ese sprint, aunque ya estén Cerrados",
+			defectos: []Defecto{
+				{Estado: DefectoCerrado, SprintDeteccionID: idSprintHistorial(1), SprintResolucionID: idSprintHistorial(1)},
+			},
+			sprintID:       1,
+			wantDetectados: 1,
+			wantResueltos:  1,
+		},
+		{
+			name: "CA-24.5: un defecto sin sprint no cuenta en ninguno",
+			defectos: []Defecto{
+				{SprintDeteccionID: nil, SprintResolucionID: nil},
+			},
+			sprintID:       1,
+			wantDetectados: 0,
+			wantResueltos:  0,
+		},
+		{
+			name: "un defecto todavía sin resolver no cuenta como resuelto",
+			defectos: []Defecto{
+				{Estado: DefectoEnProgreso, SprintDeteccionID: idSprintHistorial(1), SprintResolucionID: nil},
+			},
+			sprintID:       1,
+			wantDetectados: 1,
+			wantResueltos:  0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			detectados, resueltos := ContarDefectosDeSprint(tt.defectos, tt.sprintID)
+
+			if detectados != tt.wantDetectados || resueltos != tt.wantResueltos {
+				t.Errorf("ContarDefectosDeSprint() = %d detectados, %d resueltos; se esperaba %d, %d",
+					detectados, resueltos, tt.wantDetectados, tt.wantResueltos)
+			}
+		})
+	}
+}

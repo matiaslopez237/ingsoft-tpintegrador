@@ -17,7 +17,7 @@ Todo esto está cargado en GitHub como Issues: las épicas son issues padre, y c
 | 1 — MVP | hasta el 25 oct | Gestión de proyectos (Épica 1) + crear elementos de backlog + registrar esfuerzo | 19 |
 | 2 — Interfaz, backlog y sprints | 26 y 27 oct | Gestionar el backlog y armar sprints de un proyecto desde una interfaz web | 26 |
 | 3 — Estimación y métricas | 29 al 31 oct | Planning Poker, esfuerzo estimado vs. real y primeras métricas | 28 |
-| 4 — Visualización y cierre | a definir (después del 31 oct) | Dashboard, reportes en PDF y documentación | 25 |
+| 4 — Visualización y cierre | 5 al 8 nov | Dashboard, reportes en PDF y documentación | 25 |
 | — | antes de la entrega | Revisión general y correcciones (sin historias nuevas) | — |
 | — | a confirmar (postergada, ya no es el 2 nov) | **Entrega** | — |
 
@@ -120,7 +120,7 @@ Sprints de 2 días (el Sprint 3, de 3, porque la entrega se postergó). Al cerra
 |---|---|---|---|---|
 | HU-22 | Como Scrum Master, quiero ver los story points planificados, completados y la velocidad del equipo por Sprint, para medir el rendimiento. | 5 | 5 | 3 |
 | HU-23 | Como Scrum Master, quiero ver las horas estimadas, las horas reales y su desviación, para evaluar la planificación. | 5 | 3 | 3 |
-| HU-24 | Como Scrum Master, quiero ver el porcentaje de historias completadas y la cantidad de defectos detectados/resueltos, para evaluar la calidad del Sprint. | 5 | 3 | 4 |
+| HU-24 | Como Scrum Master, quiero ver el porcentaje de story points completados y la cantidad de defectos detectados/resueltos, para evaluar la calidad del Sprint. | 5 | 3 | 4 |
 
 **Subtotal: 11 pts**
 
