@@ -10,9 +10,10 @@ import (
 )
 
 // hu27Sistema conecta los escenarios de HU-27 a los casos de uso ExportarReporteProyecto y
-// ExportarReporteSprint (spec HU-27, sección 5). Sus dos puertos se reemplazan por dobles en memoria:
-//   - la fuente de documentos (FuenteDocumentoReporte). SUPUESTO: la real la escribe HU-26, que todavía
-//     no existe; acá cada proyecto y cada sprint tienen un DocumentoPDF armado por el escenario;
+// ExportarReporteSprint (spec HU-27, sección 5). Sus puertos se reemplazan por dobles en memoria:
+//   - los lectores de proyectos y de sprints, y la fuente de documentos (FuenteDocumentoProyecto y
+//     FuenteDocumentoSprint), en hu27Fuente. SUPUESTO: la fuente real la escribe HU-26, que todavía no
+//     existe; acá cada proyecto y cada sprint tienen un DocumentoPDF armado por el escenario;
 //   - el generador de PDF (GeneradorPDF), que guarda lo que recibe y devuelve bytes fijos.
 //
 // No usa SQLite: HU-27 no guarda nada y el reporte de HU-26 no existe todavía.
@@ -30,8 +31,9 @@ func hu27NuevoSistema() *hu27Sistema {
 		generador: &hu27Generador{},
 	}
 	reloj := func() time.Time { return s.ahora }
-	s.proyecto = app.NuevoExportarReporteProyecto(s.fuente, s.generador, reloj)
-	s.sprint = app.NuevoExportarReporteSprint(s.fuente, s.generador, reloj)
+	// La fuente en memoria también hace de lector de proyectos y de sprints, con los mismos datos.
+	s.proyecto = app.NuevoExportarReporteProyecto(s.fuente, s.fuente, s.generador, reloj)
+	s.sprint = app.NuevoExportarReporteSprint(s.fuente, s.fuente, s.fuente, s.generador, reloj)
 	return s
 }
 
@@ -53,12 +55,28 @@ type hu27SprintEnMemoria struct {
 	doc        *domain.DocumentoPDF
 }
 
-// hu27Fuente devuelve los errores que la spec le pide a la fuente (sección 5): proyecto inexistente
-// primero, después sprint inexistente o de otro proyecto (RN-27.13).
+// hu27Fuente da los documentos y hace de lector de proyectos y de sprints (los puertos de HU-04 y HU-23
+// que reutiliza el caso de uso). El caso de uso comprueba la existencia con los lectores (RN-27.13); la
+// fuente igual devuelve esos errores, como haría la de HU-26, aunque con los lectores no se llega.
 type hu27Fuente struct {
 	proyectos map[int64]*domain.DocumentoPDF
 	sprints   map[int64]hu27SprintEnMemoria
 	falla     error
+}
+
+func (f *hu27Fuente) BuscarPorID(_ context.Context, proyectoID int64) (domain.Proyecto, error) {
+	if _, ok := f.proyectos[proyectoID]; !ok {
+		return domain.Proyecto{}, domain.ErrProyectoNoEncontrado
+	}
+	return domain.Proyecto{ID: proyectoID}, nil
+}
+
+func (f *hu27Fuente) BuscarSprintPorID(_ context.Context, sprintID int64) (domain.Sprint, error) {
+	sp, ok := f.sprints[sprintID]
+	if !ok {
+		return domain.Sprint{}, domain.ErrSprintNoEncontrado
+	}
+	return domain.Sprint{ID: sprintID, ProyectoID: sp.proyectoID}, nil
 }
 
 func (f *hu27Fuente) DocumentoDeProyecto(_ context.Context, proyectoID int64) (domain.DocumentoPDF, error) {
