@@ -50,6 +50,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		ActualizarEstadoDefecto:  &actualizadorEstadoDefectoFalso{},
 		ListarDefectos:           &listadorDefectosFalso{},
 		ConsultarCalidadSprints:  &consultorCalidadSprintsFalso{},
+		ConsultarDashboard:       &consultorDashboardFalso{},
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -86,12 +87,14 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/defectos/1/resolver", ""},                                                                            // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/cerrar", ""},                                                                              // HU-21
 		{http.MethodGet, "/proyectos/1/calidad", ""},                                                                                         // HU-24
+		{http.MethodGet, "/proyectos/1/dashboard", ""},                                                                                       // HU-25
 		{http.MethodGet, "/", ""},                                                                                                            // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                                                                                               // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                                                                                          // HU-30
 		{http.MethodGet, "/web/proyectos/nuevo", ""},                                                                                         // HU-30
 		{http.MethodGet, "/web/proyectos/1/sprints", ""},                                                                                     // HU-08
 		{http.MethodGet, "/web/proyectos/1/sprints/anteriores", ""},                                                                          // HU-12
+		{http.MethodGet, "/web/proyectos/1/dashboard", ""},                                                                                   // HU-25
 		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},                                                                           // HU-11
 		{http.MethodGet, "/web/proyectos/1/backlog", ""},                                                                                     // HU-07
 		{http.MethodGet, "/web/proyectos/1/defectos", ""},                                                                                    // HU-21

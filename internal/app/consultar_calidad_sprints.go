@@ -51,12 +51,19 @@ func (uc *ConsultarCalidadSprints) Ejecutar(ctx context.Context, proyectoID int6
 	cerrados := domain.SprintsAnteriores(sprints)
 	resumen := make([]CalidadSprint, len(cerrados))
 	for i, s := range cerrados {
-		porcentaje, hayPorcentaje := domain.PorcentajeCompletado(s)
-		detectados, resueltos := domain.ContarDefectosDeSprint(defectos, s.ID)
-		resumen[i] = CalidadSprint{
-			Sprint: s, PorcentajeCompletado: porcentaje, HayPorcentaje: hayPorcentaje,
-			DefectosDetectados: detectados, DefectosResueltos: resueltos,
-		}
+		resumen[i] = calidadDe(s, defectos)
 	}
 	return resumen, nil
+}
+
+// calidadDe arma la calidad de un Sprint Cerrado: su porcentaje completado (domain.PorcentajeCompletado)
+// y sus defectos detectados/resueltos (domain.ContarDefectosDeSprint). La usan HU-24 y el Dashboard
+// de HU-25.
+func calidadDe(s domain.Sprint, defectos []domain.Defecto) CalidadSprint {
+	porcentaje, hayPorcentaje := domain.PorcentajeCompletado(s)
+	detectados, resueltos := domain.ContarDefectosDeSprint(defectos, s.ID)
+	return CalidadSprint{
+		Sprint: s, PorcentajeCompletado: porcentaje, HayPorcentaje: hayPorcentaje,
+		DefectosDetectados: detectados, DefectosResueltos: resueltos,
+	}
 }

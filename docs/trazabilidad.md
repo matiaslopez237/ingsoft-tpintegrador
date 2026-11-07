@@ -34,6 +34,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 | HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
+| HU-25 Ver panel con estado del proyecto y gráficos | ✓ (Borrador; decisiones y P-1/P-2 confirmadas por Nicolás Andino, falta la aprobación del equipo en el PR) | 8/11 (CA-25.8 se cubre con tests del handler; CA-25.9 y CA-25.10, de la pantalla) | 11/11 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 11/11 escenarios |
 
 ---
 
@@ -2106,6 +2107,75 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 
 - **Los diagramas Mermaid** de `docs/arquitectura.md` no se vieron renderizados antes del PR: GitHub los dibuja al abrirlo.
 - **Los ADR-0005 (gráficos) y 0006 (PDF)** están pendientes: los escriben HU-25 y HU-27, y la tabla de decisiones técnicas los nombra. Cuando se mergeen, hay que sumarlos a esa tabla.
+
+---
+
+## HU-25: Ver panel con estado del proyecto y gráficos
+
+- **Issue:** [#36](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/36) · Sprint 4 · 8 SP
+- **Spec:** [docs/specs/HU-25-dashboard.md](specs/HU-25-dashboard.md)
+- **ADR:** [docs/adr/0005-graficos-dashboard.md](adr/0005-graficos-dashboard.md) (gráficos como SVG armado en Go, sin JavaScript)
+- **Feature:** [features/HU-25-dashboard.feature](../features/HU-25-dashboard.feature) (steps en [test/bdd/hu25_steps_test.go](../test/bdd/hu25_steps_test.go), sobre SQLite real en [hu25_sistema_test.go](../test/bdd/hu25_sistema_test.go))
+- **Alcance real:** las métricas ya existen (HU-11, HU-22, HU-23 y HU-24). HU-25 cuenta el backlog por estado, resume el sprint en curso con la regla del cierre (RN-11.6), ordena los sprints cerrados para los gráficos y lo muestra todo en una pantalla nueva. No agrega persistencia nueva (la tarea 25.7, adaptador de persistencia, no aplica).
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-25.1 Backlog por estado | RN-25.2 | El backlog se cuenta por estado `@normal` | `TestContarBacklog`, `TestConsultarDashboard_JuntaTodasLasMetricas`, `TestPantallaDashboard_MuestraElEstadoDelProyecto` | `domain.ContarBacklog` |
+| CA-25.2 Sprint en curso con sus puntos | RN-25.3, RN-25.4 | El sprint en curso suma los puntos de sus historias con la regla del cierre `@normal` · Una historia sin estimar del sprint en curso suma 0 puntos `@limite` | `TestResumirSprintEnCurso`, `TestConsultarDashboard_JuntaTodasLasMetricas`, `TestPantallaDashboard_MuestraElEstadoDelProyecto` | `domain.ResumirSprintEnCurso` (reutiliza `SprintVigente` de HU-20 y `ResumirCierre` de HU-11) |
+| CA-25.3 Sin sprint en curso | RN-25.3 (P-1) | Un sprint abierto que ya venció no es el sprint en curso `@alternativo` | `TestResumirSprintEnCurso` (vencido, futuro, cerrado), `TestConsultarDashboard_SprintAbiertoVencido_NoEstaEnCurso`, `TestPantallaDashboard_SinSprintEnCurso` | `domain.ResumirSprintEnCurso` |
+| CA-25.4 Sprints cerrados en orden, con sus métricas y la velocidad | RN-25.5 (P-2) | Los sprints cerrados aparecen del más antiguo al más reciente, con sus métricas `@normal` · Un sprint abierto no aparece entre los sprints cerrados `@alternativo` | `TestSprintsCerradosCronologicos` (incluye 7 sprints, sin límite), `TestConsultarDashboard_JuntaTodasLasMetricas` | `domain.SprintsCerradosCronologicos`, `app.ConsultarDashboard` (reutiliza `PorcentajeCompletado`, `ContarDefectosDeSprint` y `Velocidad`) |
+| CA-25.5 Horas y desviación del proyecto | RN-25.5 | Las horas del proyecto son las estimadas contra las reales, con su desviación `@normal` · Sin elementos estimados en horas, la desviación queda sin datos `@limite` | `TestConsultarDashboard_JuntaTodasLasMetricas`, `TestConsultarDashboard_ProyectoSinDatos` | `app.ConsultarDashboard` (reutiliza `TotalizarHoras` de HU-23) |
+| CA-25.6 Datos vigentes | RN-25.1 | El dashboard muestra los datos vigentes al volver a abrirlo `@normal` | `TestConsultarDashboard_LeeLosDatosVigentesEnCadaConsulta` | `app.ConsultarDashboard` (lee todo de nuevo en cada consulta) |
+| CA-25.7 Proyecto inexistente | — (error reutilizado) | No se puede consultar el dashboard de un proyecto que no existe `@error` | `TestConsultarDashboard_ProyectoInexistente`, `TestGetDashboard_ProyectoInexistente_Devuelve404`, `TestPantallaDashboard_ProyectoInexistente_Devuelve404` | `app.ConsultarDashboard` |
+| CA-25.8 Respuesta HTTP | Sección 3 | No va acá (como CA-24.8): se cubre con tests del adaptador | `TestGetDashboard_*` (6 tests) | `internal/adapters/http/dashboard_handler.go` |
+| CA-25.9 Gráficos en la pantalla | RN-25.5, ADR-0005 | No va acá: se cubre con tests de la pantalla y de la geometría | `TestPantallaDashboard_MuestraLosGraficos`, `TestPantallaDashboard_GraficoConSuAnchoReal`, `TestArmarGraficoBarras_*` (7 tests) | `pantallas_dashboard.go`, `grafico_barras.go`, `web/plantillas/dashboard.html` |
+| CA-25.10 Enlace desde el proyecto | RN-25.6 | No va acá: se cubre con tests de la pantalla | `TestPantallaProyecto_EnlaceAlDashboard` | `web/plantillas/proyecto_detalle.html` |
+| CA-25.11 Proyecto sin datos | Sección 6 | Un proyecto recién creado tiene el dashboard vacío, sin fallar `@limite` | `TestContarBacklog`, `TestSprintsCerradosCronologicos`, `TestConsultarDashboard_ProyectoSinDatos`, `TestGetDashboard_SinDatos_DevuelveNullYArrayVacio`, `TestPantallaDashboard_ProyectoSinDatos`, `TestArmarGraficoBarras_TodoEnCero_SinDividirPorCero` | todas las capas |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-25.1 Datos vigentes en cada pedido, sin cache | CA-25.6 | `app.ConsultarDashboard`, `pantallas.dashboard` (llama al caso de uso al atender el pedido) |
+| RN-25.2 Backlog contado por estado actual, esté o no en un sprint | CA-25.1, CA-25.11 | `domain.ContarBacklog` |
+| RN-25.3 Sprint en curso = Abierto cuyas fechas incluyen hoy | CA-25.2, CA-25.3 | `domain.ResumirSprintEnCurso` (`domain.SprintVigente` de HU-20) |
+| RN-25.4 Puntos del sprint en curso con la regla del cierre | CA-25.2 | `domain.ResumirSprintEnCurso` (`domain.ResumirCierre` de HU-11) |
+| RN-25.5 Gráficos con todos los sprints cerrados, del más antiguo al más reciente, con los valores de HU-11/22/24 | CA-25.4, CA-25.5, CA-25.9 | `domain.SprintsCerradosCronologicos`, `app.ConsultarDashboard` |
+| RN-25.6 Un clic desde la pantalla del proyecto | CA-25.10 | `web/plantillas/proyecto_detalle.html` |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/dashboard.go](../internal/domain/dashboard.go) (`ContarBacklog`, `ResumirSprintEnCurso`, `SprintsCerradosCronologicos`) | [dashboard_test.go](../internal/domain/dashboard_test.go) |
+| Caso de uso | [internal/app/consultar_dashboard.go](../internal/app/consultar_dashboard.go) (`ConsultarDashboard`, reutiliza `LectorProyectos`, `RepositorioSprints`, `ListadorElementos`, `LectorDefectos` y la parte de proyecto de `LectorHoras`) | [consultar_dashboard_test.go](../internal/app/consultar_dashboard_test.go) |
+| HTTP (JSON) | [internal/adapters/http/dashboard_handler.go](../internal/adapters/http/dashboard_handler.go) (`GET /proyectos/{id}/dashboard`) | [dashboard_handler_test.go](../internal/adapters/http/dashboard_handler_test.go) |
+| Pantalla | [internal/adapters/http/pantallas_dashboard.go](../internal/adapters/http/pantallas_dashboard.go), [grafico_barras.go](../internal/adapters/http/grafico_barras.go), [web/plantillas/dashboard.html](../internal/adapters/http/web/plantillas/dashboard.html), [web/static/estilos.css](../internal/adapters/http/web/static/estilos.css) | [pantallas_dashboard_test.go](../internal/adapters/http/pantallas_dashboard_test.go), [grafico_barras_test.go](../internal/adapters/http/grafico_barras_test.go) |
+| BDD | [test/bdd/hu25_sistema_test.go](../test/bdd/hu25_sistema_test.go), [hu25_steps_test.go](../test/bdd/hu25_steps_test.go) | 11 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 25.1 ADR de la librería de gráficos | `5fa5fcf` docs(HU-25): [25.1] ADR-0005 | — |
+| 25.2 Spec | `0c40b25` docs(HU-25): [25.2] spec SDD → `cd0c207` (P-1 y P-2 confirmadas) | — |
+| 25.3 Escenarios BDD | `ac1962d` test(HU-25): [25.3] escenarios BDD | — |
+| 25.4 Steps de godog | `4f9bf41` test(HU-25): [25.4][RED] steps (en rojo hasta el caso de uso) | BDD en rojo |
+| 25.5 Dominio (`ContarBacklog`, `ResumirSprintEnCurso`, `SprintsCerradosCronologicos`) | `1fd0020` [RED] → `3161194` [GREEN] | **RED → GREEN** |
+| 25.6 Caso de uso `ConsultarDashboard` | `2f48728` [RED] → `ca9fb7a` [GREEN] → `62a9fa8` [REFACTOR] → `4954ca2` (BDD en verde) | **RED → GREEN → REFACTOR** (`calidadDe`, compartida con HU-24) |
+| 25.7 Adaptador de persistencia | No aplica: sin persistencia nueva | — |
+| 25.8 Adaptador HTTP (`GET .../dashboard`) | `80b87be` [RED] → `99b5420` [GREEN] | **RED → GREEN** |
+| 25.9 Pantalla con los gráficos | `5f09d89` [RED] → `5a23bb9` [GREEN] (geometría de los SVG) · `90c5645` [RED] → `0e6c59e` [GREEN] (pantalla y enlace) | **RED → GREEN** ×2 |
+| 25.10 Revisión y trazabilidad | `958d0c9` [RED] → `08df6ba` [GREEN] (corrección de la revisión: el SVG con su ancho real) · este commit (trazabilidad) | **RED → GREEN** |
+
+### Huecos
+
+- La spec y el ADR-0005 los aprobó Nicolás Andino (decisiones, P-1 y P-2); falta la aprobación del equipo en el PR.
+- Probado manualmente en el navegador (servidor real, SQLite, datos cargados por la API): 3 sprints cerrados (10/8, 13/13 y 3/0 puntos), un sprint en curso con 16 puntos y 5 completados, y un elemento con 10 horas estimadas y 12 reales. El JSON y la pantalla mostraron lo esperado (velocidad 7, 80 %, 100 % y 0 %, desviación del 20,0 %), sin errores en la consola (la CSP no bloqueó nada). En el ancho de un celular (375 px) la página no tiene scroll horizontal.
+- Revisión con el agente `go-reviewer`: **Approve**, sin hallazgos CRITICAL ni HIGH. Verificó `go vet`, `gofmt` y los tests de `internal`; que no hay divisiones por cero ni punteros compartidos entre iteraciones; que la pantalla y el handler llaman al caso de uso al atender el pedido (el bug de interfaz nil de HU-21 no se repite), y que la plantilla no tiene scripts ni atributos `style` y escapa todo dentro del SVG. Hallazgos aplicados: (MEDIUM) con muchos sprints el SVG se achicaba al ancho de la pantalla y el texto quedaba ilegible; ahora se dibuja con su ancho real y el recuadro se desplaza en horizontal, sin scroll en la página (verificado a 375 px); (LOW) un fallo interno del dashboard quedaba en el log como "consultar proyecto". Hallazgos descartados: el orden no estable de `SprintsAnteriores` con fechas de inicio iguales no puede pasar, porque RN-08.5 impide sprints superpuestos; buscar el proyecto dos veces (pantalla y caso de uso) sigue el patrón del resto de las pantallas.
+- Los defectos de sprints ya cerrados no se pueden cargar a mano desde la interfaz (HU-20 asigna el sprint vigente del día), así que el gráfico de defectos se probó con datos reales solo con ceros; con valores se cubre en los tests y en el BDD.
 
 ---
 

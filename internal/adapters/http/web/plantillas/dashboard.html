@@ -1,0 +1,100 @@
+{{define "titulo"}}Dashboard de {{.Proyecto.Nombre}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>Dashboard de {{.Proyecto.Nombre}}</h1>
+  <div class="botones">
+    <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+  </div>
+</div>
+
+{{/* HU-25: estado del proyecto (RN-25.2 a RN-25.4). */}}
+<div class="estado-proyecto">
+  <section aria-labelledby="titulo-backlog">
+    <h2 id="titulo-backlog">Backlog</h2>
+    <dl class="datos">
+      <dt>Pendientes</dt><dd>{{.Backlog.Pendientes}}</dd>
+      <dt>En progreso</dt><dd>{{.Backlog.EnProgreso}}</dd>
+      <dt>Hechos</dt><dd>{{.Backlog.Hechos}}</dd>
+      <dt>Total</dt><dd>{{.Backlog.Total}}</dd>
+    </dl>
+  </section>
+
+  <section aria-labelledby="titulo-sprint-en-curso">
+    <h2 id="titulo-sprint-en-curso">Sprint en curso</h2>
+    {{if .HaySprintEnCurso}}{{with .SprintEnCurso}}
+    <p><a href="/web/proyectos/{{$.Proyecto.ID}}/sprints/{{.ID}}">Sprint {{.Numero}}</a>: {{.Objetivo}}</p>
+    <p class="suave">Del {{.FechaInicio}} al {{.FechaFin}}</p>
+    {{if .Planificados}}
+    <label for="avance-sprint">Avance</label>
+    <progress id="avance-sprint" max="{{.Planificados}}" value="{{.Completados}}">{{.Completados}} de {{.Planificados}}</progress>
+    {{end}}
+    <p>{{.Completados}} de {{.Planificados}} puntos completados</p>
+    {{end}}{{else}}
+    <p class="vacio">No hay sprint en curso (ningún sprint abierto incluye la fecha de hoy).</p>
+    {{end}}
+  </section>
+</div>
+
+{{/* HU-25: gráficos (RN-25.5), dibujados como SVG en el servidor (ADR-0005). */}}
+<section aria-labelledby="titulo-sprints-cerrados">
+  <h2 id="titulo-sprints-cerrados">Sprints cerrados</h2>
+  {{if .Graficos}}
+  <div class="graficos">
+    {{range .Graficos}}{{template "grafico_barras" .}}{{end}}
+  </div>
+  {{else}}
+  <p class="vacio">Todavía no hay sprints cerrados: los gráficos aparecen cuando se cierra el primero.</p>
+  {{end}}
+</section>
+
+<section aria-labelledby="titulo-horas-dashboard">
+  <h2 id="titulo-horas-dashboard">Horas del proyecto</h2>
+  {{if .HayHoras}}
+  <p class="metrica">Desviación: {{.Desviacion}}</p>
+  <div class="graficos">{{template "grafico_barras" .GraficoHoras}}</div>
+  {{else}}
+  <p class="vacio">Todavía no hay horas estimadas: sin datos para comparar con las reales.</p>
+  {{end}}
+</section>
+{{end}}
+
+{{define "grafico_barras"}}
+<figure class="grafico">
+  <svg class="svg-grafico" role="img" aria-labelledby="grafico-{{.ID}}-titulo" aria-describedby="grafico-{{.ID}}-desc"
+       width="{{.Ancho}}" height="{{.Alto}}" viewBox="0 0 {{.Ancho}} {{.Alto}}" xmlns="http://www.w3.org/2000/svg">
+    <title id="grafico-{{.ID}}-titulo">{{.Titulo}}</title>
+    <desc id="grafico-{{.ID}}-desc">{{.Descripcion}}</desc>
+    <line class="eje" x1="0" y1="{{.BaseY}}" x2="{{.Ancho}}" y2="{{.BaseY}}"/>
+    {{range .Grupos}}
+    <g>
+      {{range .Barras}}
+      {{if not .SinDatos}}<rect class="barra {{.Clase}}" x="{{.X}}" y="{{.Y}}" width="{{.Ancho}}" height="{{.Alto}}"><title>{{.Serie}}: {{.Texto}}</title></rect>{{end}}
+      <text class="valor" x="{{.XTexto}}" y="{{.YTexto}}" text-anchor="middle">{{.Texto}}</text>
+      {{end}}
+      <text class="etiqueta" x="{{.XEtiqueta}}" y="{{.YEtiqueta}}" text-anchor="middle">{{.Etiqueta}}</text>
+    </g>
+    {{end}}
+    {{with .Referencia}}
+    <line class="referencia" x1="{{.X1}}" y1="{{.Y}}" x2="{{.X2}}" y2="{{.Y}}"/>
+    <text class="etiqueta-referencia" x="{{.X2}}" y="{{.Y}}" dy="-4" text-anchor="end">{{.Etiqueta}}</text>
+    {{end}}
+  </svg>
+  <figcaption>
+    <ul class="leyenda">
+      {{range .Series}}<li><span class="muestra {{.Clase}}" aria-hidden="true"></span>{{.Nombre}}</li>{{end}}
+      {{with .Referencia}}<li><span class="muestra muestra-referencia" aria-hidden="true"></span>{{.Etiqueta}}</li>{{end}}
+    </ul>
+  </figcaption>
+  <table class="tabla-grafico">
+    <caption>{{.Titulo}}</caption>
+    <thead>
+      <tr><th scope="col">{{.EncabezadoGrupos}}</th>{{range .Series}}<th scope="col">{{.Nombre}}</th>{{end}}</tr>
+    </thead>
+    <tbody>
+      {{range .Grupos}}
+      <tr><th scope="row">{{.Etiqueta}}</th>{{range .Barras}}<td>{{.Texto}}</td>{{end}}</tr>
+      {{end}}
+    </tbody>
+  </table>
+</figure>
+{{end}}
