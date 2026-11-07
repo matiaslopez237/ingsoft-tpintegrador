@@ -19,7 +19,7 @@ func TestArmarReporteProyecto_HistoriasYResumen(t *testing.T) {
 	}
 	p := Proyecto{ID: 1, Nombre: "Alfa"}
 
-	r := ArmarReporteProyecto(p, nil, historias, TotalHoras{}, 0, false, nil, nil)
+	r := ArmarReporteProyecto(p, historias, TotalHoras{}, 0, false, nil, nil)
 
 	if len(r.Historias) != 3 {
 		t.Fatalf("Historias = %d, se esperaban 3", len(r.Historias))
@@ -42,7 +42,7 @@ func TestArmarReporteProyecto_HistoriaSinEstimar_NoSumaStoryPoints(t *testing.T)
 		historia("Sin estimar", EstadoHecho, nil),
 	}
 
-	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, historias, TotalHoras{}, 0, false, nil, nil)
+	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, historias, TotalHoras{}, 0, false, nil, nil)
 
 	if r.HistoriasCompletadas != 2 {
 		t.Errorf("HistoriasCompletadas = %d, se esperaban 2", r.HistoriasCompletadas)
@@ -57,7 +57,7 @@ func TestArmarReporteProyecto_EsfuerzoYMetricas_SePropaganTalCual(t *testing.T) 
 	esfuerzo := TotalHoras{HorasEstimadas: 2, HorasReales: 5, Elementos: 1}
 	metricas := []FilaMetrica{{Sprint: Sprint{Numero: 1}, PorcentajeCompletado: 75, HayPorcentaje: true}}
 
-	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, nil, esfuerzo, 7, true, metricas, nil)
+	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, esfuerzo, 7, true, metricas, nil)
 
 	if r.Esfuerzo != esfuerzo {
 		t.Errorf("Esfuerzo = %+v, se esperaba %+v", r.Esfuerzo, esfuerzo)
@@ -72,7 +72,7 @@ func TestArmarReporteProyecto_EsfuerzoYMetricas_SePropaganTalCual(t *testing.T) 
 
 // Traza: HU-26 CA-26.6: sin sprints cerrados, sin velocidad y sin filas de métricas.
 func TestArmarReporteProyecto_SinMetricas(t *testing.T) {
-	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, nil, TotalHoras{}, 0, false, nil, nil)
+	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, TotalHoras{}, 0, false, nil, nil)
 
 	if r.HayVelocidad {
 		t.Errorf("se esperaba sin velocidad")
@@ -86,7 +86,7 @@ func TestArmarReporteProyecto_SinMetricas(t *testing.T) {
 func TestArmarReporteProyecto_Defectos_SePropaganTalCual(t *testing.T) {
 	defectos := []Defecto{{ID: 1, Descripcion: "Falla X"}, {ID: 2, Descripcion: "Falla Y"}}
 
-	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, nil, TotalHoras{}, 0, false, nil, defectos)
+	r := ArmarReporteProyecto(Proyecto{Nombre: "Alfa"}, nil, TotalHoras{}, 0, false, nil, defectos)
 
 	if len(r.Defectos) != 2 {
 		t.Errorf("Defectos = %+v, se esperaban 2", r.Defectos)
