@@ -441,3 +441,26 @@ func TestGenerar_LaFechaDelPDFEsLaEmision(t *testing.T) {
 		}
 	}
 }
+
+// RN-27.4, RN-27.5: una tabla que no es el primer bloque de su sección tampoco deja su fila de
+// encabezados sola al pie: los encabezados están en la misma página que la primera fila.
+func TestGenerar_TablaDespuesDeUnParrafo_EncabezadosJuntoALaPrimeraFila(t *testing.T) {
+	for filas := 45; filas <= 60; filas++ {
+		previa := &domain.TablaPDF{Columnas: []string{"A", "B", "C"}}
+		for i := 1; i <= filas; i++ {
+			previa.Filas = append(previa.Filas, filaDePrueba(i))
+		}
+		doc := documentoConTabla(previa)
+		doc.Secciones = append(doc.Secciones, domain.SeccionPDF{Titulo: "Sección final", Bloques: []domain.BloquePDF{
+			{Parrafo: "Texto antes de la tabla."},
+			{Tabla: &domain.TablaPDF{Columnas: []string{"Encabezado final"}, Filas: [][]string{{"primera-fila"}}}},
+		}})
+		textos := paginas(t, generar(t, doc))
+		encabezados, veces := paginaDe(textos, "Encabezado final")
+		primera, _ := paginaDe(textos, "primera-fila")
+		if veces != 1 || encabezados != primera {
+			t.Errorf("con %d filas previas, los encabezados están en la página %d (%d veces) y la primera fila en la %d",
+				filas, encabezados+1, veces, primera+1)
+		}
+	}
+}
