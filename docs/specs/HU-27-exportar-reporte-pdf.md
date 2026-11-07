@@ -41,6 +41,7 @@ type DocumentoPDF struct {
 	Titulo    string     // obligatorio
 	Subtitulo string     // opcional
 	Emision   time.Time  // fecha y hora de emisión, con su huso horario (RN-27.10)
+	Aviso     string     // aviso de reemplazos (RN-27.9): lo completa el caso de uso; HU-26 nunca lo completa ni lo lee
 	Secciones []SeccionPDF
 }
 
@@ -49,7 +50,8 @@ type SeccionPDF struct {
 	Bloques []BloquePDF  // en el orden en que se muestran
 }
 
-// Un bloque es un párrafo o una tabla: exactamente uno de los dos (RN-27.11).
+// Un bloque es un párrafo o una tabla, no los dos (RN-27.11). Sin ninguno de los dos es un párrafo
+// vacío: no es un error y no se muestra.
 type BloquePDF struct {
 	Parrafo string
 	Tabla   *TablaPDF
@@ -60,6 +62,8 @@ type TablaPDF struct {
 	Filas    [][]string  // cada fila con tantas celdas como columnas
 }
 ```
+
+HU-26 completa todos los campos menos `Emision` y `Aviso`, que pone el caso de uso de HU-27 (RN-27.9, RN-27.10). El campo `Aviso` se agregó al escribir los steps de HU-27: RN-27.2 ubica el aviso en el documento, pero el modelo no tenía dónde guardarlo.
 
 Todo es texto: los números, porcentajes y horas llegan ya formateados por HU-26, para que el PDF diga lo mismo que la pantalla (por ejemplo, `+25,0 %` como en HU-19).
 
@@ -94,7 +98,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 
 ## 4. Reglas de negocio
 - **RN-27.1 (modelo neutral):** [Esencial] el PDF se genera solo a partir de un `DocumentoPDF`. HU-27 no conoce la estructura del reporte de HU-26: qué secciones hay y qué dice cada una lo decide HU-26 al armar el documento.
-- **RN-27.2 (orden del contenido):** [Esencial] título, subtítulo (si no está vacío), línea de emisión, aviso de reemplazos (si hubo) y secciones, en ese orden. Dentro de una sección, los bloques salen en el orden del documento.
+- **RN-27.2 (orden del contenido):** [Esencial] título, subtítulo (si no está vacío), línea de emisión, aviso de reemplazos (`DocumentoPDF.Aviso`, si no está vacío) y secciones, en ese orden. Dentro de una sección, los bloques salen en el orden del documento.
 - **RN-27.3 (encabezado y pie):** [Deseable] desde la segunda página, un encabezado con el título del documento. En todas las páginas, el pie "Página k de N", donde N es la cantidad total de páginas del PDF.
 - **RN-27.4 (saltos de página):** [Esencial; la última oración, Deseable] cuando el contenido no entra, sigue en la página siguiente. Los párrafos largos continúan en la página siguiente. El título de una sección no queda solo al pie: si no entra junto con la primera línea de su primer bloque (o con el encabezado y la primera fila, si es una tabla), pasa entero a la página siguiente.
 - **RN-27.5 (tablas):** [Esencial; la repetición de encabezados, Deseable] el texto de cada celda se ajusta al ancho de su columna en varias líneas, y la fila toma la altura de su celda más alta. Una fila nunca se parte entre dos páginas: si no entra, pasa entera a la siguiente. En cada página donde la tabla continúa se repite la fila de encabezados.
@@ -105,9 +109,9 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
   2. Los caracteres invisibles de formato (categoría Unicode `Cf`, como el espacio de ancho cero, el guion opcional o el unidor de emojis, y los selectores de variante `U+FE00`–`U+FE0F`) se quitan.
   3. Los caracteres representables se dejan como están. Son: `U+0021`–`U+007E` (ASCII imprimible), `U+00A1`–`U+017F` (Latin-1 y Latín extendido A, salvo `U+00AD`, que es `Cf`), `– — ‘ ’ “ ” • …` (`U+2013`, `U+2014`, `U+2018`, `U+2019`, `U+201C`, `U+201D`, `U+2022`, `U+2026`), `€` (`U+20AC`), `← ↑ → ↓` (`U+2190`–`U+2193`) y `≤ ≥` (`U+2264`, `U+2265`).
   4. Cualquier otro (emojis, ideogramas, otras escrituras, caracteres de control y bytes que no son UTF-8 válido) se reemplaza por `?`. Varios seguidos, aunque entre ellos hubiera caracteres quitados en el paso 2, dan **un solo** `?`.
-- **RN-27.9 (aviso de reemplazos):** [Deseable] si RN-27.8 insertó al menos un `?`, el PDF muestra después de la línea de emisión: "Aviso: 3 símbolos que no se pueden mostrar en PDF, como los emojis, se reemplazaron por «?»." En singular: "Aviso: 1 símbolo que no se puede mostrar en PDF, como los emojis, se reemplazó por «?»." El número es la cantidad de `?` insertados. Los espacios convertidos (paso 1) y los invisibles quitados (paso 2) no cuentan, porque no cambian lo que se ve.
+- **RN-27.9 (aviso de reemplazos):** [Deseable] si RN-27.8 insertó al menos un `?`, el caso de uso escribe el aviso en `DocumentoPDF.Aviso` y el PDF lo muestra después de la línea de emisión; si no hubo reemplazos, el campo queda vacío. HU-26 nunca completa ni lee ese campo. El texto es: "Aviso: 3 símbolos que no se pueden mostrar en PDF, como los emojis, se reemplazaron por «?»." En singular: "Aviso: 1 símbolo que no se puede mostrar en PDF, como los emojis, se reemplazó por «?»." El número es la cantidad de `?` insertados. Los espacios convertidos (paso 1) y los invisibles quitados (paso 2) no cuentan, porque no cambian lo que se ve.
 - **RN-27.10 (fecha de emisión):** [Esencial] la fija el caso de uso con su reloj al pedir la descarga, en la hora de Argentina (UTC-3, sin horario de verano), y la pasa en `DocumentoPDF.Emision`. Se muestra como `dd/mm/aaaa` y `HH:MM` en 24 horas. Es la única fecha que usa el generador: también es la de creación y modificación en los metadatos del PDF, de modo que el mismo documento con la misma emisión genera siempre los mismos bytes.
-- **RN-27.11 (documento válido):** [Esencial] el generador rechaza con `domain.ErrDocumentoInvalido` un documento con título vacío (después de RN-27.8 y sin contar espacios), una sección con título vacío, un bloque con párrafo y tabla a la vez o con ninguno de los dos, una tabla sin columnas, o una fila con distinta cantidad de celdas que columnas. Son errores de programación de quien arma el documento (HU-26), no del usuario: se responden como falla interna (sección 7).
+- **RN-27.11 (documento válido):** [Esencial] el generador rechaza con `domain.ErrDocumentoInvalido` un documento con título vacío (después de RN-27.8 y sin contar espacios), una sección con título vacío, un bloque con párrafo y tabla a la vez, una tabla sin columnas, o una fila con distinta cantidad de celdas que columnas. Son errores de programación de quien arma el documento (HU-26), no del usuario: se responden como falla interna (sección 7). Un bloque sin párrafo ni tabla **no** es un error: es un párrafo vacío y no se muestra nada (sección 6).
 - **RN-27.12 (nombre del archivo):** [Esencial] `reporte-proyecto-{proyectoID}-{aaaa-mm-dd}.pdf` para un proyecto y `reporte-proyecto-{proyectoID}-sprint-{sprintID}-{aaaa-mm-dd}.pdf` para un sprint, con los IDs de la ruta y la fecha de emisión de RN-27.10. No incluye el nombre del proyecto ni del sprint: el nombre tiene solo minúsculas sin acentos, dígitos, `-` y `.`.
 - **RN-27.13 (qué se puede descargar):** [Esencial] el proyecto tiene que existir y el sprint tiene que ser de ese proyecto; un sprint de otro proyecto se trata como inexistente (igual que RN-23.11). **SUPUESTO:** se puede descargar en cualquier estado del proyecto y del sprint, igual que HU-23 (RN-23.12); si HU-26 restringe algún caso, HU-27 responde lo mismo que la pantalla del reporte.
 - **RN-27.14 (hoja):** [Esencial] A4 en orientación vertical.
@@ -123,7 +127,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 - **Casos de uso** (`internal/app/exportar_reporte_pdf.go`): `ExportarReporteProyecto.Ejecutar(ctx, proyectoID)` y `ExportarReporteSprint.Ejecutar(ctx, proyectoID, sprintID)`. Devuelven `ArchivoPDF{Nombre string; Contenido []byte}`. Cada uno:
   1. pide el documento a la fuente;
   2. le pone la emisión con su reloj (inyectado, igual que `RegistrarDefecto` de HU-20);
-  3. lo normaliza, agrega el aviso si hace falta y lo valida;
+  3. lo normaliza, completa `Aviso` si hace falta (RN-27.9) y lo valida;
   4. llama al generador y arma el nombre del archivo.
 - **Puertos** (definidos en `internal/app`):
 
@@ -175,7 +179,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 - Tabla sin filas → encabezados y "Sin datos." (RN-27.7).
 - Sección sin bloques → solo su título. Documento sin secciones → una página con título, subtítulo y emisión.
 - Subtítulo vacío → no se muestra ni deja una línea en blanco.
-- Párrafo vacío → no es un error, no se muestra nada.
+- Párrafo vacío (un bloque sin párrafo ni tabla) → no es un error, no se muestra nada y el documento se exporta (RN-27.11).
 - Título hecho solo de espacios o de caracteres invisibles → documento inválido (RN-27.11).
 - `😀😀` → `?`, cuenta 1. `👨‍👩‍👧` (tres emojis unidos con `U+200D`) → `?`, cuenta 1. `❤️` (`U+2764` + `U+FE0F`) → `?`, cuenta 1. `😀 😀` → `? ?`, cuenta 2 (RN-27.8).
 - `中文` → `?`. Una palabra en griego o en cirílico → `?`, aunque la fuente tenga esos glifos (RN-27.8, paso 3: solo lo que se probó).
@@ -209,11 +213,11 @@ Un emoji, un ideograma o un carácter de control **no son errores**: se reemplaz
 - **CA-27.4 (párrafo largo):** [Esencial] Dado un párrafo de 10 000 caracteres, cuando se genera, entonces ocupa más de una página, todas las páginas tienen el pie con la numeración y el texto se extrae completo. (RN-27.3, RN-27.4)
 - **CA-27.5 (título de sección al pie):** [Deseable] Dado un documento en el que el título de una sección cae en la última línea libre de una página, cuando se genera, entonces ese título aparece en la página siguiente junto con su primer bloque. (RN-27.4)
 - **CA-27.6 (largo de una celda):** [Deseable] Dada una celda de 301 caracteres, entonces queda en 299 más "…"; dada una de 300, queda igual; dada una de 300 en la columna más angosta, la fila entra en una página. (RN-27.6, RN-27.5)
-- **CA-27.7 (vacíos):** [Esencial] Dada una tabla sin filas, entonces se ven sus encabezados y "Sin datos."; dada una sección sin bloques, solo su título; dado un documento sin secciones, una página con título, subtítulo y emisión; dado un subtítulo vacío, no se muestra. (RN-27.7, RN-27.2)
+- **CA-27.7 (vacíos):** [Esencial] Dada una tabla sin filas, entonces se ven sus encabezados y "Sin datos."; dada una sección sin bloques, solo su título; dado un documento sin secciones, una página con título, subtítulo y emisión; dado un subtítulo vacío, no se muestra; dado un bloque sin párrafo ni tabla (párrafo vacío), no es un error, no se muestra nada y el documento se exporta. (RN-27.7, RN-27.2, RN-27.11)
 - **CA-27.8 (emojis e ideogramas):** [Esencial] Dado el título "Sprint 😀 final", cuando se genera, entonces no hay error, el título dice "Sprint ? final" y aparece "Aviso: 1 símbolo que no se puede mostrar en PDF, como los emojis, se reemplazó por «?».". Dado "Equipo 😀😀 y 中文", queda "Equipo ? y ?" y el aviso dice 2 símbolos. (RN-27.8, RN-27.9)
 - **CA-27.9 (secuencias de emojis):** [Deseable] Dados `👨‍👩‍👧`, `❤️` y `😀 😀`, cuando se normalizan, entonces quedan `?`, `?` y `? ?`, y cuentan 1, 1 y 2. (RN-27.8, RN-27.9)
 - **CA-27.10 (espacios, invisibles y controles):** [Esencial] Dada una celda con una tabulación, un salto de línea y un espacio de ancho cero, entonces los dos primeros pasan a espacio, el tercero se quita y no hay aviso; dada una con `U+0007` o con bytes que no son UTF-8 válido, cada uno pasa a `?` con aviso; dado "¿cumplida?", queda igual y no cuenta. (RN-27.8, RN-27.9)
-- **CA-27.11 (documento inválido):** [Esencial] Dado un documento con título vacío o solo con espacios, una sección sin título, un bloque con párrafo y tabla o sin ninguno, una tabla sin columnas o una fila con distinta cantidad de celdas que columnas, cuando se valida, entonces se obtiene `ErrDocumentoInvalido` y no se llama al generador. (RN-27.11)
+- **CA-27.11 (documento inválido):** [Esencial] Dado un documento con título vacío o solo con espacios, una sección sin título, un bloque con párrafo y tabla, una tabla sin columnas o una fila con distinta cantidad de celdas que columnas, cuando se valida, entonces se obtiene `ErrDocumentoInvalido` y no se llama al generador. (RN-27.11)
 - **CA-27.12 (determinismo):** [Deseable] Dado el mismo documento con la misma emisión, cuando se genera dos veces, entonces los bytes son idénticos. (RN-27.10)
 - **CA-27.13 (fecha de emisión):** [Esencial] Dado un reloj en 2026-11-07 17:05 UTC, entonces la emisión dice "07/11/2026 a las 14:05"; dado uno en 2026-11-08 02:30 UTC, dice "07/11/2026 a las 23:30" y el archivo lleva `2026-11-07`. (RN-27.10, RN-27.12)
 - **CA-27.14 (descarga del proyecto):** [Esencial] Dado el proyecto 3 y la emisión del 2026-11-07, cuando se pide `GET /web/proyectos/3/reporte/pdf`, entonces la respuesta es `200` con `Content-Type: application/pdf`, `Content-Disposition: attachment; filename="reporte-proyecto-3-2026-11-07.pdf"`, `X-Content-Type-Options: nosniff` y un cuerpo que empieza con `%PDF-`. (Sección 3, RN-27.12)
@@ -299,3 +303,8 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 ## Historial
 - 2026-11-07: creada (borrador). Decisiones P-1 a P-7 tomadas por el autor, abiertas a objeción en el PR. Preguntas 2 a 9 pendientes de la spec de HU-26.
 - 2026-11-07: ligada a los criterios de la issue #38, citados literalmente, y pregunta 1 resuelta. Se agregan RN-27.15 (archivo válido), CA-27.22 (mismas secciones, en el exportador), CA-27.23 (integración con HU-26, pendiente) y CA-27.24 (PDF válido), y la sección 9, con la trazabilidad a los criterios y la prioridad esencial/deseable. Las reglas, criterios y decisiones anteriores no cambian. La spec sigue en borrador.
+- 2026-11-07: dos huecos corregidos al escribir los steps de HU-27, con el OK de Lucas Orellana:
+  - `DocumentoPDF` suma el campo `Aviso`, que completa el caso de uso y HU-26 nunca completa ni lee (sección 2, RN-27.2, RN-27.9, sección 5).
+  - Un bloque sin párrafo ni tabla deja de ser un error, porque contradecía el caso límite "Párrafo vacío": se saca esa condición de RN-27.11 y de CA-27.11, y CA-27.7 suma el caso.
+
+  No cambia ninguna otra regla ni decisión. La spec sigue en borrador.
