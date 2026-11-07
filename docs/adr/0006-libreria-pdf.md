@@ -1,4 +1,4 @@
-# ADR-0005: Librería para exportar el reporte a PDF
+# ADR-0006: Librería para exportar el reporte a PDF
 
 **Date**: 2026-11-05
 **Status**: proposed
@@ -124,7 +124,7 @@ Además, con `fpdf`:
 - **Mantenimiento más lento:** la última versión de `fpdf` es de mayo de 2026. Si se abandonara, el código ya descargado sigue compilando, y el acceso queda aislado en el adaptador, así que el cambio de librería no toca el núcleo.
 - **Dependencia de Codeberg:** el spike descargó el módulo por `proxy.golang.org`, el proxy por defecto de Go, y el CI no lo cambia. No se probó qué pasa si Codeberg no responde, ni qué proxy usa Render.
 - **Memoria en el plan free:** cada documento reserva unos 20 MB, en buena parte por procesar las fuentes, y Render ofrece 512 MB. No se ve un problema con el uso previsto (ADR-0002), pero no se midió en Render.
-- **Numeración de este ADR:** HU-25 también tiene pendiente su ADR de gráficos. Hoy ninguna rama remota usa el 0005; si otro se mergea antes, este se renumera.
+- **Numeración de este ADR:** se escribió como 0005, pero la rama de HU-25 ya usa ese número para el ADR de gráficos (`docs/adr/0005-graficos-dashboard.md`). Por eso pasó a ser el 0006, el número que ya le asignaban `docs/arquitectura.md` y `docs/trazabilidad.md`.
 
 ## Preguntas abiertas
 
