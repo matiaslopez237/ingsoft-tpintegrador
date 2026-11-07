@@ -2,8 +2,10 @@ package domain
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 )
 
 // CA-27.2, CA-27.8, CA-27.9, CA-27.10: cada texto se normaliza carácter por carácter (RN-27.8) y se
@@ -128,4 +130,94 @@ func TestTextoAvisoReemplazos(t *testing.T) {
 			t.Errorf("TextoAvisoReemplazos(%d) = %q, se esperaba %q", c.reemplazos, got, c.aviso)
 		}
 	}
+}
+
+// celdaNormalizada normaliza un documento con una sola celda y devuelve esa celda y los reemplazos.
+func celdaNormalizada(t *testing.T, celda string) (string, int) {
+	t.Helper()
+	d := DocumentoPDF{Titulo: "T", Secciones: []SeccionPDF{{Titulo: "S", Bloques: []BloquePDF{{Tabla: &TablaPDF{
+		Columnas: []string{"C"}, Filas: [][]string{{celda}},
+	}}}}}}
+	got, n := NormalizarDocumento(d)
+	return got.Secciones[0].Bloques[0].Tabla.Filas[0][0], n
+}
+
+// CA-27.6: una celda tiene como máximo 300 caracteres (runes), contados después de RN-27.8; si tiene
+// más, quedan los primeros 299 y "…" (RN-27.6). El recorte no es un reemplazo: no suma al aviso (RN-27.9).
+func TestNormalizarDocumento_TopeDeCaracteresPorCelda(t *testing.T) {
+	a := strings.Repeat
+	casos := []struct {
+		nombre     string
+		celda      string
+		want       string
+		reemplazos int
+	}{
+		{"vacía", "", "", 0},
+		{"299 caracteres", a("x", 299), a("x", 299), 0},
+		{"300 caracteres, el límite", a("x", 300), a("x", 300), 0},
+		{"301 caracteres", a("x", 301), a("x", 299) + "…", 0},
+		{"400 caracteres", a("x", 400), a("x", 299) + "…", 0},
+		{"300 acentos, que ocupan 600 bytes", a("á", 300), a("á", 300), 0},
+		{"301 acentos", a("á", 301), a("á", 299) + "…", 0},
+		{"301 eñes y espacios mezclados", a("ñ ", 150) + "ñ", a("ñ ", 149) + "ñ…", 0},
+		{"un emoji y 299 letras: se reemplaza antes de contar", "😀" + a("x", 299), "?" + a("x", 299), 1},
+		{"un emoji y 300 letras", "😀" + a("x", 300), "?" + a("x", 298) + "…", 1},
+		{"350 emojis seguidos quedan en un solo ?", a("😀", 350), "?", 1},
+		{"301 invisibles más 2 letras: se quitan antes de contar", a("​", 301) + "xy", "xy", 0},
+	}
+	for _, c := range casos {
+		t.Run(c.nombre, func(t *testing.T) {
+			got, n := celdaNormalizada(t, c.celda)
+			if got != c.want || n != c.reemplazos {
+				t.Errorf("celda de %d runes = (%d runes %q…, %d), se esperaba (%d runes %q…, %d)",
+					utf8.RuneCountInString(c.celda), utf8.RuneCountInString(got), primeros(got), n,
+					utf8.RuneCountInString(c.want), primeros(c.want), c.reemplazos)
+			}
+			if utf8.RuneCountInString(got) > 300 {
+				t.Errorf("la celda quedó con %d runes", utf8.RuneCountInString(got))
+			}
+		})
+	}
+}
+
+// RN-27.6 es solo para las celdas: los encabezados, los párrafos y los títulos no tienen tope.
+func TestNormalizarDocumento_TopeSoloEnLasCeldas(t *testing.T) {
+	largo := strings.Repeat("x", 301)
+	d := DocumentoPDF{Titulo: largo, Subtitulo: largo, Secciones: []SeccionPDF{
+		{Titulo: largo, Bloques: []BloquePDF{{Parrafo: largo}, {Tabla: &TablaPDF{
+			Columnas: []string{largo}, Filas: [][]string{{"corta"}},
+		}}}},
+	}}
+	got, _ := NormalizarDocumento(d)
+	s := got.Secciones[0]
+	for nombre, texto := range map[string]string{
+		"título": got.Titulo, "subtítulo": got.Subtitulo, "título de sección": s.Titulo,
+		"párrafo": s.Bloques[0].Parrafo, "encabezado": s.Bloques[1].Tabla.Columnas[0],
+	} {
+		if texto != largo {
+			t.Errorf("el %s se cortó: quedó con %d runes", nombre, utf8.RuneCountInString(texto))
+		}
+	}
+}
+
+// Sección 5: el recorte no modifica el documento original.
+func TestNormalizarDocumento_TopeNoModificaElOriginal(t *testing.T) {
+	largo := strings.Repeat("x", 301)
+	filas := [][]string{{largo}}
+	d := DocumentoPDF{Titulo: "T", Secciones: []SeccionPDF{{Titulo: "S", Bloques: []BloquePDF{{Tabla: &TablaPDF{
+		Columnas: []string{"C"}, Filas: filas,
+	}}}}}}
+	NormalizarDocumento(d)
+	if filas[0][0] != largo {
+		t.Errorf("la celda original quedó con %d runes", utf8.RuneCountInString(filas[0][0]))
+	}
+}
+
+// primeros acorta un texto largo para los mensajes de error.
+func primeros(s string) string {
+	r := []rune(s)
+	if len(r) > 12 {
+		return string(r[:12])
+	}
+	return s
 }
