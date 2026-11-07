@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strings"
 	"testing"
@@ -194,16 +195,18 @@ func paginaDe(textos []string, s string) (pagina, veces int) {
 
 // CA-27.3: una tabla de 200 filas cruza páginas; cada fila aparece completa, una sola vez, con sus tres
 // celdas en la misma página y en orden (RN-27.4, RN-27.5). El texto solo no alcanza (ADR-0006): también
-// se comprueba la cantidad de páginas. Con filas de una línea de unos 6 mm y unos 250 mm útiles por
-// hoja, entran entre 35 y 45 filas por página: 200 filas dan entre 5 y 6 páginas.
+// se comprueba la cantidad de páginas: las 201 filas (con la de encabezados) de una línea, de
+// altoLineaTabla cada una, ocupan lo que dan, repartido en hojas A4 con los márgenes del adaptador; como
+// las filas no se parten y la primera hoja también tiene el título, se acepta una página más.
 func TestGenerar_TablaLarga_CruzaPaginasSinPerderNiRepetirFilas(t *testing.T) {
 	tabla := &domain.TablaPDF{Columnas: []string{"Columna A", "Columna B", "Columna C"}}
 	for i := 1; i <= 200; i++ {
 		tabla.Filas = append(tabla.Filas, filaDePrueba(i))
 	}
 	textos := paginas(t, generar(t, documentoConTabla(tabla)))
-	if len(textos) < 5 || len(textos) > 6 {
-		t.Errorf("páginas = %d, se esperaban 5 o 6", len(textos))
+	minimo := int(math.Ceil(201 * altoLineaTabla / (297 - margenSuperior - margenInferior)))
+	if len(textos) < minimo || len(textos) > minimo+1 {
+		t.Errorf("páginas = %d, se esperaban %d o %d", len(textos), minimo, minimo+1)
 	}
 	anterior := 0
 	for i := 1; i <= 200; i++ {

@@ -37,6 +37,8 @@ func (g *Generador) Generar(ctx context.Context, doc domain.DocumentoPDF) ([]byt
 		return nil, err
 	}
 	f := fpdf.New("P", "mm", "A4", "")
+	f.SetMargins(margenLateral, margenSuperior, margenLateral)
+	f.SetAutoPageBreak(true, margenInferior)
 	f.AddUTF8FontFromBytes(familia, "", fuenteRegular)
 	f.AddUTF8FontFromBytes(familia, "B", fuenteNegrita)
 	f.AddPage()
@@ -82,20 +84,67 @@ func textoEmision(doc domain.DocumentoPDF) string {
 		" (hora de Argentina, UTC-3)."
 }
 
+// Márgenes de la hoja, en mm. El inferior deja lugar para el pie.
+const (
+	margenLateral  = 15.0
+	margenSuperior = 15.0
+	margenInferior = 20.0
+)
+
+// Medidas de la tabla, en mm.
+const (
+	altoLineaTabla = 4.5 // con letra de 9 puntos
+	letraTabla     = 9
+)
+
+// dibujarTabla dibuja la fila de encabezados y las filas, todas las columnas del mismo ancho (el ancho
+// no es regla de negocio; spec, sección 5). El texto de cada celda se ajusta en varias líneas, y una fila
+// que no entra en lo que queda de la página pasa entera a la siguiente (RN-27.5). Sin filas, muestra
+// "Sin datos." (RN-27.7).
 func dibujarTabla(f *fpdf.Fpdf, t *domain.TablaPDF) {
 	ancho, _ := f.GetPageSize()
 	izq, _, der, _ := f.GetMargins()
 	w := (ancho - izq - der) / float64(len(t.Columnas))
-	f.SetFont(familia, "B", 9)
-	for _, c := range t.Columnas {
-		f.CellFormat(w, 6, c, "1", 0, "L", false, 0, "")
+	dibujarFila(f, t.Columnas, w, "B")
+	if len(t.Filas) == 0 {
+		f.SetFont(familia, "", letraTabla)
+		f.MultiCell(0, altoLineaTabla+1, "Sin datos.", "", "L", false)
+		return
 	}
-	f.Ln(-1)
-	f.SetFont(familia, "", 9)
 	for _, fila := range t.Filas {
-		for _, celda := range fila {
-			f.CellFormat(w, 6, celda, "1", 0, "L", false, 0, "")
-		}
-		f.Ln(-1)
+		dibujarFila(f, fila, w, "")
 	}
+}
+
+// dibujarFila dibuja una fila con la altura de su celda más alta. Si no entra, salta de página antes.
+func dibujarFila(f *fpdf.Fpdf, celdas []string, w float64, estilo string) {
+	f.SetFont(familia, estilo, letraTabla)
+	alto := altoFila(f, celdas, w)
+	if f.GetY()+alto > limiteInferior(f) {
+		f.AddPage()
+	}
+	x0, y0 := f.GetXY()
+	for i, c := range celdas {
+		x := x0 + float64(i)*w
+		f.Rect(x, y0, w, alto, "D")
+		f.SetXY(x, y0)
+		f.MultiCell(w, altoLineaTabla, c, "", "L", false)
+	}
+	f.SetXY(x0, y0+alto)
+}
+
+// altoFila es la cantidad de líneas de la celda más alta por el alto de una línea, con la letra actual.
+func altoFila(f *fpdf.Fpdf, celdas []string, w float64) float64 {
+	lineas := 1
+	for _, c := range celdas {
+		lineas = max(lineas, len(f.SplitText(c, w)))
+	}
+	return float64(lineas) * altoLineaTabla
+}
+
+// limiteInferior es la altura desde la que fpdf salta de página solo.
+func limiteInferior(f *fpdf.Fpdf) float64 {
+	_, alto := f.GetPageSize()
+	_, margen := f.GetAutoPageBreak()
+	return alto - margen
 }
