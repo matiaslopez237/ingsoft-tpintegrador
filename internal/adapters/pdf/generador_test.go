@@ -430,3 +430,14 @@ func cuerpos(textos []string, titulo string) []string {
 	}
 	return r
 }
+
+// CA-27.12, RN-27.10: la fecha de creación y la de modificación del PDF son la emisión, y no la hora en
+// que se generó. Sin esto, dos exportaciones en segundos distintos darían bytes distintos.
+func TestGenerar_LaFechaDelPDFEsLaEmision(t *testing.T) {
+	b := generar(t, documentoNormal())
+	for _, campo := range []string{"/CreationDate (D:20261107140500)", "/ModDate (D:20261107140500)"} {
+		if !bytes.Contains(b, []byte(campo)) {
+			t.Errorf("el PDF no tiene %s", campo)
+		}
+	}
+}
