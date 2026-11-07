@@ -1,11 +1,13 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
 // datosDashboard es lo que muestra la pantalla del Dashboard (HU-25).
@@ -50,8 +52,12 @@ func (p *pantallas) dashboard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	d, err := p.cu.ConsultarDashboard.Ejecutar(r.Context(), id)
-	if err != nil {
+	if errors.Is(err, domain.ErrProyectoNoEncontrado) {
 		p.errorDeConsulta(w, err)
+		return
+	}
+	if err != nil {
+		p.fallaInterna(w, "consultar dashboard", err) // así el log dice qué falló
 		return
 	}
 	p.renderizar(w, http.StatusOK, "dashboard.html", aDatosDashboard(aVistaProyecto(proyecto), d))

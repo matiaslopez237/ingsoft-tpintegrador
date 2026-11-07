@@ -61,7 +61,7 @@
 {{define "grafico_barras"}}
 <figure class="grafico">
   <svg class="svg-grafico" role="img" aria-labelledby="grafico-{{.ID}}-titulo" aria-describedby="grafico-{{.ID}}-desc"
-       viewBox="0 0 {{.Ancho}} {{.Alto}}" xmlns="http://www.w3.org/2000/svg">
+       width="{{.Ancho}}" height="{{.Alto}}" viewBox="0 0 {{.Ancho}} {{.Alto}}" xmlns="http://www.w3.org/2000/svg">
     <title id="grafico-{{.ID}}-titulo">{{.Titulo}}</title>
     <desc id="grafico-{{.ID}}-desc">{{.Descripcion}}</desc>
     <line class="eje" x1="0" y1="{{.BaseY}}" x2="{{.Ancho}}" y2="{{.BaseY}}"/>
