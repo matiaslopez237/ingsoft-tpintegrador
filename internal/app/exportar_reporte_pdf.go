@@ -56,17 +56,11 @@ func (uc *ExportarReporteProyecto) Ejecutar(ctx context.Context, proyectoID int6
 	if err != nil {
 		return ArchivoPDF{}, fmt.Errorf("armar el reporte del proyecto %d: %w", proyectoID, err)
 	}
-	doc.Emision = domain.HoraDeEmision(uc.reloj())
-	doc, n := domain.NormalizarDocumento(doc)
-	doc.Aviso = domain.TextoAvisoReemplazos(n)
-	if err := doc.Validar(); err != nil {
-		return ArchivoPDF{}, err
-	}
-	contenido, err := uc.generador.Generar(ctx, doc)
+	contenido, emision, err := generarPDF(ctx, uc.generador, uc.reloj, doc)
 	if err != nil {
-		return ArchivoPDF{}, fmt.Errorf("generar el PDF del proyecto %d: %w", proyectoID, err)
+		return ArchivoPDF{}, fmt.Errorf("reporte del proyecto %d: %w", proyectoID, err)
 	}
-	return ArchivoPDF{Nombre: domain.NombreArchivoReporteProyecto(proyectoID, doc.Emision), Contenido: contenido}, nil
+	return ArchivoPDF{Nombre: domain.NombreArchivoReporteProyecto(proyectoID, emision), Contenido: contenido}, nil
 }
 
 // ExportarReporteSprint es el caso de uso de HU-27 para el reporte de un sprint.
@@ -100,15 +94,26 @@ func (uc *ExportarReporteSprint) Ejecutar(ctx context.Context, proyectoID, sprin
 	if err != nil {
 		return ArchivoPDF{}, fmt.Errorf("armar el reporte del sprint %d: %w", sprintID, err)
 	}
-	doc.Emision = domain.HoraDeEmision(uc.reloj())
+	contenido, emision, err := generarPDF(ctx, uc.generador, uc.reloj, doc)
+	if err != nil {
+		return ArchivoPDF{}, fmt.Errorf("reporte del sprint %d: %w", sprintID, err)
+	}
+	return ArchivoPDF{Nombre: domain.NombreArchivoReporteSprint(proyectoID, sprintID, emision), Contenido: contenido}, nil
+}
+
+// generarPDF es lo común a los dos casos de uso: pone la emisión (RN-27.10), normaliza y completa el
+// aviso (RN-27.8, RN-27.9), valida (RN-27.11) y genera. Devuelve la emisión, que da la fecha del nombre
+// del archivo. Las reglas viven en el dominio; acá solo se ordenan.
+func generarPDF(ctx context.Context, generador GeneradorPDF, reloj func() time.Time, doc domain.DocumentoPDF) ([]byte, time.Time, error) {
+	doc.Emision = domain.HoraDeEmision(reloj())
 	doc, n := domain.NormalizarDocumento(doc)
 	doc.Aviso = domain.TextoAvisoReemplazos(n)
 	if err := doc.Validar(); err != nil {
-		return ArchivoPDF{}, err
+		return nil, time.Time{}, err
 	}
-	contenido, err := uc.generador.Generar(ctx, doc)
+	contenido, err := generador.Generar(ctx, doc)
 	if err != nil {
-		return ArchivoPDF{}, fmt.Errorf("generar el PDF del sprint %d: %w", sprintID, err)
+		return nil, time.Time{}, fmt.Errorf("generar el PDF: %w", err)
 	}
-	return ArchivoPDF{Nombre: domain.NombreArchivoReporteSprint(proyectoID, sprintID, doc.Emision), Contenido: contenido}, nil
+	return contenido, doc.Emision, nil
 }
