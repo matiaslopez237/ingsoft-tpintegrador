@@ -52,6 +52,7 @@
   {{if .HayHoras}}
   <p class="metrica">Desviación: {{.Desviacion}}</p>
   <div class="graficos">{{template "grafico_barras" .GraficoHoras}}</div>
+  {{with .AvisoHoras}}<p class="ayuda">{{.}}</p>{{end}}
   {{else}}
   <p class="vacio">Todavía no hay horas estimadas: sin datos para comparar con las reales.</p>
   {{end}}

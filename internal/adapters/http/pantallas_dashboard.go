@@ -21,6 +21,9 @@ type datosDashboard struct {
 	HayHoras     bool // false: ningún elemento estimado en horas (RN-23.6)
 	GraficoHoras graficoBarras
 	Desviacion   string
+	// AvisoHoras explica, como el bloque de HU-23, que las horas reales de los elementos sin estimar
+	// están en la barra de reales pero no en la desviación (RN-23.5). Vacío si todos están estimados.
+	AvisoHoras string
 }
 
 type vistaConteoBacklog struct {
@@ -94,6 +97,9 @@ func aDatosDashboard(proyecto vistaProyecto, d app.Dashboard) datosDashboard {
 			},
 		})
 		datos.Desviacion = textoPorcentaje(*d.Horas.DesviacionPorcentaje)
+		if d.Horas.ElementosSinEstimar > 0 {
+			datos.AvisoHoras = avisoSinEstimar(d.Horas)
+		}
 	}
 	return datos
 }
