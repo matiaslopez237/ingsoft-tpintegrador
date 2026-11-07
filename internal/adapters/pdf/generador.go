@@ -75,18 +75,7 @@ func (g *Generador) Generar(ctx context.Context, doc domain.DocumentoPDF) ([]byt
 	f.SetHeaderFunc(func() { encabezado(f, doc.Titulo) })
 	f.SetFooterFunc(func() { pie(f) })
 	f.AddPage()
-
-	f.SetFont(familia, "B", 16)
-	f.MultiCell(0, 8, doc.Titulo, "", "L", false)
-	if doc.Subtitulo != "" {
-		f.SetFont(familia, "", 11)
-		f.MultiCell(0, 6, doc.Subtitulo, "", "L", false)
-	}
-	f.SetFont(familia, "", 9)
-	f.MultiCell(0, 5, textoEmision(doc), "", "L", false)
-	if doc.Aviso != "" {
-		f.MultiCell(0, 5, doc.Aviso, "", "L", false)
-	}
+	dibujarPortada(f, doc)
 	for _, s := range doc.Secciones {
 		dibujarSeccion(f, s)
 	}
@@ -96,6 +85,25 @@ func (g *Generador) Generar(ctx context.Context, doc domain.DocumentoPDF) ([]byt
 		return nil, fmt.Errorf("generar el PDF: %w", err)
 	}
 	return buf.Bytes(), nil
+}
+
+// dibujarPortada escribe lo que va antes de las secciones, en el orden de RN-27.2: título, subtítulo
+// (si hay), línea de emisión y aviso de reemplazos (si hay).
+func dibujarPortada(f *fpdf.Fpdf, doc domain.DocumentoPDF) {
+	escribir(f, "B", 16, 8, doc.Titulo)
+	if doc.Subtitulo != "" {
+		escribir(f, "", 11, 6, doc.Subtitulo)
+	}
+	escribir(f, "", 9, 5, textoEmision(doc))
+	if doc.Aviso != "" {
+		escribir(f, "", 9, 5, doc.Aviso)
+	}
+}
+
+// escribir escribe un texto en varias líneas, a todo el ancho, con la letra y el alto de línea dados.
+func escribir(f *fpdf.Fpdf, estilo string, letra, altoLinea float64, texto string) {
+	f.SetFont(familia, estilo, letra)
+	f.MultiCell(0, altoLinea, texto, "", "L", false)
 }
 
 // textoEmision es la línea de emisión de la sección 3 de la spec (RN-27.10). La emisión ya viene en
@@ -137,15 +145,13 @@ func dibujarSeccion(f *fpdf.Fpdf, s domain.SeccionPDF) {
 	} else {
 		f.Ln(espacioSeccion)
 	}
-	f.SetFont(familia, "B", letraSeccion)
-	f.MultiCell(0, altoLineaSeccion, s.Titulo, "", "L", false)
+	escribir(f, "B", letraSeccion, altoLineaSeccion, s.Titulo)
 	for _, b := range s.Bloques {
 		switch {
 		case b.Tabla != nil:
 			dibujarTabla(f, b.Tabla)
 		case b.Parrafo != "": // un párrafo vacío no se muestra (RN-27.11)
-			f.SetFont(familia, "", letraParrafo)
-			f.MultiCell(0, altoLineaParrafo, b.Parrafo, "", "L", false)
+			escribir(f, "", letraParrafo, altoLineaParrafo, b.Parrafo)
 		}
 	}
 }
@@ -175,8 +181,7 @@ func dibujarTabla(f *fpdf.Fpdf, t *domain.TablaPDF) {
 	}
 	dibujarFila(f, t.Columnas, w, "B")
 	if len(t.Filas) == 0 {
-		f.SetFont(familia, "", letraTabla)
-		f.MultiCell(0, altoLineaTabla+1, "Sin datos.", "", "L", false)
+		escribir(f, "", letraTabla, altoLineaTabla+1, "Sin datos.")
 		return
 	}
 	for _, fila := range t.Filas {
