@@ -1,12 +1,12 @@
 # ADR-0005: Gráficos del Dashboard como SVG armado en Go
 
 **Date**: 2026-11-06
-**Status**: proposed
+**Status**: accepted
 **Deciders**: Equipo completo (Matías López, Ezequiel Assenza, Nicolás Andino, Lucas Orellana)
 
 ## Context
 
-HU-25 pide un Dashboard con al menos 3 métricas clave **de forma gráfica**. Hasta ahora la interfaz no usa JavaScript (ADR-0003), y desde HU-29 las pantallas responden con `Content-Security-Policy: default-src 'self'`, que bloquea:
+HU-25 pide un Dashboard con al menos 3 métricas clave **de forma gráfica**. Hasta ahora la interfaz no usa JavaScript (ADR-0003), y desde HU-30 las pantallas responden con `Content-Security-Policy: default-src 'self'` (HU-29 la documentó), que bloquea:
 - scripts y estilos de otros sitios (un CDN, por ejemplo);
 - scripts y estilos escritos dentro de la página (`<script>…</script>`, atributos `onclick`, `style="…"`).
 
@@ -55,3 +55,5 @@ Los gráficos se dibujan como **SVG armado en el servidor**, con `html/template`
 ## Notes
 
 Propuesto por Nicolás Andino al empezar HU-25 (tarea 25.1, #309). Cierra el pendiente que dejaron ADR-0003 (actualización del 2026-11-05) y `docs/arquitectura.md`.
+
+**Actualización 2026-11-07:** aceptado. Lo aprobó Matías López (Agile Enabler) el 2026-11-07, en la revisión del PR #375.

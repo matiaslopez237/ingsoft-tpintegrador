@@ -2,7 +2,7 @@
 
 **Historia:** Como cualquier rol del equipo, quiero un Dashboard con el estado del proyecto y gráficos de las métricas principales, para tener una visión rápida del avance.
 **Issue:** #36  ·  **Sprint:** 4  ·  **Story points:** 8
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada
 
 ## 1. Objetivo
 Juntar en una sola pantalla lo que hoy está repartido entre el backlog, los sprints, los sprints anteriores, los defectos y las horas, para que cualquier integrante vea de un vistazo cómo viene el proyecto: qué hay en el backlog, cómo va el sprint en curso y cómo rindieron los sprints cerrados.
@@ -26,7 +26,7 @@ Es una consulta de solo lectura. En HTTP, `proyectoID` va en la ruta.
 1. **Puntos por sprint:** barras de puntos planificados y completados de cada Sprint `Cerrado`, y la velocidad del equipo (HU-22).
 2. **% completado por sprint:** una barra por Sprint `Cerrado` con su porcentaje (HU-24). Un sprint sin puntos planificados figura como "sin datos", sin barra (RN-24.2).
 3. **Defectos por sprint:** barras de defectos detectados y resueltos de cada Sprint `Cerrado` (HU-24).
-4. **Horas estimadas contra reales** del proyecto, con la desviación (HU-23). Si ningún elemento está estimado en horas, se informa "sin datos" en lugar del gráfico (RN-23.6).
+4. **Horas estimadas contra reales** del proyecto, con la desviación (HU-23, RN-23.4 a RN-23.6). Si ningún elemento está estimado en horas, se informa "sin datos" en lugar del gráfico (RN-23.6). Si hay elementos sin estimar, debajo del gráfico va el mismo aviso que el bloque de horas de HU-23: cuántos elementos están sin estimar y que sus horas reales están en la barra de reales pero no en la desviación (RN-23.5).
 
 **En la pantalla** (`GET /web/proyectos/{id}/dashboard`): las dos secciones de estado arriba y los 4 gráficos abajo. Cada gráfico es un SVG armado en el servidor (ADR-0005) con un título accesible y una tabla con los mismos datos. La pantalla del proyecto (HU-04) suma un botón "Dashboard", el primero de la fila (RN-25.6).
 
@@ -70,7 +70,7 @@ No hay más condiciones de error: es una consulta de solo lectura sin más datos
 - **CA-25.2:** Dado un Sprint `Abierto` cuyas fechas incluyen hoy, con elementos de 3, 5 y 2 puntos y solo el de 5 `Hecho`, cuando se consulta el Dashboard, entonces el sprint en curso es ese, con 10 puntos planificados y 5 completados. (RN-25.3, RN-25.4)
 - **CA-25.3:** Dado un proyecto sin ningún Sprint `Abierto` que incluya hoy (sin sprints, o con uno abierto ya vencido), cuando se consulta el Dashboard, entonces informa que no hay sprint en curso. (RN-25.3)
 - **CA-25.4:** Dado un proyecto con dos Sprints `Cerrado`, cuando se consulta el Dashboard, entonces los datos por sprint traen los dos, del más antiguo al más reciente, con sus puntos planificados y completados, su porcentaje y sus defectos detectados y resueltos, iguales a los de HU-12 y HU-24; y la velocidad es la de HU-22. (RN-25.5)
-- **CA-25.5:** Dado un proyecto con horas estimadas y reales cargadas, cuando se consulta el Dashboard, entonces las horas y la desviación son las de HU-23 para el proyecto; si ningún elemento está estimado, la desviación queda sin datos. (RN-25.5)
+- **CA-25.5:** Dado un proyecto con horas estimadas y reales cargadas, cuando se consulta el Dashboard, entonces las horas y la desviación son las de HU-23 para el proyecto; si ningún elemento está estimado, la desviación queda sin datos; y si hay elementos sin estimar, la pantalla muestra el aviso de HU-23 que explica que sus horas reales no entran en la desviación. (RN-23.4 a RN-23.6, de HU-23)
 - **CA-25.6:** Dado que se abrió el Dashboard, cuando se completa una historia del sprint en curso y se vuelve a abrir, entonces los puntos completados ya incluyen esa historia. (RN-25.1)
 - **CA-25.7:** Dado un ID de proyecto que no existe, cuando se consulta el Dashboard, entonces se obtiene `ErrProyectoNoEncontrado`. (HTTP 404)
 - **CA-25.8:** Dado un pedido válido a `GET /proyectos/{id}/dashboard`, entonces la respuesta es `200` con el objeto de la sección 3 (`sprint_en_curso` y `velocidad` en `null` cuando no hay datos); con un ID inválido, `400`; con un proyecto inexistente, `404`.
@@ -79,15 +79,16 @@ No hay más condiciones de error: es una consulta de solo lectura sin más datos
 - **CA-25.11:** Dado un proyecto recién creado, sin elementos ni sprints, cuando se abre su Dashboard, entonces responde `200` con el backlog en 0, sin sprint en curso, y en lugar de los gráficos el aviso de que no hay datos todavía. (sección 6)
 
 ## Decisiones confirmadas
-- **Gráficos como SVG armado en Go**, sin JavaScript (ADR-0005). Elegido por Nicolás Andino el 2026-11-06; falta la aprobación del equipo en el PR.
+- **Gráficos como SVG armado en Go**, sin JavaScript (ADR-0005). Propuesto por Nicolás Andino el 2026-11-06; aprobado por Matías López (Agile Enabler) el 2026-11-07, en la revisión del PR #375.
 - **Métricas graficadas:** puntos por sprint (con la velocidad), % completado por sprint, defectos por sprint y horas estimadas contra reales. Elegidas por Nicolás Andino el 2026-11-06.
 - **Pantalla propia** (`/web/proyectos/{id}/dashboard`) con un botón en la pantalla del proyecto, en lugar de mostrar el panel dentro de HU-04. Elegido por Nicolás Andino el 2026-11-06.
 - **Estado del proyecto:** backlog por estado y sprint en curso. Elegido por Nicolás Andino el 2026-11-06.
-- **P-1 — Sprint abierto pero vencido:** no figura como sprint en curso; la sección dice "No hay sprint en curso". Es la misma regla de HU-20 (`domain.SprintVigente`). Confirmada por Nicolás Andino el 2026-11-06.
-- **P-2 — Cantidad de sprints en los gráficos:** todos los sprints cerrados, sin límite. Confirmada por Nicolás Andino el 2026-11-06.
+- **P-1 — Sprint abierto pero vencido:** no figura como sprint en curso; la sección dice "No hay sprint en curso". Es la misma regla de HU-20 (`domain.SprintVigente`). Propuesta por Nicolás Andino el 2026-11-06; aprobada por Matías López (Agile Enabler) el 2026-11-07, en la revisión del PR #375.
+- **P-2 — Cantidad de sprints en los gráficos:** todos los sprints cerrados, sin límite. Propuesta por Nicolás Andino el 2026-11-06; aprobada por Matías López (Agile Enabler) el 2026-11-07, en la revisión del PR #375.
 
 ## Preguntas abiertas
 Ninguna.
 
 ## Historial
 - 2026-11-06: creada (borrador). P-1 y P-2 confirmadas por Nicolás Andino; falta la aprobación del equipo en el PR.
+- 2026-11-07: Aprobada. En la revisión del PR #375, Matías López (Agile Enabler) aprobó ADR-0005, P-1 y P-2, y pidió mostrar en el gráfico de horas el aviso de elementos sin estimar de HU-23 (sección 3 y CA-25.5). CA-25.5 pasa a citar las reglas de HU-23 (RN-23.4 a RN-23.6) en lugar de RN-25.5.

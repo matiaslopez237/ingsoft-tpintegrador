@@ -141,7 +141,7 @@ Las decisiones de arquitectura están en [`docs/adr/`](adr/), una por archivo, c
 | Persistencia | SQLite con `modernc.org/sqlite`, sin CGO, en un solo archivo. | [ADR-0002](adr/0002-persistencia.md) |
 | Interfaz | Páginas generadas en el servidor con `html/template` y un CSS propio, sin JavaScript hasta ahora. | [ADR-0003](adr/0003-interfaz-web.md) |
 | CI/CD | GitHub Actions con `-race` y cobertura mínima del 80 %, `main` protegida y despliegue en Render (https://ingsoft-tpintegrador.onrender.com) después de cada merge con el CI en verde. | [ADR-0004](adr/0004-ci-cd.md) |
-| Gráficos del Dashboard | SVG armado en el servidor con `html/template`, sin JavaScript ni dependencias, para respetar la política de seguridad de las pantallas (propuesto en HU-25, falta la aprobación del equipo). | [ADR-0005](adr/0005-graficos-dashboard.md) |
+| Gráficos del Dashboard | SVG armado en el servidor con `html/template`, sin JavaScript ni dependencias, para respetar la política de seguridad de las pantallas (HU-25, aceptado en la revisión del PR #375). | [ADR-0005](adr/0005-graficos-dashboard.md) |
 | Organización del código | Arquitectura hexagonal: dominio, casos de uso y adaptadores (este documento). | [`CLAUDE.md`](../CLAUDE.md) |
 | BDD | Escenarios en Gherkin automatizados con godog. | [`CLAUDE.md`](../CLAUDE.md) |
 
