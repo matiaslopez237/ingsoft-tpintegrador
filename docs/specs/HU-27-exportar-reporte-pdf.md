@@ -298,6 +298,7 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
   - es un caso raro: hace falta una celda de más de 300 caracteres con un emoji después del carácter 299.
 
   No tiene test propio.
+- **P-9 — Saneado del nombre en el adaptador HTTP** (2026-11-07, abierta a objeción en el PR): aunque el caso de uso ya da un nombre que cumple RN-27.12, el handler lo sanea otra vez antes de escribir `Content-Disposition`, como defensa en profundidad: deja solo minúsculas, dígitos, `-` y `.`, cambia cualquier otro carácter por `-` y, si queda vacío, usa `reporte.pdf`. Así unas comillas o un salto de línea nunca cortan la cabecera ni agregan otras, aunque cambie la función del dominio. Con los nombres de RN-27.12 no cambia nada. Lo verifica `TestReportePDF_NombreConCaracteresPeligrosos_NoInyectaCabeceras`.
 
 ## Preguntas abiertas
 **Criterios de la historia:**
@@ -317,7 +318,7 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 **Para el equipo:**
 
 10. **ADR-0006:** confirmar la librería y la fuente para pasarlo de `proposed` a `accepted`. Esta spec depende de esa decisión: si cambia la librería, cambian la lista de RN-27.8 y la sección 5.
-11. **Decisiones P-1 a P-8:** sin objeciones hasta ahora; se confirman en el PR.
+11. **Decisiones P-1 a P-9:** sin objeciones hasta ahora; se confirman en el PR.
 
 ## Historial
 - 2026-11-07: creada (borrador). Decisiones P-1 a P-7 tomadas por el autor, abiertas a objeción en el PR. Preguntas 2 a 9 pendientes de la spec de HU-26.
@@ -335,3 +336,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
   No cambia ninguna regla, criterio ni decisión. La spec sigue en borrador.
 - 2026-11-07: decisión P-8 del autor, abierta a objeción en el PR: los `?` se cuentan al normalizar, antes de recortar las celdas. No cambia ninguna regla ni criterio. La spec sigue en borrador.
 - 2026-11-07: la parte HTTP de la sección 5 se ajusta a la convención de rutas de CLAUDE.md: las descargas se registran con `RegistrarExportarReportePDF` en `pantallas_reporte_pdf.go`, y no dentro de `RegistrarPantallas`, y usan su propia tabla de errores 404 en vez de `errorDeConsulta`, que no conoce el sprint. No cambia ninguna regla, criterio ni decisión. La spec sigue en borrador.
+- 2026-11-07: decisión P-9 del autor, abierta a objeción en el PR: el adaptador HTTP vuelve a sanear el nombre del archivo antes de escribir la cabecera. No cambia ninguna regla ni criterio. La spec sigue en borrador.
