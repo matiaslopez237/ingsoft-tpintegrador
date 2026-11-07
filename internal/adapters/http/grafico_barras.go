@@ -27,9 +27,11 @@ type especGrafico struct {
 	ID          string // prefijo de los id del SVG, único en la página
 	Titulo      string
 	Descripcion string
-	Series      []serieGrafico
-	Grupos      []grupoGrafico
-	Sufijo      string // se agrega al valor escrito sobre cada barra ("%")
+	// EncabezadoGrupos encabeza la columna de los grupos en la tabla de datos ("Sprint").
+	EncabezadoGrupos string
+	Series           []serieGrafico
+	Grupos           []grupoGrafico
+	Sufijo           string // se agrega al valor escrito sobre cada barra ("%")
 	// MinimoEscala es el valor que como mínimo ocupa todo el alto: 100 en un porcentaje, para que 50%
 	// se vea como la mitad aunque ningún sprint llegue a 100.
 	MinimoEscala       float64

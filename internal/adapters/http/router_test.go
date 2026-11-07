@@ -94,6 +94,7 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/web/proyectos/nuevo", ""},                                                                                         // HU-30
 		{http.MethodGet, "/web/proyectos/1/sprints", ""},                                                                                     // HU-08
 		{http.MethodGet, "/web/proyectos/1/sprints/anteriores", ""},                                                                          // HU-12
+		{http.MethodGet, "/web/proyectos/1/dashboard", ""},                                                                                   // HU-25
 		{http.MethodPost, "/web/proyectos/1/sprints/1/cerrar", ""},                                                                           // HU-11
 		{http.MethodGet, "/web/proyectos/1/backlog", ""},                                                                                     // HU-07
 		{http.MethodGet, "/web/proyectos/1/defectos", ""},                                                                                    // HU-21
