@@ -22,6 +22,7 @@ type sistemaDashboardReal struct {
 	crearProyecto *app.CrearProyecto
 	crearElemento *app.CrearElementoBacklog
 	completar     *app.CompletarHistoria
+	consultar     *app.ConsultarDashboard
 	db            *sql.DB
 	dir           string
 	hoy           time.Time
@@ -41,7 +42,7 @@ func nuevoSistemaDashboard() (sistemaDashboard, error) {
 	}
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
 	elementos := persistencia.NuevoRepositorioBacklog(db)
-	return &sistemaDashboardReal{
+	s := &sistemaDashboardReal{
 		crearProyecto: app.NuevoCrearProyecto(proyectos),
 		crearElemento: app.NuevoCrearElementoBacklog(elementos),
 		completar:     app.NuevoCompletarHistoria(proyectos, elementos),
@@ -49,7 +50,11 @@ func nuevoSistemaDashboard() (sistemaDashboard, error) {
 		dir:           dir,
 		hoy:           time.Date(2026, 3, 10, 0, 0, 0, 0, time.UTC),
 		siguiente:     map[int64]int{},
-	}, nil
+	}
+	// El reloj lee s.hoy en cada consulta, así el step "hoy es" lo puede fijar después de crearlo.
+	s.consultar = app.NuevoConsultarDashboard(proyectos, persistencia.NuevoRepositorioSprints(db), elementos,
+		persistencia.NuevoRepositorioDefectos(db), persistencia.NuevoRepositorioEsfuerzo(db), func() time.Time { return s.hoy })
+	return s, nil
 }
 
 func (s *sistemaDashboardReal) CrearProyecto(nombre string) (int64, error) {
@@ -131,9 +136,26 @@ func (s *sistemaDashboardReal) CompletarHistoria(proyectoID, elementoID int64) e
 	return s.completar.Ejecutar(context.Background(), app.DatosCompletar{ProyectoID: proyectoID, ElementoID: elementoID})
 }
 
-// ConsultarDashboard todavía no tiene caso de uso (HU-25, tareas 25.5 y 25.6).
-func (s *sistemaDashboardReal) ConsultarDashboard(int64) (dashboardVista, error) {
-	return dashboardVista{}, errors.New("el caso de uso del dashboard todavía no existe")
+func (s *sistemaDashboardReal) ConsultarDashboard(proyectoID int64) (dashboardVista, error) {
+	d, err := s.consultar.Ejecutar(context.Background(), proyectoID)
+	if err != nil {
+		return dashboardVista{}, err
+	}
+	v := dashboardVista{
+		Pendientes: d.Backlog.Pendientes, EnProgreso: d.Backlog.EnProgreso, Hechos: d.Backlog.Hechos, Total: d.Backlog.Total,
+		HaySprintEnCurso: d.HaySprintEnCurso, NumeroEnCurso: d.SprintEnCurso.Sprint.Numero,
+		PlanificadosEnCurso: d.SprintEnCurso.PuntosPlanificados, HechosEnCurso: d.SprintEnCurso.PuntosCompletados,
+		Velocidad: d.Velocidad.Velocidad, HayVelocidad: d.Velocidad.HayDatos,
+		HorasEstimadas: d.Horas.HorasEstimadas, HorasReales: d.Horas.HorasReales, Desviacion: d.Horas.DesviacionPorcentaje,
+	}
+	for _, c := range d.SprintsCerrados {
+		v.Cerrados = append(v.Cerrados, cerradoVista{
+			Numero: c.Sprint.Numero, Planificados: c.Sprint.PuntosPlanificados, Completados: c.Sprint.PuntosCompletados,
+			Porcentaje: c.PorcentajeCompletado, HayPorcentaje: c.HayPorcentaje,
+			Detectados: c.DefectosDetectados, Resueltos: c.DefectosResueltos,
+		})
+	}
+	return v, nil
 }
 
 // Cerrar cierra la base del escenario y borra su carpeta temporal.
