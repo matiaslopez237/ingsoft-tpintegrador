@@ -2,6 +2,7 @@ package http
 
 import (
 	"errors"
+	"fmt"
 	"net/http"
 	"strings"
 	"testing"
@@ -52,6 +53,22 @@ func TestPantallaDashboard_MuestraLosGraficos(t *testing.T) {
 	if csp := rec.Header().Get("Content-Security-Policy"); csp != "default-src 'self'" {
 		t.Errorf("Content-Security-Policy = %q, se esperaba default-src 'self'", csp)
 	}
+}
+
+// Traza: HU-25 RN-25.5 (P-2), revisión de go-reviewer: el SVG se dibuja con su ancho real, así con
+// muchos sprints el texto no se achica (el recuadro del gráfico se desplaza en horizontal).
+func TestPantallaDashboard_GraficoConSuAnchoReal(t *testing.T) {
+	d := dashboardCompleto()
+	d.SprintsCerrados = nil
+	for i := range 15 {
+		d.SprintsCerrados = append(d.SprintsCerrados, app.CalidadSprint{Sprint: domain.Sprint{ID: int64(i + 1), Numero: i + 1}})
+	}
+	cu, _ := casosConDashboard(d, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	puntos := armarGraficoBarras(graficosDeSprints(d.SprintsCerrados, d.Velocidad)[0].especGrafico)
+	contiene(t, rec, fmt.Sprintf(`width="%d" height="%d" viewBox="0 0 %d %d"`, puntos.Ancho, puntos.Alto, puntos.Ancho, puntos.Alto))
 }
 
 // Traza: HU-25 CA-25.1, CA-25.2: el estado del proyecto muestra el backlog por estado y el sprint en curso.
