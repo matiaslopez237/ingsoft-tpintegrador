@@ -7,8 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-// NormalizarDocumento aplica RN-27.8 a todos los textos del documento y devuelve cuántos "?" insertó
-// (RN-27.9). Es pura: no modifica el documento que recibe. Emision y Aviso no se tocan.
+// NormalizarDocumento aplica RN-27.8 a todos los textos del documento y RN-27.6 a las celdas, y devuelve
+// cuántos "?" insertó (RN-27.9); el recorte de una celda no cuenta. Es pura: no modifica el documento
+// que recibe. Emision y Aviso no se tocan.
 func NormalizarDocumento(d DocumentoPDF) (DocumentoPDF, int) {
 	total := 0
 	norm := func(s string) string {
@@ -32,7 +33,7 @@ func NormalizarDocumento(d DocumentoPDF) (DocumentoPDF, int) {
 				for _, fila := range b.Tabla.Filas {
 					var celdas []string
 					for _, celda := range fila {
-						celdas = append(celdas, norm(celda))
+						celdas = append(celdas, recortarCelda(norm(celda)))
 					}
 					t.Filas = append(t.Filas, celdas)
 				}
@@ -43,6 +44,18 @@ func NormalizarDocumento(d DocumentoPDF) (DocumentoPDF, int) {
 		c.Secciones = append(c.Secciones, cs)
 	}
 	return c, total
+}
+
+// LargoMaximoCelda es la cantidad máxima de caracteres de una celda de tabla, "…" incluido (RN-27.6).
+const LargoMaximoCelda = 300
+
+// recortarCelda aplica RN-27.6 a una celda ya normalizada: si tiene más de LargoMaximoCelda caracteres
+// (runes, no bytes), deja los primeros LargoMaximoCelda-1 y agrega "…", que está en la lista de RN-27.8.
+func recortarCelda(s string) string {
+	if utf8.RuneCountInString(s) <= LargoMaximoCelda {
+		return s
+	}
+	return string([]rune(s)[:LargoMaximoCelda-1]) + "…"
 }
 
 // TextoAvisoReemplazos es el aviso de RN-27.9 para n "?" insertados; vacío si no hubo reemplazos.
