@@ -40,6 +40,7 @@ type CasosDeUso struct {
 	ActualizarEstadoDefecto  actualizadorEstadoDefecto // HU-21
 	ListarDefectos           listadorDefectos          // HU-21
 	ConsultarCalidadSprints  consultorCalidadSprints   // HU-24
+	ConsultarDashboard       consultorDashboard        // HU-25
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
@@ -70,6 +71,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarActualizarEstadoDefecto(mux, cu.ActualizarEstadoDefecto)
 	RegistrarListarDefectos(mux, cu.ListarDefectos)
 	RegistrarCalidadSprints(mux, cu.ConsultarCalidadSprints)
+	RegistrarDashboard(mux, cu.ConsultarDashboard)
 	RegistrarPantallas(mux, cu)
 	return mux
 }
