@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -157,5 +158,141 @@ func TestGenerar_ContextoCancelado_DevuelveError(t *testing.T) {
 	b, err := NuevoGenerador().Generar(ctx, documentoNormal())
 	if !errors.Is(err, context.Canceled) || b != nil {
 		t.Errorf("Generar = (%d bytes, %v), se esperaba context.Canceled sin bytes", len(b), err)
+	}
+}
+
+// compacto quita todos los espacios: el extractor pega las líneas de un párrafo sin separador.
+func compacto(s string) string { return espacios.ReplaceAllString(s, "") }
+
+// documentoConTabla arma un documento con una sola sección que tiene la tabla.
+func documentoConTabla(t *domain.TablaPDF) domain.DocumentoPDF {
+	return domain.DocumentoPDF{
+		Titulo:    "Reporte con tabla",
+		Emision:   emisionDePrueba,
+		Secciones: []domain.SeccionPDF{{Titulo: "Datos", Bloques: []domain.BloquePDF{{Tabla: t}}}},
+	}
+}
+
+// filaDePrueba es la fila i de una tabla de prueba: cada celda dice su columna y su número de fila.
+func filaDePrueba(i int) []string {
+	return []string{fmt.Sprintf("A-%03d", i), fmt.Sprintf("B-%03d", i), fmt.Sprintf("C-%03d", i)}
+}
+
+// paginaDe devuelve en qué página aparece el texto y cuántas veces aparece en todo el documento.
+func paginaDe(textos []string, s string) (pagina, veces int) {
+	pagina = -1
+	for i, texto := range textos {
+		if n := strings.Count(texto, s); n > 0 {
+			veces += n
+			if pagina < 0 {
+				pagina = i
+			}
+		}
+	}
+	return pagina, veces
+}
+
+// CA-27.3: una tabla de 200 filas cruza páginas; cada fila aparece completa, una sola vez, con sus tres
+// celdas en la misma página y en orden (RN-27.4, RN-27.5). El texto solo no alcanza (ADR-0006): también
+// se comprueba la cantidad de páginas. Con filas de una línea de unos 6 mm y unos 250 mm útiles por
+// hoja, entran entre 35 y 45 filas por página: 200 filas dan entre 5 y 6 páginas.
+func TestGenerar_TablaLarga_CruzaPaginasSinPerderNiRepetirFilas(t *testing.T) {
+	tabla := &domain.TablaPDF{Columnas: []string{"Columna A", "Columna B", "Columna C"}}
+	for i := 1; i <= 200; i++ {
+		tabla.Filas = append(tabla.Filas, filaDePrueba(i))
+	}
+	textos := paginas(t, generar(t, documentoConTabla(tabla)))
+	if len(textos) < 5 || len(textos) > 6 {
+		t.Errorf("páginas = %d, se esperaban 5 o 6", len(textos))
+	}
+	anterior := 0
+	for i := 1; i <= 200; i++ {
+		celdas := filaDePrueba(i)
+		pagina, veces := paginaDe(textos, celdas[0])
+		if veces != 1 {
+			t.Fatalf("la fila %d aparece %d veces", i, veces)
+		}
+		for _, c := range celdas[1:] {
+			if p, v := paginaDe(textos, c); v != 1 || p != pagina {
+				t.Fatalf("la celda %s está en la página %d (%d veces); su fila, en la %d", c, p+1, v, pagina+1)
+			}
+		}
+		if pagina < anterior {
+			t.Fatalf("la fila %d está en la página %d, antes que la fila anterior", i, pagina+1)
+		}
+		anterior = pagina
+	}
+	if anterior != len(textos)-1 {
+		t.Errorf("la última fila está en la página %d de %d: sobran páginas", anterior+1, len(textos))
+	}
+}
+
+// CA-27.3, RN-27.5: el texto de una celda se ajusta al ancho de su columna en varias líneas. 30 filas
+// con una celda de 300 caracteres no entran en una hoja si cada celda ocupa varias líneas: con tres
+// columnas iguales (unos 60 mm, unos 35 caracteres por línea) cada fila tiene unas 9 líneas, unos
+// 40 mm, así que entran unas 6 filas por hoja y hacen falta 5 o más páginas.
+func TestGenerar_CeldaLarga_SeAjustaEnVariasLineas(t *testing.T) {
+	largo := strings.TrimSpace(strings.Repeat("palabra ", 37) + "fin") // 299 caracteres
+	tabla := &domain.TablaPDF{Columnas: []string{"Texto", "B", "C"}}
+	for i := 1; i <= 30; i++ {
+		tabla.Filas = append(tabla.Filas, []string{largo, fmt.Sprintf("B-%03d", i), "c"})
+	}
+	textos := paginas(t, generar(t, documentoConTabla(tabla)))
+	if len(textos) < 5 {
+		t.Errorf("páginas = %d: las celdas no se ajustaron en varias líneas", len(textos))
+	}
+	if _, veces := paginaDe(textos, "B-030"); veces != 1 {
+		t.Errorf("la última fila aparece %d veces", veces)
+	}
+}
+
+// CA-27.4: un párrafo de 10 000 caracteres continúa en las páginas siguientes y se extrae completo.
+func TestGenerar_ParrafoLargo_ContinuaEnOtrasPaginas(t *testing.T) {
+	var sb strings.Builder
+	for i := 1; sb.Len() < 10000; i++ {
+		fmt.Fprintf(&sb, "frase%04d con acentos y eñes. ", i)
+	}
+	parrafo := strings.TrimSpace(sb.String())
+	doc := domain.DocumentoPDF{Titulo: "Párrafo largo", Emision: emisionDePrueba, Secciones: []domain.SeccionPDF{
+		{Titulo: "Texto", Bloques: []domain.BloquePDF{{Parrafo: parrafo}}},
+	}}
+	textos := paginas(t, generar(t, doc))
+	if len(textos) < 2 {
+		t.Fatalf("páginas = %d, se esperaban 2 o más", len(textos))
+	}
+	if !strings.Contains(compacto(strings.Join(textos, "")), compacto(parrafo)) {
+		t.Errorf("el párrafo no se extrae completo y en orden")
+	}
+}
+
+// CA-27.7: un documento sin subtítulo ni secciones es una página con título y emisión, y nada más.
+func TestGenerar_DocumentoMinimo(t *testing.T) {
+	doc := domain.DocumentoPDF{Titulo: "Reporte vacío", Emision: emisionDePrueba}
+	textos := paginas(t, generar(t, doc))
+	if len(textos) != 1 {
+		t.Fatalf("páginas = %d, se esperaba 1", len(textos))
+	}
+	if got, want := compacto(textos[0]), compacto("Reporte vacío Emitido el 07/11/2026 a las 14:05 (hora de Argentina, UTC-3)."); got != want {
+		t.Errorf("texto = %q, se esperaba %q", got, want)
+	}
+}
+
+// CA-27.7, CA-27.22: las secciones salen en orden aunque estén vacías; una tabla sin filas muestra sus
+// encabezados y "Sin datos."; un párrafo vacío no muestra nada (RN-27.7, RN-27.11).
+func TestGenerar_SeccionesVacias(t *testing.T) {
+	doc := domain.DocumentoPDF{Titulo: "Vacíos", Emision: emisionDePrueba, Secciones: []domain.SeccionPDF{
+		{Titulo: "Notas", Bloques: []domain.BloquePDF{{}}},
+		{Titulo: "Esfuerzo"},
+		{Titulo: "Defectos", Bloques: []domain.BloquePDF{{Tabla: &domain.TablaPDF{Columnas: []string{"Defecto", "Severidad"}}}}},
+		{Titulo: "Métricas", Bloques: []domain.BloquePDF{{Parrafo: "Velocidad: 8 puntos."}}},
+	}}
+	textos := paginas(t, generar(t, doc))
+	if len(textos) != 1 {
+		t.Fatalf("páginas = %d, se esperaba 1", len(textos))
+	}
+	want := compacto("Vacíos Emitido el 07/11/2026 a las 14:05 (hora de Argentina, UTC-3). " +
+		"Notas Esfuerzo Defectos Defecto Severidad Sin datos. Métricas Velocidad: 8 puntos.")
+	if got := compacto(textos[0]); got != want {
+		t.Errorf("texto = %q\nse esperaba %q", got, want)
 	}
 }
