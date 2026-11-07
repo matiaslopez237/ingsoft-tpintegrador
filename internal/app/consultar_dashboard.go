@@ -73,12 +73,7 @@ func (uc *ConsultarDashboard) Ejecutar(ctx context.Context, proyectoID int64) (D
 	cerrados := domain.SprintsCerradosCronologicos(sprints)
 	d.SprintsCerrados = make([]CalidadSprint, len(cerrados))
 	for i, s := range cerrados {
-		porcentaje, hayPorcentaje := domain.PorcentajeCompletado(s)
-		detectados, resueltos := domain.ContarDefectosDeSprint(defectos, s.ID)
-		d.SprintsCerrados[i] = CalidadSprint{
-			Sprint: s, PorcentajeCompletado: porcentaje, HayPorcentaje: hayPorcentaje,
-			DefectosDetectados: detectados, DefectosResueltos: resueltos,
-		}
+		d.SprintsCerrados[i] = calidadDe(s, defectos)
 	}
 
 	// Velocidad promedia los más recientes primero (orden de SprintsAnteriores, RN-22.2).
