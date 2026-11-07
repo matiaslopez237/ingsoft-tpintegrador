@@ -299,3 +299,118 @@ func TestGenerar_SeccionesVacias(t *testing.T) {
 		t.Errorf("texto = %q\nse esperaba %q", got, want)
 	}
 }
+
+// tablaLarga es el documento de la tabla de 200 filas de CA-27.3.
+func tablaLarga() domain.DocumentoPDF {
+	tabla := &domain.TablaPDF{Columnas: []string{"Columna A", "Columna B", "Columna C"}}
+	for i := 1; i <= 200; i++ {
+		tabla.Filas = append(tabla.Filas, filaDePrueba(i))
+	}
+	return documentoConTabla(tabla)
+}
+
+// CA-27.3, RN-27.3: todas las páginas tienen el pie "Página k de N", con N igual a la cantidad de
+// páginas que lee el extractor; desde la segunda, empiezan con el título del documento.
+func TestGenerar_EncabezadoYPie(t *testing.T) {
+	textos := paginas(t, generar(t, tablaLarga()))
+	if len(textos) < 2 {
+		t.Fatalf("páginas = %d, se esperaban 2 o más", len(textos))
+	}
+	for i, texto := range textos {
+		pie := fmt.Sprintf("Página %d de %d", i+1, len(textos))
+		if strings.Count(texto, pie) != 1 {
+			t.Errorf("la página %d no tiene el pie %q:\n%s", i+1, pie, texto)
+		}
+		titulo := strings.Count(texto, "Reporte con tabla")
+		if i == 0 && titulo != 1 {
+			t.Errorf("la primera página tiene el título %d veces, se esperaba 1 (sin encabezado)", titulo)
+		}
+		if i > 0 && !strings.HasPrefix(texto, "Reporte con tabla") {
+			t.Errorf("la página %d no empieza con el encabezado:\n%s", i+1, texto)
+		}
+	}
+}
+
+// CA-27.3, RN-27.5: la fila de encabezados se repite en cada página donde la tabla continúa.
+func TestGenerar_TablaLarga_RepiteLosEncabezadosEnCadaPagina(t *testing.T) {
+	textos := paginas(t, generar(t, tablaLarga()))
+	for i, texto := range textos {
+		if strings.Count(texto, "Columna A Columna B Columna C") != 1 {
+			t.Errorf("la página %d no tiene la fila de encabezados una vez:\n%s", i+1, texto)
+		}
+	}
+}
+
+// CA-27.6, RN-27.5: una fila de varias líneas nunca se parte entre dos páginas: el texto entero de cada
+// celda larga está en una sola página.
+func TestGenerar_FilaDeVariasLineas_NoSeParte(t *testing.T) {
+	tabla := &domain.TablaPDF{Columnas: []string{"Texto", "Fila"}}
+	for i := 1; i <= 40; i++ {
+		celda := fmt.Sprintf("inicio%02d ", i) + strings.Repeat("palabra ", 34) + fmt.Sprintf("final%02d", i)
+		tabla.Filas = append(tabla.Filas, []string{celda, fmt.Sprintf("F-%02d", i)})
+	}
+	textos := paginas(t, generar(t, documentoConTabla(tabla)))
+	if len(textos) < 3 {
+		t.Fatalf("páginas = %d: la prueba necesita que la tabla cruce varias páginas", len(textos))
+	}
+	for i, fila := range tabla.Filas {
+		enteras := 0
+		for _, texto := range textos {
+			if strings.Contains(compacto(texto), compacto(fila[0])) {
+				enteras++
+			}
+		}
+		if enteras != 1 {
+			t.Errorf("la celda de la fila %d está entera en %d páginas, se esperaba 1", i+1, enteras)
+		}
+	}
+}
+
+// RN-27.4: el título de una sección no queda solo al pie. Se prueba con tablas previas de distinto
+// largo, para que el título caiga en todas las alturas posibles cerca del final de la primera página: el
+// título siempre está en la misma página que la primera fila de su tabla, o que la primera línea de su
+// párrafo.
+func TestGenerar_TituloDeSeccion_NoQuedaSoloAlPie(t *testing.T) {
+	for _, bloque := range []domain.BloquePDF{
+		{Tabla: &domain.TablaPDF{Columnas: []string{"Encabezado final"}, Filas: [][]string{{"primera-fila"}}}},
+		{Parrafo: "primera-linea del párrafo final"},
+	} {
+		for filas := 45; filas <= 60; filas++ {
+			previa := &domain.TablaPDF{Columnas: []string{"A", "B", "C"}}
+			for i := 1; i <= filas; i++ {
+				previa.Filas = append(previa.Filas, filaDePrueba(i))
+			}
+			doc := documentoConTabla(previa)
+			doc.Secciones = append(doc.Secciones, domain.SeccionPDF{Titulo: "Sección final", Bloques: []domain.BloquePDF{bloque}})
+			textos := paginas(t, generar(t, doc))
+			titulo, _ := paginaDe(textos, "Sección final")
+			primera, _ := paginaDe(textos, "primera-")
+			if titulo != primera {
+				t.Errorf("con %d filas previas, el título está en la página %d y su primer contenido en la %d", filas, titulo+1, primera+1)
+			}
+		}
+	}
+}
+
+// CA-27.12: con la misma emisión, dos generaciones dan los mismos bytes, también en paralelo; con otra
+// emisión, otros bytes, porque la fecha de creación del PDF es la emisión (RN-27.10).
+func TestGenerar_Determinista(t *testing.T) {
+	primero := generar(t, documentoNormal())
+	resultados := make(chan []byte, 8)
+	for range 8 {
+		go func() {
+			b, _ := NuevoGenerador().Generar(context.Background(), documentoNormal())
+			resultados <- b
+		}()
+	}
+	for range 8 {
+		if b := <-resultados; !bytes.Equal(b, primero) {
+			t.Fatal("dos generaciones del mismo documento dieron bytes distintos")
+		}
+	}
+	otro := documentoNormal()
+	otro.Emision = otro.Emision.Add(time.Minute)
+	if bytes.Equal(generar(t, otro), primero) {
+		t.Error("con otra emisión dio los mismos bytes: la fecha del PDF no es la emisión")
+	}
+}
