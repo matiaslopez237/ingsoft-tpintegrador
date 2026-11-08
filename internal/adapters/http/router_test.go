@@ -53,6 +53,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		ConsultarCalidadSprints:  &consultorCalidadSprintsFalso{},
 		ArmarReporteProyecto:     reporteProyectoFunc(func(context.Context, int64) (domain.Reporte, error) { return domain.Reporte{}, nil }),
 		ArmarReporteSprint:       reporteSprintFunc(func(context.Context, int64, int64) (domain.Reporte, error) { return domain.Reporte{}, nil }),
+		ExportarReporteProyecto:  &exportadorReporteProyectoFalso{}, // HU-27
+		ExportarReporteSprint:    &exportadorReporteSprintFalso{},   // HU-27
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -91,6 +93,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodGet, "/proyectos/1/calidad", ""},                                                                                         // HU-24
 		{http.MethodGet, "/web/proyectos/1/reporte", ""},                                                                                     // HU-26
 		{http.MethodGet, "/web/proyectos/1/sprints/1/reporte", ""},                                                                           // HU-26
+		{http.MethodGet, "/web/proyectos/1/reporte/pdf", ""},                                                                                 // HU-27
+		{http.MethodGet, "/web/proyectos/1/sprints/1/reporte/pdf", ""},                                                                       // HU-27
 		{http.MethodGet, "/", ""},                                                                                                            // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                                                                                               // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                                                                                          // HU-30
