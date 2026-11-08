@@ -2293,7 +2293,7 @@ Sin etiqueta `Traza` de HU-27, porque es un test compartido que suma casos: `Tes
 
 ### Commits
 
-Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-sprint` (73 commits, contando el de esta actualización), en orden. Los merges están al final.
+Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-sprint` (72 commits hasta `f68e9a6`, más los de documentación posteriores), en orden. Los merges están al final.
 
 | Ciclo | Commit | Etapa |
 |---|---|---|
