@@ -1,8 +1,8 @@
 # ADR-0006: Librería para exportar el reporte a PDF
 
 **Date**: 2026-11-05
-**Status**: proposed
-**Deciders**: Propuesto por Lucas Orellana (HU-27); falta la confirmación del equipo (Matías López, Ezequiel Assenza, Nicolás Andino)
+**Status**: accepted (2026-11-08)
+**Deciders**: Propuesto por Lucas Orellana (HU-27); aceptado por Matías López (Agile Enabler) el 2026-11-08, en la revisión del PR #379
 
 ## Context
 
@@ -139,8 +139,10 @@ Para la spec de HU-27, porque son reglas que este ADR no debe inventar:
 6. **Aclaración del sprint cerrado:** si HU-26 la incluye (RN-23.8), el PDF lleva el mismo texto.
 
 Para el equipo:
-7. **Aceptación:** confirmar este ADR para pasarlo de `proposed` a `accepted`.
+7. **Resuelta (2026-11-08): aceptado.** **Aceptación:** confirmar este ADR para pasarlo de `proposed` a `accepted`. Lo aceptó Matías López (Agile Enabler) en la revisión del PR #379.
 
 ## Notes
 
 Primera tarea de HU-27 en la planificación del Sprint 4. Esta etapa solo agrega el ADR: `go.mod` y el código de producción no cambian hasta el adaptador.
+
+**Actualización 2026-11-08:** aceptado. Lo aprobó Matías López (Agile Enabler) el 2026-11-08, en la revisión del PR #379.
