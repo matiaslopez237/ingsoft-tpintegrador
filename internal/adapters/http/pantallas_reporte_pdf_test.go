@@ -258,6 +258,25 @@ func TestReportePDF_FallaInterna_Devuelve500SinDetalle(t *testing.T) {
 	}
 }
 
+// Traza: HU-27 CA-27.20 (RN-27.11, sección 7): un documento inválido es un error de quien lo armó, no del
+// usuario: 500 con la página genérica, sin el texto del error, que queda en el log.
+func TestReportePDF_DocumentoInvalido_Devuelve500SinDetalle(t *testing.T) {
+	for _, r := range rutasReportePDF {
+		t.Run(r.nombre, func(t *testing.T) {
+			logs := capturarLog(t)
+			proyecto, sprint := exportadoresConError(fmt.Errorf("reporte del proyecto 3: %w", domain.ErrDocumentoInvalido))
+
+			rec := pedirReportePDF(t, context.Background(), proyecto, sprint, r.ruta)
+
+			esPaginaDeErrorPDF(t, rec, http.StatusInternalServerError, "Ocurrió un error interno. Probá de nuevo más tarde.")
+			seccionNoContiene(t, rec.Body.String(), domain.ErrDocumentoInvalido.Error(), "reporte del proyecto")
+			if !strings.Contains(logs.String(), domain.ErrDocumentoInvalido.Error()) {
+				t.Errorf("el detalle no quedó en el log; log: %q", logs)
+			}
+		})
+	}
+}
+
 // Traza: HU-27 CA-27.16 (RN-27.12): aunque el caso de uso ya da un nombre seguro, el adaptador no deja
 // que un nombre con comillas o saltos de línea corte la cabecera o agregue otras.
 func TestReportePDF_NombreConCaracteresPeligrosos_NoInyectaCabeceras(t *testing.T) {
