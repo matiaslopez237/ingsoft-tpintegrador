@@ -8,13 +8,13 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
-// FuenteDocumentoProyecto arma el documento del reporte de un proyecto. SUPUESTO: la implementa HU-26,
-// que convierte su reporte al modelo neutral (spec HU-27, sección 5).
+// FuenteDocumentoProyecto arma el documento del reporte de un proyecto. La implementa el adaptador HTTP
+// sobre el caso de uso del reporte de HU-26, convirtiéndolo al modelo neutral (spec HU-27, P-11).
 type FuenteDocumentoProyecto interface {
 	DocumentoDeProyecto(ctx context.Context, proyectoID int64) (domain.DocumentoPDF, error)
 }
 
-// FuenteDocumentoSprint arma el documento del reporte de un sprint. SUPUESTO: la implementa HU-26.
+// FuenteDocumentoSprint arma el documento del reporte de un sprint. La implementa el mismo adaptador.
 type FuenteDocumentoSprint interface {
 	DocumentoDeSprint(ctx context.Context, proyectoID, sprintID int64) (domain.DocumentoPDF, error)
 }

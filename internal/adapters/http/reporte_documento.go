@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"strconv"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -139,4 +140,37 @@ func textoSprintDefecto(id *int64) string {
 
 func tablaPDF(columnas []string, filas [][]string) domain.BloquePDF {
 	return domain.BloquePDF{Tabla: &domain.TablaPDF{Columnas: columnas, Filas: filas}}
+}
+
+// fuenteDocumentoReporte implementa app.FuenteDocumentoProyecto y app.FuenteDocumentoSprint (HU-27) sobre
+// los casos de uso del reporte de HU-26: arma el reporte, le da el formato de la pantalla y lo convierte
+// con aDocumentoPDF (spec HU-27, sección 5 y P-11).
+type fuenteDocumentoReporte struct {
+	proyecto armadorReporteProyecto
+	sprint   armadorReporteSprint
+}
+
+// NuevaFuenteDocumentoReporte arma la fuente con los casos de uso ArmarReporteProyecto y
+// ArmarReporteSprint de HU-26.
+func NuevaFuenteDocumentoReporte(proyecto armadorReporteProyecto, sprint armadorReporteSprint) *fuenteDocumentoReporte {
+	return &fuenteDocumentoReporte{proyecto: proyecto, sprint: sprint}
+}
+
+// DocumentoDeProyecto devuelve el documento del reporte de un proyecto. El error del caso de uso sale
+// sin cambios: el caso de uso de HU-27 ya lo envuelve, y errors.Is tiene que seguir reconociéndolo.
+func (f *fuenteDocumentoReporte) DocumentoDeProyecto(ctx context.Context, proyectoID int64) (domain.DocumentoPDF, error) {
+	reporte, err := f.proyecto.Ejecutar(ctx, proyectoID)
+	if err != nil {
+		return domain.DocumentoPDF{}, err
+	}
+	return aDocumentoPDF(aDatosReporte(reporte)), nil
+}
+
+// DocumentoDeSprint devuelve el documento del reporte de un Sprint, con el mismo manejo de errores.
+func (f *fuenteDocumentoReporte) DocumentoDeSprint(ctx context.Context, proyectoID, sprintID int64) (domain.DocumentoPDF, error) {
+	reporte, err := f.sprint.Ejecutar(ctx, proyectoID, sprintID)
+	if err != nil {
+		return domain.DocumentoPDF{}, err
+	}
+	return aDocumentoPDF(aDatosReporte(reporte)), nil
 }
