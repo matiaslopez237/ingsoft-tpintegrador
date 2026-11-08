@@ -2366,7 +2366,7 @@ Sin etiqueta `Traza` de HU-27, porque es un test compartido que suma casos: `Tes
 
 ### Commits
 
-Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-sprint` (72 commits hasta `f68e9a6`, más los de documentación posteriores), en orden. Los merges están al final.
+Salen de `git log --no-merges origin/main..HEAD` (72 commits hasta `f68e9a6`, más los de documentación posteriores), en orden. HU-26 y HU-25 ya están en `main`, así que el filtro anterior, `^origin/hu-26-reporte-proyecto-sprint`, ya no cambia el resultado. Los merges están al final.
 
 | Ciclo | Commit | Etapa |
 |---|---|---|
@@ -2400,7 +2400,7 @@ Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-s
 | Revisión: comentarios de código | `400426e` docs(HU-27): comentarios de código con Implementa HU-27 y sin referencias viejas. Resuelve dos huecos de la primera versión de esta trazabilidad: el comentario de `DocumentoPDF` que decía que HU-26 completa el documento, y `Implementa HU-27`, que antes estaba solo en los dos handlers de descarga | — (solo comentarios) |
 | Aclaración del sprint cerrado (RN-27.17) | `9baf345` [RED] → `f68e9a6` [GREEN] | **RED → GREEN** |
 
-**Merges de la rama, que no son de HU-27:** `f3a0005` y `862daa2` (traen `origin/main`), y `faea8c3` y `aa7d69b` (traen HU-26).
+**Merges de la rama, que no son de HU-27:** `f3a0005` y `862daa2` (traen `origin/main`), `faea8c3` y `aa7d69b` (traen HU-26), y `a0cec10` (trae `origin/main` con HU-25 y HU-26 mergeadas; conflictos en `main.go` y `router.go`, resueltos conservando los dos lados).
 
 **Commits que el filtro `git log --grep="(HU-27)"` no encuentra**, porque usan el prefijo `test(bdd):`: `55d0145` (RED de los steps) y `7a6b1b4` (lectores en el sistema en memoria).
 
@@ -2423,7 +2423,7 @@ Ninguna quedó en un commit: se aplicaron en una copia del repo o en el árbol, 
 
 Algunos mutantes no compilaron en el primer intento (un import o una variable sin usar) y se repitieron dejándolos en uso: `Content-Length` sin `strconv`, el encabezado contado en bytes, y la fuente que devuelve un documento vacío. En la aclaración del sprint cerrado, el mutante "como tabla" no compiló la primera vez por un error del script (`\&`) y se repitió.
 
-**Cruce de pasos BDD al integrar HU-26:** un programa temporal, que no está en el repo, cruzó las 475 regex de `test/bdd` (incluidas las armadas con la constante `horas`) con las 1851 líneas de paso de todos los `.feature`, con los Outline expandidos: 0 pasos con más de una regex y 0 sin regex. Se repitió al integrar la aclaración de HU-26 (`aa7d69b`), con el mismo resultado.
+**Cruce de pasos BDD al integrar HU-26:** un programa temporal, que no está en el repo, cruzó las 475 regex de `test/bdd` (incluidas las armadas con la constante `horas`) con las 1851 líneas de paso de todos los `.feature`, con los Outline expandidos: 0 pasos con más de una regex y 0 sin regex. Se repitió al integrar la aclaración de HU-26 (`aa7d69b`), con el mismo resultado, y al integrar HU-25 (`a0cec10`): 500 regex y 1906 líneas de paso, 0 con más de una regex y 0 sin regex.
 
 **Prueba de humo:** `cmd/server` con una base temporal y `curl`. La pantalla del reporte responde `200` con el botón; la descarga, `200` con `%PDF-1.3` … `%%EOF`, `filename="reporte-proyecto-1-2026-11-07.pdf"` y `nosniff`; un proyecto inexistente, `404`. No es una prueba en navegador.
 
@@ -2454,7 +2454,7 @@ Algunos mutantes no compilaron en el primer intento (un import o una variable si
 - **`ledongthuc/pdf` es una dependencia solo de los tests:** `go list -deps ./cmd/server` no la incluye. Está en el bloque `require` de `go.mod`, junto a `fpdf`.
 - **La spec está en Borrador**, y el **ADR-0006 sigue en `proposed`** (pregunta abierta 10).
 - **`-race` no se corrió localmente:** el único gcc de la máquina es MinGW de 32 bits. Lo corre el CI en Linux (`go test -race ./...`).
-- **BDD completo: unos 500 s** (499,7 s en la última corrida). Necesita `-timeout 30m` localmente; en el CI hace falta el timeout de 20 minutos de la rama `ci-timeout-tests` (`5a96c12`), porque `go test` corta cada paquete a los 10 minutos y el CI corre además con `-race`.
+- **BDD completo: unos 500 s** (499,7 s en la última corrida). Necesita `-timeout 30m` localmente; en el CI hace falta el timeout de 20 minutos de la rama `ci-timeout-tests` (`5a96c12`), porque `go test` corta cada paquete a los 10 minutos y el CI corre además con `-race`. Ese timeout ya está en `main` (PR #376) y llegó a esta rama con `862daa2`. En esta máquina la suite completa tardó después entre 670 s y 1022 s, y una corrida se cortó a los 30 minutos sin pasos fallidos, trabada en I/O de SQLite: el tiempo depende del entorno.
 - **Decisiones del autor, abiertas a objeción en el PR:** P-8 ("?" que se pierden al recortar una celda, sin test propio), P-9 (saneado del nombre en el handler), P-10 (6 columnas y 100 caracteres por encabezado) y la parte de P-11 que dice que la conversión vive en el adaptador HTTP y no en el dominio. La otra parte de P-11, que la conversión es de HU-27, la confirmó Matías López (issue #38 y revisión del PR #378).
 - ~~**RN-27.17 y CA-27.26 (aclaración del sprint cerrado) están pendientes de HU-26.**~~ Resuelto el 2026-11-08: HU-26 agregó `AclaracionSprintCerrado` a `datosReporte` y se integró en esta rama; `aDocumentoPDF` la copia como primer párrafo de Métricas (`9baf345` [RED] → `f68e9a6` [GREEN]). Texto anterior: Matías López le pidió a Eze que el reporte de un sprint cerrado lleve una aclaración, como la de HU-23. Mientras HU-26 no la agregue a `datosReporte`, la pantalla no la muestra y el PDF tampoco, así que no hay nada que probar. Cuando exista: sumarla a `aDocumentoPDF` (como un párrafo en la misma sección que la pantalla), y a `TestADocumentoPDF_ReporteDeSprint` y `TestADocumentoPDF_TextosSonLosDeLaPantalla` con un sprint cerrado, con su RED y su GREEN.
 - **Preguntas abiertas:** 12 (recursos de la generación: sin tope de tamaño ni de descargas simultáneas), 13 (texto descompuesto: `e` + `U+0301` sale "e?") y 14 (sprints abiertos y cerrados en el Resumen, que la pantalla no muestra; decisión de Eze). La 15 (aclaración del reporte de un sprint cerrado) quedó resuelta: pasó a RN-27.17 y CA-27.26.
@@ -2462,15 +2462,15 @@ Algunos mutantes no compilaron en el primer intento (un import o una variable si
 
 ### Para revisar
 
-Código de otras historias que tocó HU-27 (`git diff --stat origin/hu-26-reporte-proyecto-sprint...HEAD`, sin los archivos propios de HU-27). Conviene que lo revisen sus autores en la PR.
+Código de otras historias que tocó HU-27 (`git diff --stat origin/main...HEAD`, sin los archivos propios de HU-27; antes de que HU-26 entrara a `main`, la base era `origin/hu-26-reporte-proyecto-sprint`). Conviene que lo revisen sus autores en la PR. HU-25 no tiene líneas tocadas: en el merge `a0cec10`, sus líneas de `main.go`, `router.go`, `router_test.go`, `bdd_test.go` y `proyecto_detalle.html` quedaron como están en `main`.
 
 | Archivo | Historia | Cambio |
 |---|---|---|
 | [internal/adapters/http/pantallas_reporte.go](../internal/adapters/http/pantallas_reporte.go) | HU-26 (Eze) | **Líneas de Eze tocadas:** campo `URLPDF` en `datosReporte`, y dos líneas en `aDatosReporte` que lo arman (del proyecto, y del sprint con su ID); el import de `fmt` |
 | [reporte.html](../internal/adapters/http/web/plantillas/reporte.html) | HU-26 (Eze) | **Línea de Eze tocada:** el enlace "Descargar PDF" dentro de `<div class="botones">`, después de "Volver…" |
-| [cmd/server/main.go](../cmd/server/main.go) | Compartido | **Líneas de Eze tocadas:** los dos casos de uso del reporte de HU-26 pasan a variables (`armarReporteProyecto`, `armarReporteSprint`), con la misma construcción, porque los usan la pantalla y la fuente. Se suman el import de `adapters/pdf`, la fuente, el generador y los dos casos de uso de exportación |
-| [router.go](../internal/adapters/http/router.go), [router_test.go](../internal/adapters/http/router_test.go) | Compartidos | Dos campos en `CasosDeUso`, el registro antes de `RegistrarPantallas`, dos dobles y dos rutas |
-| [test/bdd/bdd_test.go](../test/bdd/bdd_test.go) | Compartido | Registra `registrarStepsHU27`; en el merge con HU-26 se conservaron las dos líneas |
+| [cmd/server/main.go](../cmd/server/main.go) | Compartido | **Líneas de Eze tocadas:** los dos casos de uso del reporte de HU-26 pasan a variables (`armarReporteProyecto`, `armarReporteSprint`), con la misma construcción, porque los usan la pantalla y la fuente. Se suman el import de `adapters/pdf`, la fuente, el generador y los dos casos de uso de exportación. **Merge con HU-25 (`a0cec10`):** conflicto en el literal de `CasosDeUso`; se conservó `ConsultarDashboard` de HU-25, HU-26 quedó una sola vez con las variables (repetir el campo no compila) y después los dos casos de uso de HU-27, en el orden del struct |
+| [router.go](../internal/adapters/http/router.go), [router_test.go](../internal/adapters/http/router_test.go) | Compartidos | Dos campos en `CasosDeUso`, el registro antes de `RegistrarPantallas`, dos dobles y dos rutas. **Merge con HU-25 (`a0cec10`):** conflicto en `NuevoRouter`; quedaron `RegistrarDashboard` (HU-25) y `RegistrarExportarReportePDF` (HU-27), los dos antes de `RegistrarPantallas`. `router_test.go` se combinó solo, con las rutas y los dobles de HU-25, HU-26 y HU-27 |
+| [test/bdd/bdd_test.go](../test/bdd/bdd_test.go) | Compartido | Registra `registrarStepsHU27`; en los merges con HU-26 y con HU-25 se conservaron las líneas de las tres historias (`registrarStepsHU25`, `HU26` y `HU27`) |
 | [go.mod](../go.mod), [go.sum](../go.sum) | Compartidos | `codeberg.org/go-pdf/fpdf` y `github.com/ledongthuc/pdf` (solo tests) |
 | [docs/third-party-licenses/README.md](third-party-licenses/README.md) | Compartido | Sección "Fuentes" con la licencia de DejaVu |
 | [docs/specs/HU-26-reporte-proyecto-sprint.md](specs/HU-26-reporte-proyecto-sprint.md) | HU-26 (Eze) | Sin cambios: `4d9d784` la dejó igual a la de su rama |
