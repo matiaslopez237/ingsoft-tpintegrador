@@ -26,7 +26,7 @@ var encabezadosDatoValor = []string{"Dato", "Valor"}
 
 // aDocumentoPDF convierte el reporte de HU-26, ya formateado para la pantalla, al documento que exporta
 // HU-27: las cinco secciones de reporte.html, en el mismo orden, con los mismos títulos y los mismos
-// textos (RN-26.11; spec HU-27, P-11). No completa Emision ni Aviso, que son del caso de uso de HU-27.
+// textos (spec HU-27, RN-27.16 y P-11). No completa Emision ni Aviso, que son del caso de uso de HU-27.
 func aDocumentoPDF(d datosReporte) domain.DocumentoPDF {
 	return domain.DocumentoPDF{
 		Titulo: tituloReporte(d),
@@ -92,7 +92,8 @@ func bloquesHistorias(d datosReporte) []domain.BloquePDF {
 	}
 }
 
-// bloquesMetricas pone la velocidad antes de la tabla, solo en el reporte de un proyecto (RN-26.5).
+// bloquesMetricas pone la velocidad antes de la tabla, solo en el reporte de un proyecto, como la
+// pantalla de HU-26.
 func bloquesMetricas(d datosReporte) []domain.BloquePDF {
 	var bloques []domain.BloquePDF
 	if !d.EsDeSprint {
