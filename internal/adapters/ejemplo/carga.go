@@ -69,10 +69,10 @@ func cargar(ctx context.Context, cu CasosDeUso, c contenido) error {
 			return fallo("crear "+h.id, err)
 		}
 	}
-	for _, paso := range c.pasos {
-		cu.Reloj.hoy = paso.dia()
-		if err := paso.aplicar(ctx, k); err != nil {
-			return fallo(paso.String(), err)
+	for _, p := range c.pasos {
+		cu.Reloj.hoy = p.dia()
+		if err := p.aplicar(ctx, k); err != nil {
+			return fallo(p.String(), err)
 		}
 	}
 	return nil
@@ -102,7 +102,10 @@ func (k *carga) crearHistoria(ctx context.Context, h historia) error {
 		ProyectoID: k.proyectoID, ElementoID: e.ID,
 		Cambios: domain.CambiosElemento{CambiarHorasEstimadas: true, HorasEstimadas: &horas},
 	})
-	return err
+	if err != nil {
+		return fmt.Errorf("cargar las horas estimadas: %w", err)
+	}
+	return nil
 }
 
 type crearSprint struct {
@@ -174,7 +177,7 @@ func (p crearSprint) aplicar(ctx context.Context, k *carga) error {
 		return err
 	}
 	if s.Numero != p.numero {
-		return fmt.Errorf("se creó el sprint %d", s.Numero) // el contenido está desordenado
+		return fmt.Errorf("el contenido espera el sprint %d, pero la aplicación lo numeró %d: los sprints del contenido no están en orden", p.numero, s.Numero)
 	}
 	k.sprints[p.numero] = s.ID
 	return nil

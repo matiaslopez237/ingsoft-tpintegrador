@@ -113,16 +113,25 @@ func TestCargar_AplicaLosPasosEnOrdenConElRelojDeCadaDia(t *testing.T) {
 		t.Fatalf("cargar: %v", err)
 	}
 
-	ps, _ := q.listar.Ejecutar(ctx)
+	ps, err := q.listar.Ejecutar(ctx)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	if len(ps) != 1 {
 		t.Fatalf("se esperaba un proyecto, hay %d", len(ps))
 	}
-	p, _ := q.ver.Ejecutar(ctx, ps[0].ID)
+	p, err := q.ver.Ejecutar(ctx, ps[0].ID)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	if p.Nombre != "Demo" || len(p.Integrantes) != 2 || p.Integrantes[0].Roles[0] == "" {
 		t.Fatalf("proyecto = %+v, se esperaba Demo con Ana y Beto", p)
 	}
 
-	es, _ := q.backlog.Ejecutar(ctx, app.DatosListarBacklog{ProyectoID: p.ID})
+	es, err := q.backlog.Ejecutar(ctx, app.DatosListarBacklog{ProyectoID: p.ID})
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	porTitulo := map[string]domain.ElementoBacklog{}
 	for _, e := range es {
 		porTitulo[e.Titulo] = e
@@ -135,23 +144,35 @@ func TestCargar_AplicaLosPasosEnOrdenConElRelojDeCadaDia(t *testing.T) {
 		t.Errorf("HU-02 = %+v, se esperaba sin terminar, de vuelta en el backlog y con 2 puntos", dos)
 	}
 
-	ss, _ := q.sprints.Ejecutar(ctx, p.ID)
+	ss, err := q.sprints.Ejecutar(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	if len(ss) != 1 || ss[0].Estado != domain.SprintCerrado || ss[0].PuntosPlanificados != 5 || ss[0].PuntosCompletados != 3 {
 		t.Fatalf("sprints = %+v, se esperaba el 1 cerrado con 5 planificados y 3 completados", ss)
 	}
 
-	rs, _ := q.rondas.Ejecutar(ctx, p.ID, dos.ID)
+	rs, err := q.rondas.Ejecutar(ctx, p.ID, dos.ID)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	slices.SortFunc(rs, func(a, b domain.ResumenRonda) int { return a.Numero - b.Numero }) // el historial viene de la más nueva a la más vieja
 	if len(rs) != 2 || rs[1].EstimacionAcordada == nil || *rs[1].EstimacionAcordada != 2 {
 		t.Errorf("rondas de HU-02 = %+v, se esperaban 2, la última con 2 acordado", rs)
 	}
 
-	h, _ := q.horas.Ejecutar(ctx, p.ID)
+	h, err := q.horas.Ejecutar(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	if h.HorasReales != 10 {
 		t.Errorf("horas reales = %v, se esperaban 10", h.HorasReales)
 	}
 
-	ds, _ := q.defs.Ejecutar(ctx, p.ID)
+	ds, err := q.defs.Ejecutar(ctx, p.ID)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	var got []string
 	for _, d := range ds {
 		got = append(got, d.Descripcion+" "+string(d.Estado)+" "+sprintDe(d.SprintDeteccionID, ss)+" "+sprintDe(d.SprintResolucionID, ss))
@@ -189,7 +210,10 @@ func TestCargarSiCorresponde_BaseVacia_CargaElTPUnaSolaVez(t *testing.T) {
 		t.Fatalf("segunda carga = %v, %v; se esperaba BaseConProyectos sin error", got, err)
 	}
 
-	ps, _ := q.listar.Ejecutar(ctx)
+	ps, err := q.listar.Ejecutar(ctx)
+	if err != nil {
+		t.Fatalf("consulta: %v", err)
+	}
 	if len(ps) != 1 || ps[0].Nombre != "Software Metrics & Estimation" {
 		t.Errorf("proyectos = %+v, se esperaba solo el del TP", ps)
 	}
