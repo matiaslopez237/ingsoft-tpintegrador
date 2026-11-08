@@ -326,7 +326,7 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 **Criterios de la historia:**
 1. **Resuelta (2026-11-07, fuente: issue #38). Criterios de aceptación originales de HU-27:** el texto de los criterios no estaba en el repositorio. La issue #38 tiene dos: "El PDF contiene las mismas secciones que el reporte en pantalla." y "El archivo se puede descargar/guardar correctamente.". Se citan al principio de la spec y la sección 9 los liga con los RN y CA.
 
-**Dependen de HU-26** (resueltas con la spec y el código de HU-26 al integrarla, salvo la 5 y la 9):
+**Dependen de HU-26** (resueltas con la spec y el código de HU-26 al integrarla, salvo la 5; la 9 sigue en la 15):
 
 2. **Resuelta (2026-11-07, fuente: spec de HU-26, salidas esperadas, y `reporte.html`). Secciones del reporte:** son cinco, "Resumen", "Historias y estimaciones", "Esfuerzo", "Métricas" y "Defectos", en ese orden, las mismas para el proyecto y para el sprint. Cómo se reparte el contenido entre párrafos y tablas lo define la conversión de P-11, copiando la pantalla. CA-27.23 compara esos títulos.
 3. **Resuelta (2026-11-07, fuente: spec de HU-26). Proyecto y sprint:** los dos reportes son el mismo tipo `domain.Reporte` y se expresan con el mismo modelo sin ampliarlo; el del sprint no tiene velocidad (en HU-26, la velocidad es solo de las métricas del reporte de un proyecto).
@@ -335,7 +335,7 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 6. **Resuelta (2026-11-07, fuente: spec de HU-26, sección 2). Pantalla y rutas:** la pantalla del reporte vive en `/web/proyectos/{id}/reporte` y `/web/proyectos/{id}/sprints/{sprintID}/reporte`, como se suponía.
 7. **Resuelta (2026-11-07, decisión P-11). Dónde vive la conversión:** en el adaptador HTTP, a partir de `datosReporte`, para no duplicar ni mover `textoHoras`, `textoPorcentaje` y las demás funciones de formato.
 8. **Resuelta (2026-11-07, fuente: spec de HU-26, la regla del sprint en cualquier estado y la sección 7). Restricciones del reporte:** ninguna. El reporte de un sprint se puede pedir en cualquier estado, y HU-26 no define errores propios además de proyecto o sprint inexistente (RN-27.13, sección 7).
-9. **Aclaración del sprint cerrado:** si el reporte incluye la aclaración de RN-23.8, el PDF la lleva como un párrafo más, sin regla propia de HU-27.
+9. **Resuelta (2026-11-07): pasa a la pregunta 15.** **Aclaración del sprint cerrado:** si el reporte incluye la aclaración de RN-23.8, el PDF la lleva como un párrafo más, sin regla propia de HU-27.
 
 **Para el equipo:**
 
@@ -368,3 +368,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 - 2026-11-07: preguntas abiertas 12 (recursos de la generación) y 13 (texto descompuesto), de la revisión de go-reviewer. No cambia ninguna regla ni criterio. La spec sigue en borrador.
 - 2026-11-07: integración con HU-26 (rama `hu-26-reporte-proyecto-sprint` mergeada en esta). Decisión P-11 del autor, abierta a objeción en el PR: la conversión del reporte a `DocumentoPDF` vive en el adaptador HTTP (sección 5). Se quitan los supuestos sobre HU-26 que quedaron confirmados (rutas, cualquier estado del sprint en RN-27.13, sin errores propios en la sección 7), CA-27.23 y el criterio 1 (b) dejan de estar pendientes de HU-26 y se reescribe por qué (b) se verifica aparte. Preguntas 2, 3, 6, 7 y 8 resueltas, 4 resuelta con P-10, 12 sigue abierta, y se agrega la 14 (sprints del proyecto en el Resumen). Ninguna regla ni criterio cambia de contenido. La spec sigue en borrador.
 - 2026-11-07: cambio de alcance confirmado por Matías López (Agile Enabler) en la revisión del PR de HU-26 (#378): la conversión del reporte a `DocumentoPDF` pasa a ser de HU-27, y la spec de HU-26 deja de tenerla. P-11 pasa de decisión del autor a confirmada. Se agregan RN-27.16 (conversión del reporte) y CA-27.25 (el criterio que la verifica), sin renumerar nada, y se suman al criterio 1 (b) de la sección 9 y a la prioridad. Las reglas de HU-26 se citan por su contenido y no por número, porque HU-26 las va a renumerar. Se agrega la pregunta 15 (aclaración del reporte de un sprint cerrado). Las demás reglas y criterios no cambian. La spec sigue en borrador.
+- 2026-11-07: la pregunta 9 (aclaración del sprint cerrado) queda resuelta: es la misma que la 15, que sigue abierta. No cambia ninguna regla ni criterio. La spec sigue en borrador.
