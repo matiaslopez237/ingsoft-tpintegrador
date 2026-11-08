@@ -8,7 +8,10 @@ Feature: Generar reporte de proyecto o Sprint
   # Las historias, los sprints y los defectos se preparan directamente con sus datos, igual que
   # HU-22/HU-24 con los sprints: el escenario prueba que HU-26 junta bien los datos, no el registro
   # ni el ciclo de vida de cada uno (HU-05, HU-06, HU-08, HU-09, HU-10, HU-18, HU-20, HU-21).
-  # CA-26.13 (ID inválido) y CA-26.14 (conversión a DocumentoPDF) se cubren con tests de adaptador.
+  # CA-26.13 (ID inválido) se cubre con tests de adaptador (HTTP), no acá. Lo mismo CA-26.14 (la
+  # aclaración del Sprint Cerrado, RN-26.11): es un detalle de la pantalla, no del dominio ni del caso
+  # de uso que prueban estos escenarios, mismo criterio que la aclaración de HU-23 (RN-23.8), que
+  # tampoco tiene escenario BDD.
 
   Background:
     Given el proyecto "Alfa" para el reporte

@@ -11,6 +11,14 @@ import (
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
 )
 
+// textoAclaracionReporteSprintCerrado explica, en el reporte de un Sprint Cerrado, por qué el resumen
+// de historias y el % completado pueden parecer contradictorios (RN-26.11, mismo caso que HU-23
+// RN-23.8 opción A): las historias que volvieron al backlog al cerrar el Sprint (RN-26.2) no están en
+// la sección de historias, pero sí cuentan en los puntos planificados que guardó el cierre (HU-11,
+// RN-11.6), que es lo que usa el % completado.
+const textoAclaracionReporteSprintCerrado = "Solo cuentan las historias que siguen en este sprint. " +
+	"El % completado usa los puntos que se guardaron al cerrarlo, que incluyen las historias que volvieron al backlog."
+
 // armadorReporteProyecto es lo que el handler necesita del caso de uso ArmarReporteProyecto (HU-26).
 type armadorReporteProyecto interface {
 	Ejecutar(ctx context.Context, proyectoID int64) (domain.Reporte, error)
@@ -49,9 +57,10 @@ type (
 
 		EsfuerzoEstimadas, EsfuerzoReales, EsfuerzoDesviacionHoras, EsfuerzoDesviacionPorcentaje string
 
-		HayVelocidad bool
-		Velocidad    string
-		Metricas     []vistaMetricaReporte
+		HayVelocidad            bool
+		Velocidad               string
+		AclaracionSprintCerrado string
+		Metricas                []vistaMetricaReporte
 
 		Defectos []vistaDefectoReporte
 
@@ -136,6 +145,9 @@ func aDatosReporte(r domain.Reporte) datosReporte {
 		d.InicioSprint = r.Sprint.FechaInicio.Format(time.DateOnly)
 		d.FinSprint = r.Sprint.FechaFin.Format(time.DateOnly)
 		d.EstadoSprint = string(r.Sprint.Estado)
+		if r.Sprint.Estado == domain.SprintCerrado {
+			d.AclaracionSprintCerrado = textoAclaracionReporteSprintCerrado // RN-26.11
+		}
 	}
 	d.EsfuerzoEstimadas = textoSinEstimar
 	if !r.Esfuerzo.SinEstimar() {

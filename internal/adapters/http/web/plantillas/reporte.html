@@ -67,6 +67,9 @@
 
 <section aria-labelledby="titulo-metricas">
   <h2 id="titulo-metricas">Métricas</h2>
+  {{if .AclaracionSprintCerrado}}
+  <p class="ayuda">{{.AclaracionSprintCerrado}}</p>
+  {{end}}
   {{if not .EsDeSprint}}
   {{if .HayVelocidad}}
   <p class="metrica">Velocidad del equipo: <strong>{{.Velocidad}}</strong> puntos por Sprint</p>

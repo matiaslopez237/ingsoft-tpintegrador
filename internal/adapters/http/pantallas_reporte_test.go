@@ -89,6 +89,49 @@ func TestPantallaReporteSprint_Muestra(t *testing.T) {
 	contiene(t, rec, "Login")
 }
 
+// Traza: HU-26 CA-26.14 (RN-26.11): el reporte de un Sprint Cerrado aclara por qué las historias
+// completadas y el % completado pueden parecer contradictorios (la que volvió al backlog no cuenta en
+// la sección de historias, pero sí en los puntos planificados que guardó el cierre).
+func TestPantallaReporteSprint_Cerrado_MuestraAclaracion(t *testing.T) {
+	r := reporteDeEjemplo()
+	r.Sprint = &domain.Sprint{Numero: 1, Estado: domain.SprintCerrado}
+	cu := casosConReporte(r, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7/sprints/9/reporte", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "Solo cuentan las historias que siguen en este sprint")
+}
+
+// Traza: HU-26 CA-26.14 (RN-26.11): un Sprint Abierto no necesita la aclaración.
+func TestPantallaReporteSprint_Abierto_NoMuestraAclaracion(t *testing.T) {
+	r := reporteDeEjemplo()
+	r.Sprint = &domain.Sprint{Numero: 1, Estado: domain.SprintAbierto}
+	cu := casosConReporte(r, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7/sprints/9/reporte", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	noContiene(t, rec.Body.String(), "Solo cuentan las historias que siguen en este sprint")
+}
+
+// Traza: HU-26 CA-26.14 (RN-26.11): el reporte de un proyecto nunca muestra la aclaración (es de
+// Sprint, no hay cierre de proyecto).
+func TestPantallaReporteProyecto_NuncaMuestraAclaracionDeSprint(t *testing.T) {
+	cu := casosConReporte(reporteDeEjemplo(), nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/7/reporte", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	noContiene(t, rec.Body.String(), "Solo cuentan las historias que siguen en este sprint")
+}
+
 // Traza: HU-26 CA-26.15
 func TestPantallaReporteProyecto_SinDatos_MuestraMensajes(t *testing.T) {
 	cu := casosConReporte(domain.Reporte{Proyecto: alfa}, nil)
@@ -101,7 +144,7 @@ func TestPantallaReporteProyecto_SinDatos_MuestraMensajes(t *testing.T) {
 	contiene(t, rec, "no tiene historias", "no tiene sprints cerrados", "no tiene defectos")
 }
 
-// Traza: HU-26 sección 7
+// Traza: HU-26 CA-26.11 (proyecto inexistente), CA-26.13 (id inválido)
 func TestPantallaReporteProyecto_Errores(t *testing.T) {
 	tests := []struct {
 		nombre string
@@ -127,7 +170,7 @@ func TestPantallaReporteProyecto_Errores(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 sección 7
+// Traza: HU-26 CA-26.11 (proyecto inexistente), CA-26.12 (sprint inexistente), CA-26.13 (id de sprint inválido)
 func TestPantallaReporteSprint_Errores(t *testing.T) {
 	tests := []struct {
 		nombre string
