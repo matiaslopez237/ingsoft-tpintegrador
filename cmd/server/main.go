@@ -81,7 +81,7 @@ func main() {
 
 	// HU-31: el proyecto de ejemplo, antes de atender pedidos (RN-31.6). Si la carga falla, el servidor
 	// no arranca (P-2).
-	resultado, err := cargarEjemplo(db, os.Getenv("CARGAR_EJEMPLO"))
+	resultado, err := cargarEjemplo(context.Background(), db, os.Getenv("CARGAR_EJEMPLO"))
 	if err != nil {
 		log.Fatalf("no se pudo cargar el proyecto de ejemplo: %v", err)
 	}
@@ -123,7 +123,7 @@ func main() {
 // cargarEjemplo carga el proyecto de ejemplo si valor (el de CARGAR_EJEMPLO) está activado y la base
 // no tiene proyectos. Arma sus propios casos de uso: los que dependen de "hoy" usan el reloj de la
 // carga, no time.Now (RN-31.5). Implementa HU-31.
-func cargarEjemplo(db *sql.DB, valor string) (ejemplo.Resultado, error) {
+func cargarEjemplo(ctx context.Context, db *sql.DB, valor string) (ejemplo.Resultado, error) {
 	proyectos := persistencia.NuevoRepositorioProyectos(db)
 	backlog := persistencia.NuevoRepositorioBacklog(db)
 	sprints := persistencia.NuevoRepositorioSprints(db)
@@ -149,4 +149,9 @@ func cargarEjemplo(db *sql.DB, valor string) (ejemplo.Resultado, error) {
 		Votar:                   app.NuevoVotar(proyectos, rondas),
 		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(proyectos, backlog, rondas),
 	}, valor)
+}
+
+// mensajeCargaFallida es el mensaje con el que el servidor no arranca si la carga del ejemplo falla.
+func mensajeCargaFallida(rutaDB string, err error) string {
+	return ""
 }
