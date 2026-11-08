@@ -58,7 +58,7 @@ func reporteDeSprintDeEjemplo() domain.Reporte {
 }
 
 // reporteDeSprintCerrado es el reporte de un Sprint Cerrado, cuya pantalla muestra la aclaración de
-// HU-26 (RN-26.11) en la sección Métricas.
+// HU-26 (la regla de la aclaración en el reporte de un Sprint Cerrado) en la sección Métricas.
 func reporteDeSprintCerrado() domain.Reporte {
 	r := reporteDeSprintDeEjemplo()
 	r.Sprint.Estado = domain.SprintCerrado
