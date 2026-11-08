@@ -40,6 +40,7 @@ type CasosDeUso struct {
 	ActualizarEstadoDefecto  actualizadorEstadoDefecto // HU-21
 	ListarDefectos           listadorDefectos          // HU-21
 	ConsultarCalidadSprints  consultorCalidadSprints   // HU-24
+	ConsultarDashboard       consultorDashboard        // HU-25
 	ArmarReporteProyecto     armadorReporteProyecto    // HU-26
 	ArmarReporteSprint       armadorReporteSprint      // HU-26
 	ExportarReporteProyecto  exportadorReporteProyecto // HU-27
@@ -74,6 +75,7 @@ func NuevoRouter(cu CasosDeUso) *http.ServeMux {
 	RegistrarActualizarEstadoDefecto(mux, cu.ActualizarEstadoDefecto)
 	RegistrarListarDefectos(mux, cu.ListarDefectos)
 	RegistrarCalidadSprints(mux, cu.ConsultarCalidadSprints)
+	RegistrarDashboard(mux, cu.ConsultarDashboard)
 	RegistrarExportarReportePDF(mux, cu.ExportarReporteProyecto, cu.ExportarReporteSprint) // HU-27
 	RegistrarPantallas(mux, cu)
 	return mux

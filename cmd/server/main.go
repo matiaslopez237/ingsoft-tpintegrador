@@ -79,8 +79,10 @@ func main() {
 		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, time.Now),
 		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos),                       // HU-21
 		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
-		ArmarReporteProyecto:    armarReporteProyecto,
-		ArmarReporteSprint:      armarReporteSprint, // HU-26
+		// time.Now como reloj: "hoy" decide el sprint en curso (HU-25, RN-25.3).
+		ConsultarDashboard:   app.NuevoConsultarDashboard(repoProyectos, repoSprints, repoBacklog, repoDefectos, repoEsfuerzo, time.Now),
+		ArmarReporteProyecto: armarReporteProyecto,
+		ArmarReporteSprint:   armarReporteSprint, // HU-26
 		// time.Now como reloj: la emisión del PDF es la hora del pedido, en UTC-3 (HU-27, RN-27.10).
 		ExportarReporteProyecto: app.NuevoExportarReporteProyecto(repoProyectos, fuenteReporte, generadorPDF, time.Now),
 		ExportarReporteSprint:   app.NuevoExportarReporteSprint(repoProyectos, repoSprints, fuenteReporte, generadorPDF, time.Now), // HU-27

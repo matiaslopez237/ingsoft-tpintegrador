@@ -1,0 +1,178 @@
+package http
+
+import (
+	"errors"
+	"fmt"
+	"net/http"
+	"strings"
+	"testing"
+
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
+)
+
+const rutaDashboardDeAlfa = "/web/proyectos/7/dashboard"
+
+// casosConDashboard arma los casos de uso de las pantallas con un Dashboard fijo para el proyecto Alfa.
+func casosConDashboard(d app.Dashboard, err error) (CasosDeUso, *consultorDashboardFalso) {
+	cu := casosFalsos()
+	f := &consultorDashboardFalso{dashboard: d, err: err}
+	cu.ConsultarDashboard = f
+	return cu, f
+}
+
+// Traza: HU-25 CA-25.9 (ADR-0005): al menos 3 gráficos SVG, cada uno con título accesible y una tabla
+// con sus datos, sin scripts ni estilos en línea (la CSP los bloquearía).
+func TestPantallaDashboard_MuestraLosGraficos(t *testing.T) {
+	cu, f := casosConDashboard(dashboardCompleto(), nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	if f.recibido != 7 {
+		t.Errorf("proyecto recibido = %d, se esperaba 7", f.recibido)
+	}
+	cuerpo := rec.Body.String()
+	if n := strings.Count(cuerpo, `<svg`); n != 4 {
+		t.Errorf("hay %d gráficos SVG, se esperaban 4 (puntos, porcentaje, defectos y horas)", n)
+	}
+	if n := strings.Count(cuerpo, `role="img"`); n != 4 {
+		t.Errorf("hay %d gráficos con role=\"img\", se esperaban 4", n)
+	}
+	contiene(t, rec,
+		`aria-labelledby="grafico-puntos-titulo"`, `<title id="grafico-puntos-titulo">Puntos por sprint</title>`,
+		`<title id="grafico-porcentaje-titulo">`, `<title id="grafico-defectos-titulo">`, `<title id="grafico-horas-titulo">`,
+		`<caption>Puntos por sprint</caption>`, `<th scope="row">Sprint 1</th>`,
+		"Velocidad: 3", "75%", "sin datos",
+		"Desviación: 20,0 %",
+	)
+	noContiene(t, cuerpo, "<script")
+	noContiene(t, cuerpo, `style="`)
+	if csp := rec.Header().Get("Content-Security-Policy"); csp != "default-src 'self'" {
+		t.Errorf("Content-Security-Policy = %q, se esperaba default-src 'self'", csp)
+	}
+}
+
+// Traza: HU-25 RN-25.5 (P-2), revisión de go-reviewer: el SVG se dibuja con su ancho real, así con
+// muchos sprints el texto no se achica (el recuadro del gráfico se desplaza en horizontal).
+func TestPantallaDashboard_GraficoConSuAnchoReal(t *testing.T) {
+	d := dashboardCompleto()
+	d.SprintsCerrados = nil
+	for i := range 15 {
+		d.SprintsCerrados = append(d.SprintsCerrados, app.CalidadSprint{Sprint: domain.Sprint{ID: int64(i + 1), Numero: i + 1}})
+	}
+	cu, _ := casosConDashboard(d, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	puntos := armarGraficoBarras(graficosDeSprints(d.SprintsCerrados, d.Velocidad)[0].especGrafico)
+	contiene(t, rec, fmt.Sprintf(`width="%d" height="%d" viewBox="0 0 %d %d"`, puntos.Ancho, puntos.Alto, puntos.Ancho, puntos.Alto))
+}
+
+// Traza: HU-25 CA-25.1, CA-25.2: el estado del proyecto muestra el backlog por estado y el sprint en curso.
+func TestPantallaDashboard_MuestraElEstadoDelProyecto(t *testing.T) {
+	cu, _ := casosConDashboard(dashboardCompleto(), nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	contiene(t, rec,
+		"Dashboard de Alfa",
+		"<dt>Pendientes</dt><dd>2</dd>", "<dt>En progreso</dt><dd>1</dd>", "<dt>Hechos</dt><dd>3</dd>", "<dt>Total</dt><dd>6</dd>",
+		"Sprint 3", "Cerrar el login", "2026-11-01", "2026-11-14",
+		`<progress id="avance-sprint" max="8" value="5">`, "5 de 8 puntos completados",
+		`href="/web/proyectos/7/sprints/30"`,
+	)
+}
+
+// Traza: HU-25 CA-25.5 (RN-23.5), revisión del PR #375: con elementos sin estimar, el gráfico de horas
+// muestra el mismo aviso que el bloque de HU-23, así se entiende por qué la desviación no sale de restar
+// las dos barras (10 h contra 18 h, pero 20,0 %).
+func TestPantallaDashboard_HorasConElementosSinEstimar_MuestraElAviso(t *testing.T) {
+	d := dashboardCompleto()
+	d.Horas = domain.TotalHoras{
+		HorasEstimadas: 10, HorasReales: 18, HorasRealesSinEstimar: 6,
+		DesviacionHoras: horasDashboard(2), DesviacionPorcentaje: horasDashboard(20),
+		Elementos: 2, ElementosSinEstimar: 1,
+	}
+	cu, _ := casosConDashboard(d, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	contiene(t, rec, "Desviación: 20,0 %",
+		`<p class="ayuda">1 de 2 elementos sin estimar: sus 6 h están en las horas reales, pero no en la desviación.</p>`)
+}
+
+// Traza: HU-25 CA-25.5: si todos los elementos están estimados, no hay aviso.
+func TestPantallaDashboard_HorasTodoEstimado_SinAviso(t *testing.T) {
+	cu, _ := casosConDashboard(dashboardCompleto(), nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	noContiene(t, rec.Body.String(), "sin estimar")
+}
+
+// Traza: HU-25 CA-25.3: sin sprint en curso lo dice, sin barra de avance.
+func TestPantallaDashboard_SinSprintEnCurso(t *testing.T) {
+	d := dashboardCompleto()
+	d.HaySprintEnCurso, d.SprintEnCurso = false, domain.SprintEnCurso{}
+	cu, _ := casosConDashboard(d, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	contiene(t, rec, "No hay sprint en curso")
+	noContiene(t, rec.Body.String(), "<progress")
+}
+
+// Traza: HU-25 CA-25.11: un proyecto sin datos responde 200, con avisos en lugar de los gráficos.
+func TestPantallaDashboard_ProyectoSinDatos(t *testing.T) {
+	cu, _ := casosConDashboard(app.Dashboard{}, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "<dt>Total</dt><dd>0</dd>", "No hay sprint en curso",
+		"Todavía no hay sprints cerrados", "Todavía no hay horas estimadas")
+	noContiene(t, rec.Body.String(), "<svg")
+}
+
+// Traza: HU-25 CA-25.7: un proyecto inexistente muestra la página de error con 404.
+func TestPantallaDashboard_ProyectoInexistente_Devuelve404(t *testing.T) {
+	cu, _ := casosConDashboard(app.Dashboard{}, nil)
+
+	rec := pedirPantalla(t, cu, http.MethodGet, "/web/proyectos/99/dashboard", nil)
+
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("status = %d, se esperaba 404", rec.Code)
+	}
+	contiene(t, rec, "proyecto no encontrado")
+}
+
+// Traza: HU-25, sección 7: una falla del caso de uso da 500 sin el detalle.
+func TestPantallaDashboard_FallaInterna_Devuelve500(t *testing.T) {
+	cu, _ := casosConDashboard(app.Dashboard{}, errors.New("disco lleno"))
+
+	rec := pedirPantalla(t, cu, http.MethodGet, rutaDashboardDeAlfa, nil)
+
+	if rec.Code != http.StatusInternalServerError {
+		t.Fatalf("status = %d, se esperaba 500", rec.Code)
+	}
+	noContiene(t, rec.Body.String(), "disco lleno")
+}
+
+// Traza: HU-25 CA-25.10 (RN-25.6): la pantalla del proyecto tiene el enlace al Dashboard, el primero.
+func TestPantallaProyecto_EnlaceAlDashboard(t *testing.T) {
+	rec := pedirPantalla(t, casosFalsos(), http.MethodGet, "/web/proyectos/7", nil)
+
+	cuerpo := rec.Body.String()
+	dashboard := strings.Index(cuerpo, `href="/web/proyectos/7/dashboard"`)
+	if dashboard < 0 {
+		t.Fatalf("la pantalla del proyecto no tiene el enlace al Dashboard; cuerpo: %.400s", cuerpo)
+	}
+	if backlog := strings.Index(cuerpo, `href="/web/proyectos/7/backlog"`); backlog < dashboard {
+		t.Errorf("el enlace al Dashboard tiene que ser el primero de la fila, antes que el del backlog")
+	}
+}
