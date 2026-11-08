@@ -10,7 +10,7 @@ func utc(anio int, mes time.Month, dia, hora, min int) time.Time {
 	return time.Date(anio, mes, dia, hora, min, 0, 0, time.UTC)
 }
 
-// CA-27.13: la emisión es el instante del reloj en hora de Argentina, UTC-3 fijo (RN-27.10).
+// Traza: HU-27 CA-27.13: la emisión es el instante del reloj en hora de Argentina, UTC-3 fijo (RN-27.10).
 func TestHoraDeEmision(t *testing.T) {
 	casos := []struct {
 		nombre string
@@ -49,7 +49,7 @@ func TestHoraDeEmision_RelojEnOtroHuso(t *testing.T) {
 
 var nombreSeguro = regexp.MustCompile(`^[a-z0-9.-]+$`)
 
-// CA-27.14, CA-27.15, CA-27.16: el nombre lleva los IDs y la fecha de emisión en UTC-3, y nada más
+// Traza: HU-27 CA-27.14, CA-27.15, CA-27.16: el nombre lleva los IDs y la fecha de emisión en UTC-3, y nada más
 // (RN-27.12).
 func TestNombreArchivoReporte(t *testing.T) {
 	casos := []struct {

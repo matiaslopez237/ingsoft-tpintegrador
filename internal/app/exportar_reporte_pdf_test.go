@@ -100,7 +100,7 @@ func exportarSprint(f *exportarFalso, proyectoID, sprintID int64) (ArchivoPDF, e
 	return NuevoExportarReporteSprint(f, f, f, f, f.reloj).Ejecutar(context.Background(), proyectoID, sprintID)
 }
 
-// CA-27.1, CA-27.14: el generador recibe el documento con la emisión en UTC-3 y el archivo lleva sus
+// Traza: HU-27 RN-27.10, RN-27.12 (sección 5): el generador recibe el documento con la emisión en UTC-3 y el archivo lleva sus
 // bytes y el nombre de RN-27.12.
 func TestExportarReporteProyecto_GeneraElPDFDelDocumento(t *testing.T) {
 	f := nuevoExportarFalso()
@@ -124,7 +124,7 @@ func TestExportarReporteProyecto_GeneraElPDFDelDocumento(t *testing.T) {
 	}
 }
 
-// CA-27.15: el reporte de un sprint del proyecto lleva el nombre con los dos IDs.
+// Traza: HU-27 CA-27.15: el reporte de un sprint del proyecto lleva el nombre con los dos IDs.
 func TestExportarReporteSprint_GeneraElPDFDelDocumento(t *testing.T) {
 	f := nuevoExportarFalso()
 	archivo, err := exportarSprint(f, 3, 12)
@@ -139,7 +139,7 @@ func TestExportarReporteSprint_GeneraElPDFDelDocumento(t *testing.T) {
 	}
 }
 
-// CA-27.8, CA-27.9: el caso de uso normaliza el documento y completa el aviso con la cantidad de
+// Traza: HU-27 CA-27.8, CA-27.9: el caso de uso normaliza el documento y completa el aviso con la cantidad de
 // reemplazos (RN-27.8, RN-27.9).
 func TestExportarReporte_NormalizaYCompletaElAviso(t *testing.T) {
 	f := nuevoExportarFalso()
@@ -156,7 +156,7 @@ func TestExportarReporte_NormalizaYCompletaElAviso(t *testing.T) {
 	}
 }
 
-// RN-27.9: el aviso lo escribe siempre el caso de uso; si la fuente trajera uno, no se usa.
+// Traza: HU-27 RN-27.9: el aviso lo escribe siempre el caso de uso; si la fuente trajera uno, no se usa.
 func TestExportarReporte_SinReemplazos_AvisoVacioAunqueLaFuenteTraigaUno(t *testing.T) {
 	f := nuevoExportarFalso()
 	f.documento.Aviso = "aviso que HU-26 no debería poner"
@@ -168,7 +168,7 @@ func TestExportarReporte_SinReemplazos_AvisoVacioAunqueLaFuenteTraigaUno(t *test
 	}
 }
 
-// CA-27.11: un documento mal armado no llega al generador; el título se valida después de normalizar.
+// Traza: HU-27 CA-27.11: un documento mal armado no llega al generador; el título se valida después de normalizar.
 func TestExportarReporte_DocumentoInvalido_NoLlegaAlGenerador(t *testing.T) {
 	casos := map[string]string{"título vacío": "", "título de invisibles": "​​"}
 	for nombre, titulo := range casos {
@@ -184,7 +184,7 @@ func TestExportarReporte_DocumentoInvalido_NoLlegaAlGenerador(t *testing.T) {
 	}
 }
 
-// CA-27.17: con un proyecto inexistente no se busca el sprint, ni se arma ni se genera nada.
+// Traza: HU-27 CA-27.17: con un proyecto inexistente no se busca el sprint, ni se arma ni se genera nada.
 func TestExportarReporte_ProyectoInexistente(t *testing.T) {
 	exportaciones := map[string]func(f *exportarFalso) (ArchivoPDF, error){
 		"proyecto": func(f *exportarFalso) (ArchivoPDF, error) { return exportarProyecto(f, 99) },
@@ -205,7 +205,7 @@ func TestExportarReporte_ProyectoInexistente(t *testing.T) {
 	}
 }
 
-// CA-27.18: un sprint inexistente o de otro proyecto es "sprint no encontrado" (RN-27.13).
+// Traza: HU-27 CA-27.18: un sprint inexistente o de otro proyecto es "sprint no encontrado" (RN-27.13).
 func TestExportarReporteSprint_SprintInexistenteODeOtroProyecto(t *testing.T) {
 	for nombre, sprintID := range map[string]int64{"inexistente": 99, "de otro proyecto": 13} {
 		t.Run(nombre, func(t *testing.T) {
@@ -222,7 +222,7 @@ func TestExportarReporteSprint_SprintInexistenteODeOtroProyecto(t *testing.T) {
 	}
 }
 
-// CA-27.20: una falla de la fuente o del generador llega envuelta, sin archivo.
+// Traza: HU-27 CA-27.20: una falla de la fuente o del generador llega envuelta, sin archivo.
 func TestExportarReporte_FallaDeLaFuenteODelGenerador_SeEnvuelveSinArchivo(t *testing.T) {
 	falla := errors.New("falla de prueba")
 	casos := map[string]func(f *exportarFalso){

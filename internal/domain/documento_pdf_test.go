@@ -30,7 +30,8 @@ func tablaDeColumnas(n int, texto string) *TablaPDF {
 	return t
 }
 
-// CA-27.11: los errores de quien arma el documento se rechazan con ErrDocumentoInvalido (RN-27.11).
+// Traza: HU-27 CA-27.11 (RN-27.11, P-10): los errores de quien arma el documento se rechazan con
+// ErrDocumentoInvalido.
 func TestDocumentoPDFValidar_DocumentoMalArmado_RetornaErrDocumentoInvalido(t *testing.T) {
 	casos := []struct {
 		nombre  string
@@ -67,7 +68,8 @@ func TestDocumentoPDFValidar_DocumentoMalArmado_RetornaErrDocumentoInvalido(t *t
 	}
 }
 
-// CA-27.7 y RN-27.11: lo vacío que no es un error de armado se acepta.
+// Traza: HU-27 CA-27.7, CA-27.11 (RN-27.6, RN-27.11, P-10): lo vacío que no es un error de armado se
+// acepta, y también una tabla justo en los topes de columnas y de encabezados.
 func TestDocumentoPDFValidar_ContenidoVacioPermitido_NoEsError(t *testing.T) {
 	casos := []struct {
 		nombre  string

@@ -8,7 +8,7 @@ import (
 	"unicode/utf8"
 )
 
-// CA-27.2, CA-27.8, CA-27.9, CA-27.10: cada texto se normaliza carácter por carácter (RN-27.8) y se
+// Traza: HU-27 CA-27.2, CA-27.8, CA-27.9, CA-27.10: cada texto se normaliza carácter por carácter (RN-27.8) y se
 // cuentan los "?" insertados (RN-27.9).
 func TestNormalizarTextoPDF(t *testing.T) {
 	casos := []struct {
@@ -59,7 +59,7 @@ func TestNormalizarTextoPDF(t *testing.T) {
 	}
 }
 
-// RN-27.8 se aplica a todos los textos: título, subtítulo, títulos de sección, párrafos, encabezados y
+// Traza: HU-27 CA-27.8 (RN-27.8): se aplica a todos los textos: título, subtítulo, títulos de sección, párrafos, encabezados y
 // celdas (CA-27.8). La cuenta es la suma de todos.
 func TestNormalizarDocumento_TodosLosTextos(t *testing.T) {
 	d := DocumentoPDF{
@@ -93,7 +93,7 @@ func TestNormalizarDocumento_TodosLosTextos(t *testing.T) {
 	}
 }
 
-// Sección 5: NormalizarDocumento es pura, no modifica el documento que recibe.
+// Traza: HU-27 sección 5: NormalizarDocumento es pura, no modifica el documento que recibe.
 func TestNormalizarDocumento_NoModificaElOriginal(t *testing.T) {
 	d := DocumentoPDF{
 		Titulo: "Reporte 😀",
@@ -108,7 +108,7 @@ func TestNormalizarDocumento_NoModificaElOriginal(t *testing.T) {
 	}
 }
 
-// Sección 5: Emision y Aviso no son texto que normalizar; se conservan.
+// Traza: HU-27 sección 5: Emision y Aviso no son texto que normalizar; se conservan.
 func TestNormalizarDocumento_ConservaEmisionYAviso(t *testing.T) {
 	d := documentoValido()
 	d.Emision = time.Date(2026, 11, 7, 14, 5, 0, 0, time.FixedZone("UTC-3", -3*60*60))
@@ -119,7 +119,7 @@ func TestNormalizarDocumento_ConservaEmisionYAviso(t *testing.T) {
 	}
 }
 
-// CA-27.8, CA-27.9: el texto del aviso, en singular y en plural; sin reemplazos, no hay aviso (RN-27.9).
+// Traza: HU-27 CA-27.8, CA-27.9: el texto del aviso, en singular y en plural; sin reemplazos, no hay aviso (RN-27.9).
 func TestTextoAvisoReemplazos(t *testing.T) {
 	casos := []struct {
 		reemplazos int
@@ -147,7 +147,7 @@ func celdaNormalizada(t *testing.T, celda string) (string, int) {
 	return got.Secciones[0].Bloques[0].Tabla.Filas[0][0], n
 }
 
-// CA-27.6: una celda tiene como máximo 300 caracteres (runes), contados después de RN-27.8; si tiene
+// Traza: HU-27 CA-27.6: una celda tiene como máximo 300 caracteres (runes), contados después de RN-27.8; si tiene
 // más, quedan los primeros 299 y "…" (RN-27.6). El recorte no es un reemplazo: no suma al aviso (RN-27.9).
 func TestNormalizarDocumento_TopeDeCaracteresPorCelda(t *testing.T) {
 	a := strings.Repeat
@@ -185,7 +185,8 @@ func TestNormalizarDocumento_TopeDeCaracteresPorCelda(t *testing.T) {
 	}
 }
 
-// RN-27.6 es solo para las celdas: los encabezados, los párrafos y los títulos no tienen tope.
+// Traza: HU-27 CA-27.6 (RN-27.6): el recorte es solo para las celdas. Los encabezados no se recortan (su
+// tope de 100 lo controla Validar, RN-27.11), y los párrafos y los títulos no tienen tope.
 func TestNormalizarDocumento_TopeSoloEnLasCeldas(t *testing.T) {
 	largo := strings.Repeat("x", 301)
 	d := DocumentoPDF{Titulo: largo, Subtitulo: largo, Secciones: []SeccionPDF{
@@ -205,7 +206,7 @@ func TestNormalizarDocumento_TopeSoloEnLasCeldas(t *testing.T) {
 	}
 }
 
-// Sección 5: el recorte no modifica el documento original.
+// Traza: HU-27 sección 5: el recorte no modifica el documento original.
 func TestNormalizarDocumento_TopeNoModificaElOriginal(t *testing.T) {
 	largo := strings.Repeat("x", 301)
 	filas := [][]string{{largo}}

@@ -114,7 +114,7 @@ func esPaginaDeErrorPDF(t *testing.T, rec *httptest.ResponseRecorder, code int, 
 	seccionNoContiene(t, rec.Body.String(), "<script", "%PDF")
 }
 
-// Traza: HU-27 CA-27.14, CA-27.24 (sección 3, RN-27.12, RN-27.15): cabeceras de descarga y los bytes
+// Traza: HU-27 CA-27.14 (sección 3, RN-27.12, RN-27.15): cabeceras de descarga y los bytes
 // del caso de uso tal cual, con el Content-Length de su tamaño.
 func TestReportePDFProyecto_Descarga(t *testing.T) {
 	uc := &exportadorReporteProyectoFalso{archivo: app.ArchivoPDF{Nombre: "reporte-proyecto-3-2026-11-07.pdf", Contenido: contenidoPDFFalso}}
@@ -127,7 +127,7 @@ func TestReportePDFProyecto_Descarga(t *testing.T) {
 	}
 }
 
-// Traza: HU-27 CA-27.15, CA-27.24 (sección 3, RN-27.12, RN-27.15). Los IDs llegan cada uno en su lugar.
+// Traza: HU-27 CA-27.15 (sección 3, RN-27.12, RN-27.15). Los IDs llegan cada uno en su lugar.
 func TestReportePDFSprint_Descarga(t *testing.T) {
 	proyecto := &exportadorReporteProyectoFalso{}
 	uc := &exportadorReporteSprintFalso{archivo: app.ArchivoPDF{Nombre: "reporte-proyecto-3-sprint-12-2026-11-07.pdf", Contenido: contenidoPDFFalso}}
@@ -277,7 +277,7 @@ func TestReportePDF_DocumentoInvalido_Devuelve500SinDetalle(t *testing.T) {
 	}
 }
 
-// Traza: HU-27 CA-27.16 (RN-27.12): aunque el caso de uso ya da un nombre seguro, el adaptador no deja
+// Traza: HU-27 P-9 (RN-27.12): aunque el caso de uso ya da un nombre seguro, el adaptador no deja
 // que un nombre con comillas o saltos de línea corte la cabecera o agregue otras.
 func TestReportePDF_NombreConCaracteresPeligrosos_NoInyectaCabeceras(t *testing.T) {
 	nombres := []string{

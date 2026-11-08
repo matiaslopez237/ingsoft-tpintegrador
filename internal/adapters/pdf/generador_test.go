@@ -188,7 +188,7 @@ func TestGenerar_ListaDeRepresentables_SaleIdentica(t *testing.T) {
 	}
 }
 
-// CA-27.7: sin subtítulo ni aviso, esas líneas no aparecen.
+// Traza: HU-27 CA-27.7: sin subtítulo ni aviso, esas líneas no aparecen.
 func TestGenerar_SinSubtituloNiAviso_NoLosMuestra(t *testing.T) {
 	doc := documentoNormal()
 	doc.Subtitulo, doc.Aviso = "", ""
@@ -199,7 +199,7 @@ func TestGenerar_SinSubtituloNiAviso_NoLosMuestra(t *testing.T) {
 	}
 }
 
-// CA-27.24: el resultado es un PDF completo: empieza con %PDF- y termina con %%EOF (como mucho seguido
+// Traza: HU-27 CA-27.24: el resultado es un PDF completo: empieza con %PDF- y termina con %%EOF (como mucho seguido
 // de un salto de línea), y se puede volver a leer (RN-27.15).
 func TestGenerar_EsUnPDFCompleto(t *testing.T) {
 	b := generar(t, documentoNormal())
@@ -213,7 +213,7 @@ func TestGenerar_EsUnPDFCompleto(t *testing.T) {
 	paginas(t, b)
 }
 
-// Sección 7: si fpdf falla, el generador devuelve un error, no entra en pánico ni devuelve bytes. Un
+// Traza: HU-27 sección 7: si fpdf falla, el generador devuelve un error, no entra en pánico ni devuelve bytes. Un
 // emoji no llega normalizado desde el caso de uso, pero es la forma conocida de hacer fallar a fpdf
 // (ADR-0006).
 func TestGenerar_FallaDeFpdf_DevuelveError(t *testing.T) {
@@ -306,7 +306,7 @@ func paginaDe(textos []string, s string) (pagina, veces int) {
 	return pagina, veces
 }
 
-// CA-27.3: una tabla de 200 filas cruza páginas; cada fila aparece completa, una sola vez, con sus tres
+// Traza: HU-27 CA-27.3: una tabla de 200 filas cruza páginas; cada fila aparece completa, una sola vez, con sus tres
 // celdas en la misma página y en orden (RN-27.4, RN-27.5). El texto solo no alcanza (ADR-0006): también
 // se comprueba la cantidad de páginas: las 201 filas (con la de encabezados) de una línea, de
 // altoLineaTabla cada una, ocupan lo que dan, repartido en hojas A4 con los márgenes del adaptador; como
@@ -343,7 +343,7 @@ func TestGenerar_TablaLarga_CruzaPaginasSinPerderNiRepetirFilas(t *testing.T) {
 	}
 }
 
-// CA-27.3, RN-27.5: el texto de una celda se ajusta al ancho de su columna en varias líneas. 30 filas
+// Traza: HU-27 RN-27.5: el texto de una celda se ajusta al ancho de su columna en varias líneas. 30 filas
 // con una celda de 300 caracteres no entran en una hoja si cada celda ocupa varias líneas: con tres
 // columnas iguales (unos 60 mm, unos 35 caracteres por línea) cada fila tiene unas 9 líneas, unos
 // 40 mm, así que entran unas 6 filas por hoja y hacen falta 5 o más páginas.
@@ -362,7 +362,7 @@ func TestGenerar_CeldaLarga_SeAjustaEnVariasLineas(t *testing.T) {
 	}
 }
 
-// CA-27.4: un párrafo de 10 000 caracteres continúa en las páginas siguientes y se extrae completo.
+// Traza: HU-27 CA-27.4: un párrafo de 10 000 caracteres continúa en las páginas siguientes y se extrae completo.
 func TestGenerar_ParrafoLargo_ContinuaEnOtrasPaginas(t *testing.T) {
 	var sb strings.Builder
 	for i := 1; sb.Len() < 10000; i++ {
@@ -381,7 +381,7 @@ func TestGenerar_ParrafoLargo_ContinuaEnOtrasPaginas(t *testing.T) {
 	}
 }
 
-// CA-27.7: un documento sin subtítulo ni secciones es una página con título y emisión, y nada más.
+// Traza: HU-27 CA-27.7: un documento sin subtítulo ni secciones es una página con título y emisión, y nada más.
 func TestGenerar_DocumentoMinimo(t *testing.T) {
 	doc := domain.DocumentoPDF{Titulo: "Reporte vacío", Emision: emisionDePrueba}
 	textos := paginas(t, generar(t, doc))
@@ -393,7 +393,7 @@ func TestGenerar_DocumentoMinimo(t *testing.T) {
 	}
 }
 
-// CA-27.7, CA-27.22: las secciones salen en orden aunque estén vacías; una tabla sin filas muestra sus
+// Traza: HU-27 CA-27.7, CA-27.22: las secciones salen en orden aunque estén vacías; una tabla sin filas muestra sus
 // encabezados y "Sin datos."; un párrafo vacío no muestra nada (RN-27.7, RN-27.11).
 func TestGenerar_SeccionesVacias(t *testing.T) {
 	doc := domain.DocumentoPDF{Titulo: "Vacíos", Emision: emisionDePrueba, Secciones: []domain.SeccionPDF{
@@ -422,7 +422,7 @@ func tablaLarga() domain.DocumentoPDF {
 	return documentoConTabla(tabla)
 }
 
-// CA-27.3, RN-27.3: todas las páginas tienen el pie "Página k de N", con N igual a la cantidad de
+// Traza: HU-27 CA-27.3, RN-27.3: todas las páginas tienen el pie "Página k de N", con N igual a la cantidad de
 // páginas que lee el extractor; desde la segunda, empiezan con el título del documento.
 func TestGenerar_EncabezadoYPie(t *testing.T) {
 	textos := paginas(t, generar(t, tablaLarga()))
@@ -444,7 +444,7 @@ func TestGenerar_EncabezadoYPie(t *testing.T) {
 	}
 }
 
-// CA-27.3, RN-27.5: la fila de encabezados se repite en cada página donde la tabla continúa.
+// Traza: HU-27 CA-27.3, RN-27.5: la fila de encabezados se repite en cada página donde la tabla continúa.
 func TestGenerar_TablaLarga_RepiteLosEncabezadosEnCadaPagina(t *testing.T) {
 	textos := paginas(t, generar(t, tablaLarga()))
 	for i, texto := range textos {
@@ -454,7 +454,7 @@ func TestGenerar_TablaLarga_RepiteLosEncabezadosEnCadaPagina(t *testing.T) {
 	}
 }
 
-// CA-27.6, RN-27.5: una fila de varias líneas nunca se parte entre dos páginas: el texto entero de cada
+// Traza: HU-27 RN-27.5: una fila de varias líneas nunca se parte entre dos páginas: el texto entero de cada
 // celda larga está en una sola página.
 func TestGenerar_FilaDeVariasLineas_NoSeParte(t *testing.T) {
 	tabla := &domain.TablaPDF{Columnas: []string{"Texto", "Fila"}}
@@ -479,7 +479,7 @@ func TestGenerar_FilaDeVariasLineas_NoSeParte(t *testing.T) {
 	}
 }
 
-// RN-27.4: el título de una sección no queda solo al pie. Se prueba con tablas previas de distinto
+// Traza: HU-27 CA-27.5 (RN-27.4): el título de una sección no queda solo al pie. Se prueba con tablas previas de distinto
 // largo, para que el título caiga en todas las alturas posibles cerca del final de la primera página: el
 // título siempre está en la misma página que la primera fila de su tabla, o que la primera línea de su
 // párrafo.
@@ -505,7 +505,7 @@ func TestGenerar_TituloDeSeccion_NoQuedaSoloAlPie(t *testing.T) {
 	}
 }
 
-// CA-27.12: con la misma emisión, dos generaciones dan los mismos bytes, también en paralelo; con otra
+// Traza: HU-27 CA-27.12: con la misma emisión, dos generaciones dan los mismos bytes, también en paralelo; con otra
 // emisión, otros bytes, porque la fecha de creación del PDF es la emisión (RN-27.10).
 func TestGenerar_Determinista(t *testing.T) {
 	primero := generar(t, documentoNormal())
@@ -544,7 +544,7 @@ func cuerpos(textos []string, titulo string) []string {
 	return r
 }
 
-// CA-27.12, RN-27.10: la fecha de creación y la de modificación del PDF son la emisión, y no la hora en
+// Traza: HU-27 CA-27.12, RN-27.10: la fecha de creación y la de modificación del PDF son la emisión, y no la hora en
 // que se generó. Sin esto, dos exportaciones en segundos distintos darían bytes distintos.
 func TestGenerar_LaFechaDelPDFEsLaEmision(t *testing.T) {
 	b := generar(t, documentoNormal())
@@ -555,7 +555,7 @@ func TestGenerar_LaFechaDelPDFEsLaEmision(t *testing.T) {
 	}
 }
 
-// RN-27.4, RN-27.5: una tabla que no es el primer bloque de su sección tampoco deja su fila de
+// Traza: HU-27 RN-27.4, RN-27.5: una tabla que no es el primer bloque de su sección tampoco deja su fila de
 // encabezados sola al pie: los encabezados están en la misma página que la primera fila.
 func TestGenerar_TablaDespuesDeUnParrafo_EncabezadosJuntoALaPrimeraFila(t *testing.T) {
 	for filas := 45; filas <= 60; filas++ {
