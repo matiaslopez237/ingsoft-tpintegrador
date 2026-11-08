@@ -2,14 +2,14 @@
 
 **Historia:** Como Product Owner, quiero generar un reporte de un proyecto o Sprint con historias, estimaciones, esfuerzo, métricas y defectos, para compartirlo con los interesados.
 **Issue:** #37  ·  **Sprint:** 4  ·  **Story points:** 5
-**Estado de la spec:** Borrador
+**Estado de la spec:** Aprobada
 
 ## 1. Objetivo
 Armar, para un proyecto o para un Sprint de ese proyecto, un reporte de solo lectura con cinco secciones (Resumen, Historias y estimaciones, Esfuerzo, Métricas, Defectos) que junta en un solo lugar datos que hoy están repartidos en varias pantallas (HU-04, HU-07, HU-22, HU-23, HU-24, HU-21), para que el Product Owner lo comparta con los interesados sin tener que recorrer el sistema.
 
 **Alcance real de esta historia:** no agrega ningún cálculo nuevo. Cada sección reutiliza tal cual un caso de uso o una función del dominio que ya existe (sección 5). Lo único que agrega HU-26 es **juntar** esos datos en un reporte y mostrarlos en una pantalla propia.
 
-**Contrato con HU-27 (exportar a PDF):** HU-27 ya tiene spec y rama (`hu-27-exportar-reporte-pdf`, sin mergear), armada sobre un supuesto explícito de cómo sería HU-26. Esta spec lo confirma: HU-26 expone dos puertos nuevos que HU-27 ya declaró en `internal/app`, y convierte su reporte al modelo neutral `domain.DocumentoPDF` que HU-27 ya tiene en su rama (sección 5). Los nombres de sección que usa HU-27 como ejemplo en su CA-27.22 no son vinculantes; los que define acá son los reales, y cuando esta historia tenga pantalla y conversión, HU-27 puede cerrar su CA-27.23 (hoy "pendiente de HU-26").
+**Exportar a PDF:** es responsabilidad de HU-27, no de esta historia (decisión de Matías López en la revisión del PR [#378](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/378); ver Historial). HU-26 no expone ningún puerto ni conversión para HU-27.
 
 ## 2. Entradas
 **Reporte de un proyecto.** `GET /web/proyectos/{id}/reporte`
@@ -25,9 +25,9 @@ Armar, para un proyecto o para un Sprint de ese proyecto, un reporte de solo lec
 | `proyectoID` | `int64` | Sí | Entero positivo. Debe corresponder a un proyecto existente (HU-01). |
 | `sprintID` | `int64` | Sí | Entero positivo. Debe corresponder a un Sprint de ese proyecto. |
 
-Son dos consultas de solo lectura: no hay más entradas, ni formulario. El Sprint puede estar en cualquier estado, `Abierto` o `Cerrado` (RN-26.9; decisión confirmada con Ezequiel en el chat, igual criterio que HU-23 RN-23.12).
+Son dos consultas de solo lectura: no hay más entradas, ni formulario. El Sprint puede estar en cualquier estado, `Abierto` o `Cerrado` (RN-26.10; decisión confirmada con Ezequiel en el chat, igual criterio que HU-23 RN-23.12).
 
-**Decisión propuesta — sin endpoint JSON propio:** a diferencia de HU-16, HU-17, HU-21 a HU-24, que exponen el mismo dato por JSON y por pantalla, HU-26 solo tiene pantalla HTML. El reporte no agrega ningún dato nuevo (cada número ya tiene su propio endpoint JSON en la historia que lo calculó), y el único consumidor interno, HU-27, llama al puerto Go directamente en el mismo proceso, no por HTTP. Si el equipo necesita el reporte en JSON más adelante, se agrega como una historia propia.
+**Sin endpoint JSON propio:** a diferencia de HU-16, HU-17, HU-21 a HU-24, que exponen el mismo dato por JSON y por pantalla, HU-26 solo tiene pantalla HTML. El reporte no agrega ningún dato nuevo (cada número ya tiene su propio endpoint JSON en la historia que lo calculó). Si el equipo necesita el reporte en JSON más adelante, se agrega como una historia propia. Confirmada por Matías López (Agile Enabler) el 2026-11-08, en la revisión del PR [#378](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/378).
 
 ## 3. Salidas esperadas
 Las dos pantallas (de proyecto y de Sprint) muestran el mismo reporte, con las mismas cinco secciones, en este orden:
@@ -38,12 +38,12 @@ Las dos pantallas (de proyecto y de Sprint) muestran el mismo reporte, con las m
 2. **Historias y estimaciones:** una tabla con Título, Prioridad, Estado y Story Points ("Sin estimar" si no tiene) de las historias del reporte (RN-26.1, RN-26.2), más una línea con el resumen: "X de Y historias completadas (Z de W story points)".
 3. **Esfuerzo:** los mismos datos que ya da HU-23 (`domain.TotalHoras`) sobre esas mismas historias, en una tabla de dato/valor: Horas estimadas, Horas reales, Desviación en horas, Desviación en porcentaje ("Sin estimar" si ningún elemento tiene horas estimadas, RN-23.6).
 4. **Métricas:** una tabla con una fila por Sprint:
-   - Proyecto: una fila por cada Sprint `Cerrado` (RN-26.4), igual que HU-24, más la velocidad del equipo (HU-22) como un dato aparte antes de la tabla.
-   - Sprint: una sola fila, la de ese Sprint, calculada igual que HU-24 pero sin exigir que esté `Cerrado` (RN-26.5).
+   - Proyecto: una fila por cada Sprint `Cerrado` (RN-26.5), igual que HU-24, más la velocidad del equipo (HU-22) como un dato aparte antes de la tabla.
+   - Sprint: una sola fila, la de ese Sprint, calculada igual que HU-24 pero sin exigir que esté `Cerrado` (RN-26.6). Si está `Cerrado`, antes de la tabla va una aclaración (RN-26.11) sobre por qué el resumen de historias (sección 2) y el % completado pueden parecer contradictorios cuando una historia volvió al backlog al cerrarse.
    - Columnas: Sprint (número), % completado ("Sin datos" si no hay, RN-24.2), Defectos detectados, Defectos resueltos.
-5. **Defectos:** una tabla con Elemento, Descripción, Severidad, Estado, Sprint detección y Sprint resolución (mismas columnas que la pantalla de HU-21) de los defectos del reporte (RN-26.6, RN-26.7).
+5. **Defectos:** una tabla con Elemento, Descripción, Severidad, Estado, Sprint detección y Sprint resolución (mismas columnas que la pantalla de HU-21) de los defectos del reporte (RN-26.7, RN-26.8).
 
-Una sección sin filas muestra un mensaje en vez de una tabla vacía (RN-26.8), igual criterio que el resto de las pantallas del proyecto (por ejemplo, "El proyecto todavía no tiene sprints cerrados." de HU-12).
+Una sección sin filas muestra un mensaje en vez de una tabla vacía (RN-26.9), igual criterio que el resto de las pantallas del proyecto (por ejemplo, "El proyecto todavía no tiene sprints cerrados." de HU-12).
 
 **En HTTP:** `200` con la pantalla; `400` si el ID no es un número; `404` si el proyecto no existe, o si el Sprint no existe o es de otro proyecto.
 
@@ -58,19 +58,18 @@ Una sección sin filas muestra un mensaje en vez de una tabla vacía (RN-26.8), 
 - **RN-26.8:** Los defectos del reporte de un **Sprint** son los que tienen ese Sprint como Sprint de detección o como Sprint de resolución (mismo criterio que `domain.ContarDefectosDeSprint`, HU-24): un defecto detectado en otro Sprint y resuelto en este cuenta igual; uno sin Sprint asignado no aparece en ningún reporte de Sprint (sí en el del proyecto, por RN-26.7).
 - **RN-26.9:** Una sección sin datos (sin historias, sin Sprints cerrados, sin defectos) muestra un mensaje en vez de una tabla vacía; no es un error.
 - **RN-26.10:** El reporte se arma para un Sprint en cualquier estado, `Abierto` o `Cerrado` (igual criterio que HU-23, RN-23.12): no hace falta esperar a que se cierre para pedirlo.
-- **RN-26.11 (conversión a `DocumentoPDF`, contrato con HU-27):** cada reporte se puede convertir a un `domain.DocumentoPDF` con una sección por cada una de las cinco de este reporte, en el mismo orden, con el mismo título y los mismos datos ya formateados como texto (los números con el mismo formato que la pantalla, por ejemplo "+25,0 %" como HU-19). HU-26 completa todos los campos de `DocumentoPDF` menos `Emision` y `Aviso`, que son de HU-27.
+- **RN-26.11 (aclaración en el reporte de un Sprint Cerrado):** cuando el Sprint del reporte está `Cerrado`, la sección de Métricas muestra, antes de la tabla, una aclaración de por qué el resumen de historias (sección 2, RN-26.2 y RN-26.3) y el % completado (RN-26.6) pueden parecer contradictorios: las historias que volvieron al backlog al cerrar el Sprint (RN-26.2) ya no están en la sección de historias, pero sí cuentan en los puntos planificados que guardó el cierre (HU-11, RN-11.6), que es justamente lo que usa el % completado. Mismo caso que HU-23 (RN-23.8, opción A), con el texto adaptado a historias y story points en vez de horas. Un Sprint `Abierto`, y el reporte de un proyecto (que no tiene un único Sprint), no la muestran.
 
 ## 5. Restricciones
 - **Dominio** (`internal/domain`, sin dependencias externas), con TDD:
   - `reporte.go`: `Reporte` (tipo armado por `ArmarReporteProyecto`/`ArmarReporteSprint`, con sus cinco secciones ya resueltas: `FilaResumen` (dato/valor), las historias (`[]ElementoBacklog`, ya existe), el esfuerzo (`TotalHoras`, ya existe de HU-23), las métricas (`[]FilaMetrica`, un tipo nuevo chico: Sprint, PorcentajeCompletado, HayPorcentaje, DefectosDetectados, DefectosResueltos — mismo contenido que `app.CalidadSprint` de HU-24, pero en el dominio, porque el dominio no puede depender de `internal/app`) y los defectos (`[]Defecto`, ya existe).
   - `ArmarReporteProyecto(proyecto Proyecto, historias []ElementoBacklog, esfuerzo TotalHoras, velocidad float64, hayVelocidad bool, metricas []FilaMetrica, defectos []Defecto) Reporte` y `ArmarReporteSprint(proyecto Proyecto, sprint Sprint, historias []ElementoBacklog, esfuerzo TotalHoras, metrica FilaMetrica, defectos []Defecto) Reporte`: funciones puras que arman el `Reporte` a partir de los datos ya calculados (el resumen de RN-26.3, los mensajes de "sin datos" de RN-26.9); no leen nada ni llaman a ningún puerto. Implementa HU-26 (RN-26.1 a RN-26.9).
-  - `ADocumentoPDF(r Reporte) domain.DocumentoPDF`: la conversión de RN-26.11, función pura.
 - **Casos de uso** (`internal/app`), cada uno reutiliza los puertos que ya existen, sin agregar ninguno de persistencia nuevo:
-  - `ArmarReporteProyecto`: busca el proyecto (`LectorProyectos`, HU-04), lista sus historias (`app.ListarBacklog`, HU-07), totaliza su esfuerzo (`LectorHoras` + `domain.TotalizarHoras`, HU-23), consulta su velocidad (`app.ConsultarVelocidad`, HU-22) y su calidad por Sprint (`app.ConsultarCalidadSprints`, HU-24), lista sus defectos (`app.ListarDefectos`, HU-21), y arma el reporte con `domain.ArmarReporteProyecto`.
+  - `ArmarReporteProyecto`: busca el proyecto (`LectorProyectos`, HU-04), lista sus historias (`app.ListarBacklog`, HU-07), totaliza su esfuerzo (`LectorHoras` + `domain.TotalizarHoras`, HU-23), lista sus defectos (`app.ListarDefectos`, HU-21), y calcula su velocidad y su calidad por Sprint llamando directo a las mismas funciones del dominio que usan `app.ConsultarVelocidad` (HU-22) y `app.ConsultarCalidadSprints` (HU-24) — `domain.Velocidad`, `domain.PorcentajeCompletado`, `domain.ContarDefectosDeSprint` — en vez de esos dos casos de uso, para no repetir las consultas a los repositorios que ya hace `Ejecutar` (`BuscarPorID`, `ListarSprints`, `ListarDefectos`). **Nota (revisión del PR [#378](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/378)):** esto duplica la lógica de esos dos casos de uso en vez de reutilizarlos, que es lo que decía esta restricción originalmente; el PR [#375](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/375) (HU-25) agrega `calidadDe`, pensada justo para este cálculo — si entra antes que esta historia, conviene que HU-26 lo reutilice también. No bloquea esta historia. Arma el reporte con `domain.ArmarReporteProyecto`.
   - `ArmarReporteSprint`: busca el proyecto, busca el Sprint (`LectorSprintPorID`, HU-23) y verifica que sea suyo (RN-26.10, mismo patrón que `ConsultarHorasSprint`), filtra sus historias (RN-26.2) y sus defectos (RN-26.8) de las mismas listas completas del proyecto, calcula su métrica con `domain.PorcentajeCompletado` y `domain.ContarDefectosDeSprint` (sin pasar por `ConsultarCalidadSprints`, que exige `Cerrado`), y arma el reporte con `domain.ArmarReporteSprint`.
-  - Los dos implementan también los puertos que ya declaró HU-27 en su rama, `FuenteDocumentoProyecto.DocumentoDeProyecto` y `FuenteDocumentoSprint.DocumentoDeSprint`: arman el `Reporte` igual que `Ejecutar` y lo convierten con `domain.ADocumentoPDF` (RN-26.11). **Mientras HU-27 no esté mergeada**, esos dos métodos existen en el código de HU-26 pero no los llama nadie todavía; cuando se mergee HU-27, el router los conecta.
 - **HTTP/pantalla:** sin endpoint JSON (sección 2). Dos rutas nuevas en `pantallas.go`, junto a las demás `/web/...`: `GET /web/proyectos/{id}/reporte` y `GET /web/proyectos/{id}/sprints/{sprintID}/reporte`. Reutilizan `proyectoIDDesdeRuta`, `sprintIDDesdeRuta` y `errorDeConsulta`. Una sola plantilla `reporte.html` para los dos casos (con el título que arma el dominio).
 - **Enlace desde las pantallas existentes:** un enlace "Ver reporte" en el detalle del proyecto (HU-04) y en el detalle de un Sprint (HU-09), igual patrón que "Sprints anteriores" de HU-12.
+- **Aclaración del Sprint Cerrado (RN-26.11):** una constante de texto nueva en `pantallas_reporte.go` (mismo patrón que `textoAclaracionSprintCerrado` de HU-23 en `pantallas_horas.go`), agregada a los datos de la pantalla solo cuando el Sprint del reporte está `Cerrado`; se muestra en `reporte.html`, en la sección de Métricas, antes de la tabla.
 - **Sin persistencia nueva:** no hay tablas, columnas ni migraciones (tarea 26.6 no aplica, mismo caso que la 24.6 de HU-24).
 
 ## 6. Casos límite
@@ -106,13 +105,17 @@ No hay más condiciones de error: las dos son consultas de solo lectura.
 - **CA-26.11:** Dado un ID de proyecto que no existe, cuando se pide el reporte del proyecto o de un Sprint, entonces la respuesta es `404` con "proyecto no encontrado". (Sección 7)
 - **CA-26.12:** Dado un ID de Sprint que no existe, o de un Sprint de otro proyecto, cuando se pide su reporte, entonces la respuesta es `404` con "sprint no encontrado". (RN-26.10, sección 7)
 - **CA-26.13:** Dado un ID de proyecto o de Sprint inválido, cuando se pide un reporte, entonces la respuesta es `400` y no se llama al caso de uso. (Sección 7)
-- **CA-26.14:** Dado un reporte cualquiera, cuando se convierte a `DocumentoPDF`, entonces tiene cinco secciones, con los mismos títulos y en el mismo orden que la pantalla, y los mismos datos de cada sección como texto. (RN-26.11)
+- **CA-26.14:** Dado un Sprint `Cerrado` con una historia que volvió al backlog al cerrarse, cuando se pide su reporte, entonces la sección de Métricas muestra la aclaración; dado un Sprint `Abierto`, cuando se pide su reporte, entonces no la muestra. (RN-26.11)
 - **CA-26.15:** Dado un proyecto sin historias, sin Sprints cerrados y sin defectos, cuando se pide su reporte, entonces cada sección (salvo el resumen) muestra su mensaje de "sin datos", sin romper la pantalla. (RN-26.9)
 
 ## Preguntas abiertas
-- **P-1 — Sin endpoint JSON propio:** propuesta en la sección 2; a confirmar con el equipo en la revisión del PR, por si alguna historia futura lo necesita.
-- **P-2 — Puertos de HU-27 implementados pero sin conectar:** hasta que HU-27 se mergee, `FuenteDocumentoProyecto`/`FuenteDocumentoSprint` quedan implementados y probados, pero nada los llama todavía (no hay ruta `/pdf`). Cuando HU-27 entre a `main`, falta sumar esos dos casos de uso a su `CasosDeUso` (un cambio de un par de líneas, sin tocar esta spec).
-- **P-3 — "Ver reporte" en las pantallas existentes:** propuesto en la sección 5 (detalle de proyecto y de Sprint); si el equipo prefiere otro lugar, se ajusta sin cambiar las reglas de negocio.
+Ninguna: P-1 y P-3 quedaron confirmadas en la revisión del PR #378 (ver Historial); P-2 ya no aplica, porque la conversión a PDF pasó a HU-27.
 
 ## Historial
 - 2026-11-07: creada (borrador). Alcance de las 5 secciones y "cualquier estado de Sprint" confirmados con Ezequiel en el chat antes de escribir la spec. P-1 a P-3 son decisiones propuestas, pendientes de confirmar con el equipo.
+- 2026-11-08: aprobada por Matías López (Agile Enabler), en la revisión del PR [#378](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/378):
+  - P-1 (sin endpoint JSON propio) y P-3 ("Ver reporte" en el detalle del proyecto y del Sprint) confirmadas tal cual estaban propuestas.
+  - La conversión a PDF (antes RN-26.11 y CA-26.14) pasa a HU-27: se sacan de esta spec esa RN y ese CA, la parte de la sección 1 sobre el contrato con HU-27, la función `ADocumentoPDF` y los puertos `FuenteDocumento…` de la sección 5. P-2 ya no aplica, se saca.
+  - Se agrega, en su lugar, una aclaración en el reporte de un Sprint `Cerrado` (nueva RN-26.11/CA-26.14, punto 1 de la revisión) para que el resumen de historias y el % completado no parezcan contradictorios cuando una historia volvió al backlog al cerrarse.
+  - Se corrige la numeración de RN citada en las secciones 2 y 3 (había quedado corrida un número respecto de la sección 4, punto 3 de la revisión).
+  - Se corrige la sección 5 sobre cómo calcula HU-26 la calidad por Sprint, para que describa lo que hace el código (duplica `ConsultarCalidadSprints`/`ConsultarVelocidad` en vez de llamarlos) en lugar de lo que decía la spec original (punto 2 de la revisión; no bloquea, se resuelve cuando se mergee HU-25 o en una corrección aparte).
