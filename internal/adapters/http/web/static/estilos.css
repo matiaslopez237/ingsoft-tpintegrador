@@ -130,3 +130,32 @@ button.peligro { background: #fff; color: var(--peligro); border-color: var(--pe
   .contenido { margin: 0; border-radius: 0; padding: 1rem; }
   .encabezado { flex-direction: column; align-items: flex-start; }
 }
+
+/* HU-25: Dashboard. Los gráficos son SVG armados en el servidor (ADR-0005): los colores van con
+   clases, no con atributos style, que la Content-Security-Policy bloquea. Cada serie se distingue
+   también por la leyenda y la tabla, no solo por el color. */
+:root {
+  --serie-1: #1d4ed8;
+  --serie-2: #0f766e;
+  --serie-3: #c2410c;
+}
+.estado-proyecto { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem 2rem; }
+.suave { color: var(--suave); }
+progress { width: 100%; max-width: 320px; height: 1rem; }
+.graficos { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(340px, 100%), 1fr)); gap: 1.5rem; }
+/* El SVG va con su ancho real (atributos width y height): con muchos sprints el recuadro se desplaza
+   en horizontal en lugar de achicar el texto. */
+.grafico { margin: 0; min-width: 0; overflow-x: auto; }
+.svg-grafico { display: block; max-width: none; }
+.barra.serie-1, .muestra.serie-1 { fill: var(--serie-1); background: var(--serie-1); }
+.barra.serie-2, .muestra.serie-2 { fill: var(--serie-2); background: var(--serie-2); }
+.barra.serie-3, .muestra.serie-3 { fill: var(--serie-3); background: var(--serie-3); }
+.eje { stroke: var(--borde); stroke-width: 1; }
+.referencia { stroke: var(--texto); stroke-width: 1.5; stroke-dasharray: 6 4; }
+.svg-grafico text { fill: var(--texto); font-size: 11px; }
+.svg-grafico .etiqueta { fill: var(--suave); }
+.leyenda { display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; margin: 0.5rem 0; padding: 0; list-style: none; font-size: 0.9rem; }
+.muestra { display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.35rem; border-radius: 2px; vertical-align: middle; }
+.muestra-referencia { height: 0; border-top: 2px dashed var(--texto); border-radius: 0; }
+.tabla-grafico { font-size: 0.9rem; }
+.tabla-grafico caption { text-align: left; color: var(--suave); padding-bottom: 0.25rem; }
