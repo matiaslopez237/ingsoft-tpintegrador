@@ -13,6 +13,7 @@ import (
 	"time"
 
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/pdf"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 )
@@ -36,6 +37,11 @@ func main() {
 	repoRondas := persistencia.NuevoRepositorioRondas(db)     // HU-14
 	repoEsfuerzo := persistencia.NuevoRepositorioEsfuerzo(db) // HU-18, HU-19 y HU-23
 	repoDefectos := persistencia.NuevoRepositorioDefectos(db) // HU-20/HU-21
+	armarReporteProyecto := app.NuevoArmarReporteProyecto(repoProyectos, repoBacklog, repoSprints, repoEsfuerzo, repoDefectos)
+	armarReporteSprint := app.NuevoArmarReporteSprint(repoProyectos, repoSprints, repoBacklog, repoEsfuerzo, repoDefectos) // HU-26
+	// HU-27: la fuente convierte el reporte de HU-26 a DocumentoPDF (spec HU-27, P-11).
+	fuenteReporte := adapterhttp.NuevaFuenteDocumentoReporte(armarReporteProyecto, armarReporteSprint)
+	generadorPDF := pdf.NuevoGenerador()
 	mux := adapterhttp.NuevoRouter(adapterhttp.CasosDeUso{
 		CrearProyecto:            app.NuevoCrearProyecto(repoProyectos),
 		ModificarProyecto:        app.NuevoModificarProyecto(repoProyectos),
@@ -73,8 +79,11 @@ func main() {
 		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, time.Now),
 		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos),                       // HU-21
 		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
-		ArmarReporteProyecto:    app.NuevoArmarReporteProyecto(repoProyectos, repoBacklog, repoSprints, repoEsfuerzo, repoDefectos),
-		ArmarReporteSprint:      app.NuevoArmarReporteSprint(repoProyectos, repoSprints, repoBacklog, repoEsfuerzo, repoDefectos), // HU-26
+		ArmarReporteProyecto:    armarReporteProyecto,
+		ArmarReporteSprint:      armarReporteSprint, // HU-26
+		// time.Now como reloj: la emisión del PDF es la hora del pedido, en UTC-3 (HU-27, RN-27.10).
+		ExportarReporteProyecto: app.NuevoExportarReporteProyecto(repoProyectos, fuenteReporte, generadorPDF, time.Now),
+		ExportarReporteSprint:   app.NuevoExportarReporteSprint(repoProyectos, repoSprints, fuenteReporte, generadorPDF, time.Now), // HU-27
 	})
 
 	puerto := os.Getenv("PORT")
