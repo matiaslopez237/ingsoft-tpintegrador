@@ -130,7 +130,7 @@ type pantallas struct {
 var paginas = []string{
 	"error.html", "proyectos.html", "proyecto_form.html", "proyecto_detalle.html",
 	"sprints.html", "sprints_anteriores.html", "backlog.html", "sprint_detalle.html", "elemento.html", "defecto_form.html",
-	"ronda.html", "defectos.html", "dashboard.html",
+	"ronda.html", "defectos.html", "dashboard.html", "reporte.html",
 }
 
 // funcionesPlantillas son las funciones disponibles en las plantillas. segmento escapa un texto
@@ -189,6 +189,7 @@ func RegistrarPantallas(mux *http.ServeMux, cu CasosDeUso) {
 	p.registrarPantallasPlanningPoker(mux)                                                                             // HU-14
 	p.registrarPantallasDashboard(mux)                                                                                 // HU-25
 	p.registrarPantallasDefectosLista(mux)                                                                             // HU-21
+	p.registrarPantallaReporte(mux)                                                                                    // HU-26
 }
 
 // formulario envuelve las acciones POST de las pantallas: rechaza los envíos desde otro sitio

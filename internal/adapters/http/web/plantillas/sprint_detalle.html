@@ -2,7 +2,10 @@
 {{define "contenido"}}
 <div class="cabecera">
   <h1>Sprint {{.Sprint.Numero}} de {{.Proyecto.Nombre}}</h1>
-  <a href="/web/proyectos/{{.Proyecto.ID}}/sprints">Volver a sprints</a>
+  <div class="botones">
+    <a class="boton" href="/web/proyectos/{{.Proyecto.ID}}/sprints/{{.Sprint.ID}}/reporte">Ver reporte</a>
+    <a href="/web/proyectos/{{.Proyecto.ID}}/sprints">Volver a sprints</a>
+  </div>
 </div>
 <dl class="datos">
   <dt>Sprint Goal</dt><dd>{{.Sprint.Objetivo}}</dd>

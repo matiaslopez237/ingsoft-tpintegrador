@@ -74,7 +74,9 @@ func main() {
 		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos),                       // HU-21
 		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
 		// time.Now como reloj: "hoy" decide el sprint en curso (HU-25, RN-25.3).
-		ConsultarDashboard: app.NuevoConsultarDashboard(repoProyectos, repoSprints, repoBacklog, repoDefectos, repoEsfuerzo, time.Now),
+		ConsultarDashboard:   app.NuevoConsultarDashboard(repoProyectos, repoSprints, repoBacklog, repoDefectos, repoEsfuerzo, time.Now),
+		ArmarReporteProyecto: app.NuevoArmarReporteProyecto(repoProyectos, repoBacklog, repoSprints, repoEsfuerzo, repoDefectos),
+		ArmarReporteSprint:   app.NuevoArmarReporteSprint(repoProyectos, repoSprints, repoBacklog, repoEsfuerzo, repoDefectos), // HU-26
 	})
 
 	puerto := os.Getenv("PORT")

@@ -41,6 +41,8 @@ type CasosDeUso struct {
 	ListarDefectos           listadorDefectos          // HU-21
 	ConsultarCalidadSprints  consultorCalidadSprints   // HU-24
 	ConsultarDashboard       consultorDashboard        // HU-25
+	ArmarReporteProyecto     armadorReporteProyecto    // HU-26
+	ArmarReporteSprint       armadorReporteSprint      // HU-26
 }
 
 // NuevoRouter arma el mux con todas las rutas de la aplicación. Lo usan main.go y el test
