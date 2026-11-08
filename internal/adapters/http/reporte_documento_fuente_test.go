@@ -39,10 +39,10 @@ func armadoresQueAnotan(reporte domain.Reporte, err error) (*pedidoArmador, repo
 	return pedido, proyecto, sprint
 }
 
-// Traza: HU-26 CA-26.14 (RN-26.11; HU-27 P-11): la fuente arma el reporte del proyecto con el caso de
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): la fuente arma el reporte del proyecto con el caso de
 // uso de HU-26, con el contexto y el ID del pedido, y lo convierte con aDocumentoPDF.
 func TestFuenteDocumentoReporte_DocumentoDeProyecto(t *testing.T) {
-	reporte := reporteDeEjemplo()
+	reporte := reporteParaDocumento()
 	pedido, proyecto, sprint := armadoresQueAnotan(reporte, nil)
 	fuente := NuevaFuenteDocumentoReporte(proyecto, sprint)
 	ctx := context.WithValue(context.Background(), claveContextoPDF{}, "pedido")
@@ -64,7 +64,7 @@ func TestFuenteDocumentoReporte_DocumentoDeProyecto(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 CA-26.14 (RN-26.11; HU-27 P-11): lo mismo para el reporte de un Sprint, con los dos IDs.
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): lo mismo para el reporte de un Sprint, con los dos IDs.
 func TestFuenteDocumentoReporte_DocumentoDeSprint(t *testing.T) {
 	reporte := reporteDeSprintDeEjemplo()
 	pedido, proyecto, sprint := armadoresQueAnotan(reporte, nil)
@@ -103,7 +103,7 @@ func TestFuenteDocumentoReporte_ErrorDelCasoDeUso_SinCambios(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.nombre, func(t *testing.T) {
-			_, proyecto, sprint := armadoresQueAnotan(reporteDeEjemplo(), tt.err)
+			_, proyecto, sprint := armadoresQueAnotan(reporteParaDocumento(), tt.err)
 			fuente := NuevaFuenteDocumentoReporte(proyecto, sprint)
 
 			docProyecto, errProyecto := fuente.DocumentoDeProyecto(context.Background(), 7)

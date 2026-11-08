@@ -17,9 +17,35 @@ import (
 // textos del documento que no aparecen en ella.
 var columnasDatoValor = []string{"Dato", "Valor"}
 
+// reporteParaDocumento es el reporte de un proyecto de los tests de la conversión, propio de HU-27 para
+// no depender de los fixtures de HU-26. Las historias tienen ID, así que se puede probar la columna
+// Elemento de los defectos: uno es de una historia del reporte y el otro de una que no está ("—").
+func reporteParaDocumento() domain.Reporte {
+	sp5, sp8 := 5, 8
+	uno, dos := int64(1), int64(2)
+	return domain.Reporte{
+		Proyecto: alfa,
+		Historias: []domain.ElementoBacklog{
+			{ID: 1, Titulo: "Login", Prioridad: domain.PrioridadAlta, Estado: domain.EstadoHecho, StoryPoints: &sp5},
+			{ID: 2, Titulo: "Logout", Prioridad: domain.PrioridadMedia, Estado: domain.EstadoPendiente, StoryPoints: &sp8},
+		},
+		HistoriasCompletadas: 1, StoryPointsCompletados: 5, StoryPointsTotal: 13,
+		Esfuerzo:     domain.TotalHoras{HorasEstimadas: 10, HorasReales: 8},
+		HayVelocidad: true, Velocidad: 6,
+		Metricas: []domain.FilaMetrica{
+			{Sprint: domain.Sprint{Numero: 1}, HayPorcentaje: true, PorcentajeCompletado: 75, DefectosDetectados: 2, DefectosResueltos: 1},
+		},
+		Defectos: []domain.Defecto{
+			{ID: 1, ElementoID: 1, Descripcion: "Falla el login", Severidad: domain.SeveridadAlta, Estado: domain.DefectoAbierto, SprintDeteccionID: &uno},
+			{ID: 2, ElementoID: 99, Descripcion: "Falla de una historia que no está en el reporte", Severidad: domain.SeveridadMedia,
+				Estado: domain.DefectoResuelto, SprintDeteccionID: &uno, SprintResolucionID: &dos},
+		},
+	}
+}
+
 // reporteDeSprintDeEjemplo es un reporte de un Sprint, con su métrica sin porcentaje (Sprint abierto).
 func reporteDeSprintDeEjemplo() domain.Reporte {
-	r := reporteDeEjemplo()
+	r := reporteParaDocumento()
 	r.Sprint = &domain.Sprint{
 		ID: 9, ProyectoID: alfa.ID, Numero: 2, Objetivo: "Cerrar el login",
 		FechaInicio: time.Date(2026, 4, 1, 0, 0, 0, 0, time.UTC),
@@ -34,7 +60,7 @@ func reporteDeSprintDeEjemplo() domain.Reporte {
 // reporteConDefectosLargos es el peor caso para el PDF: la tabla más ancha del reporte (Defectos, 6
 // columnas) con textos largos sin espacios del carácter más ancho de RN-27.8.
 func reporteConDefectosLargos() domain.Reporte {
-	r := reporteDeEjemplo()
+	r := reporteParaDocumento()
 	largo := strings.Repeat("Œ", 1000)
 	for range 50 {
 		r.Defectos = append(r.Defectos, domain.Defecto{Descripcion: largo, Severidad: domain.SeveridadAlta, Estado: domain.DefectoAbierto})
@@ -51,7 +77,7 @@ type casoReporteDocumento struct {
 
 func casosReporteDocumento() []casoReporteDocumento {
 	return []casoReporteDocumento{
-		{"proyecto", reporteDeEjemplo(), "/web/proyectos/7/reporte"},
+		{"proyecto", reporteParaDocumento(), "/web/proyectos/7/reporte"},
 		{"sprint", reporteDeSprintDeEjemplo(), "/web/proyectos/7/sprints/9/reporte"},
 		{"proyecto vacío", domain.Reporte{Proyecto: alfa}, "/web/proyectos/7/reporte"},
 		{"sprint vacío", domain.Reporte{Proyecto: alfa, Sprint: reporteDeSprintDeEjemplo().Sprint}, "/web/proyectos/7/sprints/9/reporte"},
@@ -99,7 +125,7 @@ func textosDeSeccion(s domain.SeccionPDF) []string {
 	return textos
 }
 
-// Traza: HU-26 CA-26.14 (RN-26.11): las secciones del documento son los <h2> de la pantalla, con los
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): las secciones del documento son los <h2> de la pantalla, con los
 // mismos títulos y en el mismo orden, y el título del documento es el <h1>.
 func TestADocumentoPDF_SeccionesSonLasDeLaPantalla(t *testing.T) {
 	for _, c := range casosReporteDocumento() {
@@ -133,7 +159,7 @@ func TestADocumentoPDF_SeccionesSonLasDeLaPantalla(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 CA-26.14 (RN-26.11; HU-27 P-11): cada texto de una sección del documento aparece en la
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): cada texto de una sección del documento aparece en la
 // misma sección de la pantalla, salvo los encabezados de las tablas de dato/valor.
 func TestADocumentoPDF_TextosSonLosDeLaPantalla(t *testing.T) {
 	for _, c := range casosReporteDocumento() {
@@ -180,11 +206,11 @@ func tabla(columnas []string, filas ...[]string) domain.BloquePDF {
 
 func parrafo(texto string) domain.BloquePDF { return domain.BloquePDF{Parrafo: texto} }
 
-// Traza: HU-26 CA-26.14 (RN-26.11; HU-27 P-11): el reporte de un proyecto, sección por sección, con los
-// textos ya formateados de datosReporte: Resumen y Esfuerzo como tablas de dato/valor, el resumen de
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): el reporte de un proyecto, sección por sección, con los
+// textos ya formateados de datosReporte, y un defecto de una historia que no está en el reporte con "—": Resumen y Esfuerzo como tablas de dato/valor, el resumen de
 // historias y la velocidad como párrafos antes de su tabla.
 func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
-	d := aDatosReporte(reporteDeEjemplo())
+	d := aDatosReporte(reporteParaDocumento())
 
 	doc := aDocumentoPDF(d)
 
@@ -218,9 +244,9 @@ func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
 			}},
 			{Titulo: "Defectos", Bloques: []domain.BloquePDF{
 				tabla([]string{"Elemento", "Descripción", "Severidad", "Estado", "Sprint detección", "Sprint resolución"},
-					// reporteDeEjemplo no les pone ID a las historias ni al defecto: el defecto queda con
-					// ElementoID 0, que es el de la última historia, y la pantalla también dice "Logout".
-					[]string{"Logout", "Falla el login", d.Defectos[0].Severidad, d.Defectos[0].Estado, "#1", "—"},
+					[]string{"Login", "Falla el login", "Alta", "Abierto", "#1", "—"},
+					// el elemento 99 no está entre las historias del reporte
+					[]string{"—", "Falla de una historia que no está en el reporte", "Media", "Resuelto", "#1", "#2"},
 				),
 			}},
 		},
@@ -230,7 +256,7 @@ func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 CA-26.14 (RN-26.5, RN-26.6, RN-26.11): el reporte de un Sprint lleva su resumen propio y
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): el reporte de un Sprint lleva su resumen propio y
 // no tiene velocidad; un porcentaje que no hay dice "Sin datos", como la pantalla.
 func TestADocumentoPDF_ReporteDeSprint(t *testing.T) {
 	d := aDatosReporte(reporteDeSprintDeEjemplo())
@@ -260,7 +286,7 @@ func TestADocumentoPDF_ReporteDeSprint(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 CA-26.14, CA-26.15 (RN-26.9, RN-26.11): un reporte sin datos lleva en cada sección el
+// Traza: HU-27 CA-27.25 (RN-27.16; P-11): un reporte sin datos lleva en cada sección el
 // mismo mensaje que la pantalla, como párrafo y no como tabla vacía.
 func TestADocumentoPDF_ReporteVacio_MensajesDeLaPantalla(t *testing.T) {
 	tests := []struct {
@@ -294,7 +320,7 @@ func TestADocumentoPDF_ReporteVacio_MensajesDeLaPantalla(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 CA-26.14 (RN-26.11; HU-27 RN-27.11, P-10): el documento que sale de cualquier reporte es
+// Traza: HU-27 CA-27.25 (RN-27.16, RN-27.11; P-10, P-11): el documento que sale de cualquier reporte es
 // válido, también con la tabla de 6 columnas llena de textos largos, antes y después de normalizarlo
 // como hace el caso de uso de HU-27.
 func TestADocumentoPDF_SiempreValido(t *testing.T) {
