@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"log"
 	"net/http"
@@ -76,28 +77,9 @@ func main() {
 		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
 	})
 
-	// HU-31: si CARGAR_EJEMPLO está activada y la base no tiene proyectos, carga el proyecto de ejemplo
-	// antes de atender pedidos (RN-31.6). Los casos de uso que dependen de "hoy" usan el reloj de la
-	// carga (RN-31.5). Si la carga falla, el servidor no arranca (P-2).
-	relojEjemplo := &ejemplo.Reloj{}
-	resultado, err := ejemplo.CargarSiCorresponde(context.Background(), ejemplo.CasosDeUso{
-		Reloj:                   relojEjemplo,
-		ListarProyectos:         app.NuevoListarProyectos(repoProyectos),
-		CrearProyecto:           app.NuevoCrearProyecto(repoProyectos),
-		AgregarIntegrante:       app.NuevoAgregarIntegrante(repoProyectos),
-		CrearElemento:           app.NuevoCrearElementoBacklog(repoBacklog),
-		EditarElemento:          app.NuevoEditarElementoBacklog(repoBacklog),
-		CrearSprint:             app.NuevoCrearSprint(repoProyectos, repoSprints),
-		AsignarHistoria:         app.NuevoAsignarHistoria(repoBacklog),
-		CompletarHistoria:       app.NuevoCompletarHistoria(repoProyectos, repoBacklog),
-		CerrarSprint:            app.NuevoCerrarSprint(repoProyectos, repoSprints),
-		RegistrarEsfuerzo:       app.NuevoRegistrarEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo, relojEjemplo.Ahora),
-		RegistrarDefecto:        app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints, repoDefectos, relojEjemplo.Ahora),
-		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, relojEjemplo.Ahora),
-		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),
-		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),
-		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas),
-	}, os.Getenv("CARGAR_EJEMPLO"))
+	// HU-31: el proyecto de ejemplo, antes de atender pedidos (RN-31.6). Si la carga falla, el servidor
+	// no arranca (P-2).
+	resultado, err := cargarEjemplo(db, os.Getenv("CARGAR_EJEMPLO"))
 	if err != nil {
 		log.Fatalf("no se pudo cargar el proyecto de ejemplo: %v", err)
 	}
@@ -134,4 +116,35 @@ func main() {
 	if err := servidor.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("error del servidor: %v", err)
 	}
+}
+
+// cargarEjemplo carga el proyecto de ejemplo si valor (el de CARGAR_EJEMPLO) está activado y la base
+// no tiene proyectos. Arma sus propios casos de uso: los que dependen de "hoy" usan el reloj de la
+// carga, no time.Now (RN-31.5). Implementa HU-31.
+func cargarEjemplo(db *sql.DB, valor string) (ejemplo.Resultado, error) {
+	proyectos := persistencia.NuevoRepositorioProyectos(db)
+	backlog := persistencia.NuevoRepositorioBacklog(db)
+	sprints := persistencia.NuevoRepositorioSprints(db)
+	rondas := persistencia.NuevoRepositorioRondas(db)
+	esfuerzo := persistencia.NuevoRepositorioEsfuerzo(db)
+	defectos := persistencia.NuevoRepositorioDefectos(db)
+	reloj := &ejemplo.Reloj{}
+	return ejemplo.CargarSiCorresponde(context.Background(), ejemplo.CasosDeUso{
+		Reloj:                   reloj,
+		ListarProyectos:         app.NuevoListarProyectos(proyectos),
+		CrearProyecto:           app.NuevoCrearProyecto(proyectos),
+		AgregarIntegrante:       app.NuevoAgregarIntegrante(proyectos),
+		CrearElemento:           app.NuevoCrearElementoBacklog(backlog),
+		EditarElemento:          app.NuevoEditarElementoBacklog(backlog),
+		CrearSprint:             app.NuevoCrearSprint(proyectos, sprints),
+		AsignarHistoria:         app.NuevoAsignarHistoria(backlog),
+		CompletarHistoria:       app.NuevoCompletarHistoria(proyectos, backlog),
+		CerrarSprint:            app.NuevoCerrarSprint(proyectos, sprints),
+		RegistrarEsfuerzo:       app.NuevoRegistrarEsfuerzo(proyectos, backlog, esfuerzo, reloj.Ahora),
+		RegistrarDefecto:        app.NuevoRegistrarDefecto(proyectos, backlog, sprints, defectos, reloj.Ahora),
+		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(proyectos, sprints, defectos, reloj.Ahora),
+		IniciarRonda:            app.NuevoIniciarRonda(proyectos, backlog, rondas),
+		Votar:                   app.NuevoVotar(proyectos, rondas),
+		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(proyectos, backlog, rondas),
+	}, valor)
 }

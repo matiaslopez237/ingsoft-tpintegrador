@@ -5,6 +5,7 @@ import (
 	"errors"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -168,7 +169,7 @@ func sprintDe(id *int64, ss []domain.Sprint) string {
 	}
 	for _, s := range ss {
 		if s.ID == *id {
-			return string(rune('0' + s.Numero))
+			return strconv.Itoa(s.Numero)
 		}
 	}
 	return "?"
