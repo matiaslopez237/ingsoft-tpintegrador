@@ -57,6 +57,20 @@ func reporteDeSprintDeEjemplo() domain.Reporte {
 	return r
 }
 
+// reporteDeSprintCerrado es el reporte de un Sprint Cerrado, cuya pantalla muestra la aclaración de
+// HU-26 (RN-26.11) en la sección Métricas.
+func reporteDeSprintCerrado() domain.Reporte {
+	r := reporteDeSprintDeEjemplo()
+	r.Sprint.Estado = domain.SprintCerrado
+	r.Metricas = []domain.FilaMetrica{{Sprint: *r.Sprint, HayPorcentaje: true, PorcentajeCompletado: 80, DefectosDetectados: 1, DefectosResueltos: 1}}
+	return r
+}
+
+// textoAclaracionEsperado es la aclaración del Sprint Cerrado tal como la muestra la pantalla de HU-26.
+// Está escrita acá y no tomada de la constante, para que un cambio de texto en la conversión falle.
+const textoAclaracionEsperado = "Solo cuentan las historias que siguen en este sprint. " +
+	"El % completado usa los puntos que se guardaron al cerrarlo, que incluyen las historias que volvieron al backlog."
+
 // reporteConDefectosLargos es el peor caso para el PDF: la tabla más ancha del reporte (Defectos, 6
 // columnas) con textos largos sin espacios del carácter más ancho de RN-27.8.
 func reporteConDefectosLargos() domain.Reporte {
@@ -81,6 +95,8 @@ func casosReporteDocumento() []casoReporteDocumento {
 		{"sprint", reporteDeSprintDeEjemplo(), "/web/proyectos/7/sprints/9/reporte"},
 		{"proyecto vacío", domain.Reporte{Proyecto: alfa}, "/web/proyectos/7/reporte"},
 		{"sprint vacío", domain.Reporte{Proyecto: alfa, Sprint: reporteDeSprintDeEjemplo().Sprint}, "/web/proyectos/7/sprints/9/reporte"},
+		{"sprint cerrado", reporteDeSprintCerrado(), "/web/proyectos/7/sprints/9/reporte"},
+		{"sprint cerrado vacío", domain.Reporte{Proyecto: alfa, Sprint: reporteDeSprintCerrado().Sprint}, "/web/proyectos/7/sprints/9/reporte"},
 		{"defectos largos", reporteConDefectosLargos(), "/web/proyectos/7/reporte"},
 	}
 }
@@ -89,6 +105,7 @@ var (
 	reH1       = regexp.MustCompile(`(?s)<h1>(.*?)</h1>`)
 	reH2       = regexp.MustCompile(`(?s)<h2[^>]*>(.*?)</h2>`)
 	reSeccion  = regexp.MustCompile(`(?s)<section[^>]*>(.*?)</section>`)
+	reParrafo  = regexp.MustCompile(`(?s)<p[ >].*?</p>`)
 	reEtiqueta = regexp.MustCompile(`<[^>]*>`)
 )
 
@@ -161,6 +178,8 @@ func TestADocumentoPDF_SeccionesSonLasDeLaPantalla(t *testing.T) {
 
 // Traza: HU-27 CA-27.25 (RN-27.16; P-11): cada texto de una sección del documento aparece en la
 // misma sección de la pantalla, salvo los encabezados de las tablas de dato/valor.
+// Traza: HU-27 CA-27.26 (RN-27.17): y al revés, cada párrafo de una sección de la pantalla (entre ellos
+// la aclaración del Sprint Cerrado) es un párrafo de la misma sección del documento.
 func TestADocumentoPDF_TextosSonLosDeLaPantalla(t *testing.T) {
 	for _, c := range casosReporteDocumento() {
 		t.Run(c.nombre, func(t *testing.T) {
@@ -185,9 +204,23 @@ func TestADocumentoPDF_TextosSonLosDeLaPantalla(t *testing.T) {
 						t.Errorf("sección %q: el texto %q no está en la pantalla, que dice %.300q", s.Titulo, texto, visible)
 					}
 				}
+				for _, p := range reParrafo.FindAllString(secciones[i][1], -1) {
+					if !tieneParrafo(s, textoVisible(p)) {
+						t.Errorf("sección %q: el párrafo %q de la pantalla no es un párrafo del documento: %+v", s.Titulo, textoVisible(p), s.Bloques)
+					}
+				}
 			}
 		})
 	}
+}
+
+func tieneParrafo(s domain.SeccionPDF, texto string) bool {
+	for _, b := range s.Bloques {
+		if b.Parrafo == texto {
+			return true
+		}
+	}
+	return false
 }
 
 func esColumnaDatoValor(texto string) bool {
@@ -283,6 +316,59 @@ func TestADocumentoPDF_ReporteDeSprint(t *testing.T) {
 	}
 	if !reflect.DeepEqual(doc.Secciones[3].Bloques, wantMetricas) {
 		t.Errorf("Métricas = %+v, se esperaba solo la tabla, sin velocidad: %+v", doc.Secciones[3].Bloques, wantMetricas)
+	}
+
+	// Traza: HU-27 CA-27.26 (RN-27.17): en un Sprint Cerrado, Métricas empieza con la aclaración de la
+	// pantalla, como párrafo, antes de la tabla (o del mensaje de sin sprints cerrados), como reporte.html.
+	t.Run("sprint cerrado", func(t *testing.T) {
+		tablaMetricas := tabla([]string{"Sprint", "% completado", "Defectos detectados", "Defectos resueltos"},
+			[]string{"2", "80,0 %", "1", "1"},
+		)
+		tests := []struct {
+			nombre  string
+			reporte domain.Reporte
+			want    []domain.BloquePDF
+		}{
+			{"con métricas", reporteDeSprintCerrado(), []domain.BloquePDF{parrafo(textoAclaracionEsperado), tablaMetricas}},
+			{"vacío", domain.Reporte{Proyecto: alfa, Sprint: reporteDeSprintCerrado().Sprint},
+				[]domain.BloquePDF{parrafo(textoAclaracionEsperado), parrafo("El reporte no tiene sprints cerrados.")}},
+		}
+		for _, tt := range tests {
+			t.Run(tt.nombre, func(t *testing.T) {
+				doc := aDocumentoPDF(aDatosReporte(tt.reporte))
+
+				if !reflect.DeepEqual(doc.Secciones[3].Bloques, tt.want) {
+					t.Errorf("Métricas = %+v, se esperaba %+v", doc.Secciones[3].Bloques, tt.want)
+				}
+			})
+		}
+	})
+}
+
+// Traza: HU-27 CA-27.26 (RN-27.17): un reporte cuya pantalla no muestra la aclaración (Sprint Abierto o
+// proyecto) tampoco la lleva en ninguna sección del documento.
+func TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto(t *testing.T) {
+	tests := []struct {
+		nombre  string
+		reporte domain.Reporte
+	}{
+		{"sprint abierto", reporteDeSprintDeEjemplo()},
+		{"sprint abierto vacío", domain.Reporte{Proyecto: alfa, Sprint: reporteDeSprintDeEjemplo().Sprint}},
+		{"proyecto", reporteParaDocumento()},
+		{"proyecto vacío", domain.Reporte{Proyecto: alfa}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.nombre, func(t *testing.T) {
+			doc := aDocumentoPDF(aDatosReporte(tt.reporte))
+
+			for _, s := range doc.Secciones {
+				for _, texto := range textosDeSeccion(s) {
+					if strings.Contains(texto, "Solo cuentan") || strings.Contains(texto, "volvieron al backlog") {
+						t.Errorf("sección %q: no tiene que llevar la aclaración del Sprint Cerrado, y tiene %q", s.Titulo, texto)
+					}
+				}
+			}
+		})
 	}
 }
 
