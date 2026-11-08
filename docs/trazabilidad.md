@@ -33,6 +33,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 | HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |
+| HU-27 Exportar el reporte a PDF | ✓ (Aprobada el 2026-11-08 por Matías López en la revisión del PR #379, con P-1 a P-11; ADR-0006 `accepted`) | 15/26 (CA-27.3 a CA-27.6, CA-27.12, CA-27.19, CA-27.24, CA-27.25 y CA-27.26 se cubren con tests del adaptador; CA-27.21 con tests de la pantalla y revisión manual; CA-27.23 con un test de integración) | 26/26 | ✓ | RED → GREEN ×14, REFACTOR ×2 | ✓ 38/38 escenarios (252 pasos; BDD completo en verde en 500 s) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
 | HU-25 Ver panel con estado del proyecto y gráficos | ✓ (Aprobada; ADR-0005, P-1 y P-2 aprobadas por Matías López en la revisión del PR #375) | 8/11 (CA-25.8 se cubre con tests del handler; CA-25.9 y CA-25.10, de la pantalla) | 11/11 | ✓ | RED → GREEN ×7, REFACTOR ✓ | ✓ 11/11 escenarios |
 
@@ -2263,6 +2264,220 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 - **Probado manualmente en el navegador** (servidor real, SQLite, 2026-11-07): proyecto con 2 historias (una Hecha con 5 SP y 10 h estimadas, otra Pendiente con 8 SP), un Sprint cerrado con la primera asignada, y un defecto Alta sobre esa historia (sin Sprint de detección, por quedar detectado después de cerrarse el único Sprint). Las dos pantallas (reporte del proyecto y del Sprint) mostraron las cinco secciones correctamente, con los formatos esperados ("-100,0 %", "38,5 %" con coma decimal) y el mensaje de "sin datos" en Defectos del reporte del Sprint.
 - **Revisión con el agente `go-reviewer`:** Approve con cambios sugeridos, ninguno bloqueante. (1) *Medium/High, no resuelto, confirmado por Matías (punto 2 de su revisión):* `ArmarReporteProyecto.Ejecutar` reimplementa la orquestación de `ConsultarVelocidad` (HU-22) y `ConsultarCalidadSprints` (HU-24) en vez de llamarlos, como decía la spec original (sección 5); mismo resultado y bien testeado, pero duplica lógica entre `internal/app/armar_reporte.go` y `consultar_velocidad.go`/`consultar_calidad_sprints.go` — si cambia una regla en HU-22/HU-24 hay que acordarse de replicarla acá. Matías dio dos caminos, ninguno bloqueante: si el PR [#375](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/375) (HU-25, que agrega `calidadDe` justo para este cálculo) entra antes, HU-26 lo reutiliza; si no, queda como está. La spec (sección 5) ya se corrigió para describir lo que hace el código en vez de lo que decía antes (commit `20477eb`). (2) *Medium, resuelto:* faltaba test del enlace "Ver reporte" en `sprint_detalle.html` (sí lo había para `proyecto_detalle.html`); se agregó `TestPantallaSprintDetalle_EnlazaElReporte` (commit `573ac38`).
 - **Aviso de conflictos (Matías, revisión del PR #378):** el PR #375 (HU-25) toca `main.go`, `pantallas.go`, `router.go`, `router_test.go`, `bdd_test.go` y la trazabilidad; el PR [#377](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/377) (HU-31) toca la trazabilidad y `bdd_test.go`. Son conflictos de líneas agregadas en los mismos lugares: el que se fusiona después deja las dos.
+
+---
+
+## HU-27: Exportar el reporte a PDF
+
+- **Issue:** [#38](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/38), sub-issue de la épica 9 (Reportes) · Sprint 4 · 5 SP · depende de HU-26
+- **Spec:** [docs/specs/HU-27-exportar-reporte-pdf.md](specs/HU-27-exportar-reporte-pdf.md) (**Aprobada** el 2026-11-08 por Matías López (Agile Enabler) en la revisión del PR #379; antes Borrador. P-1 a P-11 aceptadas, incluida la parte de P-11 sobre el adaptador HTTP; que la conversión sea de HU-27 ya lo había confirmado en la issue #38 y en la revisión del PR #378. Preguntas 5, 10, 11 y 14 resueltas; 12 y 13 aceptadas como limitaciones conocidas)
+- **ADR:** [docs/adr/0006-libreria-pdf.md](adr/0006-libreria-pdf.md) (`codeberg.org/go-pdf/fpdf` con DejaVu Sans Condensed embebida), `accepted` el 2026-11-08 por Matías López (Agile Enabler) en la revisión del PR #379
+- **Feature:** [features/HU-27-exportar-reporte-pdf.feature](../features/HU-27-exportar-reporte-pdf.feature), 14 escenarios y Outlines, 38 escenarios al expandirlos (steps en [hu27_steps_test.go](../test/bdd/hu27_steps_test.go), con fuente y generador en memoria en [hu27_sistema_test.go](../test/bdd/hu27_sistema_test.go))
+- **Rutas HTTP:** `GET /web/proyectos/{id}/reporte/pdf` y `GET /web/proyectos/{id}/sprints/{sprintID}/reporte/pdf` (descargas; los errores responden con la página de error HTML).
+- **Pantalla:** enlace "Descargar PDF" en la pantalla del reporte de HU-26 (`reporte.html`), del proyecto y del sprint.
+- **Integración con HU-26:** la rama `hu-26-reporte-proyecto-sprint` está mergeada en esta (`faea8c3`, y `aa7d69b` con la aclaración del sprint cerrado y la spec aprobada). La conversión del reporte a `DocumentoPDF` es de HU-27 (RN-27.16, CA-27.25) y vive en el adaptador HTTP (P-11).
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-27.1 Documento normal | RN-27.1, RN-27.2, RN-27.3, RN-27.10 | El documento exportado conserva título, subtítulo y secciones, y lleva la fecha de emisión `@normal` | `TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina` | `generador.go` (`Generar`, `dibujarPortada`, `textoEmision`) |
+| CA-27.2 Acentos y ñ | RN-27.8, RN-27.9 | Outline "Los textos que el PDF puede mostrar no se reemplazan ni generan aviso", ejemplos de acentos, eñes y signos `@normal` | `TestNormalizarTextoPDF`, `TestGenerar_AcentosYEnie_TextoIdenticoSinAviso`, `TestGenerar_ListaDeRepresentables_SaleIdentica` | `documento_pdf_normalizar.go` (`representableEnPDF`), fuentes DejaVu embebidas en `generador.go` |
+| CA-27.3 Tabla larga | RN-27.3, RN-27.4, RN-27.5 | **Sin escenario BDD a propósito:** hay que mirar el binario. Se cubre con tests del adaptador de PDF. | `TestGenerar_TablaLarga_CruzaPaginasSinPerderNiRepetirFilas`, `TestGenerar_EncabezadoYPie`, `TestGenerar_TablaLarga_RepiteLosEncabezadosEnCadaPagina` | `generador.go` (`dibujarTabla`, `encabezado`, `pie`) |
+| CA-27.4 Párrafo largo | RN-27.3, RN-27.4 | **Sin escenario BDD a propósito** (adaptador de PDF) | `TestGenerar_ParrafoLargo_ContinuaEnOtrasPaginas` | `generador.go` (`escribir`, salto automático) |
+| CA-27.5 Título de sección al pie | RN-27.4 | **Sin escenario BDD a propósito** (adaptador de PDF) | `TestGenerar_TituloDeSeccion_NoQuedaSoloAlPie` | `generador.go` (`dibujarSeccion`, `altoComienzo`) |
+| CA-27.6 Largo de una celda | RN-27.6, RN-27.5 | **Sin escenario BDD a propósito** (el tope se ve en el documento normalizado y en el binario) | `TestNormalizarDocumento_TopeDeCaracteresPorCelda`, `TestNormalizarDocumento_TopeSoloEnLasCeldas`, `TestGenerar_TablaEnLosTopes_UnaFilaPorPagina` | `documento_pdf_normalizar.go` (`recortarCelda`), `generador.go` (`dibujarTabla`, `altoFila`) |
+| CA-27.7 Vacíos | RN-27.7, RN-27.2, RN-27.11 | Un reporte sin subtítulo ni secciones se exporta igual `@limite` · Un párrafo vacío no impide exportar el reporte `@limite` | `TestDocumentoPDFValidar_ContenidoVacioPermitido_NoEsError`, `TestGenerar_SinSubtituloNiAviso_NoLosMuestra`, `TestGenerar_DocumentoMinimo`, `TestGenerar_SeccionesVacias` | `documento_pdf.go` (`Validar`), `generador.go` (`dibujarSeccion`, `dibujarTabla`: "Sin datos.") |
+| CA-27.8 Emojis e ideogramas | RN-27.8, RN-27.9 | Outline "Los caracteres que el PDF no puede mostrar se reemplazan por "?" y se avisa", ejemplos de emojis e ideogramas `@alternativo` · Los caracteres se reemplazan en todos los textos del documento `@alternativo` | `TestNormalizarTextoPDF`, `TestNormalizarDocumento_TodosLosTextos`, `TestTextoAvisoReemplazos`, `TestExportarReporte_NormalizaYCompletaElAviso`, `TestExportarConGeneradorReal_Emojis_PDFConSignoYAviso` | `documento_pdf_normalizar.go` (`NormalizarDocumento`, `TextoAvisoReemplazos`), `exportar_reporte_pdf.go` (`generarPDF`) |
+| CA-27.9 Secuencias de emojis | RN-27.8, RN-27.9 | Mismo Outline, ejemplos de secuencias de emojis `@limite` | `TestNormalizarTextoPDF`, `TestTextoAvisoReemplazos`, `TestExportarReporte_NormalizaYCompletaElAviso` | `documento_pdf_normalizar.go` (`invisibleDeFormato`) |
+| CA-27.10 Espacios, invisibles y controles | RN-27.8, RN-27.9 | Outline de los textos que se pueden mostrar, ejemplos de espacios e invisibles `@limite` · Outline de los reemplazos, ejemplos de controles y bytes no UTF-8 `@limite` | `TestNormalizarTextoPDF` | `documento_pdf_normalizar.go` (`normalizarTextoPDF`) |
+| CA-27.11 Documento inválido | RN-27.11, RN-27.6 (P-10) | Outline "Un documento mal armado no llega al generador", ejemplos de errores de armado `@error` y de títulos que quedan vacíos `@limite` | `TestDocumentoPDFValidar_DocumentoMalArmado_RetornaErrDocumentoInvalido`, `TestDocumentoPDFValidar_ContenidoVacioPermitido_NoEsError`, `TestExportarReporte_DocumentoInvalido_NoLlegaAlGenerador` | `documento_pdf.go` (`Validar`, `MaximoColumnas`, `LargoMaximoEncabezado`) |
+| CA-27.12 Determinismo | RN-27.10 | **Sin escenario BDD a propósito:** compara bytes del PDF | `TestGenerar_Determinista`, `TestGenerar_LaFechaDelPDFEsLaEmision` | `generador.go` (`SetCreationDate`, `SetModificationDate`, `SetCatalogSort`) |
+| CA-27.13 Fecha de emisión | RN-27.10, RN-27.12 | Outline "La fecha de emisión va en hora de Argentina y da la fecha del nombre del archivo", ejemplos del mismo día `@normal` y del cambio de día `@limite` | `TestHoraDeEmision` | `documento_pdf_emision.go` (`HoraDeEmision`, `zonaEmision`) |
+| CA-27.14 Descarga del proyecto | Sección 3, RN-27.12 | Mismo Outline, ejemplos del mismo día (`@CA-27.14`): nombre del archivo | `TestNombreArchivoReporte`, `TestReportePDFProyecto_Descarga`, `TestReportePDF_PasaElContextoDelPedido`, `TestPantallaReporte_BotonDescargarPDF_LlevaALaDescarga` | `documento_pdf_emision.go` (`NombreArchivoReporteProyecto`), `pantallas_reporte_pdf.go` (`descargarReporteProyecto`, `responderPDF`) |
+| CA-27.15 Descarga del sprint | Sección 3, RN-27.12 | El reporte de un sprint se exporta con su propio nombre de archivo `@alternativo` | `TestNombreArchivoReporte`, `TestExportarReporteSprint_GeneraElPDFDelDocumento`, `TestReportePDFSprint_Descarga`, `TestReportePDF_PasaElContextoDelPedido`, `TestPantallaReporte_BotonDescargarPDF_LlevaALaDescarga` | `documento_pdf_emision.go` (`NombreArchivoReporteSprint`), `exportar_reporte_pdf.go` (`ExportarReporteSprint`), `pantallas_reporte_pdf.go` (`descargarReporteSprint`) |
+| CA-27.16 Nombre seguro | RN-27.12 (P-9) | El nombre del archivo no depende del nombre del proyecto `@limite` | `TestNombreArchivoReporte`, `TestReportePDF_NombreConCaracteresPeligrosos_NoInyectaCabeceras` (traza P-9) | `documento_pdf_emision.go`, `pantallas_reporte_pdf.go` (`nombreArchivoSeguro`) |
+| CA-27.17 Proyecto inexistente | RN-27.13, sección 7 | Outline "No se exporta el reporte de un proyecto inexistente" `@error` | `TestExportarReporte_ProyectoInexistente`, `TestReportePDF_NoEncontrados_Devuelven404`, `TestFuenteDocumentoReporte_ErrorDelCasoDeUso_SinCambios` | `exportar_reporte_pdf.go`, `pantallas_reporte_pdf.go` (`errorDeReportePDF`, `erroresReportePDF`) |
+| CA-27.18 Sprint inexistente o de otro proyecto | RN-27.13, sección 7 | Outline "No se exporta el reporte de un sprint inexistente o de otro proyecto" `@error` | `TestExportarReporteSprint_SprintInexistenteODeOtroProyecto`, `TestReportePDF_NoEncontrados_Devuelven404`, `TestFuenteDocumentoReporte_ErrorDelCasoDeUso_SinCambios` | `exportar_reporte_pdf.go` (`ProyectoID != proyectoID`), `pantallas_reporte_pdf.go` |
+| CA-27.19 IDs inválidos | Sección 7 | **Sin escenario BDD a propósito:** los rechaza el adaptador HTTP sin llamar al caso de uso | `TestReportePDF_IDsInvalidos_Devuelven400SinLlamar` | `pantallas_reporte_pdf.go` (reutiliza `idDeRuta` y `sprintIDDesdeRuta`) |
+| CA-27.20 Falla interna | Sección 7 | Outline "Si falla el armado del reporte o el generador, no se obtiene ningún archivo" `@error` (parte del caso de uso; el 500 sin detalle, en tests HTTP) | `TestExportarReporte_FallaDeLaFuenteODelGenerador_SeEnvuelveSinArchivo`, `TestReportePDF_FallaInterna_Devuelve500SinDetalle`, `TestReportePDF_DocumentoInvalido_Devuelve500SinDetalle`, `TestFuenteDocumentoReporte_ErrorDelCasoDeUso_SinCambios` | `exportar_reporte_pdf.go` (`%w`), `pantallas_reporte_pdf.go` (`fallaInterna`) |
+| CA-27.21 Botón y revisión visual | Sección 3 | **Sin escenario BDD:** la parte automatizable es la pantalla (tests del adaptador); la revisión visual es manual y no tiene escenario `@manual` (ver "Huecos") | `TestPantallaReporte_BotonDescargarPDF`, `TestPantallaReporte_BotonDescargarPDF_LlevaALaDescarga` | `pantallas_reporte.go` (campo `URLPDF` en `aDatosReporte`), `reporte.html` |
+| CA-27.22 Mismas secciones, en el exportador | RN-27.1, RN-27.2, RN-27.7 | El PDF conserva los títulos y el orden de las secciones del reporte, aunque estén vacías `@normal` | `TestGenerar_SeccionesVacias` | `generador.go` (`dibujarSeccion`) |
+| CA-27.23 Mismas secciones que la pantalla, integración | RN-27.1, RN-27.2, RN-27.16 | **Sin escenario BDD** (ver "Huecos") | `TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla` (fuente, caso de uso y generador reales; dobles de los casos de uso de HU-26) | `reporte_documento.go`, `exportar_reporte_pdf.go`, `generador.go`, `reporte.html` |
+| CA-27.24 PDF válido | RN-27.15 | **Sin escenario BDD a propósito:** mira el binario y las cabeceras | `TestGenerar_EsUnPDFCompleto`, `TestReportePDFProyecto_Descarga`, `TestReportePDFSprint_Descarga` | `generador.go` (`Output` a un buffer), `pantallas_reporte_pdf.go` (`responderPDF`, `Content-Length`) |
+| CA-27.25 Conversión del reporte | RN-27.16, RN-27.11 (P-10, P-11) | **Sin escenario BDD a propósito:** compara el documento con la pantalla, en el adaptador HTTP | `TestADocumentoPDF_SeccionesSonLasDeLaPantalla`, `TestADocumentoPDF_TextosSonLosDeLaPantalla`, `TestADocumentoPDF_ReporteDeProyecto`, `TestADocumentoPDF_ReporteDeSprint`, `TestADocumentoPDF_ReporteVacio_MensajesDeLaPantalla`, `TestADocumentoPDF_SiempreValido`, `TestFuenteDocumentoReporte_DocumentoDeProyecto`, `TestFuenteDocumentoReporte_DocumentoDeSprint` | `reporte_documento.go` (`aDocumentoPDF`, `fuenteDocumentoReporte`, `NuevaFuenteDocumentoReporte`) |
+| CA-27.26 Aclaración del sprint cerrado | RN-27.17, RN-27.16 | **Sin escenario BDD a propósito:** como CA-27.25, compara el documento con la pantalla, en el adaptador HTTP | `TestADocumentoPDF_ReporteDeSprint` (subtest "sprint cerrado"), `TestADocumentoPDF_TextosSonLosDeLaPantalla` (casos "sprint cerrado" y "sprint cerrado vacío"), `TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto` | `reporte_documento.go` (`bloquesMetricas` copia `datosReporte.AclaracionSprintCerrado`, que arma `aDatosReporte` de HU-26) |
+
+Los tests se listan según su etiqueta `Traza`. Los escenarios de CA-27.2, CA-27.8 a CA-27.11, CA-27.13, CA-27.14, CA-27.17, CA-27.18 y CA-27.20 son ejemplos de `Scenario Outline`, con el tag en cada bloque `Examples`.
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Tests con la etiqueta (ejemplos) | Código |
+|---|---|---|---|
+| RN-27.1 Modelo neutral | CA-27.1, CA-27.22, CA-27.23 | `TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina`, `TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla` | `documento_pdf.go` (`DocumentoPDF`), puertos de `exportar_reporte_pdf.go` |
+| RN-27.2 Orden del contenido | CA-27.1, CA-27.7, CA-27.22, CA-27.23 | `TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina`, `TestGenerar_SinSubtituloNiAviso_NoLosMuestra` | `generador.go` (`dibujarPortada`) |
+| RN-27.3 Encabezado y pie | CA-27.1, CA-27.3, CA-27.4 | `TestGenerar_EncabezadoYPie` | `generador.go` (`encabezado`, `pie`, `AliasNbPages`) |
+| RN-27.4 Saltos de página | CA-27.3, CA-27.4, CA-27.5 | `TestGenerar_TituloDeSeccion_NoQuedaSoloAlPie`, `TestGenerar_TablaDespuesDeUnParrafo_EncabezadosJuntoALaPrimeraFila` | `generador.go` (`dibujarSeccion`, `altoComienzo`) |
+| RN-27.5 Tablas | CA-27.3, CA-27.6 | `TestGenerar_CeldaLarga_SeAjustaEnVariasLineas`, `TestGenerar_FilaDeVariasLineas_NoSeParte`, `TestGenerar_TablaLarga_RepiteLosEncabezadosEnCadaPagina`, `TestGenerar_TablaEnLosTopes_UnaFilaPorPagina` | `generador.go` (`dibujarTabla`, `dibujarFila`, `altoFila`) |
+| RN-27.6 Largo de una celda; topes de columnas y encabezados (P-10) | CA-27.6, CA-27.11 | `TestNormalizarDocumento_TopeDeCaracteresPorCelda`, `TestDocumentoPDFValidar_DocumentoMalArmado_RetornaErrDocumentoInvalido`, `TestGenerar_TablaEnLosTopes_UnaFilaPorPagina` | `documento_pdf_normalizar.go` (`recortarCelda`), `documento_pdf.go` (`MaximoColumnas`, `LargoMaximoEncabezado`) |
+| RN-27.7 Tabla sin filas | CA-27.7, CA-27.22 | `TestGenerar_SeccionesVacias` | `generador.go` (`dibujarTabla`) |
+| RN-27.8 Caracteres | CA-27.2, CA-27.8, CA-27.9, CA-27.10 | `TestNormalizarTextoPDF`, `TestGenerar_ListaDeRepresentables_SaleIdentica` | `documento_pdf_normalizar.go` |
+| RN-27.9 Aviso de reemplazos | CA-27.8, CA-27.9, CA-27.10 | `TestTextoAvisoReemplazos`, `TestExportarReporte_SinReemplazos_AvisoVacioAunqueLaFuenteTraigaUno` | `documento_pdf_normalizar.go` (`TextoAvisoReemplazos`), `exportar_reporte_pdf.go` |
+| RN-27.10 Fecha de emisión | CA-27.1, CA-27.12, CA-27.13 | `TestHoraDeEmision`, `TestGenerar_LaFechaDelPDFEsLaEmision`, `TestExportarReporteProyecto_GeneraElPDFDelDocumento` | `documento_pdf_emision.go` (`HoraDeEmision`), `generador.go` |
+| RN-27.11 Documento válido | CA-27.7, CA-27.11, CA-27.25 | `TestDocumentoPDFValidar_DocumentoMalArmado_RetornaErrDocumentoInvalido`, `TestADocumentoPDF_SiempreValido` | `documento_pdf.go` (`Validar`) |
+| RN-27.12 Nombre del archivo | CA-27.13 a CA-27.16 | `TestNombreArchivoReporte`, `TestExportarReporteProyecto_GeneraElPDFDelDocumento` | `documento_pdf_emision.go` |
+| RN-27.13 Qué se puede descargar | CA-27.17, CA-27.18 | `TestExportarReporteSprint_SprintInexistenteODeOtroProyecto`, `TestReportePDF_NoEncontrados_Devuelven404` | `exportar_reporte_pdf.go` |
+| RN-27.14 Hoja A4 vertical | CA-27.1 | `TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina` | `generador.go` (`fpdf.New("P", "mm", "A4", "")`) |
+| RN-27.15 Archivo válido | CA-27.24 | `TestGenerar_EsUnPDFCompleto`, `TestReportePDFProyecto_Descarga` | `generador.go`, `pantallas_reporte_pdf.go` |
+| RN-27.16 Conversión del reporte | CA-27.23, CA-27.25 | `TestADocumentoPDF_SeccionesSonLasDeLaPantalla`, `TestADocumentoPDF_TextosSonLosDeLaPantalla`, `TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla` | `reporte_documento.go` |
+| RN-27.17 Aclaración del sprint cerrado | CA-27.26 | `TestADocumentoPDF_ReporteDeSprint`, `TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto` | `reporte_documento.go` (`bloquesMetricas`) |
+
+### Tests sin CA propio
+
+Llevan `Traza: HU-27 (sección N)`, una decisión o una RN sin CA. `grep "CA-27\."` no los encuentra; `grep "HU-27"`, sí:
+
+| Test | Traza | Qué verifica |
+|---|---|---|
+| `TestNormalizarDocumento_NoModificaElOriginal`, `TestNormalizarDocumento_TopeNoModificaElOriginal` | Sección 5 | La normalización no modifica el documento que recibe |
+| `TestNormalizarDocumento_ConservaEmisionYAviso` | Sección 5 | Deja `Emision` y `Aviso` como están |
+| `TestExportarReporteProyecto_GeneraElPDFDelDocumento` | RN-27.10, RN-27.12 (sección 5) | Orden de los pasos y nombre del archivo, con un generador falso |
+| `TestExportarReporte_SinReemplazos_AvisoVacioAunqueLaFuenteTraigaUno` | RN-27.9 | El aviso que traiga la fuente se pisa |
+| `TestGenerar_FallaDeFpdf_DevuelveError` | Sección 7 | El error de `Output` sale tal cual, sin bytes |
+| `TestGenerar_CeldaLarga_SeAjustaEnVariasLineas`, `TestGenerar_FilaDeVariasLineas_NoSeParte`, `TestGenerar_TablaDespuesDeUnParrafo_EncabezadosJuntoALaPrimeraFila` | RN-27.4, RN-27.5 | Tablas con celdas de varias líneas y al pie |
+| `TestReportePDF_ConviveConLasPantallas` | Sección 5 | Las rutas de descarga se registran junto a las pantallas sin choque de patrones |
+| `TestReportePDF_NombreConCaracteresPeligrosos_NoInyectaCabeceras` | P-9 (RN-27.12) | El handler sanea el nombre antes de la cabecera |
+
+Sin etiqueta `Traza` de HU-27, porque es un test compartido que suma casos: `TestNuevoRouter_RegistraTodasLasRutas` (suma las dos rutas `/pdf`).
+
+### Errores nuevos
+
+`domain.ErrDocumentoInvalido` (RN-27.11): es un error de programación de quien arma el documento y se responde con `500`. Se reutilizan `ErrProyectoNoEncontrado` (HU-01) y `ErrSprintNoEncontrado` (HU-09), los dos con `404`.
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/documento_pdf.go](../internal/domain/documento_pdf.go) (`DocumentoPDF`, `SeccionPDF`, `BloquePDF`, `TablaPDF`, `Validar`, `ErrDocumentoInvalido`), [documento_pdf_normalizar.go](../internal/domain/documento_pdf_normalizar.go) (`NormalizarDocumento`, `TextoAvisoReemplazos`), [documento_pdf_emision.go](../internal/domain/documento_pdf_emision.go) (`HoraDeEmision`, `NombreArchivoReporteProyecto`, `NombreArchivoReporteSprint`) | [documento_pdf_test.go](../internal/domain/documento_pdf_test.go), [documento_pdf_normalizar_test.go](../internal/domain/documento_pdf_normalizar_test.go), [documento_pdf_emision_test.go](../internal/domain/documento_pdf_emision_test.go) |
+| Casos de uso y puertos | [internal/app/exportar_reporte_pdf.go](../internal/app/exportar_reporte_pdf.go) (`ExportarReporteProyecto`, `ExportarReporteSprint`, puertos `FuenteDocumentoProyecto`, `FuenteDocumentoSprint` y `GeneradorPDF`; reutiliza `LectorProyectos` de HU-04 y `LectorSprintPorID` de HU-23) | [exportar_reporte_pdf_test.go](../internal/app/exportar_reporte_pdf_test.go) |
+| Adaptador de PDF | [internal/adapters/pdf/generador.go](../internal/adapters/pdf/generador.go) (`Generador`, `NuevoGenerador`, `Generar`), [fuentes/](../internal/adapters/pdf/fuentes) (DejaVu Sans Condensed 2.37, licencia en [docs/third-party-licenses/](third-party-licenses/dejavu-fonts-LICENSE.txt)) | [generador_test.go](../internal/adapters/pdf/generador_test.go), [integracion_test.go](../internal/adapters/pdf/integracion_test.go) |
+| Conversión del reporte (P-11) | [internal/adapters/http/reporte_documento.go](../internal/adapters/http/reporte_documento.go) (`aDocumentoPDF`, `fuenteDocumentoReporte`, `NuevaFuenteDocumentoReporte`) | [reporte_documento_test.go](../internal/adapters/http/reporte_documento_test.go), [reporte_documento_fuente_test.go](../internal/adapters/http/reporte_documento_fuente_test.go), [reporte_pdf_integracion_test.go](../internal/adapters/http/reporte_pdf_integracion_test.go) |
+| Descargas HTTP y botón | [internal/adapters/http/pantallas_reporte_pdf.go](../internal/adapters/http/pantallas_reporte_pdf.go) (`RegistrarExportarReportePDF`, `responderPDF`, `nombreArchivoSeguro`), [pantallas_reporte.go](../internal/adapters/http/pantallas_reporte.go) (`URLPDF`), [reporte.html](../internal/adapters/http/web/plantillas/reporte.html), [router.go](../internal/adapters/http/router.go), [cmd/server/main.go](../cmd/server/main.go) | [pantallas_reporte_pdf_test.go](../internal/adapters/http/pantallas_reporte_pdf_test.go), [pantallas_reporte_boton_test.go](../internal/adapters/http/pantallas_reporte_boton_test.go), [router_test.go](../internal/adapters/http/router_test.go) |
+| BDD | [features/HU-27-exportar-reporte-pdf.feature](../features/HU-27-exportar-reporte-pdf.feature), [test/bdd/hu27_steps_test.go](../test/bdd/hu27_steps_test.go), [hu27_sistema_test.go](../test/bdd/hu27_sistema_test.go) (fuente y generador en memoria), [bdd_test.go](../test/bdd/bdd_test.go) | 38 escenarios y 252 pasos en verde |
+
+### Commits
+
+Salen de `git log --no-merges origin/main..HEAD` (72 commits hasta `f68e9a6`, más los de documentación posteriores), en orden. HU-26 y HU-25 ya están en `main`, así que el filtro anterior, `^origin/hu-26-reporte-proyecto-sprint`, ya no cambia el resultado. Los merges están al final.
+
+| Ciclo | Commit | Etapa |
+|---|---|---|
+| ADR | `757de07` docs(HU-27): ADR de la librería de PDF → `8e15310` renumerado a 0006 | — |
+| Spec | `ae10399` docs(HU-27): spec SDD de exportar el reporte a PDF → `23999df` ligada a los criterios de la issue #38 | — |
+| BDD en rojo: feature | `3849991` test(HU-27): [RED] escenarios BDD de exportar el reporte a PDF | BDD en rojo |
+| BDD en rojo: steps | `55d0145` test(bdd): [RED] steps de godog de HU-27 | BDD en rojo, por compilación |
+| Spec: `Aviso` y bloque vacío | `90d2002` docs(HU-27) → `ebcba02` test(HU-27): [RED] escenario del bloque vacío | BDD en rojo, por compilación |
+| Dominio: validar | `124e49b` [RED] → `2ed5c99` [GREEN] | **RED → GREEN** |
+| Dominio: normalizar y avisar | `c6ef36b` [RED] → `9e84213` [GREEN] | **RED → GREEN** |
+| Dominio: emisión y nombre | `296c022` [RED] → `8e03f08` [GREEN] | **RED → GREEN** |
+| Casos de uso | `d50a616` [RED] → `7a6b1b4` test(bdd): [RED] lectores en el sistema en memoria → `3b3bab5` [GREEN] → `4e319da` [REFACTOR] | **RED → GREEN → REFACTOR**; el BDD de HU-27 en verde desde `3b3bab5` |
+| Spec: puertos | `1bf3562` docs(HU-27) | — |
+| Tope de 300 por celda | `49d747d` [RED] → `4b1996b` [GREEN] → `9503984` docs (P-8) | **RED → GREEN** |
+| Adaptador de PDF: texto en orden | `7bffdcb` [RED] → `8ad30bc` [GREEN] | **RED → GREEN** |
+| Adaptador de PDF: páginas, tablas y vacíos | `3926404` [RED] → `f046db4` [GREEN] | **RED → GREEN** |
+| Adaptador de PDF: encabezado, pie, títulos al pie, determinismo | `a9b9d2d` [RED] → `685bc65` [GREEN] → `3e52382` [REFACTOR] | **RED → GREEN → REFACTOR** |
+| Adaptador de PDF: mutantes sobrevivientes | `9221050` fecha de creación · `f6a58c7` encabezados al pie | — (sin RED real, ver abajo) |
+| Descargas HTTP | `fbaf73a` [RED] → `a4abece` [GREEN] → `f973e77` docs (registro propio) → `c9075e5` docs (P-9) | **RED → GREEN** |
+| Revisión: topes (P-10) | `311e1d9` docs → `ddd97a7` [RED] → `dd79d27` [GREEN] | **RED → GREEN** |
+| Revisión: tests que faltaban | `d3c82ea` representables · `d35b1be` acentos · `3a1d3fe` emojis de punta a punta · `e69d7b9` documento inválido en HTTP · `df58232` docs → `855d1fe` selectores suplementarios · `5f7fde1` trazas | — (sin RED real, ver abajo) |
+| Revisión: refactor y preguntas | `8028407` refactor(HU-27): un solo "generar el PDF" · `d241bf1` docs (preguntas 12 y 13) | — (refactor sin cambio de comportamiento) |
+| Integración con HU-26 | `faea8c3` merge de `origin/hu-26-reporte-proyecto-sprint` → `7a1ea6f` docs (P-11) | — |
+| Conversión del reporte | `0789297` [RED] → `57a1666` [GREEN] | **RED → GREEN** |
+| Fuente del documento | `d7855e7` [RED] → `4496a55` [GREEN] | **RED → GREEN** |
+| Cambio de alcance (#378) | `4d9d784` revert de la spec de HU-26 · `39b14ab` docs (RN-27.16, CA-27.25) · `c0dbcd1` docs (comentarios) · `720d796` test (fixture propio y trazas) · `ffeae9b` docs (pregunta 9) | — |
+| Botón | `165abfa` [RED] → `400fc79` [GREEN] | **RED → GREEN** |
+| Rutas en `NuevoRouter` | `a2f5767` [RED] → `3fe8d8f` [GREEN] → `0cb61f0` conexión en `main.go` | **RED → GREEN**; `main.go` sin test automático (humo, ver abajo) |
+| Integración CA-27.23 | `bac4b4f` test(HU-27): títulos de sección del PDF iguales a los de la pantalla | — (sin RED real, ver abajo) |
+| Spec: implementado | `773d548` docs(HU-27) | — |
+| Revisión: comentarios de código | `400426e` docs(HU-27): comentarios de código con Implementa HU-27 y sin referencias viejas. Resuelve dos huecos de la primera versión de esta trazabilidad: el comentario de `DocumentoPDF` que decía que HU-26 completa el documento, y `Implementa HU-27`, que antes estaba solo en los dos handlers de descarga | — (solo comentarios) |
+| Aclaración del sprint cerrado (RN-27.17) | `9baf345` [RED] → `f68e9a6` [GREEN] | **RED → GREEN** |
+
+**Merges de la rama, que no son de HU-27:** `f3a0005` y `862daa2` (traen `origin/main`), `faea8c3` y `aa7d69b` (traen HU-26), y `a0cec10` (trae `origin/main` con HU-25 y HU-26 mergeadas; conflictos en `main.go` y `router.go`, resueltos conservando los dos lados).
+
+**Commits que el filtro `git log --grep="(HU-27)"` no encuentra**, porque usan el prefijo `test(bdd):`: `55d0145` (RED de los steps) y `7a6b1b4` (lectores en el sistema en memoria).
+
+### Evidencia: mutaciones manuales
+
+Ninguna quedó en un commit: se aplicaron en una copia del repo o en el árbol, y se restauraron. En total, 109 mutantes: 108 murieron y 1 sobrevivió, equivalente para el test que lo corre. Los resultados de las tandas anteriores a la integración con HU-26 (dominio y casos de uso, tope de celda, adaptador de PDF, descargas HTTP y revisión) salen de los registros de las conversaciones donde se hicieron, porque los cuerpos de los commits están vacíos.
+
+| Etapa | Mutantes | Murieron | Sobrevivieron y por qué |
+|---|---|---|---|
+| Dominio y casos de uso | 10 | 10 | — |
+| Tope de 300 por celda | 8 | 8 | — |
+| Adaptador de PDF | 13 | 13 | M8 (sin la fecha de emisión en el PDF) y M11 (tabla al pie sin su primera fila) sobrevivieron primero; los matan `9221050` y `f6a58c7`. **M5** (fuente sin glifos para la ñ) muere, pero se aproximó con Helvetica: es **casi equivalente**, porque no se encontró una TTF sin la ñ para probar el caso exacto |
+| Descargas HTTP | 14 | 14 | — |
+| Revisión: topes y tests que faltaban | 14 | 14 | — (topes: 7; lista de representables, normalizar en el caso de uso, documento inválido como 404: 3; rango de los selectores suplementarios: 4) |
+| Conversión y fuente | 25 | 25 | — (14 de `aDocumentoPDF`, 10 de la fuente, repetidos con el fixture propio, y 1 sobre el "—" de `aVistasDefectosReporte`, aplicado solo para comprobar el test) |
+| Botón | 10 | 10 | — |
+| Rutas en `NuevoRouter` | 3 | 3 | — |
+| Integración CA-27.23 | 6 | 5 | "La fuente del sprint usa el caso de uso del proyecto": **equivalente para ese test**, porque los dos dobles devuelven el mismo reporte y los títulos son los mismos. Lo mata `TestFuenteDocumentoReporte_DocumentoDeSprint` |
+| Aclaración del sprint cerrado | 6 | 6 | — (quitar la condición, invertirla, otro texto, quitar el párrafo, como tabla en vez de párrafo, y condición por `EsDeSprint` en vez de la aclaración) |
+
+Algunos mutantes no compilaron en el primer intento (un import o una variable sin usar) y se repitieron dejándolos en uso: `Content-Length` sin `strconv`, el encabezado contado en bytes, y la fuente que devuelve un documento vacío. En la aclaración del sprint cerrado, el mutante "como tabla" no compiló la primera vez por un error del script (`\&`) y se repitió.
+
+**Cruce de pasos BDD al integrar HU-26:** un programa temporal, que no está en el repo, cruzó las 475 regex de `test/bdd` (incluidas las armadas con la constante `horas`) con las 1851 líneas de paso de todos los `.feature`, con los Outline expandidos: 0 pasos con más de una regex y 0 sin regex. Se repitió al integrar la aclaración de HU-26 (`aa7d69b`), con el mismo resultado, y al integrar HU-25 (`a0cec10`): 500 regex y 1906 líneas de paso, 0 con más de una regex y 0 sin regex.
+
+**Prueba de humo:** `cmd/server` con una base temporal y `curl`. La pantalla del reporte responde `200` con el botón; la descarga, `200` con `%PDF-1.3` … `%%EOF`, `filename="reporte-proyecto-1-2026-11-07.pdf"` y `nosniff`; un proyecto inexistente, `404`. No es una prueba en navegador.
+
+### Etapas sin RED real
+
+- **Tests agregados con el código ya correcto** (sus mensajes no llevan etiqueta `[RED]`):
+  - `9221050` y `f6a58c7`: los agregaron los mutantes M8 y M11 del adaptador de PDF, que sobrevivían; el código ya hacía lo correcto
+  - `d3c82ea`, `d35b1be`, `e69d7b9` y `855d1fe`: tests de la revisión con `go-reviewer`, sobre comportamiento que ya existía
+  - `3a1d3fe`: emojis de punta a punta, con el caso de uso y el generador reales
+  - `bac4b4f`: CA-27.23 con el generador real; prueba código que ya existía
+  - `720d796`: fixture propio y trazas; cambia el esperado de la columna Elemento, que con el fixture anterior no se podía probar
+  - `5f7fde1`: solo trazas y comentarios
+- **RED que ya pasaba en parte:** en `ddd97a7`, `TestGenerar_TablaEnLosTopes_UnaFilaPorPagina` pasó en el RED, porque la regla nueva vive en `Validar` y el dibujo de la tabla no cambia; el RED falló por los dos casos inválidos del dominio.
+- **RED por compilación:** `55d0145`, `ebcba02`, `124e49b`, `c6ef36b`, `296c022`, `d50a616`, `7a6b1b4`, `7bffdcb`, `fbaf73a`, `0789297`, `d7855e7` y `a2f5767` (falta la función, el tipo o el campo). `165abfa` falló por aserción (la pantalla todavía no tenía el botón), y `9baf345` también (el documento de un sprint cerrado no tenía la aclaración; `TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto` ya pasaba en el RED, porque es la guarda del caso negativo).
+- **GREEN que corrigió el test del RED:** `57a1666` cambió el esperado de la columna Elemento ("—" por "Logout"), porque el fixture de HU-26 no tenía IDs. `720d796` volvió a "—" con un fixture propio. `f046db4` y `685bc65` ajustaron tests del RED anterior, como explican sus mensajes.
+- **Sin test automático:** `0cb61f0` (`main.go`), cubierto con la prueba de humo.
+
+### Huecos
+
+- **CA-27.23 no tiene escenario BDD.** Hacerlo sobre SQLite real acoplaría los steps de HU-27 a los tipos internos de `hu26_sistema_test.go` (código de Eze) o copiaría unas 160 líneas de esa preparación, y sumaría la lectura del PDF a `test/bdd`. Lo que agregaría es poco: el paso de SQLite al reporte lo cubre el BDD de HU-26 sobre SQLite real, y el del reporte al PDF lo cubre `TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla`. El recorrido completo con el servidor real se probó a mano (prueba de humo).
+- **La parte manual de CA-27.21 no tiene escenario `@manual`.** La suite no filtra `@manual` y corre con `Strict`, así que un escenario manual fallaría por pasos indefinidos. Checklist para la revisión visual, con un PDF descargado de la pantalla:
+  - [ ] Los acentos, la ñ, "¿", "¡", "€", "–" y "…" se ven bien.
+  - [ ] Desde la página 2 está el encabezado con el título del documento; en todas, el pie "Página k de N", con la N correcta.
+  - [ ] Ninguna fila de tabla está encimada ni cortada entre dos páginas, y los encabezados se repiten donde la tabla sigue.
+  - [ ] Ningún título de sección queda solo al pie.
+  - [ ] Con un emoji en un nombre, se ve "?" y el aviso después de la línea de emisión.
+- **Mutantes equivalentes o casi:** el de CA-27.23 sobre la fuente del sprint (equivalente para ese test, lo mata el test de la fuente) y M5 del adaptador de PDF (casi equivalente, aproximado con Helvetica).
+- **`ledongthuc/pdf` es una dependencia solo de los tests:** `go list -deps ./cmd/server` no la incluye. Está en el bloque `require` de `go.mod`, junto a `fpdf`.
+- ~~**La spec está en Borrador**, y el **ADR-0006 sigue en `proposed`** (pregunta abierta 10).~~ Resuelto el 2026-11-08: Matías López (Agile Enabler) aprobó la spec y aceptó el ADR-0006 en la revisión del PR #379.
+- **`-race` no se corrió localmente:** el único gcc de la máquina es MinGW de 32 bits. Lo corre el CI en Linux (`go test -race ./...`).
+- **BDD completo: unos 500 s** (499,7 s en la última corrida). Necesita `-timeout 30m` localmente; en el CI hace falta el timeout de 20 minutos de la rama `ci-timeout-tests` (`5a96c12`), porque `go test` corta cada paquete a los 10 minutos y el CI corre además con `-race`. Ese timeout ya está en `main` (PR #376) y llegó a esta rama con `862daa2`. En esta máquina la suite completa tardó después entre 670 s y 1022 s, y una corrida se cortó a los 30 minutos sin pasos fallidos, trabada en I/O de SQLite: el tiempo depende del entorno.
+- ~~**Decisiones del autor, abiertas a objeción en el PR:** P-8 ("?" que se pierden al recortar una celda, sin test propio), P-9 (saneado del nombre en el handler), P-10 (6 columnas y 100 caracteres por encabezado) y la parte de P-11 que dice que la conversión vive en el adaptador HTTP y no en el dominio. La otra parte de P-11, que la conversión es de HU-27, la confirmó Matías López (issue #38 y revisión del PR #378).~~ Resuelto el 2026-11-08: P-8, P-9, P-10 y P-11 completa, incluida la parte del adaptador HTTP, las aceptó Matías López (Agile Enabler) en la revisión del PR #379.
+- ~~**RN-27.17 y CA-27.26 (aclaración del sprint cerrado) están pendientes de HU-26.**~~ Resuelto el 2026-11-08: HU-26 agregó `AclaracionSprintCerrado` a `datosReporte` y se integró en esta rama; `aDocumentoPDF` la copia como primer párrafo de Métricas (`9baf345` [RED] → `f68e9a6` [GREEN]). Texto anterior: Matías López le pidió a Eze que el reporte de un sprint cerrado lleve una aclaración, como la de HU-23. Mientras HU-26 no la agregue a `datosReporte`, la pantalla no la muestra y el PDF tampoco, así que no hay nada que probar. Cuando exista: sumarla a `aDocumentoPDF` (como un párrafo en la misma sección que la pantalla), y a `TestADocumentoPDF_ReporteDeSprint` y `TestADocumentoPDF_TextosSonLosDeLaPantalla` con un sprint cerrado, con su RED y su GREEN.
+- ~~**Preguntas abiertas:** 12 (recursos de la generación: sin tope de tamaño ni de descargas simultáneas), 13 (texto descompuesto: `e` + `U+0301` sale "e?") y 14 (sprints abiertos y cerrados en el Resumen, que la pantalla no muestra; decisión de Eze). La 15 (aclaración del reporte de un sprint cerrado) quedó resuelta: pasó a RN-27.17 y CA-27.26.~~ Resuelto el 2026-11-08 en la revisión del PR #379: la 14 se corrige en la pantalla de HU-26 con DEF-05 (#380) y el PDF lo trae al copiar la pantalla.
+- **Limitaciones conocidas** (preguntas 12 y 13, aceptadas así por Matías López (Agile Enabler) el 2026-11-08, en la revisión del PR #379):
+  - **12, recursos de la generación:** una generación ya empezada no se puede cancelar, y no hay tope de tamaño del documento ni de descargas simultáneas. Se acepta porque alcanza para el uso del TP.
+  - **13, texto descompuesto:** `e` + `U+0301` sale "e?" y cuenta 1 en el aviso. Se acepta porque los navegadores mandan el texto compuesto y arreglarlo suma `golang.org/x/text`.
+- **El sprint de los defectos se muestra con su ID** (columnas "Sprint detección" y "Sprint resolución"): viene de HU-21 y de la pantalla de HU-26, y lo corrige DEF-05 (#380). El PDF no tiene que cambiar si DEF-05 corrige el valor de `SprintDeteccion` y `SprintResolucion` en `datosReporte`: `aDocumentoPDF` arma la celda desde esos campos, igual que `reporte.html`. Si DEF-05 cambia en cambio la plantilla o el tipo de esos campos, el PDF seguiría mostrando el ID, y `TestADocumentoPDF_TextosSonLosDeLaPantalla`, que compara cada texto del PDF con la misma sección de la pantalla, fallaría y lo avisaría.
+- **Textos fijos repetidos:** los mensajes de "sin datos", "Sin fecha de fin" y "—" están en `reporte.html` y en `reporte_documento.go`. `TestADocumentoPDF_TextosSonLosDeLaPantalla` los compara como subcadenas, así que un recorte del texto ("Sin fecha" en vez de "Sin fecha de fin") lo detecta solo el test del documento esperado completo. La aclaración del sprint cerrado no se repite: se copia del campo de `datosReporte`, y los párrafos de la pantalla se comparan enteros.
+
+### Para revisar
+
+Código de otras historias que tocó HU-27 (`git diff --stat origin/main...HEAD`, sin los archivos propios de HU-27; antes de que HU-26 entrara a `main`, la base era `origin/hu-26-reporte-proyecto-sprint`). Conviene que lo revisen sus autores en la PR. HU-25 no tiene líneas tocadas: en el merge `a0cec10`, sus líneas de `main.go`, `router.go`, `router_test.go`, `bdd_test.go` y `proyecto_detalle.html` quedaron como están en `main`.
+
+| Archivo | Historia | Cambio |
+|---|---|---|
+| [internal/adapters/http/pantallas_reporte.go](../internal/adapters/http/pantallas_reporte.go) | HU-26 (Eze) | **Líneas de Eze tocadas:** campo `URLPDF` en `datosReporte`, y dos líneas en `aDatosReporte` que lo arman (del proyecto, y del sprint con su ID); el import de `fmt` |
+| [reporte.html](../internal/adapters/http/web/plantillas/reporte.html) | HU-26 (Eze) | **Línea de Eze tocada:** el enlace "Descargar PDF" dentro de `<div class="botones">`, después de "Volver…" |
+| [cmd/server/main.go](../cmd/server/main.go) | Compartido | **Líneas de Eze tocadas:** los dos casos de uso del reporte de HU-26 pasan a variables (`armarReporteProyecto`, `armarReporteSprint`), con la misma construcción, porque los usan la pantalla y la fuente. Se suman el import de `adapters/pdf`, la fuente, el generador y los dos casos de uso de exportación. **Merge con HU-25 (`a0cec10`):** conflicto en el literal de `CasosDeUso`; se conservó `ConsultarDashboard` de HU-25, HU-26 quedó una sola vez con las variables (repetir el campo no compila) y después los dos casos de uso de HU-27, en el orden del struct |
+| [router.go](../internal/adapters/http/router.go), [router_test.go](../internal/adapters/http/router_test.go) | Compartidos | Dos campos en `CasosDeUso`, el registro antes de `RegistrarPantallas`, dos dobles y dos rutas. **Merge con HU-25 (`a0cec10`):** conflicto en `NuevoRouter`; quedaron `RegistrarDashboard` (HU-25) y `RegistrarExportarReportePDF` (HU-27), los dos antes de `RegistrarPantallas`. `router_test.go` se combinó solo, con las rutas y los dobles de HU-25, HU-26 y HU-27 |
+| [test/bdd/bdd_test.go](../test/bdd/bdd_test.go) | Compartido | Registra `registrarStepsHU27`; en los merges con HU-26 y con HU-25 se conservaron las líneas de las tres historias (`registrarStepsHU25`, `HU26` y `HU27`) |
+| [go.mod](../go.mod), [go.sum](../go.sum) | Compartidos | `codeberg.org/go-pdf/fpdf` y `github.com/ledongthuc/pdf` (solo tests) |
+| [docs/third-party-licenses/README.md](third-party-licenses/README.md) | Compartido | Sección "Fuentes" con la licencia de DejaVu |
+| [docs/specs/HU-26-reporte-proyecto-sprint.md](specs/HU-26-reporte-proyecto-sprint.md) | HU-26 (Eze) | Sin cambios: `4d9d784` la dejó igual a la de su rama |
 
 ---
 

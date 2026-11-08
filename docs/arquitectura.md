@@ -142,11 +142,9 @@ Las decisiones de arquitectura están en [`docs/adr/`](adr/), una por archivo, c
 | Interfaz | Páginas generadas en el servidor con `html/template` y un CSS propio, sin JavaScript hasta ahora. | [ADR-0003](adr/0003-interfaz-web.md) |
 | CI/CD | GitHub Actions con `-race` y cobertura mínima del 80 %, `main` protegida y despliegue en Render (https://ingsoft-tpintegrador.onrender.com) después de cada merge con el CI en verde. | [ADR-0004](adr/0004-ci-cd.md) |
 | Gráficos del Dashboard | SVG armado en el servidor con `html/template`, sin JavaScript ni dependencias, para respetar la política de seguridad de las pantallas (HU-25, aceptado en la revisión del PR #375). | [ADR-0005](adr/0005-graficos-dashboard.md) |
+| Exportar a PDF | `codeberg.org/go-pdf/fpdf` con la fuente DejaVu Sans Condensed embebida, sin CGO ni dependencias del sistema, para que funcione en Render (HU-27, aceptado en la revisión del PR #379). | [ADR-0006](adr/0006-libreria-pdf.md) |
 | Organización del código | Arquitectura hexagonal: dominio, casos de uso y adaptadores (este documento). | [`CLAUDE.md`](../CLAUDE.md) |
 | BDD | Escenarios en Gherkin automatizados con godog. | [`CLAUDE.md`](../CLAUDE.md) |
-
-**Pendientes del Sprint 4:**
-- **ADR-0006, exportar a PDF** (HU-27, tarea 27.1): la librería tiene que funcionar en Render sin dependencias del sistema.
 
 **Decisiones de diseño que salen de las specs y valen para todo el sistema:**
 - **Sin usuarios ni sesiones:** cualquiera que llegue a una ruta puede usarla, y no se controla qué rol hace cada acción. Por eso los formularios se protegen comprobando el origen y no con un token.

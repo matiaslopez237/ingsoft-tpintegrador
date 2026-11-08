@@ -3,7 +3,9 @@ module github.com/matiaslopez237/ingsoft-tpintegrador
 go 1.27.0
 
 require (
+	codeberg.org/go-pdf/fpdf v0.12.0
 	github.com/cucumber/godog v0.16.0
+	github.com/ledongthuc/pdf v0.0.0-20261020125853-5e46805f718e
 	modernc.org/sqlite v1.61.0
 )
 
