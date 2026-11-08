@@ -46,8 +46,10 @@ jobs:
 
       # Una sola corrida: tests unitarios + BDD, con el detector de carreras (-race) y la cobertura.
       # -race verifica los tests de pedidos simultáneos (HU-02, HU-08 a HU-11); en Windows no corre.
+      # -timeout 20m: go test corta cada paquete a los 10 minutos, y la suite BDD (test/bdd) ya tarda
+      # cerca de 9 en el CI y crece con cada historia.
       - name: go test (unitarios + BDD, con -race y cobertura)
-        run: go test -race -covermode=atomic -coverprofile=coverage.out ./...
+        run: go test -race -timeout 20m -covermode=atomic -coverprofile=coverage.out ./...
 
       - name: Resumen de cobertura
         run: |

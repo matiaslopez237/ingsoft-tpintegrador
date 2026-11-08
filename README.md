@@ -59,6 +59,7 @@ gofmt -l .                                    # tiene que no listar nada
 
 - **Escenarios BDD:** están en [`features/`](features/), y sus pasos en [`test/bdd/`](test/bdd/).
 - **Detector de carreras (`-race`):** el CI lo corre en Linux. En Windows necesita un compilador de C, así que localmente se puede omitir.
+- **Suite completa:** puede tardar más de los 10 minutos que `go test` deja por paquete, sobre todo en máquinas lentas. Si corta por tiempo, agregá `-timeout 20m`, como el CI: `go test -timeout 20m ./...`.
 - **`BDD_TAGS` en Windows:** el ejemplo usa la sintaxis de Linux y macOS. En PowerShell: `$env:BDD_TAGS="@HU-08"; go test ./test/bdd/`.
 
 ## Documentación
