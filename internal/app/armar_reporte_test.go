@@ -156,7 +156,7 @@ func TestArmarReporteProyecto_SinSprintsCerrados_SinMetricas(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 sección 7
+// Traza: HU-26 CA-26.11
 func TestArmarReporteProyecto_ProyectoInexistente_RetornaError(t *testing.T) {
 	f := nuevoReporteFalso()
 
@@ -271,7 +271,7 @@ func TestArmarReporteSprint_Defectos(t *testing.T) {
 	}
 }
 
-// Traza: HU-26 sección 7
+// Traza: HU-26 CA-26.11 (proyecto inexistente), CA-26.12 (sprint inexistente o de otro proyecto)
 func TestArmarReporteSprint_Errores(t *testing.T) {
 	f := nuevoReporteFalso(proyectoActivo(1))
 	f.sprints = []domain.Sprint{{ID: 1, ProyectoID: 2}} // de otro proyecto
