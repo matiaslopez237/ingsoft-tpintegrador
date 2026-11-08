@@ -9,7 +9,7 @@ import (
 
 // NormalizarDocumento aplica RN-27.8 a todos los textos del documento y RN-27.6 a las celdas, y devuelve
 // cuántos "?" insertó (RN-27.9); el recorte de una celda no cuenta. Es pura: no modifica el documento
-// que recibe. Emision y Aviso no se tocan.
+// que recibe. Emision y Aviso no se tocan. Implementa HU-27 (RN-27.6, RN-27.8, RN-27.9).
 func NormalizarDocumento(d DocumentoPDF) (DocumentoPDF, int) {
 	total := 0
 	norm := func(s string) string {
@@ -59,6 +59,7 @@ func recortarCelda(s string) string {
 }
 
 // TextoAvisoReemplazos es el aviso de RN-27.9 para n "?" insertados; vacío si no hubo reemplazos.
+// Implementa HU-27 (RN-27.9).
 func TextoAvisoReemplazos(n int) string {
 	switch {
 	case n <= 0:

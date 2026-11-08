@@ -47,7 +47,8 @@ func NuevoExportarReporteProyecto(proyectos LectorProyectos, fuente FuenteDocume
 }
 
 // Ejecutar verifica que el proyecto exista (RN-27.13), arma el documento, lo prepara (RN-27.8 a
-// RN-27.11) y genera el PDF. Ante cualquier error no devuelve ningún archivo.
+// RN-27.11) y genera el PDF. Ante cualquier error no devuelve ningún archivo. Implementa HU-27 (RN-27.8
+// a RN-27.13).
 func (uc *ExportarReporteProyecto) Ejecutar(ctx context.Context, proyectoID int64) (ArchivoPDF, error) {
 	if _, err := uc.proyectos.BuscarPorID(ctx, proyectoID); err != nil {
 		return ArchivoPDF{}, err
@@ -72,13 +73,16 @@ type ExportarReporteSprint struct {
 	reloj     func() time.Time
 }
 
+// NuevoExportarReporteSprint recibe además el lector de sprints, para verificar que el sprint sea del
+// proyecto (RN-27.13).
 func NuevoExportarReporteSprint(proyectos LectorProyectos, sprints LectorSprintPorID, fuente FuenteDocumentoSprint,
 	generador GeneradorPDF, reloj func() time.Time) *ExportarReporteSprint {
 	return &ExportarReporteSprint{proyectos: proyectos, sprints: sprints, fuente: fuente, generador: generador, reloj: reloj}
 }
 
 // Ejecutar verifica que el proyecto exista y que el sprint sea suyo (RN-27.13), en el orden de la tabla
-// de errores de la spec, y después hace lo mismo que el del proyecto.
+// de errores de la spec, y después hace lo mismo que el del proyecto. Implementa HU-27 (RN-27.8 a
+// RN-27.13).
 func (uc *ExportarReporteSprint) Ejecutar(ctx context.Context, proyectoID, sprintID int64) (ArchivoPDF, error) {
 	if _, err := uc.proyectos.BuscarPorID(ctx, proyectoID); err != nil {
 		return ArchivoPDF{}, err

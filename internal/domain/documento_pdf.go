@@ -7,8 +7,9 @@ import (
 	"unicode/utf8"
 )
 
-// ErrDocumentoInvalido indica que quien armó el documento del PDF (HU-26) no cumplió RN-27.11. Es un
-// error de programación, no del usuario: el adaptador HTTP lo responde como falla interna.
+// ErrDocumentoInvalido indica que quien armó el documento del PDF (la conversión del reporte, spec HU-27,
+// P-11) no cumplió RN-27.11. Es un error de programación, no del usuario: el adaptador HTTP lo responde
+// como falla interna. Implementa HU-27 (RN-27.11).
 var ErrDocumentoInvalido = errors.New("documento del PDF inválido")
 
 // Topes de una tabla (RN-27.6, P-10): con ellos, la fila de encabezados y una fila con celdas de
@@ -18,8 +19,9 @@ const (
 	LargoMaximoEncabezado = 100 // en caracteres (runes), contados después de RN-27.8
 )
 
-// DocumentoPDF es el modelo neutral del que se genera el PDF (spec HU-27, sección 2). HU-26 completa
-// todos los campos menos Emision y Aviso, que pone el caso de uso de HU-27 (RN-27.9, RN-27.10).
+// DocumentoPDF es el modelo neutral del que se genera el PDF (spec HU-27, sección 2). La conversión del
+// reporte de HU-26 (RN-27.16, P-11) completa todos los campos menos Emision y Aviso, que pone el caso de
+// uso de exportación (RN-27.9, RN-27.10). Implementa HU-27 (RN-27.1).
 type DocumentoPDF struct {
 	Titulo    string    // obligatorio
 	Subtitulo string    // opcional
@@ -48,7 +50,8 @@ type TablaPDF struct {
 }
 
 // Validar implementa RN-27.11. Los títulos se comprueban sin contar espacios; se llama después de
-// normalizar (RN-27.8), así que un título hecho solo de invisibles llega vacío.
+// normalizar (RN-27.8), así que un título hecho solo de invisibles llega vacío. Implementa HU-27
+// (RN-27.6, RN-27.11).
 func (d DocumentoPDF) Validar() error {
 	if strings.TrimSpace(d.Titulo) == "" {
 		return ErrDocumentoInvalido

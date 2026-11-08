@@ -27,6 +27,7 @@ var encabezadosDatoValor = []string{"Dato", "Valor"}
 // aDocumentoPDF convierte el reporte de HU-26, ya formateado para la pantalla, al documento que exporta
 // HU-27: las cinco secciones de reporte.html, en el mismo orden, con los mismos títulos y los mismos
 // textos (spec HU-27, RN-27.16 y P-11). No completa Emision ni Aviso, que son del caso de uso de HU-27.
+// Implementa HU-27 (RN-27.16).
 func aDocumentoPDF(d datosReporte) domain.DocumentoPDF {
 	return domain.DocumentoPDF{
 		Titulo: tituloReporte(d),
@@ -145,7 +146,7 @@ func tablaPDF(columnas []string, filas [][]string) domain.BloquePDF {
 
 // fuenteDocumentoReporte implementa app.FuenteDocumentoProyecto y app.FuenteDocumentoSprint (HU-27) sobre
 // los casos de uso del reporte de HU-26: arma el reporte, le da el formato de la pantalla y lo convierte
-// con aDocumentoPDF (spec HU-27, sección 5 y P-11).
+// con aDocumentoPDF (spec HU-27, sección 5 y P-11). Implementa HU-27 (RN-27.16).
 type fuenteDocumentoReporte struct {
 	proyecto armadorReporteProyecto
 	sprint   armadorReporteSprint

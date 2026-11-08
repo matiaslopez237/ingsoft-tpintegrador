@@ -52,11 +52,13 @@ const aliasPaginas = "{nb}"
 // Generador implementa app.GeneradorPDF. No guarda estado: cada llamada arma su propio documento.
 type Generador struct{}
 
+// NuevoGenerador arma el generador de PDF que usan los casos de uso de exportación.
 func NuevoGenerador() *Generador { return &Generador{} }
 
 // Generar dibuja el documento en A4 vertical (RN-27.14). Recibe el documento ya normalizado y validado
 // por el caso de uso, así que no lo vuelve a normalizar ni a validar. Si fpdf falla, devuelve su error
-// tal cual, sin bytes: el caso de uso es el que dice que falló la generación.
+// tal cual, sin bytes: el caso de uso es el que dice que falló la generación. Implementa HU-27 (RN-27.2
+// a RN-27.5, RN-27.7, RN-27.10, RN-27.14, RN-27.15).
 func (g *Generador) Generar(ctx context.Context, doc domain.DocumentoPDF) ([]byte, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
