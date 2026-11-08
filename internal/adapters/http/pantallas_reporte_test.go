@@ -163,3 +163,13 @@ func TestPantallaProyectoDetalle_EnlazaElReporte(t *testing.T) {
 	}
 	contiene(t, rec, `href="/web/proyectos/7/reporte"`)
 }
+
+// Traza: HU-26 sección 5 (P-3): enlace desde el detalle del Sprint, mismo patrón que el del proyecto.
+func TestPantallaSprintDetalle_EnlazaElReporte(t *testing.T) {
+	rec := pedirPantalla(t, casosConAsignacion(nil, nil), http.MethodGet, rutaSprintDetalle, nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, `href="/web/proyectos/7/sprints/1/reporte"`)
+}
