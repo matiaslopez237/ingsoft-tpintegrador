@@ -3,6 +3,7 @@ package http
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -53,6 +54,8 @@ type (
 		Metricas     []vistaMetricaReporte
 
 		Defectos []vistaDefectoReporte
+
+		URLPDF string // descarga del PDF (HU-27, CA-27.21)
 	}
 )
 
@@ -123,8 +126,10 @@ func aDatosReporte(r domain.Reporte) datosReporte {
 		HayVelocidad:           r.HayVelocidad,
 		Metricas:               aVistasMetricasReporte(r.Metricas),
 		Defectos:               aVistasDefectosReporte(r.Defectos, r.Historias),
+		URLPDF:                 fmt.Sprintf("/web/proyectos/%d/reporte/pdf", r.Proyecto.ID), // HU-27
 	}
 	if r.Sprint != nil {
+		d.URLPDF = fmt.Sprintf("/web/proyectos/%d/sprints/%d/reporte/pdf", r.Proyecto.ID, r.Sprint.ID) // HU-27
 		d.EsDeSprint = true
 		d.NumeroSprint = r.Sprint.Numero
 		d.SprintGoal = r.Sprint.Objetivo
