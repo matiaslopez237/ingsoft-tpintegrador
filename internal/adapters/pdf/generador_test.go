@@ -174,6 +174,43 @@ func documentoConTabla(t *domain.TablaPDF) domain.DocumentoPDF {
 	}
 }
 
+// caracterMasAncho es el carácter más ancho de la lista de RN-27.8 en DejaVu Sans Condensed (unos 3 mm
+// a 9 puntos). Un texto sin espacios de este carácter es el peor caso para el alto de una fila (P-10).
+const caracterMasAncho = "Œ"
+
+// Traza: HU-27 CA-27.6 (RN-27.5, RN-27.6, P-10, sección 5): justo en los topes, 6 columnas con
+// encabezados de 100 caracteres y celdas de 300 del carácter más ancho, cada página tiene la fila de
+// encabezados y exactamente una fila entera. Se cuentan los Œ de cada página: 6×100 + 6×300.
+func TestGenerar_TablaEnLosTopes_UnaFilaPorPagina(t *testing.T) {
+	const filas = 3
+	tabla := &domain.TablaPDF{}
+	for range 6 {
+		tabla.Columnas = append(tabla.Columnas, strings.Repeat(caracterMasAncho, 100))
+	}
+	for range filas {
+		var fila []string
+		for range 6 {
+			fila = append(fila, strings.Repeat(caracterMasAncho, 300))
+		}
+		tabla.Filas = append(tabla.Filas, fila)
+	}
+	doc := documentoConTabla(tabla)
+	if err := doc.Validar(); err != nil {
+		t.Fatalf("la tabla en los topes tiene que ser válida: %v", err)
+	}
+
+	textos := paginas(t, generar(t, doc))
+
+	if len(textos) != filas {
+		t.Fatalf("páginas = %d, se esperaba una por fila (%d)", len(textos), filas)
+	}
+	for i, texto := range textos {
+		if n := strings.Count(texto, caracterMasAncho); n != 6*100+6*300 {
+			t.Errorf("página %d: %d caracteres %s, se esperaban %d (encabezados y una fila entera)", i+1, n, caracterMasAncho, 6*100+6*300)
+		}
+	}
+}
+
 // filaDePrueba es la fila i de una tabla de prueba: cada celda dice su columna y su número de fila.
 func filaDePrueba(i int) []string {
 	return []string{fmt.Sprintf("A-%03d", i), fmt.Sprintf("B-%03d", i), fmt.Sprintf("C-%03d", i)}

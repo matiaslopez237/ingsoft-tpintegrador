@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -17,6 +18,16 @@ func documentoValido() DocumentoPDF {
 			}}}},
 		},
 	}
+}
+
+// tablaDeColumnas arma una tabla de n columnas con una fila, todas con el mismo texto.
+func tablaDeColumnas(n int, texto string) *TablaPDF {
+	t := &TablaPDF{Filas: [][]string{{}}}
+	for range n {
+		t.Columnas = append(t.Columnas, texto)
+		t.Filas[0] = append(t.Filas[0], texto)
+	}
+	return t
 }
 
 // CA-27.11: los errores de quien arma el documento se rechazan con ErrDocumentoInvalido (RN-27.11).
@@ -38,6 +49,11 @@ func TestDocumentoPDFValidar_DocumentoMalArmado_RetornaErrDocumentoInvalido(t *t
 		}},
 		{"fila con más celdas que columnas", func(d *DocumentoPDF) {
 			d.Secciones[1].Bloques[0].Tabla.Filas = [][]string{{"Login", "5", "extra"}}
+		}},
+		// RN-27.6, P-10: los topes de columnas y de encabezados.
+		{"tabla de 7 columnas", func(d *DocumentoPDF) { d.Secciones[1].Bloques[0].Tabla = tablaDeColumnas(7, "A") }},
+		{"encabezado de 101 caracteres", func(d *DocumentoPDF) {
+			d.Secciones[1].Bloques[0].Tabla.Columnas[0] = strings.Repeat("Œ", 101)
 		}},
 	}
 	for _, c := range casos {
@@ -63,6 +79,11 @@ func TestDocumentoPDFValidar_ContenidoVacioPermitido_NoEsError(t *testing.T) {
 		{"tabla sin filas", func(d *DocumentoPDF) { d.Secciones[1].Bloques[0].Tabla.Filas = nil }},
 		{"bloque sin párrafo ni tabla (párrafo vacío)", func(d *DocumentoPDF) {
 			d.Secciones[0].Bloques = []BloquePDF{{}}
+		}},
+		// RN-27.6, P-10: justo en los topes. Œ ocupa 2 bytes: el encabezado se cuenta en caracteres.
+		{"tabla de 6 columnas", func(d *DocumentoPDF) { d.Secciones[1].Bloques[0].Tabla = tablaDeColumnas(6, "A") }},
+		{"encabezado de 100 caracteres", func(d *DocumentoPDF) {
+			d.Secciones[1].Bloques[0].Tabla.Columnas[0] = strings.Repeat("Œ", 100)
 		}},
 	}
 	for _, c := range casos {
