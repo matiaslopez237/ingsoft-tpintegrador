@@ -28,7 +28,7 @@ Es una propuesta de Matías, siguiendo lo que hizo cada uno en los sprints anter
 | Eze | HU-24, HU-26 | 8 | HU-24 sigue a sus HU-20, HU-21 y HU-22 (defectos y velocidad), y el reporte reúne esas métricas. |
 | Nico | HU-25 | 8 | Es la historia más grande y la que tiene más trabajo de pantalla. |
 | Lucas | HU-27 | 5 | Toma el reporte de HU-26 y suma la librería de PDF. Arranca por el ADR, que no depende de nadie. |
-| Matías | HU-29, HU-28, HU-31 | 7 | Tiene menos puntos porque también revisa los PR (Agile Enabler). HU-31 la sumó durante el sprint, y le sirve para las capturas de HU-28. |
+| Matías | HU-29, HU-28, HU-31 | 7 | Arrancó con menos puntos (4) porque también revisa los PR (Agile Enabler). Sumó HU-31 durante el sprint, que le sirve para las capturas de HU-28. |
 
 **Cada uno se asigna en GitHub sus historias y sus tareas** (Assignees → *assign yourself*), así queda registrado quién las tomó.
 

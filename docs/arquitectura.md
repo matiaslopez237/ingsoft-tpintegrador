@@ -31,6 +31,7 @@ flowchart LR
 | `internal/app` | Un caso de uso por acción (`CrearProyecto`, `CerrarSprint`, `ConsultarHorasSprint`…) y los **puertos**: las interfaces que necesita para leer y guardar. | Del dominio. |
 | `internal/adapters/http` | Las rutas JSON y las pantallas. Traducen el pedido a una llamada al caso de uso y el resultado o el error a una respuesta. | De los casos de uso y del dominio. |
 | `internal/adapters/persistencia` | Los repositorios sobre SQLite, que implementan los puertos. | Del dominio y del driver de SQLite. |
+| `internal/adapters/ejemplo` | La carga del proyecto de ejemplo al arrancar (HU-31). Como el HTTP, maneja la aplicación desde afuera: usa los casos de uso y no conoce la persistencia. | De los casos de uso y del dominio. |
 | `cmd/server` | El `main`: abre la base, arma los repositorios y los casos de uso, y levanta el servidor. | De todo lo anterior. |
 
 Las dependencias apuntan siempre hacia el dominio. Se puede comprobar con:
@@ -84,7 +85,7 @@ Usa SQLite con `modernc.org/sqlite`, un driver escrito en Go que no necesita CGO
 
 ### Arranque
 
-`cmd/server/main.go` lee dos variables de entorno: `DB_PATH` (por defecto `metrics.db`) y `PORT` (por defecto `8080`). Configura tiempos máximos de lectura y escritura, y al recibir `Ctrl+C` o `SIGTERM` (la señal con la que Render detiene el servidor) termina los pedidos en curso y cierra la base.
+`cmd/server/main.go` lee tres variables de entorno: `DB_PATH` (por defecto `metrics.db`), `PORT` (por defecto `8080`) y `CARGAR_EJEMPLO` (si está en `true` y la base no tiene proyectos, carga el proyecto de ejemplo antes de atender pedidos, HU-31). Configura tiempos máximos de lectura y escritura, y al recibir `Ctrl+C` o `SIGTERM` (la señal con la que Render detiene el servidor) termina los pedidos en curso y cierra la base.
 
 ## Cómo viaja un pedido
 

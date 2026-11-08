@@ -10,14 +10,14 @@ Una aplicación recién desplegada está vacía, y en el plan gratuito de Render
 ## 2. Entradas
 | Dato | Tipo (Go) | Obligatorio | Validación |
 |---|---|---|---|
-| Variable de entorno `CARGAR_EJEMPLO` | `string` | No | Se interpreta con `strconv.ParseBool` (`true`, `1`, `TRUE`…). Ausente o vacía equivale a `false`. Un valor que `ParseBool` no reconoce no carga el ejemplo (RN-31.3). |
+| Variable de entorno `CARGAR_EJEMPLO` | `string` | No | Sin los espacios de alrededor, se interpreta con `strconv.ParseBool` (`true`, `1`, `TRUE`…). Ausente o vacía equivale a `false`. Un valor que `ParseBool` no reconoce no carga el ejemplo (RN-31.3). |
 | Proyectos existentes en la base | `[]domain.Proyecto` | — | Se leen con el caso de uso `ListarProyectos` (HU-30) antes de cargar. |
 
 No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de atender pedidos.
 
 ## 3. Salidas esperadas
 - **Con la variable activada y la base sin proyectos:** queda cargado el proyecto de ejemplo con este contenido:
-  - **Proyecto:** "Software Metrics & Estimation", `Activo`, con inicio el 2026-10-22 (P-1). El Sprint 1 va del 22 al 25 de octubre y sin fecha de fin.
+  - **Proyecto:** "Software Metrics & Estimation", `Activo`, con inicio el 2026-10-22 (P-1) y sin fecha de fin. El Sprint 1 va del 22 al 25 de octubre.
   - **Integrantes:** Matías López (Agile Enabler), Ezequiel Assenza, Nicolás Andino y Lucas Orellana (Product Builder).
   - **Product Backlog:** las historias HU-01 a HU-31 como elementos, con la descripción y los criterios de aceptación de su issue y los story points del Product Backlog. Como el Product Backlog no tiene prioridades, la prioridad sale del sprint: Alta en los Sprints 1 y 2, Media en el 3 y Baja en el 4.
   - **Sprints 1 a 3 `Cerrado`**, con las fechas y las historias reales de cada uno, todas `Hecho`: 19, 26 y 28 puntos planificados y completados.
@@ -42,7 +42,7 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 - **RN-31.3:** Si `CARGAR_EJEMPLO` tiene un valor que no se reconoce como booleano, no se carga el ejemplo y se avisa en el log. No impide arrancar.
 - **RN-31.4:** Los sprints se arman en orden cronológico, como pasaron: se crea el sprint, se le asignan sus historias, se registran el esfuerzo y los defectos con fechas dentro del sprint, se completan las historias y se cierra, antes de crear el siguiente. Así los puntos de cada cierre (RN-11.6) y los sprints de detección y resolución de los defectos (RN-20.5, RN-21.6) salen de las mismas reglas que en el uso normal.
 - **RN-31.5:** Para los casos de uso que dependen de "hoy" (`RegistrarDefecto`, `ActualizarEstadoDefecto` y `RegistrarEsfuerzo`), la carga les pasa un reloj con la fecha del ejemplo que corresponde, dentro del sprint en curso. Los demás casos de uso no cambian.
-- **RN-31.6:** La carga ocurre antes de que el servidor empiece a atender pedidos, así que no hay pedidos simultáneos que la afecten.
+- **RN-31.6:** La carga ocurre antes de que el servidor empiece a atender pedidos, así que no hay pedidos simultáneos que la afecten. Usa el mismo contexto que el apagado del servidor: con `Ctrl+C` o `SIGTERM` durante la carga, se corta.
 
 ## 5. Restricciones
 - **Dónde va:** la carga es un adaptador que maneja la aplicación desde afuera, como el HTTP: `internal/adapters/ejemplo`. Recibe los casos de uso ya construidos y no depende de SQLite. El contenido del ejemplo son datos en Go, en el mismo paquete.
@@ -60,13 +60,15 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 - Reiniciar el servidor con el ejemplo ya cargado → no se duplica, porque la base ya tiene un proyecto.
 - Base de una versión anterior, a la que las migraciones le agregan columnas (ADR-0002) → sigue valiendo RN-31.1: solo importa si hay proyectos.
 - El Sprint 4 sigue `Abierto` después de su fecha de fin (2026-11-08) → es válido: un sprint se cierra cuando el equipo lo decide (RN-11.2).
+- `Ctrl+C` o `SIGTERM` durante la carga → la carga se corta y el servidor no arranca, igual que si un paso falla (sección 7).
+- Arrancar de nuevo después de una carga que falló → la base tiene el proyecto a medias y RN-31.1 no vuelve a cargarlo. Por eso el mensaje de la falla pide borrar el archivo de `DB_PATH` antes de volver a arrancar. En Render no hace falta: cada despliegue arranca con la base vacía.
 
 ## 7. Condiciones de error
 | Situación | Error (Go) | Mensaje / comportamiento |
 |---|---|---|
 | `CARGAR_EJEMPLO` con un valor no booleano | — (no es un error de dominio) | No se carga y se registra en el log "CARGAR_EJEMPLO no es un valor booleano: no se carga el ejemplo". El servidor arranca igual. |
 | No se pudo leer la lista de proyectos | El error del caso de uso, envuelto | Igual que una falla al cargar (fila siguiente). |
-| Un caso de uso devuelve un error durante la carga | El error del caso de uso, envuelto con el paso que falló (por ejemplo, "cargar ejemplo: cerrar el sprint 2: …") | El servidor no arranca y el log muestra el error (P-2). Con los tests de la carga en el CI, esto solo puede pasar si cambia una regla de otra historia sin actualizar el ejemplo. |
+| Un caso de uso devuelve un error durante la carga, o `Ctrl+C`/`SIGTERM` la corta | El error del caso de uso (o `context.Canceled`), envuelto con el paso que falló (por ejemplo, "cargar ejemplo: cerrar el sprint 2: …") | El servidor no arranca (P-2). El log muestra el error y dice que la base quedó con el ejemplo a medias: "borrá <DB_PATH> antes de volver a arrancar". Con los tests de la carga en el CI, un error de un paso solo puede pasar si cambia una regla de otra historia sin actualizar el ejemplo. |
 
 ## 8. Criterios de aceptación
 - **CA-31.1:** Dada una base vacía y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces existe el proyecto "Software Metrics & Estimation", `Activo`, con 4 integrantes y sus roles. (RN-31.1)
@@ -96,3 +98,4 @@ Ninguna.
 - 2026-11-05: Matías confirma P-1 a P-3 y aprueba la spec.
 - 2026-11-05: los defectos del ejemplo usan sus fechas reales. DEF-03 se resolvió y DEF-04 se detectó entre el Sprint 3 y el 4, así que no tienen sprint de resolución y de detección, respectivamente.
 - 2026-11-07: implementada. La prioridad de cada historia sale de su sprint, porque el Product Backlog no tiene prioridades, y el esfuerzo se registra a nombre de quien más commits hizo en cada historia. Los tests verifican los defectos (HU-21) y las rondas (HU-16), en lugar de la calidad de HU-24.
+- 2026-11-08: en la revisión del PR #377, Nico señaló que una carga que falla deja el ejemplo a medias y el próximo arranque no lo vuelve a cargar. El mensaje de la falla pide borrar la base, `Ctrl+C` durante la carga la corta, y se agregaron los casos límite. CA-31.5 verifica los valores exactos de las horas.

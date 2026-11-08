@@ -34,7 +34,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 | HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
-| HU-31 Proyecto de ejemplo precargado | ✓ (Implementada; P-1 a P-3 confirmadas por Matías) | 9/11 (CA-31.10 y CA-31.11 se cubren con tests Go) | 6/11 (CA-31.2 a CA-31.5 solo en BDD) | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 13/13 escenarios |
+| HU-31 Proyecto de ejemplo precargado | ✓ (Implementada; P-1 a P-3 confirmadas por Matías) | 9/11 (CA-31.10 y CA-31.11 se cubren con tests Go) | 7/11 (CA-31.2 a CA-31.5 solo en BDD) | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 13/13 escenarios |
 
 ---
 
@@ -2230,13 +2230,17 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 | 31.6 Conexión | `b474877` [RED] → `d2fcf4c` [GREEN] | 2 tests en rojo → verde |
 | 31.7 Revisión | `8c97e95` refactor(HU-31): [31.7][REFACTOR] la carga del ejemplo en su propia función | Tests en verde |
 | 31.7 Trazabilidad | docs(trazabilidad): HU-31 | — |
+| Revisión de Nico (PR #377): carga a medias | `9982bb5` [RED] → `9513f8c` [GREEN] | 2 tests en rojo → verde; el test del reloj pasaba desde el RED (cubre código ya correcto) |
+| Revisión de Nico: errores y test | `ca21e9d` refactor(HU-31): [REFACTOR] errores de la carga más claros | Tests en verde |
+| Revisión de Nico: horas realistas | `12ef733` feat(HU-31): contenido con horas más realistas | Tests y BDD en verde |
+| Revisión de Nico: CA-31.5 exacto | `af461fd` test(HU-31): CA-31.5 verifica los valores exactos | BDD 13/13 |
 
 **Merge de la rama, que no es de HU-31:** `5fb4f3f` (trae `origin/main` con HU-24; se resolvió el conflicto en `test/bdd/bdd_test.go` dejando las dos historias).
 
 ### Verificación
 
 - `go vet` y el `gofmt` del toolchain limpios; tests de `cmd` e `internal` en verde; cobertura de `internal/adapters/ejemplo`: 81,6 %.
-- Con el servidor real: base vacía y `CARGAR_EJEMPLO=true` carga el ejemplo en unos 6 segundos (velocidad 24,3; 303 h estimadas contra 278 reales); un reinicio no duplica; `si` y la variable ausente no cargan, y el log dice por qué. En el navegador se revisaron el detalle del proyecto, sprints anteriores (con las columnas de HU-24), el Sprint 4 abierto y las dos rondas de HU-14.
+- Con el servidor real: base vacía y `CARGAR_EJEMPLO=true` carga el ejemplo en unos 6 segundos (velocidad 24,3; 151,5 h estimadas contra 139 reales, -8,3 %); un reinicio no duplica; `si` y la variable ausente no cargan, y el log dice por qué. En el navegador se revisaron el detalle del proyecto, sprints anteriores (con las columnas de HU-24), el Sprint 4 abierto y las dos rondas de HU-14.
 
 ### Huecos
 
@@ -2245,6 +2249,8 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 - **Prioridades del ejemplo:** el Product Backlog no tiene prioridades, así que salen del sprint (Alta en los Sprints 1 y 2, Media en el 3, Baja en el 4).
 - **Sprint 4 del ejemplo:** queda abierto con sus fechas reales (5 al 8 de noviembre). Desde el 9, el Dashboard de HU-25 va a decir que no hay sprint en curso (P-1 de HU-25). Cuando se cierre el Sprint 4 real, se cierra también en el ejemplo (P-3).
 - **CA-31.11 en Render:** se verifica después del merge, en el primer despliegue automático.
+- **Carga a medias:** las cargas no son una transacción: cada caso de uso guarda lo suyo. Si un paso falla o se corta con `Ctrl+C`, la base queda con el ejemplo incompleto y el próximo arranque no lo vuelve a cargar (RN-31.1). El mensaje pide borrar la base antes de volver a arrancar; en Render no pasa, porque cada despliegue arranca vacío. Lo señaló Nico en la revisión del PR #377.
+- **Horas del ejemplo:** 1,5 h estimadas por story point, y las reales en registros de hasta 4 h, sin pasar de 8,5 h por persona y día.
 
 ---
 
