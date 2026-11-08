@@ -1,0 +1,129 @@
+{{define "titulo"}}{{if .EsDeSprint}}Reporte del Sprint {{.NumeroSprint}} de {{.Proyecto.Nombre}}{{else}}Reporte de {{.Proyecto.Nombre}}{{end}}{{end}}
+{{define "contenido"}}
+<div class="cabecera">
+  <h1>{{if .EsDeSprint}}Reporte del Sprint {{.NumeroSprint}} de {{.Proyecto.Nombre}}{{else}}Reporte de {{.Proyecto.Nombre}}{{end}}</h1>
+  <div class="botones">
+    {{if .EsDeSprint}}
+    <a href="/web/proyectos/{{.Proyecto.ID}}/sprints">Volver a sprints</a>
+    {{else}}
+    <a href="/web/proyectos/{{.Proyecto.ID}}">Volver al proyecto</a>
+    {{end}}
+  </div>
+</div>
+
+<section aria-labelledby="titulo-resumen">
+  <h2 id="titulo-resumen">Resumen</h2>
+  <dl class="datos">
+    {{if .EsDeSprint}}
+    <dt>Número</dt><dd>{{.NumeroSprint}}</dd>
+    <dt>Sprint Goal</dt><dd>{{.SprintGoal}}</dd>
+    <dt>Inicio</dt><dd>{{.InicioSprint}}</dd>
+    <dt>Fin</dt><dd>{{.FinSprint}}</dd>
+    <dt>Estado</dt><dd><span class="estado">{{.EstadoSprint}}</span></dd>
+    {{else}}
+    <dt>Nombre</dt><dd>{{.Proyecto.Nombre}}</dd>
+    <dt>Estado</dt><dd><span class="estado">{{.Proyecto.Estado}}</span></dd>
+    <dt>Inicio</dt><dd>{{.Proyecto.FechaInicio}}</dd>
+    <dt>Fin</dt><dd>{{if .Proyecto.FechaFin}}{{.Proyecto.FechaFin}}{{else}}Sin fecha de fin{{end}}</dd>
+    {{end}}
+  </dl>
+</section>
+
+<section aria-labelledby="titulo-historias">
+  <h2 id="titulo-historias">Historias y estimaciones</h2>
+  {{if .Historias}}
+  <p class="metrica">{{.HistoriasCompletadas}} de {{.HistoriasTotal}} historias completadas ({{.StoryPointsCompletados}} de {{.StoryPointsTotal}} story points)</p>
+  <table>
+    <caption class="oculto">Historias del reporte</caption>
+    <thead>
+      <tr><th scope="col">Título</th><th scope="col">Prioridad</th><th scope="col">Estado</th><th scope="col">Story points</th></tr>
+    </thead>
+    <tbody>
+      {{range .Historias}}
+      <tr>
+        <td>{{.Titulo}}</td>
+        <td>{{.Prioridad}}</td>
+        <td><span class="estado">{{.Estado}}</span></td>
+        <td>{{.StoryPoints}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="vacio">El reporte no tiene historias.</p>
+  {{end}}
+</section>
+
+<section aria-labelledby="titulo-esfuerzo">
+  <h2 id="titulo-esfuerzo">Esfuerzo</h2>
+  <dl class="datos">
+    <dt>Horas estimadas</dt><dd>{{.EsfuerzoEstimadas}}</dd>
+    <dt>Horas reales</dt><dd>{{.EsfuerzoReales}}</dd>
+    <dt>Desviación en horas</dt><dd>{{.EsfuerzoDesviacionHoras}}</dd>
+    <dt>Desviación en porcentaje</dt><dd>{{.EsfuerzoDesviacionPorcentaje}}</dd>
+  </dl>
+</section>
+
+<section aria-labelledby="titulo-metricas">
+  <h2 id="titulo-metricas">Métricas</h2>
+  {{if .AclaracionSprintCerrado}}
+  <p class="ayuda">{{.AclaracionSprintCerrado}}</p>
+  {{end}}
+  {{if not .EsDeSprint}}
+  {{if .HayVelocidad}}
+  <p class="metrica">Velocidad del equipo: <strong>{{.Velocidad}}</strong> puntos por Sprint</p>
+  {{else}}
+  <p class="vacio">Todavía no hay datos de velocidad (sin sprints cerrados).</p>
+  {{end}}
+  {{end}}
+  {{if .Metricas}}
+  <table>
+    <caption class="oculto">Calidad por Sprint</caption>
+    <thead>
+      <tr><th scope="col">Sprint</th><th scope="col">% completado</th><th scope="col">Defectos detectados</th><th scope="col">Defectos resueltos</th></tr>
+    </thead>
+    <tbody>
+      {{range .Metricas}}
+      <tr>
+        <td>{{.Sprint}}</td>
+        <td>{{if .HayPorcentaje}}{{.Porcentaje}}{{else}}Sin datos{{end}}</td>
+        <td>{{.DefectosDetectados}}</td>
+        <td>{{.DefectosResueltos}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="vacio">El reporte no tiene sprints cerrados.</p>
+  {{end}}
+</section>
+
+<section aria-labelledby="titulo-defectos">
+  <h2 id="titulo-defectos">Defectos</h2>
+  {{if .Defectos}}
+  <table>
+    <caption class="oculto">Defectos del reporte</caption>
+    <thead>
+      <tr>
+        <th scope="col">Elemento</th><th scope="col">Descripción</th><th scope="col">Severidad</th>
+        <th scope="col">Estado</th><th scope="col">Sprint detección</th><th scope="col">Sprint resolución</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{range .Defectos}}
+      <tr>
+        <td>{{.Elemento}}</td>
+        <td>{{.Descripcion}}</td>
+        <td>{{.Severidad}}</td>
+        <td><span class="estado">{{.Estado}}</span></td>
+        <td>{{if .SprintDeteccion}}#{{.SprintDeteccion}}{{else}}—{{end}}</td>
+        <td>{{if .SprintResolucion}}#{{.SprintResolucion}}{{else}}—{{end}}</td>
+      </tr>
+      {{end}}
+    </tbody>
+  </table>
+  {{else}}
+  <p class="vacio">El reporte no tiene defectos.</p>
+  {{end}}
+</section>
+{{end}}
