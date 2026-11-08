@@ -331,6 +331,8 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 
 10. **ADR-0006:** confirmar la librería y la fuente para pasarlo de `proposed` a `accepted`. Esta spec depende de esa decisión: si cambia la librería, cambian la lista de RN-27.8 y la sección 5.
 11. **Decisiones P-1 a P-10:** sin objeciones hasta ahora; se confirman en el PR.
+12. **Recursos de la generación:** `Generar` mira el contexto solo al principio, así que una generación ya empezada no se puede cancelar; y no hay límite de tamaño del documento ni de descargas simultáneas (cada una parsea las dos fuentes, ADR-0006). Depende del contenido que defina HU-26: si el reporte puede ser muy grande, hay que decidir un tope o un límite de concurrencia.
+13. **Texto descompuesto:** `e` + `U+0301` (acento combinante) sale "e?" y cuenta 1 en el aviso (RN-27.8, paso 4), aunque en pantalla se vea "é". Arreglarlo requeriría `golang.org/x/text` para recomponer el texto antes de normalizar. Decisión del equipo.
 
 ## Historial
 - 2026-11-07: creada (borrador). Decisiones P-1 a P-7 tomadas por el autor, abiertas a objeción en el PR. Preguntas 2 a 9 pendientes de la spec de HU-26.
@@ -351,3 +353,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 - 2026-11-07: decisión P-9 del autor, abierta a objeción en el PR: el adaptador HTTP vuelve a sanear el nombre del archivo antes de escribir la cabecera. No cambia ninguna regla ni criterio. La spec sigue en borrador.
 - 2026-11-07: decisión P-10 del autor, abierta a objeción en el PR, a partir de la revisión de go-reviewer: el tope de 300 caracteres por celda no alcanzaba para que una fila entre en una página con muchas columnas. RN-27.6 suma los topes de 6 columnas y de 100 caracteres por encabezado, RN-27.11 los suma como documento inválido, y se ajustan la sección 5, los casos límite, CA-27.6 y CA-27.11 (sin renumerar). No cambia ninguna otra regla. La spec sigue en borrador.
 - 2026-11-07: RN-27.8, paso 2, nombra también los selectores de variante suplementarios `U+E0100`–`U+E01EF`, que el código ya quitaba y la spec no mencionaba (revisión de go-reviewer). No son `Cf`, así que la regla anterior no los cubría. No cambia ningún criterio. La spec sigue en borrador.
+- 2026-11-07: preguntas abiertas 12 (recursos de la generación) y 13 (texto descompuesto), de la revisión de go-reviewer. No cambia ninguna regla ni criterio. La spec sigue en borrador.
