@@ -33,7 +33,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 | HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |
-| HU-27 Exportar el reporte a PDF | ✓ (Borrador; que la conversión sea de HU-27 lo confirmó Matías López en #38 y #378; P-1 a P-11, abiertas a objeción en el PR; ADR-0006 en `proposed`) | 15/26 (CA-27.3 a CA-27.6, CA-27.12, CA-27.19, CA-27.24 y CA-27.25 se cubren con tests del adaptador; CA-27.21 con tests de la pantalla y revisión manual; CA-27.23 con un test de integración; CA-27.26, pendiente de HU-26) | 25/26 (CA-27.26, pendiente de HU-26) | ✓ | RED → GREEN ×14, REFACTOR ×2 | ✓ 38/38 escenarios (252 pasos; BDD completo en verde en 500 s) |
+| HU-27 Exportar el reporte a PDF | ✓ (Borrador; que la conversión sea de HU-27 lo confirmó Matías López en #38 y #378; P-1 a P-11, abiertas a objeción en el PR; ADR-0006 en `proposed`) | 15/26 (CA-27.3 a CA-27.6, CA-27.12, CA-27.19, CA-27.24, CA-27.25 y CA-27.26 se cubren con tests del adaptador; CA-27.21 con tests de la pantalla y revisión manual; CA-27.23 con un test de integración) | 26/26 | ✓ | RED → GREEN ×14, REFACTOR ×2 | ✓ 38/38 escenarios (252 pasos; BDD completo en verde en 500 s) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
 
 ---
@@ -2202,7 +2202,7 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 - **Feature:** [features/HU-27-exportar-reporte-pdf.feature](../features/HU-27-exportar-reporte-pdf.feature), 14 escenarios y Outlines, 38 escenarios al expandirlos (steps en [hu27_steps_test.go](../test/bdd/hu27_steps_test.go), con fuente y generador en memoria en [hu27_sistema_test.go](../test/bdd/hu27_sistema_test.go))
 - **Rutas HTTP:** `GET /web/proyectos/{id}/reporte/pdf` y `GET /web/proyectos/{id}/sprints/{sprintID}/reporte/pdf` (descargas; los errores responden con la página de error HTML).
 - **Pantalla:** enlace "Descargar PDF" en la pantalla del reporte de HU-26 (`reporte.html`), del proyecto y del sprint.
-- **Integración con HU-26:** la rama `hu-26-reporte-proyecto-sprint` está mergeada en esta (`faea8c3`). La conversión del reporte a `DocumentoPDF` es de HU-27 (RN-27.16, CA-27.25) y vive en el adaptador HTTP (P-11).
+- **Integración con HU-26:** la rama `hu-26-reporte-proyecto-sprint` está mergeada en esta (`faea8c3`, y `aa7d69b` con la aclaración del sprint cerrado y la spec aprobada). La conversión del reporte a `DocumentoPDF` es de HU-27 (RN-27.16, CA-27.25) y vive en el adaptador HTTP (P-11).
 
 ### Criterios de aceptación
 
@@ -2233,7 +2233,7 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 | CA-27.23 Mismas secciones que la pantalla, integración | RN-27.1, RN-27.2, RN-27.16 | **Sin escenario BDD** (ver "Huecos") | `TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla` (fuente, caso de uso y generador reales; dobles de los casos de uso de HU-26) | `reporte_documento.go`, `exportar_reporte_pdf.go`, `generador.go`, `reporte.html` |
 | CA-27.24 PDF válido | RN-27.15 | **Sin escenario BDD a propósito:** mira el binario y las cabeceras | `TestGenerar_EsUnPDFCompleto`, `TestReportePDFProyecto_Descarga`, `TestReportePDFSprint_Descarga` | `generador.go` (`Output` a un buffer), `pantallas_reporte_pdf.go` (`responderPDF`, `Content-Length`) |
 | CA-27.25 Conversión del reporte | RN-27.16, RN-27.11 (P-10, P-11) | **Sin escenario BDD a propósito:** compara el documento con la pantalla, en el adaptador HTTP | `TestADocumentoPDF_SeccionesSonLasDeLaPantalla`, `TestADocumentoPDF_TextosSonLosDeLaPantalla`, `TestADocumentoPDF_ReporteDeProyecto`, `TestADocumentoPDF_ReporteDeSprint`, `TestADocumentoPDF_ReporteVacio_MensajesDeLaPantalla`, `TestADocumentoPDF_SiempreValido`, `TestFuenteDocumentoReporte_DocumentoDeProyecto`, `TestFuenteDocumentoReporte_DocumentoDeSprint` | `reporte_documento.go` (`aDocumentoPDF`, `fuenteDocumentoReporte`, `NuevaFuenteDocumentoReporte`) |
-| CA-27.26 Aclaración del sprint cerrado | RN-27.17, RN-27.16 | **Pendiente de HU-26** | **Pendiente de HU-26:** se agrega a los tests de la conversión cuando HU-26 sume la aclaración a `datosReporte` | — (`aDocumentoPDF` la va a copiar de `datosReporte`) |
+| CA-27.26 Aclaración del sprint cerrado | RN-27.17, RN-27.16 | **Sin escenario BDD a propósito:** como CA-27.25, compara el documento con la pantalla, en el adaptador HTTP | `TestADocumentoPDF_ReporteDeSprint` (subtest "sprint cerrado"), `TestADocumentoPDF_TextosSonLosDeLaPantalla` (casos "sprint cerrado" y "sprint cerrado vacío"), `TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto` | `reporte_documento.go` (`bloquesMetricas` copia `datosReporte.AclaracionSprintCerrado`, que arma `aDatosReporte` de HU-26) |
 
 Los tests se listan según su etiqueta `Traza`. Los escenarios de CA-27.2, CA-27.8 a CA-27.11, CA-27.13, CA-27.14, CA-27.17, CA-27.18 y CA-27.20 son ejemplos de `Scenario Outline`, con el tag en cada bloque `Examples`.
 
@@ -2257,7 +2257,7 @@ Los tests se listan según su etiqueta `Traza`. Los escenarios de CA-27.2, CA-27
 | RN-27.14 Hoja A4 vertical | CA-27.1 | `TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina` | `generador.go` (`fpdf.New("P", "mm", "A4", "")`) |
 | RN-27.15 Archivo válido | CA-27.24 | `TestGenerar_EsUnPDFCompleto`, `TestReportePDFProyecto_Descarga` | `generador.go`, `pantallas_reporte_pdf.go` |
 | RN-27.16 Conversión del reporte | CA-27.23, CA-27.25 | `TestADocumentoPDF_SeccionesSonLasDeLaPantalla`, `TestADocumentoPDF_TextosSonLosDeLaPantalla`, `TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla` | `reporte_documento.go` |
-| RN-27.17 Aclaración del sprint cerrado | CA-27.26 | **Pendiente de HU-26** | — |
+| RN-27.17 Aclaración del sprint cerrado | CA-27.26 | `TestADocumentoPDF_ReporteDeSprint`, `TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto` | `reporte_documento.go` (`bloquesMetricas`) |
 
 ### Tests sin CA propio
 
@@ -2293,7 +2293,7 @@ Sin etiqueta `Traza` de HU-27, porque es un test compartido que suma casos: `Tes
 
 ### Commits
 
-Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-sprint` (64 commits), en orden. Los dos merges están al final.
+Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-sprint` (73 commits, contando el de esta actualización), en orden. Los merges están al final.
 
 | Ciclo | Commit | Etapa |
 |---|---|---|
@@ -2325,14 +2325,15 @@ Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-s
 | Integración CA-27.23 | `bac4b4f` test(HU-27): títulos de sección del PDF iguales a los de la pantalla | — (sin RED real, ver abajo) |
 | Spec: implementado | `773d548` docs(HU-27) | — |
 | Revisión: comentarios de código | `400426e` docs(HU-27): comentarios de código con Implementa HU-27 y sin referencias viejas. Resuelve dos huecos de la primera versión de esta trazabilidad: el comentario de `DocumentoPDF` que decía que HU-26 completa el documento, y `Implementa HU-27`, que antes estaba solo en los dos handlers de descarga | — (solo comentarios) |
+| Aclaración del sprint cerrado (RN-27.17) | `9baf345` [RED] → `f68e9a6` [GREEN] | **RED → GREEN** |
 
-**Merges de la rama, que no son de HU-27:** `f3a0005` (trae `origin/main`) y `faea8c3` (trae HU-26).
+**Merges de la rama, que no son de HU-27:** `f3a0005` y `862daa2` (traen `origin/main`), y `faea8c3` y `aa7d69b` (traen HU-26).
 
 **Commits que el filtro `git log --grep="(HU-27)"` no encuentra**, porque usan el prefijo `test(bdd):`: `55d0145` (RED de los steps) y `7a6b1b4` (lectores en el sistema en memoria).
 
 ### Evidencia: mutaciones manuales
 
-Ninguna quedó en un commit: se aplicaron en una copia del repo o en el árbol, y se restauraron. En total, 103 mutantes: 102 murieron y 1 sobrevivió, equivalente para el test que lo corre. Los resultados de las tandas anteriores a la integración con HU-26 (dominio y casos de uso, tope de celda, adaptador de PDF, descargas HTTP y revisión) salen de los registros de las conversaciones donde se hicieron, porque los cuerpos de los commits están vacíos.
+Ninguna quedó en un commit: se aplicaron en una copia del repo o en el árbol, y se restauraron. En total, 109 mutantes: 108 murieron y 1 sobrevivió, equivalente para el test que lo corre. Los resultados de las tandas anteriores a la integración con HU-26 (dominio y casos de uso, tope de celda, adaptador de PDF, descargas HTTP y revisión) salen de los registros de las conversaciones donde se hicieron, porque los cuerpos de los commits están vacíos.
 
 | Etapa | Mutantes | Murieron | Sobrevivieron y por qué |
 |---|---|---|---|
@@ -2345,10 +2346,11 @@ Ninguna quedó en un commit: se aplicaron en una copia del repo o en el árbol, 
 | Botón | 10 | 10 | — |
 | Rutas en `NuevoRouter` | 3 | 3 | — |
 | Integración CA-27.23 | 6 | 5 | "La fuente del sprint usa el caso de uso del proyecto": **equivalente para ese test**, porque los dos dobles devuelven el mismo reporte y los títulos son los mismos. Lo mata `TestFuenteDocumentoReporte_DocumentoDeSprint` |
+| Aclaración del sprint cerrado | 6 | 6 | — (quitar la condición, invertirla, otro texto, quitar el párrafo, como tabla en vez de párrafo, y condición por `EsDeSprint` en vez de la aclaración) |
 
-Algunos mutantes no compilaron en el primer intento (un import o una variable sin usar) y se repitieron dejándolos en uso: `Content-Length` sin `strconv`, el encabezado contado en bytes, y la fuente que devuelve un documento vacío.
+Algunos mutantes no compilaron en el primer intento (un import o una variable sin usar) y se repitieron dejándolos en uso: `Content-Length` sin `strconv`, el encabezado contado en bytes, y la fuente que devuelve un documento vacío. En la aclaración del sprint cerrado, el mutante "como tabla" no compiló la primera vez por un error del script (`\&`) y se repitió.
 
-**Cruce de pasos BDD al integrar HU-26:** un programa temporal, que no está en el repo, cruzó las 475 regex de `test/bdd` (incluidas las armadas con la constante `horas`) con las 1851 líneas de paso de todos los `.feature`, con los Outline expandidos: 0 pasos con más de una regex y 0 sin regex.
+**Cruce de pasos BDD al integrar HU-26:** un programa temporal, que no está en el repo, cruzó las 475 regex de `test/bdd` (incluidas las armadas con la constante `horas`) con las 1851 líneas de paso de todos los `.feature`, con los Outline expandidos: 0 pasos con más de una regex y 0 sin regex. Se repitió al integrar la aclaración de HU-26 (`aa7d69b`), con el mismo resultado.
 
 **Prueba de humo:** `cmd/server` con una base temporal y `curl`. La pantalla del reporte responde `200` con el botón; la descarga, `200` con `%PDF-1.3` … `%%EOF`, `filename="reporte-proyecto-1-2026-11-07.pdf"` y `nosniff`; un proyecto inexistente, `404`. No es una prueba en navegador.
 
@@ -2362,7 +2364,7 @@ Algunos mutantes no compilaron en el primer intento (un import o una variable si
   - `720d796`: fixture propio y trazas; cambia el esperado de la columna Elemento, que con el fixture anterior no se podía probar
   - `5f7fde1`: solo trazas y comentarios
 - **RED que ya pasaba en parte:** en `ddd97a7`, `TestGenerar_TablaEnLosTopes_UnaFilaPorPagina` pasó en el RED, porque la regla nueva vive en `Validar` y el dibujo de la tabla no cambia; el RED falló por los dos casos inválidos del dominio.
-- **RED por compilación:** `55d0145`, `ebcba02`, `124e49b`, `c6ef36b`, `296c022`, `d50a616`, `7a6b1b4`, `7bffdcb`, `fbaf73a`, `0789297`, `d7855e7` y `a2f5767` (falta la función, el tipo o el campo). `165abfa` falló por aserción (la pantalla todavía no tenía el botón).
+- **RED por compilación:** `55d0145`, `ebcba02`, `124e49b`, `c6ef36b`, `296c022`, `d50a616`, `7a6b1b4`, `7bffdcb`, `fbaf73a`, `0789297`, `d7855e7` y `a2f5767` (falta la función, el tipo o el campo). `165abfa` falló por aserción (la pantalla todavía no tenía el botón), y `9baf345` también (el documento de un sprint cerrado no tenía la aclaración; `TestADocumentoPDF_SinAclaracion_SprintAbiertoYProyecto` ya pasaba en el RED, porque es la guarda del caso negativo).
 - **GREEN que corrigió el test del RED:** `57a1666` cambió el esperado de la columna Elemento ("—" por "Logout"), porque el fixture de HU-26 no tenía IDs. `720d796` volvió a "—" con un fixture propio. `f046db4` y `685bc65` ajustaron tests del RED anterior, como explican sus mensajes.
 - **Sin test automático:** `0cb61f0` (`main.go`), cubierto con la prueba de humo.
 
@@ -2381,9 +2383,9 @@ Algunos mutantes no compilaron en el primer intento (un import o una variable si
 - **`-race` no se corrió localmente:** el único gcc de la máquina es MinGW de 32 bits. Lo corre el CI en Linux (`go test -race ./...`).
 - **BDD completo: unos 500 s** (499,7 s en la última corrida). Necesita `-timeout 30m` localmente; en el CI hace falta el timeout de 20 minutos de la rama `ci-timeout-tests` (`5a96c12`), porque `go test` corta cada paquete a los 10 minutos y el CI corre además con `-race`.
 - **Decisiones del autor, abiertas a objeción en el PR:** P-8 ("?" que se pierden al recortar una celda, sin test propio), P-9 (saneado del nombre en el handler), P-10 (6 columnas y 100 caracteres por encabezado) y la parte de P-11 que dice que la conversión vive en el adaptador HTTP y no en el dominio. La otra parte de P-11, que la conversión es de HU-27, la confirmó Matías López (issue #38 y revisión del PR #378).
-- **RN-27.17 y CA-27.26 (aclaración del sprint cerrado) están pendientes de HU-26.** Matías López le pidió a Eze que el reporte de un sprint cerrado lleve una aclaración, como la de HU-23. Mientras HU-26 no la agregue a `datosReporte`, la pantalla no la muestra y el PDF tampoco, así que no hay nada que probar. Cuando exista: sumarla a `aDocumentoPDF` (como un párrafo en la misma sección que la pantalla), y a `TestADocumentoPDF_ReporteDeSprint` y `TestADocumentoPDF_TextosSonLosDeLaPantalla` con un sprint cerrado, con su RED y su GREEN.
+- ~~**RN-27.17 y CA-27.26 (aclaración del sprint cerrado) están pendientes de HU-26.**~~ Resuelto el 2026-11-08: HU-26 agregó `AclaracionSprintCerrado` a `datosReporte` y se integró en esta rama; `aDocumentoPDF` la copia como primer párrafo de Métricas (`9baf345` [RED] → `f68e9a6` [GREEN]). Texto anterior: Matías López le pidió a Eze que el reporte de un sprint cerrado lleve una aclaración, como la de HU-23. Mientras HU-26 no la agregue a `datosReporte`, la pantalla no la muestra y el PDF tampoco, así que no hay nada que probar. Cuando exista: sumarla a `aDocumentoPDF` (como un párrafo en la misma sección que la pantalla), y a `TestADocumentoPDF_ReporteDeSprint` y `TestADocumentoPDF_TextosSonLosDeLaPantalla` con un sprint cerrado, con su RED y su GREEN.
 - **Preguntas abiertas:** 12 (recursos de la generación: sin tope de tamaño ni de descargas simultáneas), 13 (texto descompuesto: `e` + `U+0301` sale "e?") y 14 (sprints abiertos y cerrados en el Resumen, que la pantalla no muestra; decisión de Eze). La 15 (aclaración del reporte de un sprint cerrado) quedó resuelta: pasó a RN-27.17 y CA-27.26.
-- **Textos fijos repetidos:** los mensajes de "sin datos", "Sin fecha de fin" y "—" están en `reporte.html` y en `reporte_documento.go`. `TestADocumentoPDF_TextosSonLosDeLaPantalla` los compara como subcadenas, así que un recorte del texto ("Sin fecha" en vez de "Sin fecha de fin") lo detecta solo el test del documento esperado completo.
+- **Textos fijos repetidos:** los mensajes de "sin datos", "Sin fecha de fin" y "—" están en `reporte.html` y en `reporte_documento.go`. `TestADocumentoPDF_TextosSonLosDeLaPantalla` los compara como subcadenas, así que un recorte del texto ("Sin fecha" en vez de "Sin fecha de fin") lo detecta solo el test del documento esperado completo. La aclaración del sprint cerrado no se repite: se copia del campo de `datosReporte`, y los párrafos de la pantalla se comparan enteros.
 
 ### Para revisar
 

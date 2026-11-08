@@ -25,7 +25,8 @@ Feature: Exportar el reporte a PDF
   # TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla, con la fuente, el caso de uso y el generador de
   # PDF reales. Un escenario sobre SQLite real acoplaría estos pasos a los de HU-26 o copiaría su
   # preparación, y el paso de SQLite al reporte ya lo cubren los escenarios de HU-26. Tampoco
-  # CA-27.25 (conversión del reporte), que compara el documento con la pantalla en el mismo adaptador.
+  # CA-27.25 (conversión del reporte), que compara el documento con la pantalla en el mismo adaptador,
+  # ni CA-27.26 (aclaración del sprint cerrado), que se prueba con esos mismos tests de la conversión.
 
   Background:
     Given el reloj de HU-27 marca el 2026-11-07 a las 17:05 UTC
