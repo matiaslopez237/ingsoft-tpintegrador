@@ -218,7 +218,9 @@ func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
 			}},
 			{Titulo: "Defectos", Bloques: []domain.BloquePDF{
 				tabla([]string{"Elemento", "Descripción", "Severidad", "Estado", "Sprint detección", "Sprint resolución"},
-					[]string{"—", "Falla el login", d.Defectos[0].Severidad, d.Defectos[0].Estado, "#1", "—"},
+					// reporteDeEjemplo no les pone ID a las historias ni al defecto: el defecto queda con
+					// ElementoID 0, que es el de la última historia, y la pantalla también dice "Logout".
+					[]string{"Logout", "Falla el login", d.Defectos[0].Severidad, d.Defectos[0].Estado, "#1", "—"},
 				),
 			}},
 		},
