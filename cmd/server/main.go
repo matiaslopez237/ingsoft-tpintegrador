@@ -73,6 +73,8 @@ func main() {
 		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, time.Now),
 		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos),                       // HU-21
 		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
+		ArmarReporteProyecto:    app.NuevoArmarReporteProyecto(repoProyectos, repoBacklog, repoSprints, repoEsfuerzo, repoDefectos),
+		ArmarReporteSprint:      app.NuevoArmarReporteSprint(repoProyectos, repoSprints, repoBacklog, repoEsfuerzo, repoDefectos), // HU-26
 	})
 
 	puerto := os.Getenv("PORT")
