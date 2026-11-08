@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	lectorpdf "github.com/ledongthuc/pdf"
 
@@ -110,6 +111,49 @@ func TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina(t *testing.T) {
 		"Reportes", "En progreso", "3",
 		"Señales: áéíóúüñ€°ªº–—“”…→≤≥%", "Pendiente", "8",
 	)
+}
+
+// representablesDeLaSpec arma la lista de RN-27.8, paso 3, tal como la escribe la spec, sin usar la
+// función del dominio: así el test compara el código con la spec y no consigo mismo.
+func representablesDeLaSpec() string {
+	var b strings.Builder
+	for r := rune(0x21); r <= 0x7E; r++ { // ASCII imprimible
+		b.WriteRune(r)
+	}
+	for r := rune(0xA1); r <= 0x17F; r++ { // Latin-1 y Latín extendido A, salvo U+00AD
+		if r != 0xAD {
+			b.WriteRune(r)
+		}
+	}
+	b.WriteString("–—‘’“”•…€←↑→↓≤≥")
+	return b.String()
+}
+
+// Traza: HU-27 CA-27.2 (RN-27.8, sección 5, "Lista de representables"): los 331 caracteres de la lista
+// pasan la normalización sin cambios ni avisos, fpdf no devuelve error y el texto extraído es idéntico.
+func TestGenerar_ListaDeRepresentables_SaleIdentica(t *testing.T) {
+	lista := representablesDeLaSpec()
+	if n := utf8.RuneCountInString(lista); n != 331 {
+		t.Fatalf("la lista tiene %d caracteres, se esperaban 331", n)
+	}
+	doc, reemplazos := domain.NormalizarDocumento(domain.DocumentoPDF{
+		Titulo: "Representables", Emision: emisionDePrueba,
+		Secciones: []domain.SeccionPDF{{Titulo: "Lista", Bloques: []domain.BloquePDF{{Parrafo: lista}}}},
+	})
+	if reemplazos != 0 || doc.Secciones[0].Bloques[0].Parrafo != lista {
+		t.Fatalf("la normalización cambió la lista: %d reemplazos", reemplazos)
+	}
+
+	texto := compacto(strings.Join(paginas(t, generar(t, doc)), ""))
+
+	if !strings.Contains(texto, compacto(lista)) {
+		for _, r := range lista {
+			if !strings.ContainsRune(texto, r) {
+				t.Errorf("falta %U %q en el texto extraído", r, r)
+			}
+		}
+		t.Errorf("el texto extraído no tiene la lista completa y en orden")
+	}
 }
 
 // CA-27.7: sin subtítulo ni aviso, esas líneas no aparecen.
