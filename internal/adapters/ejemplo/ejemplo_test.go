@@ -27,6 +27,24 @@ func (f *creadorProyectoFalso) Ejecutar(context.Context, app.DatosNuevoProyecto)
 	return domain.Proyecto{ID: 1}, nil
 }
 
+// Traza: HU-31 CA-31.8 (sección 3): el log dice si se cargó el ejemplo o por qué no.
+func TestResultado_String(t *testing.T) {
+	tests := []struct {
+		r    Resultado
+		want string
+	}{
+		{Cargado, "se cargó el proyecto de ejemplo"},
+		{OpcionApagada, "no se carga el proyecto de ejemplo: CARGAR_EJEMPLO está apagada"},
+		{ValorInvalido, "CARGAR_EJEMPLO no es un valor booleano: no se carga el ejemplo"},
+		{BaseConProyectos, "no se carga el proyecto de ejemplo: la base ya tiene proyectos"},
+	}
+	for _, tt := range tests {
+		if got := tt.r.String(); got != tt.want {
+			t.Errorf("Resultado(%d).String() = %q, se esperaba %q", tt.r, got, tt.want)
+		}
+	}
+}
+
 // Traza: HU-31 CA-31.6, CA-31.7, CA-31.8 (RN-31.1, RN-31.3)
 func TestCargarSiCorresponde_SinCargar(t *testing.T) {
 	errLectura := errors.New("base caída")

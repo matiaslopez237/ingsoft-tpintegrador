@@ -143,3 +143,8 @@ func CargarSiCorresponde(ctx context.Context, cu CasosDeUso, valor string) (Resu
 	}
 	return Cargado, nil
 }
+
+// String es el mensaje para el log del servidor (sección 3 de la spec).
+func (r Resultado) String() string {
+	return ""
+}
