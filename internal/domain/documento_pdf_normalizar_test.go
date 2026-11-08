@@ -33,6 +33,11 @@ func TestNormalizarTextoPDF(t *testing.T) {
 		{"espacio de ancho cero", "Sprint​final", "Sprintfinal", 0},
 		{"guion opcional", "pla­nificación", "planificación", 0},
 		{"selector de variante solo", "a️b", "ab", 0},
+		// Selectores de variante suplementarios, U+E0100 a U+E01EF (no son Cf; RN-27.8, paso 2).
+		{"selector suplementario, primero", "a\U000E0100b", "ab", 0},
+		{"selector suplementario, último", "a\U000E01EFb", "ab", 0},
+		{"justo después de los suplementarios", "a\U000E01F0b", "a?b", 1},
+		{"selector suplementario entre emojis", "😀\U000E0100😀", "?", 1},
 		// Paso 4: el resto pasa a "?", y varios seguidos dan uno solo (CA-27.8, CA-27.9, CA-27.10).
 		{"un emoji", "Sprint 😀 final", "Sprint ? final", 1},
 		{"emojis seguidos e ideogramas", "Equipo 😀😀 y 中文", "Equipo ? y ?", 2},
