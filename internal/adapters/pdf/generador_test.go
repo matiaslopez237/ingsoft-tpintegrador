@@ -92,7 +92,8 @@ func documentoNormal() domain.DocumentoPDF {
 	}
 }
 
-// CA-27.1, CA-27.2: el documento sale completo y en orden, con acentos y ñ (RN-27.1, RN-27.2, RN-27.14).
+// Traza: HU-27 CA-27.1 (RN-27.1, RN-27.2, RN-27.14): el documento sale completo y en orden. CA-27.2 tiene
+// su propio test, sin aviso.
 func TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina(t *testing.T) {
 	textos := paginas(t, generar(t, documentoNormal()))
 	if len(textos) != 1 {
@@ -111,6 +112,37 @@ func TestGenerar_DocumentoNormal_TextoEnOrdenEnUnaPagina(t *testing.T) {
 		"Reportes", "En progreso", "3",
 		"Señales: áéíóúüñ€°ªº–—“”…→≤≥%", "Pendiente", "8",
 	)
+}
+
+// Traza: HU-27 CA-27.2 (RN-27.8, RN-27.9): el título y las celdas del criterio, con minúsculas y
+// mayúsculas acentuadas, pasan por la normalización del caso de uso sin reemplazos, así que no hay aviso,
+// y el texto extraído es idéntico.
+func TestGenerar_AcentosYEnie_TextoIdenticoSinAviso(t *testing.T) {
+	const (
+		titulo = "Proyecto Ñandú: planificación ¿cumplida? ¡Sí!"
+		celdas = "áéíóúüñÁÉÍÓÚÜÑ€°ªº–—“”…→≤≥%"
+	)
+	doc, reemplazos := domain.NormalizarDocumento(domain.DocumentoPDF{
+		Titulo: titulo, Emision: emisionDePrueba,
+		Secciones: []domain.SeccionPDF{{Titulo: "Caracteres", Bloques: []domain.BloquePDF{{Tabla: &domain.TablaPDF{
+			Columnas: []string{"Texto", "Otra"},
+			Filas:    [][]string{{celdas, celdas}},
+		}}}}},
+	})
+	doc.Aviso = domain.TextoAvisoReemplazos(reemplazos)
+	if reemplazos != 0 || doc.Aviso != "" {
+		t.Fatalf("reemplazos = %d, aviso = %q: se esperaba ninguno", reemplazos, doc.Aviso)
+	}
+
+	textos := paginas(t, generar(t, doc))
+
+	if len(textos) != 1 {
+		t.Fatalf("páginas = %d, se esperaba 1", len(textos))
+	}
+	contieneEnOrden(t, textos[0], titulo, "Emitido el 07/11/2026", "Caracteres", celdas, celdas)
+	if strings.Contains(textos[0], "Aviso:") {
+		t.Errorf("aparece un aviso sin reemplazos:\n%s", textos[0])
+	}
 }
 
 // representablesDeLaSpec arma la lista de RN-27.8, paso 3, tal como la escribe la spec, sin usar la
