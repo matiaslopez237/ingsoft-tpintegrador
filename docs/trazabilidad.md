@@ -2315,6 +2315,7 @@ Salen de `git log --no-merges origin/main..HEAD ^origin/hu-26-reporte-proyecto-s
 | Rutas en `NuevoRouter` | `a2f5767` [RED] → `3fe8d8f` [GREEN] → `0cb61f0` conexión en `main.go` | **RED → GREEN**; `main.go` sin test automático (humo, ver abajo) |
 | Integración CA-27.23 | `bac4b4f` test(HU-27): títulos de sección del PDF iguales a los de la pantalla | — (sin RED real, ver abajo) |
 | Spec: implementado | `773d548` docs(HU-27) | — |
+| Revisión: comentarios de código | `400426e` docs(HU-27): comentarios de código con Implementa HU-27 y sin referencias viejas. Resuelve dos huecos de la primera versión de esta trazabilidad: el comentario de `DocumentoPDF` que decía que HU-26 completa el documento, y `Implementa HU-27`, que antes estaba solo en los dos handlers de descarga | — (solo comentarios) |
 
 **Merges de la rama, que no son de HU-27:** `f3a0005` (trae `origin/main`) y `faea8c3` (trae HU-26).
 
@@ -2373,8 +2374,6 @@ Algunos mutantes no compilaron en el primer intento (un import o una variable si
 - **Decisiones del autor, abiertas a objeción en el PR:** P-8 ("?" que se pierden al recortar una celda, sin test propio), P-9 (saneado del nombre en el handler), P-10 (6 columnas y 100 caracteres por encabezado). **P-11** (la conversión es de HU-27 y vive en el adaptador HTTP) ya está confirmada (#378).
 - **Preguntas abiertas:** 12 (recursos de la generación: sin tope de tamaño ni de descargas simultáneas), 13 (texto descompuesto: `e` + `U+0301` sale "e?"), 14 (sprints abiertos y cerrados en el Resumen, que la pantalla no muestra; decisión de Eze) y 15 (aclaración del reporte de un sprint cerrado, que el PDF tiene que copiar cuando exista en `datosReporte`).
 - **Textos fijos repetidos:** los mensajes de "sin datos", "Sin fecha de fin" y "—" están en `reporte.html` y en `reporte_documento.go`. `TestADocumentoPDF_TextosSonLosDeLaPantalla` los compara como subcadenas, así que un recorte del texto ("Sin fecha" en vez de "Sin fecha de fin") lo detecta solo el test del documento esperado completo.
-- **Comentario desactualizado en el código:** el de `DocumentoPDF` en `internal/domain/documento_pdf.go` todavía dice que HU-26 completa los campos; desde P-11 los completa la conversión de HU-27. No se cambió en esta trazabilidad.
-- **`Implementa HU-27`** solo está en los dos handlers de descarga; el resto del código cita las reglas (`RN-27.x`) y la spec, y se encuentra con `grep "RN-27"`.
 
 ### Para revisar
 
