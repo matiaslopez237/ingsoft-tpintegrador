@@ -58,7 +58,7 @@ Feature: Proyecto de ejemplo precargado
   @CA-31.5 @normal
   Scenario: El ejemplo tiene esfuerzo registrado y una historia que se votó dos veces
     When arranca la carga del ejemplo con CARGAR_EJEMPLO "true"
-    Then las horas del proyecto de ejemplo tienen horas estimadas, horas reales y desviación
+    Then las horas del proyecto de ejemplo son 151,5 estimadas y 139 reales, con una desviación de -12,5 h y -8,3 %
     And el historial de rondas de "HU-14" en el ejemplo tiene 2 rondas, la última con estimación acordada 5
 
   @CA-31.1 @limite

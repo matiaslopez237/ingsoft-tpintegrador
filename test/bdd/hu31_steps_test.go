@@ -58,7 +58,7 @@ func registrarStepsHU31(ctx *godog.ScenarioContext) {
 	ctx.Step(`^en el sprint (\d+) del ejemplo están hechos solo "([^"]*)" y "([^"]*)"$`, w.hechosEnSprint)
 	ctx.Step(`^la velocidad del ejemplo es el promedio de (\d+), (\d+) y (\d+)$`, w.velocidad)
 	ctx.Step(`^los defectos del ejemplo son:$`, w.defectos)
-	ctx.Step(`^las horas del proyecto de ejemplo tienen horas estimadas, horas reales y desviación$`, w.horas)
+	ctx.Step(`^las horas del proyecto de ejemplo son (-?[\d,]+) estimadas y (-?[\d,]+) reales, con una desviación de (-?[\d,]+) h y (-?[\d,]+) %$`, w.horas)
 	ctx.Step(`^el historial de rondas de "([^"]*)" en el ejemplo tiene (\d+) rondas, la última con estimación acordada (\d+)$`, w.rondas)
 	ctx.Step(`^la base del ejemplo tiene solo el proyecto "([^"]*)"$`, w.soloProyecto)
 	ctx.Step(`^la base del ejemplo no tiene proyectos$`, w.sinProyectos)
@@ -297,7 +297,7 @@ func (w *hu31World) defectos(ctx context.Context, tabla *godog.Table) error {
 	return nil
 }
 
-func (w *hu31World) horas(ctx context.Context) error {
+func (w *hu31World) horas(ctx context.Context, estimadas, reales, desvHoras, desvPorcentaje string) error {
 	p, err := w.proyectoDelEjemplo(ctx)
 	if err != nil {
 		return err
@@ -306,8 +306,19 @@ func (w *hu31World) horas(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if t.HorasEstimadas <= 0 || t.HorasReales <= 0 || t.DesviacionHoras == nil {
-		return fmt.Errorf("las horas son %v estimadas y %v reales, con desviación %v", t.HorasEstimadas, t.HorasReales, t.DesviacionHoras)
+	if t.DesviacionHoras == nil || t.DesviacionPorcentaje == nil {
+		return fmt.Errorf("las horas no tienen desviación: %+v", t)
+	}
+	got := []float64{t.HorasEstimadas, t.HorasReales, *t.DesviacionHoras, *t.DesviacionPorcentaje}
+	for i, texto := range []string{estimadas, reales, desvHoras, desvPorcentaje} {
+		want, err := strconv.ParseFloat(strings.Replace(texto, ",", ".", 1), 64)
+		if err != nil {
+			return fmt.Errorf("número inválido en el escenario: %q", texto)
+		}
+		if math.Abs(got[i]-want) > 1e-9 {
+			return fmt.Errorf("las horas son %v estimadas y %v reales, con desviación de %v h y %v %%; se esperaba %s, %s, %s h y %s %%",
+				got[0], got[1], got[2], got[3], estimadas, reales, desvHoras, desvPorcentaje)
+		}
 	}
 	return nil
 }
