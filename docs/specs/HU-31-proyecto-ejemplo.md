@@ -2,7 +2,7 @@
 
 **Historia:** Como integrante del equipo, quiero que la aplicación arranque con un proyecto de ejemplo ya cargado, para mostrar cómo se ve un proyecto completo sin tener que cargarlo a mano.
 **Issue:** #367  ·  **Sprint:** 4  ·  **Story points:** 3
-**Estado de la spec:** Aprobada
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Una aplicación recién desplegada está vacía, y en el plan gratuito de Render la base se borra en cada despliegue (ADR-0004). Para mostrar el sistema hay que cargar a mano un proyecto, su backlog, sus sprints, el esfuerzo y los defectos antes de cada presentación. Esta historia carga sola un proyecto de ejemplo completo al arrancar, para que todas las pantallas y métricas tengan datos desde el primer momento. El ejemplo es este mismo TP: "Software Metrics & Estimation".
@@ -19,10 +19,10 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 - **Con la variable activada y la base sin proyectos:** queda cargado el proyecto de ejemplo con este contenido:
   - **Proyecto:** "Software Metrics & Estimation", `Activo`, con inicio el 2026-10-22 (P-1). El Sprint 1 va del 22 al 25 de octubre y sin fecha de fin.
   - **Integrantes:** Matías López (Agile Enabler), Ezequiel Assenza, Nicolás Andino y Lucas Orellana (Product Builder).
-  - **Product Backlog:** las historias HU-01 a HU-31 como elementos, con su descripción, prioridad, criterios de aceptación y los story points del Product Backlog.
+  - **Product Backlog:** las historias HU-01 a HU-31 como elementos, con la descripción y los criterios de aceptación de su issue y los story points del Product Backlog. Como el Product Backlog no tiene prioridades, la prioridad sale del sprint: Alta en los Sprints 1 y 2, Media en el 3 y Baja en el 4.
   - **Sprints 1 a 3 `Cerrado`**, con las fechas y las historias reales de cada uno, todas `Hecho`: 19, 26 y 28 puntos planificados y completados.
   - **Sprint 4 `Abierto`** (del 2026-11-05 al 2026-11-08), con sus historias, HU-24 y HU-29 `Hecho` y el resto sin terminar (P-3).
-  - **Esfuerzo:** horas estimadas y registros de esfuerzo de los integrantes en las historias de los sprints, para que HU-19 y HU-23 muestren desviaciones.
+  - **Esfuerzo:** horas estimadas y registros de esfuerzo en las historias de los sprints, para que HU-19 y HU-23 muestren desviaciones. Cada historia registra el esfuerzo a nombre del integrante que más commits hizo en ella.
   - **Planning Poker:** rondas con votos y estimación acordada en historias del Sprint 3, incluida una historia que necesitó una segunda ronda por diferencias.
   - **Defectos:** DEF-01 a DEF-04, sobre las historias donde aparecieron y con sus fechas reales, así que los sprints de detección y resolución salen de esas fechas (RN-20.5, RN-21.6):
 
@@ -46,8 +46,8 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 
 ## 5. Restricciones
 - **Dónde va:** la carga es un adaptador que maneja la aplicación desde afuera, como el HTTP: `internal/adapters/ejemplo`. Recibe los casos de uso ya construidos y no depende de SQLite. El contenido del ejemplo son datos en Go, en el mismo paquete.
-- **Conexión:** `cmd/server/main.go` lee `CARGAR_EJEMPLO` y llama a la carga después de abrir la base y antes de `ListenAndServe`. `render.yaml` define `CARGAR_EJEMPLO=true`. En las máquinas del equipo la variable no está definida, salvo que alguien la quiera.
-- **Tests:** la carga completa se prueba contra una base SQLite real en una carpeta temporal, y se verifica el resultado con los casos de uso de consulta (velocidad de HU-22, horas de HU-23, calidad de HU-24). Así, si una regla de otra historia cambia y el ejemplo deja de cumplirla, el CI falla.
+- **Conexión:** `cmd/server/main.go` lee `CARGAR_EJEMPLO` y llama a `cargarEjemplo` después de abrir la base y antes de `ListenAndServe`. Esa función arma los casos de uso de la carga, con su propio reloj. `render.yaml` define `CARGAR_EJEMPLO=true`. En las máquinas del equipo la variable no está definida, salvo que alguien la quiera.
+- **Tests:** la carga completa se prueba contra una base SQLite real en una carpeta temporal, y se verifica el resultado con los casos de uso de consulta (velocidad de HU-22, horas de HU-23, defectos de HU-21 y rondas de HU-16). Así, si una regla de otra historia cambia y el ejemplo deja de cumplirla, el CI falla.
 - **Fechas:** todas las fechas del ejemplo son anteriores a la fecha en que corre la aplicación, así que cumplen RN-18.4 (el esfuerzo no puede ser futuro).
 - **Sin datos nuevos en el dominio:** no se agregan entidades, columnas ni reglas al dominio.
 - **Fuera de alcance:** borrar o reiniciar el ejemplo desde la aplicación, cargar más de un proyecto de ejemplo y actualizar el ejemplo cuando cambie el TP real (se hace editando los datos en Go).
@@ -95,3 +95,4 @@ Ninguna.
 - 2026-11-05: creada (borrador). P-1 a P-3, propuestas pendientes de confirmar por Matías. La carga automática con `CARGAR_EJEMPLO` y el uso de este TP como contenido los decidió Matías al crear la historia.
 - 2026-11-05: Matías confirma P-1 a P-3 y aprueba la spec.
 - 2026-11-05: los defectos del ejemplo usan sus fechas reales. DEF-03 se resolvió y DEF-04 se detectó entre el Sprint 3 y el 4, así que no tienen sprint de resolución y de detección, respectivamente.
+- 2026-11-07: implementada. La prioridad de cada historia sale de su sprint, porque el Product Backlog no tiene prioridades, y el esfuerzo se registra a nombre de quien más commits hizo en cada historia. Los tests verifican los defectos (HU-21) y las rondas (HU-16), en lugar de la calidad de HU-24.
