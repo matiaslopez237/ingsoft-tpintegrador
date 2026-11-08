@@ -56,7 +56,7 @@ func NuevoGenerador() *Generador { return &Generador{} }
 
 // Generar dibuja el documento en A4 vertical (RN-27.14). Recibe el documento ya normalizado y validado
 // por el caso de uso, así que no lo vuelve a normalizar ni a validar. Si fpdf falla, devuelve su error
-// envuelto y ningún byte.
+// tal cual, sin bytes: el caso de uso es el que dice que falló la generación.
 func (g *Generador) Generar(ctx context.Context, doc domain.DocumentoPDF) ([]byte, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, err
@@ -82,7 +82,7 @@ func (g *Generador) Generar(ctx context.Context, doc domain.DocumentoPDF) ([]byt
 
 	var buf bytes.Buffer
 	if err := f.Output(&buf); err != nil {
-		return nil, fmt.Errorf("generar el PDF: %w", err)
+		return nil, err // el caso de uso lo envuelve con "generar el PDF"
 	}
 	return buf.Bytes(), nil
 }
