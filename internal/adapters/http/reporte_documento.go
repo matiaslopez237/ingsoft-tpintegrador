@@ -94,9 +94,14 @@ func bloquesHistorias(d datosReporte) []domain.BloquePDF {
 }
 
 // bloquesMetricas pone la velocidad antes de la tabla, solo en el reporte de un proyecto, como la
-// pantalla de HU-26.
+// pantalla de HU-26. Antes de todo va la aclaración del Sprint Cerrado, cuando la pantalla la muestra.
 func bloquesMetricas(d datosReporte) []domain.BloquePDF {
 	var bloques []domain.BloquePDF
+	// Traza: HU-27 CA-27.26 (RN-27.17): la misma condición que {{if .AclaracionSprintCerrado}} en
+	// reporte.html; aDatosReporte (HU-26) solo la completa en un Sprint Cerrado.
+	if d.AclaracionSprintCerrado != "" {
+		bloques = append(bloques, domain.BloquePDF{Parrafo: d.AclaracionSprintCerrado})
+	}
 	if !d.EsDeSprint {
 		velocidad := textoSinVelocidad
 		if d.HayVelocidad {
