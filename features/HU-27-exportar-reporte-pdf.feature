@@ -7,11 +7,11 @@ Feature: Exportar el reporte a PDF
   # Los escenarios corren sobre los casos de uso ExportarReporteProyecto y ExportarReporteSprint. Los pasos
   # llevan "HU-27" para que ninguno coincida con el de otra historia.
   #
-  # El documento del reporte lo da una fuente en memoria. SUPUESTO: la fuente real es de HU-26, que
-  # convierte su reporte al DocumentoPDF de la spec; las secciones de estos escenarios son de ejemplo, no
-  # las de HU-26. El generador de PDF es un doble que guarda el documento que recibe y devuelve unos bytes
-  # fijos: los escenarios miran ese documento (ya normalizado) y el archivo que devuelve el caso de uso,
-  # no el binario del PDF.
+  # El documento del reporte lo da una fuente en memoria. La fuente real, que convierte el reporte de
+  # HU-26 al DocumentoPDF (RN-27.16, P-11), se prueba en el adaptador HTTP; las secciones de estos
+  # escenarios son de ejemplo, no las de HU-26. El generador de PDF es un doble que guarda el documento
+  # que recibe y devuelve unos bytes fijos: los escenarios miran ese documento (ya normalizado) y el
+  # archivo que devuelve el caso de uso, no el binario del PDF.
   #
   # Los caracteres que no se pueden escribir en un .feature van entre llaves: {TAB} (tabulación),
   # {LF} (salto de línea), {U+XXXX} (el carácter con ese código) y {0xFF} (ese byte suelto, que no es
@@ -21,7 +21,11 @@ Feature: Exportar el reporte a PDF
   # CA-27.3 a CA-27.6 (páginas, saltos, tablas largas y tope por celda), CA-27.12 (bytes idénticos),
   # CA-27.19 (IDs inválidos: los rechaza el adaptador HTTP sin llamar al caso de uso), CA-27.20 en su
   # parte HTTP (500 sin detalle), CA-27.21 (botón y revisión visual @manual) y CA-27.24 (%PDF y %%EOF).
-  # CA-27.23 (integración con HU-26) queda pendiente hasta que exista HU-26.
+  # CA-27.23 (integración con HU-26) no tiene escenario: lo verifica el test del adaptador HTTP
+  # TestExportarReporte_TitulosDelPDFSonLosDeLaPantalla, con la fuente, el caso de uso y el generador de
+  # PDF reales. Un escenario sobre SQLite real acoplaría estos pasos a los de HU-26 o copiaría su
+  # preparación, y el paso de SQLite al reporte ya lo cubren los escenarios de HU-26. Tampoco
+  # CA-27.25 (conversión del reporte), que compara el documento con la pantalla en el mismo adaptador.
 
   Background:
     Given el reloj de HU-27 marca el 2026-11-07 a las 17:05 UTC
