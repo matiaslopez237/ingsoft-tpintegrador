@@ -14,27 +14,27 @@ Los RN y CA de esta spec detallan esos dos criterios; la sección 9 dice cuáles
 ## 1. Objetivo
 Permitir descargar como archivo PDF el reporte de un proyecto o de un sprint que arma HU-26, para entregarlo fuera del sistema. El PDF tiene que mostrar bien el español, paginar sin cortar mal las tablas y no fallar por un emoji en un nombre.
 
-**Alcance real de esta historia:** HU-27 no decide qué contiene el reporte; eso es de HU-26, que todavía no tiene spec ni rama. Para no esperarla, esta spec propone desacoplar las dos historias con un **modelo neutral de documento** (`DocumentoPDF`): HU-27 genera un PDF a partir de cualquier documento con título, subtítulo, fecha de emisión y secciones con párrafos y tablas de texto, y HU-26 convierte su reporte a ese modelo. Así HU-27 se puede programar y probar completa con documentos de prueba. Todo lo que depende de HU-26 está marcado como **SUPUESTO** y repetido en "Preguntas abiertas".
+**Alcance real de esta historia:** HU-27 no decide qué contiene el reporte; eso es de HU-26 ([spec](HU-26-reporte-proyecto-sprint.md)). Para no esperarla, esta spec desacopla las dos historias con un **modelo neutral de documento** (`DocumentoPDF`): HU-27 genera un PDF a partir de cualquier documento con título, subtítulo, fecha de emisión y secciones con párrafos y tablas de texto, y el reporte de HU-26 se convierte a ese modelo. Así HU-27 se pudo programar y probar completa con documentos de prueba. La conversión vive en el adaptador HTTP, a partir de los mismos datos ya formateados que muestra la pantalla del reporte (P-11). Los supuestos sobre HU-26 que tenía esta spec quedaron resueltos con la spec y el código de HU-26 (ver "Preguntas abiertas").
 
 La librería es `codeberg.org/go-pdf/fpdf` con la fuente DejaVu Sans Condensed embebida ([ADR-0006](../adr/0006-libreria-pdf.md), todavía `proposed`).
 
 ## 2. Entradas
 Son dos descargas sin cuerpo.
 
-**Reporte de un proyecto.** **En HTTP:** `GET /web/proyectos/{id}/reporte/pdf` (**SUPUESTO**: la ruta cuelga de la pantalla del reporte de HU-26, ver sección 3).
+**Reporte de un proyecto.** **En HTTP:** `GET /web/proyectos/{id}/reporte/pdf`: la ruta de la pantalla del reporte de HU-26 con `/pdf` al final (sección 3).
 
 | Dato | Tipo (Go) | Obligatorio | Validación |
 |---|---|---|---|
 | `proyectoID` | `int64` | Sí | Entero positivo. Debe corresponder a un proyecto existente (HU-01). |
 
-**Reporte de un sprint.** **En HTTP:** `GET /web/proyectos/{id}/sprints/{sprintID}/reporte/pdf` (**SUPUESTO**, igual que la anterior).
+**Reporte de un sprint.** **En HTTP:** `GET /web/proyectos/{id}/sprints/{sprintID}/reporte/pdf`, igual que la anterior.
 
 | Dato | Tipo (Go) | Obligatorio | Validación |
 |---|---|---|---|
 | `proyectoID` | `int64` | Sí | Entero positivo. Debe corresponder a un proyecto existente (HU-01). |
 | `sprintID` | `int64` | Sí | Entero positivo. Debe corresponder a un sprint de ese proyecto (RN-27.13). |
 
-**Entrada interna: el documento.** El generador de PDF recibe un `domain.DocumentoPDF`, que arma HU-26 a partir de su reporte:
+**Entrada interna: el documento.** El generador de PDF recibe un `domain.DocumentoPDF`, que se arma a partir del reporte de HU-26 (P-11):
 
 ```go
 type DocumentoPDF struct {
@@ -63,9 +63,9 @@ type TablaPDF struct {
 }
 ```
 
-HU-26 completa todos los campos menos `Emision` y `Aviso`, que pone el caso de uso de HU-27 (RN-27.9, RN-27.10). El campo `Aviso` se agregó al escribir los steps de HU-27: RN-27.2 ubica el aviso en el documento, pero el modelo no tenía dónde guardarlo.
+La conversión del reporte de HU-26 (P-11) completa todos los campos menos `Emision` y `Aviso`, que pone el caso de uso de HU-27 (RN-27.9, RN-27.10). El campo `Aviso` se agregó al escribir los steps de HU-27: RN-27.2 ubica el aviso en el documento, pero el modelo no tenía dónde guardarlo.
 
-Todo es texto: los números, porcentajes y horas llegan ya formateados por HU-26, para que el PDF diga lo mismo que la pantalla (por ejemplo, `+25,0 %` como en HU-19).
+Todo es texto: los números, porcentajes y horas llegan ya formateados, con el mismo formato que la pantalla del reporte de HU-26, para que el PDF diga lo mismo que la pantalla (por ejemplo, `+25,0 %` como en HU-19).
 
 ## 3. Salidas esperadas
 
@@ -91,13 +91,13 @@ No lleva `Content-Security-Policy`: esa cabecera se aplica a las respuestas HTML
 ### Pantalla
 Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 
-- **Dónde (SUPUESTO):** en la pantalla del reporte de HU-26. Se supone que esa pantalla vive en `/web/proyectos/{id}/reporte` para el proyecto y en `/web/proyectos/{id}/sprints/{sprintID}/reporte` para el sprint, y que la ruta del PDF es la misma con `/pdf` al final. Si HU-26 elige otras rutas, se ajustan las de esta spec sin cambiar las reglas.
+- **Dónde:** en la pantalla del reporte de HU-26, que vive en `/web/proyectos/{id}/reporte` para el proyecto y en `/web/proyectos/{id}/sprints/{sprintID}/reporte` para el sprint (spec de HU-26, sección 2). La ruta del PDF es la misma con `/pdf` al final.
 - **Qué se agrega:** un enlace con estilo de botón (`<a class="boton" href="…/reporte/pdf">Descargar PDF</a>`), como los enlaces "Registrar defecto" y "Editar" de `backlog.html`. Es un enlace `GET` y no un formulario, porque la descarga no cambia nada (no necesita la comprobación de origen de los formularios).
 - **Si la descarga falla:** el navegador muestra la página de error, con el mensaje de la sección 7 y el enlace "Volver a la lista de proyectos". Un `500` muestra "Ocurrió un error interno. Probá de nuevo más tarde.", sin el detalle.
 - **Si se reemplazaron caracteres:** el aviso va dentro del PDF (RN-27.9). La pantalla no lo anticipa, porque tendría que generar el documento para saberlo.
 
 ## 4. Reglas de negocio
-- **RN-27.1 (modelo neutral):** [Esencial] el PDF se genera solo a partir de un `DocumentoPDF`. HU-27 no conoce la estructura del reporte de HU-26: qué secciones hay y qué dice cada una lo decide HU-26 al armar el documento.
+- **RN-27.1 (modelo neutral):** [Esencial] el PDF se genera solo a partir de un `DocumentoPDF`. El generador y el caso de uso de HU-27 no conocen la estructura del reporte de HU-26: qué secciones hay y qué dice cada una lo decide HU-26 (RN-26.11), y la conversión lo copia de la pantalla del reporte (P-11).
 - **RN-27.2 (orden del contenido):** [Esencial] título, subtítulo (si no está vacío), línea de emisión, aviso de reemplazos (`DocumentoPDF.Aviso`, si no está vacío) y secciones, en ese orden. Dentro de una sección, los bloques salen en el orden del documento.
 - **RN-27.3 (encabezado y pie):** [Deseable] desde la segunda página, un encabezado con el título del documento. En todas las páginas, el pie "Página k de N", donde N es la cantidad total de páginas del PDF.
 - **RN-27.4 (saltos de página):** [Esencial; la última oración, Deseable] cuando el contenido no entra, sigue en la página siguiente. Los párrafos largos continúan en la página siguiente. El título de una sección no queda solo al pie: si no entra junto con la primera línea de su primer bloque (o con el encabezado y la primera fila, si es una tabla), pasa entero a la página siguiente.
@@ -111,9 +111,9 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
   4. Cualquier otro (emojis, ideogramas, otras escrituras, caracteres de control y bytes que no son UTF-8 válido) se reemplaza por `?`. Varios seguidos, aunque entre ellos hubiera caracteres quitados en el paso 2, dan **un solo** `?`.
 - **RN-27.9 (aviso de reemplazos):** [Deseable] si RN-27.8 insertó al menos un `?`, el caso de uso escribe el aviso en `DocumentoPDF.Aviso` y el PDF lo muestra después de la línea de emisión; si no hubo reemplazos, el campo queda vacío. HU-26 nunca completa ni lee ese campo. El texto es: "Aviso: 3 símbolos que no se pueden mostrar en PDF, como los emojis, se reemplazaron por «?»." En singular: "Aviso: 1 símbolo que no se puede mostrar en PDF, como los emojis, se reemplazó por «?»." El número es la cantidad de `?` insertados. Los espacios convertidos (paso 1) y los invisibles quitados (paso 2) no cuentan, porque no cambian lo que se ve.
 - **RN-27.10 (fecha de emisión):** [Esencial] la fija el caso de uso con su reloj al pedir la descarga, en la hora de Argentina (UTC-3, sin horario de verano), y la pasa en `DocumentoPDF.Emision`. Se muestra como `dd/mm/aaaa` y `HH:MM` en 24 horas. Es la única fecha que usa el generador: también es la de creación y modificación en los metadatos del PDF, de modo que el mismo documento con la misma emisión genera siempre los mismos bytes.
-- **RN-27.11 (documento válido):** [Esencial] el generador rechaza con `domain.ErrDocumentoInvalido` un documento con título vacío (después de RN-27.8 y sin contar espacios), una sección con título vacío, un bloque con párrafo y tabla a la vez, una tabla sin columnas, una tabla con más de 6 columnas, un encabezado de columna de más de 100 caracteres (después de RN-27.8; RN-27.6), o una fila con distinta cantidad de celdas que columnas. Son errores de programación de quien arma el documento (HU-26), no del usuario: se responden como falla interna (sección 7). Un bloque sin párrafo ni tabla **no** es un error: es un párrafo vacío y no se muestra nada (sección 6).
+- **RN-27.11 (documento válido):** [Esencial] el generador rechaza con `domain.ErrDocumentoInvalido` un documento con título vacío (después de RN-27.8 y sin contar espacios), una sección con título vacío, un bloque con párrafo y tabla a la vez, una tabla sin columnas, una tabla con más de 6 columnas, un encabezado de columna de más de 100 caracteres (después de RN-27.8; RN-27.6), o una fila con distinta cantidad de celdas que columnas. Son errores de programación de quien arma el documento (la conversión de P-11), no del usuario: se responden como falla interna (sección 7). Un bloque sin párrafo ni tabla **no** es un error: es un párrafo vacío y no se muestra nada (sección 6).
 - **RN-27.12 (nombre del archivo):** [Esencial] `reporte-proyecto-{proyectoID}-{aaaa-mm-dd}.pdf` para un proyecto y `reporte-proyecto-{proyectoID}-sprint-{sprintID}-{aaaa-mm-dd}.pdf` para un sprint, con los IDs de la ruta y la fecha de emisión de RN-27.10. No incluye el nombre del proyecto ni del sprint: el nombre tiene solo minúsculas sin acentos, dígitos, `-` y `.`.
-- **RN-27.13 (qué se puede descargar):** [Esencial] el proyecto tiene que existir y el sprint tiene que ser de ese proyecto; un sprint de otro proyecto se trata como inexistente (igual que RN-23.11). **SUPUESTO:** se puede descargar en cualquier estado del proyecto y del sprint, igual que HU-23 (RN-23.12); si HU-26 restringe algún caso, HU-27 responde lo mismo que la pantalla del reporte.
+- **RN-27.13 (qué se puede descargar):** [Esencial] el proyecto tiene que existir y el sprint tiene que ser de ese proyecto; un sprint de otro proyecto se trata como inexistente (igual que RN-23.11 y RN-26.10). Se puede descargar en cualquier estado del proyecto y del sprint, igual que la pantalla del reporte (RN-26.10) y que HU-23 (RN-23.12).
 - **RN-27.14 (hoja):** [Esencial] A4 en orientación vertical.
 - **RN-27.15 (archivo válido):** [Esencial] el cuerpo de una descarga exitosa es un PDF completo: empieza con `%PDF-`, termina con `%%EOF` (como mucho seguido de un salto de línea), se puede abrir y extraer su texto, y `Content-Length` coincide con su tamaño. Nunca se envía un PDF a medias (sección 5: se genera entero en memoria antes de responder).
 
@@ -143,8 +143,8 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
   ```go
   // Se reutilizan: LectorProyectos (HU-04) y LectorSprintPorID (HU-23).
 
-  // FuenteDocumentoProyecto y FuenteDocumentoSprint las implementa HU-26 (SUPUESTO): convierten su
-  // reporte al modelo neutral. Tienen un método cada una.
+  // FuenteDocumentoProyecto y FuenteDocumentoSprint las implementa el adaptador HTTP sobre los casos
+  // de uso de HU-26 (P-11): convierten su reporte al modelo neutral. Tienen un método cada una.
   type FuenteDocumentoProyecto interface {
   	DocumentoDeProyecto(ctx context.Context, proyectoID int64) (domain.DocumentoPDF, error)
   }
@@ -158,7 +158,10 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
   }
   ```
 
-  Hasta que exista HU-26, los tests y los steps de godog usan una fuente de prueba. En los steps, la fuente en memoria también hace de lector de proyectos y de sprints, con los mismos datos.
+  Los tests del caso de uso y los steps de godog usan una fuente de prueba. En los steps, la fuente en memoria también hace de lector de proyectos y de sprints, con los mismos datos.
+- **Conversión del reporte (P-11)** (`internal/adapters/http/reporte_documento.go`):
+  - `aDocumentoPDF(d datosReporte) domain.DocumentoPDF`: arma el documento a partir de los datos que ya formateó `aDatosReporte` para la pantalla de HU-26, con las cinco secciones de la pantalla, en el mismo orden, con los mismos títulos y los mismos textos (RN-26.11). Los textos fijos que están en la plantilla `reporte.html` (los mensajes de "sin datos", "Sin fecha de fin", "—") se repiten en la conversión, y un test compara la pantalla con el documento.
+  - `fuenteDocumentoReporte`: implementa `FuenteDocumentoProyecto` y `FuenteDocumentoSprint` sobre los casos de uso `ArmarReporteProyecto` y `ArmarReporteSprint` de HU-26. Pasa el contexto del pedido y devuelve sus errores sin cambios, así que `errors.Is` sigue reconociendo `ErrProyectoNoEncontrado` y `ErrSprintNoEncontrado`.
 - **Huso horario:** se usa `time.FixedZone("UTC-3", -3*60*60)` y no `time.LoadLocation("America/Argentina/Buenos_Aires")`. Esta última necesita la base de husos horarios del sistema o embeber `time/tzdata`, y Render corre en UTC. Argentina no usa horario de verano desde 2009.
 - **Adaptador de PDF** (`internal/adapters/pdf`): es el único paquete que importa `fpdf`. Las reglas de uso de la librería son las del ADR-0006: fuente embebida con `go:embed`, fechas fijas con `SetCreationDate` y `SetModificationDate`, `SetCatalogSort(true)`, sin las funciones `SetDefault*`, y devolver siempre el error de `Output`. La tabla (RN-27.5) la arma una función propia del adaptador; el ancho de cada columna lo decide el adaptador y no es regla de negocio. El adaptador recibe el documento ya normalizado, pero si `fpdf` igual devuelve un error, lo devuelve (se responde como falla interna).
 - **Por qué alcanzan los topes de RN-27.6:** en A4 vertical quedan unos 260 mm de alto útil, y en cada página tienen que entrar la fila de encabezados y una fila (RN-27.4, RN-27.5). El peor caso es un texto sin espacios del carácter más ancho de la lista de RN-27.8 (`Œ`, unos 3 mm a 9 puntos): fpdf lo corta por caracteres. Con 6 columnas (30 mm cada una), una celda de 300 caracteres y un encabezado de 100 entran juntos en una página; las mediciones están en P-10. Se comprueba en el test del adaptador con 6 columnas, encabezados de 100 y celdas de 300 caracteres de `Œ`: una fila por página.
@@ -167,7 +170,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 - **Dependencias nuevas:** `codeberg.org/go-pdf/fpdf` y, solo para los tests, `github.com/ledongthuc/pdf`. Se suman a `go.mod` con el adaptador, no con esta spec. La licencia de DejaVu va a `docs/third-party-licenses/` en el mismo cambio.
 - **Sin persistencia nueva:** no hay tablas, columnas ni migraciones.
 - **Fuera de alcance:**
-  - **Para HU-26:** el contenido del reporte, su pantalla y la conversión a `DocumentoPDF`.
+  - **Para HU-26:** el contenido del reporte y su pantalla. La conversión a `DocumentoPDF` copia esa pantalla (P-11).
   - **Para HU-25 o una historia posterior:** gráficos en el PDF (ver "Preguntas abiertas").
   - **Sin historia:** HTML a PDF, imágenes, marcadores, PDF/A, firma digital, otras escrituras además de las de RN-27.8, elegir la orientación desde la pantalla, una ruta JSON de descarga y controlar quién descarga (no hay usuarios ni sesiones).
 
@@ -180,6 +183,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 - **Normalizar el texto extraído:** el extractor corta donde el PDF cambia de línea, así que se normalizan los espacios o se buscan fragmentos cortos.
 - **Determinismo:** con la misma emisión fija, dos generaciones dan los mismos bytes. No se usa `time.Now` en ningún test.
 - **HTTP:** `httptest` con dobles de los casos de uso: cabeceras, cuerpo que empieza con `%PDF-`, códigos de error y que el `500` no muestre el detalle.
+- **Conversión (P-11):** tests del adaptador HTTP con reportes de ejemplo de proyecto, de sprint y vacíos: los títulos de sección son los `<h2>` de la pantalla y en el mismo orden, cada texto del documento aparece en la pantalla, y el documento pasa `Validar()`, también con la tabla más ancha.
 - **Revisión visual:** un escenario `@manual` (CA-27.21), porque ningún test automático mira el dibujo.
 
 ## 6. Casos límite
@@ -216,7 +220,7 @@ Solo lectura, sin formularios y sin JavaScript (ADR-0003).
 | Documento inválido | `domain.ErrDocumentoInvalido` (nuevo) | HTTP 500, "Ocurrió un error interno. Probá de nuevo más tarde."; el detalle va solo al log. |
 | Falla al armar el reporte (fuente) o al generar el PDF | — (se envuelven con `%w`) | HTTP 500, el mismo mensaje genérico; el detalle va solo al log. No se envía un PDF parcial. |
 
-Si hay varios errores, se informa el primero en el orden de la tabla. **SUPUESTO:** si HU-26 define errores propios (por ejemplo, un reporte que no se puede armar para un sprint abierto), HU-27 los muestra igual que la pantalla del reporte; se agregan a esta tabla cuando HU-26 tenga spec.
+Si hay varios errores, se informa el primero en el orden de la tabla. HU-26 no define errores propios: sus errores son los mismos de esta tabla (proyecto o sprint inexistente, sprint de otro proyecto; spec de HU-26, sección 7), y cualquier otra falla al armar el reporte llega como falla de la fuente.
 
 Un emoji, un ideograma o un carácter de control **no son errores**: se reemplazan y se avisa (RN-27.8, RN-27.9).
 
@@ -243,7 +247,7 @@ Un emoji, un ideograma o un carácter de control **no son errores**: se reemplaz
 - **CA-27.20 (falla interna):** [Esencial] Dada una falla de la fuente, del generador o un documento inválido, cuando se descarga, entonces la respuesta es `500` con `Content-Type: text/html`, la página "Ocurrió un error interno. Probá de nuevo más tarde." sin el detalle, y el detalle queda en el log. (Sección 7)
 - **CA-27.21 (botón y revisión visual, `@manual` en parte):** [Esencial] Dada la pantalla del reporte de un proyecto o de un sprint, entonces tiene un enlace "Descargar PDF" a la ruta de la sección 2, sin formulario ni JavaScript (automatizable). Al abrir el PDF descargado, se ven los acentos, el encabezado y el pie en cada página, las tablas sin filas encimadas ni cortadas y el aviso si hubo reemplazos (`@manual`, porque ningún test mira el dibujo). (Sección 3)
 - **CA-27.22 (mismas secciones, en el exportador):** [Esencial] Dado un documento de ejemplo con cinco secciones, "Resumen", "Historias y estimaciones", "Esfuerzo", "Métricas" y "Defectos" (una sin bloques y una con una tabla sin filas), cuando se genera el PDF, entonces el texto extraído tiene los cinco títulos, exactos, una vez cada uno y en ese orden. Los nombres son de ejemplo, no las secciones de HU-26. (RN-27.1, RN-27.2, RN-27.7)
-- **CA-27.23 (mismas secciones que la pantalla, integración):** [Esencial] **PENDIENTE DE HU-26.** Dado un proyecto con historias, esfuerzo y defectos, cuando se arma su reporte con HU-26, se convierte a `DocumentoPDF` con la fuente de HU-26 y se genera el PDF, entonces los títulos de sección del PDF son los mismos y en el mismo orden que los títulos de sección de la pantalla del reporte. Lo mismo para el reporte de un sprint. Se automatiza cuando HU-26 tenga pantalla y conversión; HU-27 no se cierra sin este CA en verde. (RN-27.1, RN-27.2; criterio 1 de la issue)
+- **CA-27.23 (mismas secciones que la pantalla, integración):** [Esencial] Dado un proyecto con historias, esfuerzo y defectos, cuando se arma su reporte con HU-26, se convierte a `DocumentoPDF` con la fuente de P-11 y se genera el PDF con el generador real, entonces los títulos de sección del PDF son los mismos y en el mismo orden que los títulos de sección de la pantalla del reporte. Lo mismo para el reporte de un sprint. Se automatiza con la pantalla y la conversión de la sección 5; HU-27 no se cierra sin este CA en verde. (RN-27.1, RN-27.2; criterio 1 de la issue)
 - **CA-27.24 (PDF válido):** [Esencial] Dada una descarga exitosa (CA-27.14 o CA-27.15), entonces el cuerpo empieza con `%PDF-`, termina con `%%EOF` (como mucho seguido de un salto de línea), `ledongthuc/pdf` lo abre, informa al menos una página y extrae el título del documento, y `Content-Length` coincide con la cantidad de bytes del cuerpo. (RN-27.15; criterio 2 de la issue)
 
 Los escenarios mínimos corresponden a: feliz, CA-27.1 y CA-27.14; alternativo, CA-27.15; límite, CA-27.3, CA-27.6 y CA-27.13; caracteres, CA-27.8; errores, CA-27.17 a CA-27.20; criterios de la issue, CA-27.22, CA-27.23 y CA-27.24.
@@ -252,12 +256,12 @@ Los escenarios mínimos corresponden a: feliz, CA-27.1 y CA-27.14; alternativo, 
 
 | Criterio de la issue #38 | Cómo se verifica | RN | CA |
 |---|---|---|---|
-| 1. "El PDF contiene las mismas secciones que el reporte en pantalla." | **(a) En el exportador:** el PDF respeta el orden y los títulos de las secciones del `DocumentoPDF`, y no pierde contenido al paginar ni por los caracteres. Automatizable hoy, con documentos de prueba. **(b) Integración:** el reporte de HU-26, convertido al `DocumentoPDF`, da en el PDF los mismos títulos de sección que su pantalla. **PENDIENTE DE HU-26.** | RN-27.1, RN-27.2, RN-27.4, RN-27.5, RN-27.7, RN-27.8 | (a) CA-27.1, CA-27.2, CA-27.3, CA-27.4, CA-27.7, CA-27.8, CA-27.10, CA-27.22 · (b) CA-27.23 |
+| 1. "El PDF contiene las mismas secciones que el reporte en pantalla." | **(a) En el exportador:** el PDF respeta el orden y los títulos de las secciones del `DocumentoPDF`, y no pierde contenido al paginar ni por los caracteres. Automatizable hoy, con documentos de prueba. **(b) Integración:** el reporte de HU-26, convertido al `DocumentoPDF` (P-11), da en el PDF los mismos títulos de sección que su pantalla. | RN-27.1, RN-27.2, RN-27.4, RN-27.5, RN-27.7, RN-27.8 | (a) CA-27.1, CA-27.2, CA-27.3, CA-27.4, CA-27.7, CA-27.8, CA-27.10, CA-27.22 · (b) CA-27.23 |
 | 2. "El archivo se puede descargar/guardar correctamente." | Las descargas HTTP: tipo, nombre seguro y errores 404, 400 y 500. Los bytes son un PDF válido que se puede abrir. El botón de la pantalla y la revisión visual. | RN-27.8, RN-27.10, RN-27.11, RN-27.12, RN-27.13, RN-27.14, RN-27.15 | CA-27.11, CA-27.13, CA-27.14, CA-27.15, CA-27.16, CA-27.17, CA-27.18, CA-27.19, CA-27.20, CA-27.21, CA-27.24 |
 
 RN-27.8 está en los dos criterios: sin esa regla, los acentos no saldrían bien (criterio 1) y un emoji haría fallar la descarga (criterio 2).
 
-**Por qué (b) queda pendiente:** HU-26 no tiene rama, spec ni código; tampoco hay en el repositorio un reporte de ejemplo. Probarlo con otra pantalla existente (por ejemplo, el detalle del proyecto) no verificaría el criterio, porque esa pantalla no es el reporte.
+**Por qué (b) se verifica aparte de (a):** (a) se prueba con documentos de ejemplo, que no dicen nada de la pantalla. (b) necesita el reporte real de HU-26, su pantalla y la conversión de P-11, y compara los títulos de sección del PDF con los de esa pantalla. Probarlo con otra pantalla existente (por ejemplo, el detalle del proyecto) no verificaría el criterio, porque esa pantalla no es el reporte. Mientras HU-26 no tenía rama, spec ni código, (b) quedó pendiente; ahora se automatiza con la conversión de la sección 5.
 
 ### Prioridad
 - **Esenciales:** 12 RN (RN-27.1, 27.2, 27.4, 27.5, 27.7, 27.8, 27.10 a 27.15) y 20 CA (CA-27.1 a 27.4, 27.7, 27.8, 27.10, 27.11, 27.13 a 27.24). RN-27.4 y RN-27.5 tienen una parte deseable, indicada en su marca.
@@ -289,7 +293,7 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 
   Se descartó quitarlos sin aviso, porque "Sprint 😀 final" pasaría a "Sprint  final" sin que nadie se entere. Se descartó rechazar la exportación, porque el dominio acepta esos caracteres desde HU-01.
 - **P-3 — Nombre del archivo:** con IDs y fecha, sin el nombre del proyecto (RN-27.12). Así no hace falta transliterar ni escapar el nombre en la cabecera, y la fecha distingue descargas de distintos días. Se usa el ID del sprint y no su número (RN-08.7) porque es el que está en la ruta y no requiere otra consulta. Objeción posible: el número dice más al usuario ("sprint-2"); cambiarlo no toca otras reglas.
-- **P-4 — Orientación:** A4 vertical (RN-27.14). A4 es el tamaño habitual en Argentina para un documento formal. La vertical alcanza para tablas de pocas columnas. Si las tablas de HU-26 tienen muchas columnas, se revisa (pregunta abierta 4).
+- **P-4 — Orientación:** A4 vertical (RN-27.14). A4 es el tamaño habitual en Argentina para un documento formal. La vertical alcanza para tablas de pocas columnas. La tabla más ancha del reporte de HU-26 tiene 6 columnas (la de defectos), dentro del tope de P-10 (pregunta abierta 4).
 - **P-5 — Fecha de emisión:** la fija el caso de uso con un reloj inyectado, en UTC-3 fijo y con formato `dd/mm/aaaa HH:MM` (RN-27.10, sección 5). Así el PDF es determinista en los tests, la hora no depende de que Render corra en UTC, y no hace falta la base de husos horarios.
 - **P-6 — Tope de 300 caracteres por celda:** garantiza, junto con los topes de columnas y de encabezados de P-10, que toda fila entre en una página (RN-27.6). La alternativa, partir una fila entre páginas, complica la función de tabla del adaptador y deja filas difíciles de leer. El texto largo va en párrafos, que no tienen tope.
 - **P-7 — Ruta bajo `/web/` y errores como página HTML:** quien pide el PDF es el navegador al seguir el botón, así que un error tiene que mostrarse como página y no como JSON. No se agrega una ruta JSON.
@@ -311,28 +315,33 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
   | 4 | 300 | — |
 
   Con encabezados de una sola palabra corta, 9 columnas ya dan 23 páginas para 2 filas y 10 columnas, 25; de 5 a 8 columnas, una fila por página. Se eligen 6 columnas y 100 caracteres (debajo de los 120 medidos) porque 6 columnas alcanzan para un reporte en A4 vertical y 100 caracteres alcanzan para un encabezado. Con texto normal, con espacios, entra mucho más: el tope cubre el peor caso. Se descartó recortar los encabezados como las celdas: un encabezado recortado deja de nombrar su columna, y superar el tope es un error de quien arma el documento (HU-26), no del usuario.
+- **P-11 — La conversión vive en el adaptador HTTP** (2026-11-07, al integrar HU-26, abierta a objeción en el PR): `aDocumentoPDF` arma el `DocumentoPDF` a partir de `datosReporte`, los datos que `aDatosReporte` ya formateó para la pantalla del reporte de HU-26, y `fuenteDocumentoReporte` implementa los puertos `FuenteDocumentoProyecto` y `FuenteDocumentoSprint` sobre los casos de uso de HU-26 (sección 5). Ajusta P-1, que dejaba la conversión a HU-26, y la propuesta de la spec de HU-26 de una función `domain.ADocumentoPDF`.
+  - **Motivo:** una sola fuente de verdad del texto formateado. Las horas, los porcentajes, la velocidad y las fechas se formatean una sola vez, en `aDatosReporte`, con `textoHoras`, `textosDesviacion`, `textoPorcentaje` y `conComa`, que ya usan HU-19, HU-22 y HU-23. En el dominio habría que duplicar esas funciones o moverlas, y la pantalla y el PDF podrían dejar de decir lo mismo.
+  - **Costo:** un adaptador de entrada (HTTP) implementa un puerto de `internal/app` que usa otro caso de uso. Las dependencias siguen apuntando hacia adentro (`app` define los puertos y no conoce el adaptador), pero el adaptador HTTP pasa a ser también una fuente de datos para HU-27. Además, los textos fijos de la plantilla (mensajes de "sin datos", "Sin fecha de fin", "—") se repiten en la conversión; un test compara la pantalla con el documento para que no diverjan.
+  - **Descartado:** `domain.ADocumentoPDF` (duplica el formateo en el dominio y mete formato de presentación ahí) y mover las funciones de formato a otro paquete (toca las pantallas de otras historias).
 
 ## Preguntas abiertas
 **Criterios de la historia:**
 1. **Resuelta (2026-11-07, fuente: issue #38). Criterios de aceptación originales de HU-27:** el texto de los criterios no estaba en el repositorio. La issue #38 tiene dos: "El PDF contiene las mismas secciones que el reporte en pantalla." y "El archivo se puede descargar/guardar correctamente.". Se citan al principio de la spec y la sección 9 los liga con los RN y CA.
 
-**Dependen de HU-26** (conviene acordarlas con Ezequiel antes de aprobar la spec):
+**Dependen de HU-26** (resueltas con la spec y el código de HU-26 al integrarla, salvo la 5 y la 9):
 
-2. **Secciones del reporte (SUPUESTO):** esta spec no supone ninguna sección concreta. HU-26 define qué secciones lleva y cómo se reparte el contenido entre párrafos y tablas. De esto depende CA-27.23, que verifica el criterio 1 de la issue de punta a punta.
-3. **Proyecto y sprint (SUPUESTO):** se supone que los dos reportes se pueden expresar con el mismo modelo, aunque tengan secciones distintas. Si alguno necesita algo que el modelo no tiene, se amplía el modelo.
-4. **Columnas de las tablas:** la cantidad de columnas y el largo de los textos confirman o cambian la orientación vertical (P-4) y el tope de RN-27.6.
+2. **Resuelta (2026-11-07, fuente: spec de HU-26, RN-26.11, y `reporte.html`). Secciones del reporte:** son cinco, "Resumen", "Historias y estimaciones", "Esfuerzo", "Métricas" y "Defectos", en ese orden, las mismas para el proyecto y para el sprint. Cómo se reparte el contenido entre párrafos y tablas lo define la conversión de P-11, copiando la pantalla. CA-27.23 compara esos títulos.
+3. **Resuelta (2026-11-07, fuente: spec de HU-26). Proyecto y sprint:** los dos reportes son el mismo tipo `domain.Reporte` y se expresan con el mismo modelo sin ampliarlo; el del sprint no tiene velocidad (RN-26.5, RN-26.6).
+4. **Resuelta (2026-11-07, fuente: `reporte.html` y P-10). Columnas de las tablas:** la tabla más ancha del reporte es la de defectos, con 6 columnas y encabezados cortos, dentro de los topes de P-10. Se mantiene la orientación vertical (P-4).
 5. **Gráficos de HU-25 (SUPUESTO: no lleva):** si el reporte incluye gráficos, el modelo necesita un tipo de bloque nuevo y hay que probar cómo dibujarlo con `fpdf`. El ADR-0006 no lo verificó.
-6. **Pantalla y rutas (SUPUESTO):** se supone que la pantalla del reporte vive en `/web/proyectos/{id}/reporte` y `/web/proyectos/{id}/sprints/{sprintID}/reporte`.
-7. **Dónde vive la conversión:** los formatos de la pantalla (`textoHoras`, `textoPorcentaje`, `conSigno`) están en `internal/adapters/http`. Si la conversión a `DocumentoPDF` los usa, tiene que estar en ese paquete o hay que moverlos. Lo decide HU-26.
-8. **Restricciones del reporte (SUPUESTO: ninguna):** si HU-26 no permite el reporte de un sprint abierto, o define otros errores, HU-27 responde igual (RN-27.13, sección 7).
+6. **Resuelta (2026-11-07, fuente: spec de HU-26, sección 2). Pantalla y rutas:** la pantalla del reporte vive en `/web/proyectos/{id}/reporte` y `/web/proyectos/{id}/sprints/{sprintID}/reporte`, como se suponía.
+7. **Resuelta (2026-11-07, decisión P-11). Dónde vive la conversión:** en el adaptador HTTP, a partir de `datosReporte`, para no duplicar ni mover `textoHoras`, `textoPorcentaje` y las demás funciones de formato.
+8. **Resuelta (2026-11-07, fuente: spec de HU-26, RN-26.10 y sección 7). Restricciones del reporte:** ninguna. El reporte de un sprint se puede pedir en cualquier estado, y HU-26 no define errores propios además de proyecto o sprint inexistente (RN-27.13, sección 7).
 9. **Aclaración del sprint cerrado:** si el reporte incluye la aclaración de RN-23.8, el PDF la lleva como un párrafo más, sin regla propia de HU-27.
 
 **Para el equipo:**
 
 10. **ADR-0006:** confirmar la librería y la fuente para pasarlo de `proposed` a `accepted`. Esta spec depende de esa decisión: si cambia la librería, cambian la lista de RN-27.8 y la sección 5.
-11. **Decisiones P-1 a P-10:** sin objeciones hasta ahora; se confirman en el PR.
-12. **Recursos de la generación:** `Generar` mira el contexto solo al principio, así que una generación ya empezada no se puede cancelar; y no hay límite de tamaño del documento ni de descargas simultáneas (cada una parsea las dos fuentes, ADR-0006). Depende del contenido que defina HU-26: si el reporte puede ser muy grande, hay que decidir un tope o un límite de concurrencia.
+11. **Decisiones P-1 a P-11:** sin objeciones hasta ahora; se confirman en el PR.
+12. **Recursos de la generación:** `Generar` mira el contexto solo al principio, así que una generación ya empezada no se puede cancelar; y no hay límite de tamaño del documento ni de descargas simultáneas (cada una parsea las dos fuentes, ADR-0006). Sigue abierta con el reporte de HU-26: no tiene tope de historias ni de defectos, así que un proyecto grande da un documento grande. Hay que decidir si hace falta un tope o un límite de concurrencia.
 13. **Texto descompuesto:** `e` + `U+0301` (acento combinante) sale "e?" y cuenta 1 en el aviso (RN-27.8, paso 4), aunque en pantalla se vea "é". Arreglarlo requeriría `golang.org/x/text` para recomponer el texto antes de normalizar. Decisión del equipo.
+14. **Sprints del proyecto en el Resumen:** la sección 3 de la spec de HU-26 dice que el Resumen del proyecto incluye la cantidad de sprints abiertos y cerrados, pero `reporte.html` no la muestra; el PDF copia la pantalla (P-11), así que tampoco la tiene. Pendiente de la decisión de Eze.
 
 ## Historial
 - 2026-11-07: creada (borrador). Decisiones P-1 a P-7 tomadas por el autor, abiertas a objeción en el PR. Preguntas 2 a 9 pendientes de la spec de HU-26.
@@ -354,3 +363,4 @@ Tomadas por el autor (Lucas Orellana) el 2026-11-07, abiertas a objeción en el 
 - 2026-11-07: decisión P-10 del autor, abierta a objeción en el PR, a partir de la revisión de go-reviewer: el tope de 300 caracteres por celda no alcanzaba para que una fila entre en una página con muchas columnas. RN-27.6 suma los topes de 6 columnas y de 100 caracteres por encabezado, RN-27.11 los suma como documento inválido, y se ajustan la sección 5, los casos límite, CA-27.6 y CA-27.11 (sin renumerar). No cambia ninguna otra regla. La spec sigue en borrador.
 - 2026-11-07: RN-27.8, paso 2, nombra también los selectores de variante suplementarios `U+E0100`–`U+E01EF`, que el código ya quitaba y la spec no mencionaba (revisión de go-reviewer). No son `Cf`, así que la regla anterior no los cubría. No cambia ningún criterio. La spec sigue en borrador.
 - 2026-11-07: preguntas abiertas 12 (recursos de la generación) y 13 (texto descompuesto), de la revisión de go-reviewer. No cambia ninguna regla ni criterio. La spec sigue en borrador.
+- 2026-11-07: integración con HU-26 (rama `hu-26-reporte-proyecto-sprint` mergeada en esta). Decisión P-11 del autor, abierta a objeción en el PR: la conversión del reporte a `DocumentoPDF` vive en el adaptador HTTP (sección 5). Se quitan los supuestos sobre HU-26 que quedaron confirmados (rutas, cualquier estado del sprint en RN-27.13, sin errores propios en la sección 7), CA-27.23 y el criterio 1 (b) dejan de estar pendientes de HU-26 y se reescribe por qué (b) se verifica aparte. Preguntas 2, 3, 6, 7 y 8 resueltas, 4 resuelta con P-10, 12 sigue abierta, y se agrega la 14 (sprints del proyecto en el Resumen). Ninguna regla ni criterio cambia de contenido. La spec sigue en borrador.
