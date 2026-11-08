@@ -2110,6 +2110,87 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 
 ---
 
+## HU-26: Generar reporte de proyecto o Sprint
+
+- **Issue:** [#37](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/37) · Sprint 4 · 5 SP
+- **Spec:** [docs/specs/HU-26-reporte-proyecto-sprint.md](specs/HU-26-reporte-proyecto-sprint.md) (**Aprobada** el 2026-11-08 por Matías López, Agile Enabler, en la revisión del PR [#378](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/378))
+- **Feature:** [features/HU-26-reporte-proyecto-sprint.feature](../features/HU-26-reporte-proyecto-sprint.feature), 13 escenarios (steps en [hu26_steps_test.go](../test/bdd/hu26_steps_test.go), sobre SQLite real en [hu26_sistema_test.go](../test/bdd/hu26_sistema_test.go))
+- **Alcance real:** no agrega ningún cálculo nuevo. Cada una de las cinco secciones del reporte (Resumen, Historias y estimaciones, Esfuerzo, Métricas, Defectos) reutiliza tal cual un caso de uso o una función del dominio que ya existe (HU-04, HU-07, HU-09, HU-21, HU-22, HU-23, HU-24); lo único que agrega HU-26 es juntar esos datos en un `Reporte` y mostrarlos en una pantalla propia, sin persistencia nueva (tarea 26.6 no aplica, mismo caso que la 24.6 de HU-24).
+- **Exportar a PDF, de HU-27:** por decisión de Matías en la revisión del PR #378, la conversión a `DocumentoPDF` queda enteramente afuera de HU-26 (antes RN-26.11/CA-26.14; ver "Huecos" para el estado anterior). En su lugar, HU-26 agrega una aclaración de texto en el reporte de un Sprint Cerrado (nueva RN-26.11/CA-26.14, sin relación con HU-27).
+
+### Criterios de aceptación
+
+| CA | Regla | Escenario(s) BDD | Tests Go | Código |
+|---|---|---|---|---|
+| CA-26.1 La sección de historias trae todas, con título/prioridad/estado/story points | RN-26.1 | El reporte de un proyecto trae todas sus historias `@normal` | `TestArmarReporteProyecto_HistoriasYResumen` (dominio), `TestArmarReporteProyecto_TraeTodasLasHistorias` (caso de uso), `TestPantallaReporteProyecto_MuestraLasCincoSecciones` (pantalla) | `domain.ArmarReporteProyecto`, `app.ArmarReporteProyecto.Ejecutar` (`app.ListarBacklog`, HU-07) |
+| CA-26.2 El reporte de un Sprint trae solo sus historias asignadas | RN-26.2 | El reporte de un Sprint trae solo sus historias asignadas `@normal` | `TestHistoriasDeSprint` (dominio), `TestArmarReporteSprint_SoloHistoriasAsignadas` (caso de uso), `TestPantallaReporteSprint_Muestra` (pantalla) | `domain.HistoriasDeSprint` (mismo filtro que HU-09) |
+| CA-26.3 Resumen: "X de Y historias completadas (Z de W story points)" | RN-26.3 | El resumen cuenta las historias y los story points completados `@normal` | `TestArmarReporteProyecto_HistoriasYResumen`, `TestArmarReporteProyecto_HistoriaSinEstimar_NoSumaStoryPoints` (dominio); `TestPantallaReporteProyecto_MuestraLasCincoSecciones` (pantalla) | `domain.ArmarReporteProyecto`/`ArmarReporteSprint` (`resumenHistorias`) |
+| CA-26.4 El esfuerzo coincide con lo que calcula HU-23 | RN-26.4 | El esfuerzo del reporte coincide con las horas de HU-23 `@normal` | `TestArmarReporteProyecto_EsfuerzoYMetricas_SePropaganTalCual` (dominio) | `app.ArmarReporteProyecto`/`ArmarReporteSprint.Ejecutar` (`domain.TotalizarHoras`, HU-23) |
+| CA-26.5 Métricas de proyecto: velocidad + una fila por Sprint Cerrado | RN-26.5 | Las métricas de un proyecto traen la velocidad y una fila por sprint cerrado `@normal` | `TestArmarReporteProyecto_EsfuerzoYMetricas_SePropaganTalCual` (dominio), `TestArmarReporteProyecto_Metricas` (caso de uso) | `app.ArmarReporteProyecto.Ejecutar` (`domain.Velocidad` HU-22, `domain.PorcentajeCompletado`/`ContarDefectosDeSprint` HU-24; ver "Huecos" sobre la duplicación con `ConsultarVelocidad`/`ConsultarCalidadSprints`) |
+| CA-26.6 Sin Sprints cerrados, sin velocidad y sin filas de métricas | RN-26.5, RN-26.9 | Sin sprints cerrados, el reporte de un proyecto no tiene métricas `@limite` | `TestArmarReporteProyecto_SinMetricas` (dominio), `TestArmarReporteProyecto_SinSprintsCerrados_SinMetricas` (caso de uso) | `domain.ArmarReporteProyecto` / `app.ArmarReporteProyecto.Ejecutar` |
+| CA-26.7 Sprint Cerrado con puntos: métrica con su porcentaje real | RN-26.6 | Las métricas de un Sprint cerrado traen su porcentaje real `@normal` | `TestArmarReporteSprint_Metrica_SePropagaTalCual` (dominio), `TestArmarReporteSprint_AbiertoYCerrado` (caso de uso) | `app.ArmarReporteSprint.Ejecutar` (`domain.PorcentajeCompletado` sin exigir `Cerrado`) |
+| CA-26.8 Sprint Abierto: "Sin datos" en el porcentaje, pero cuenta sus defectos | RN-26.6 | Un Sprint abierto no tiene datos de porcentaje, pero cuenta sus defectos `@alternativo` | `TestArmarReporteSprint_Metrica_SePropagaTalCual`, `TestArmarReporteSprint_AbiertoYCerrado` | `app.ArmarReporteSprint.Ejecutar` |
+| CA-26.9 El reporte de un proyecto trae todos sus defectos | RN-26.7 | El reporte de un proyecto trae todos sus defectos `@normal` | `TestArmarReporteProyecto_Defectos_SePropaganTalCual` (dominio), `TestPantallaReporteProyecto_MuestraLasCincoSecciones` (pantalla) | `app.ArmarReporteProyecto.Ejecutar` (`app.ListarDefectos`, HU-21) |
+| CA-26.10 Defecto detectado en un Sprint y resuelto en otro: aparece en los dos reportes | RN-26.8 | Un defecto detectado en un Sprint y resuelto en otro aparece en los dos reportes `@alternativo` | `TestDefectosDeSprint` (dominio), `TestArmarReporteSprint_Defectos` (caso de uso) | `domain.DefectosDeSprint` (mismo criterio que `ContarDefectosDeSprint`, HU-24) |
+| CA-26.11 Proyecto inexistente → 404 "proyecto no encontrado" | Sección 7 | No se puede consultar el reporte de un proyecto que no existe `@error` | `TestArmarReporteProyecto_ProyectoInexistente_RetornaError` (caso de uso), `TestPantallaReporteProyecto_Errores` (caso "proyecto inexistente") | `domain.ErrProyectoNoEncontrado` (HU-01, reutilizado) |
+| CA-26.12 Sprint inexistente o de otro proyecto → 404 "sprint no encontrado" | RN-26.10, sección 7 | No se puede consultar el reporte de un Sprint que no existe `@error` | `TestArmarReporteSprint_Errores` (caso de uso), `TestPantallaReporteSprint_Errores` (casos "sprint inexistente") | `domain.ErrSprintNoEncontrado` (HU-09, reutilizado) |
+| CA-26.13 ID inválido → 400, sin llamar al caso de uso | Sección 7 | No va acá (como CA-24.8): se cubre con tests de adaptador | `TestPantallaReporteProyecto_Errores` (caso "id inválido"), `TestPantallaReporteSprint_Errores` (caso "id de sprint inválido") | `pantallas_reporte.go` (reutiliza `idDeRuta`, `sprintIDDesdeRuta`) |
+| CA-26.14 Sprint Cerrado: la sección de Métricas muestra la aclaración; Sprint Abierto, no | RN-26.11 | No va acá, como CA-26.13: es un detalle de la pantalla, no del dominio ni del caso de uso (mismo criterio que la aclaración de HU-23, RN-23.8, que tampoco tiene escenario BDD) | `TestPantallaReporteSprint_Cerrado_MuestraAclaracion`, `TestPantallaReporteSprint_Abierto_NoMuestraAclaracion`, `TestPantallaReporteProyecto_NuncaMuestraAclaracionDeSprint` | `pantallas_reporte.go` (`textoAclaracionReporteSprintCerrado`), `reporte.html` |
+| CA-26.15 Proyecto sin datos: cada sección (salvo Resumen) muestra su mensaje, sin romper | RN-26.9 | El reporte de un proyecto sin datos no rompe `@limite` | `TestPantallaReporteProyecto_SinDatos_MuestraMensajes` (pantalla) | `reporte.html` (mensajes de "sin datos") |
+
+### Reglas de negocio
+
+| RN | CA que la cubren | Código |
+|---|---|---|
+| RN-26.1 El reporte de un proyecto incluye todas las historias de su backlog | CA-26.1 | `app.ArmarReporteProyecto.Ejecutar` (`app.ListarBacklog`, HU-07) |
+| RN-26.2 El reporte de un Sprint incluye solo las historias con ese `SprintID` | CA-26.2 | `domain.HistoriasDeSprint` |
+| RN-26.3 Completada = `Estado Hecho`; el resumen cuenta historias y story points completados sobre el total | CA-26.3 | `domain.ArmarReporteProyecto`/`ArmarReporteSprint` (`resumenHistorias`) |
+| RN-26.4 El esfuerzo se calcula con `domain.TotalizarHoras` sobre las mismas historias del reporte | CA-26.4 | `app.ArmarReporteProyecto`/`ArmarReporteSprint.Ejecutar` |
+| RN-26.5 Métricas de proyecto: velocidad del equipo + una fila por Sprint Cerrado | CA-26.5, CA-26.6 | `app.ArmarReporteProyecto.Ejecutar` |
+| RN-26.6 Métricas de Sprint: su propio porcentaje y defectos, sin exigir `Cerrado` | CA-26.7, CA-26.8 | `app.ArmarReporteSprint.Ejecutar` |
+| RN-26.7 Defectos de proyecto: todos, sin filtrar por Sprint | CA-26.9 | `app.ArmarReporteProyecto.Ejecutar` (`app.ListarDefectos`, HU-21) |
+| RN-26.8 Defectos de Sprint: los detectados o resueltos ahí | CA-26.10 | `domain.DefectosDeSprint` |
+| RN-26.9 Una sección sin datos muestra un mensaje, no una tabla vacía | CA-26.6, CA-26.15 | `reporte.html` |
+| RN-26.10 El reporte se arma para un Sprint en cualquier estado; de otro proyecto es inexistente | CA-26.7, CA-26.8, CA-26.12 | `app.ArmarReporteSprint.Ejecutar` |
+| RN-26.11 Aclaración en el reporte de un Sprint Cerrado (por qué el resumen de historias y el % completado pueden parecer contradictorios) | CA-26.14 | `pantallas_reporte.go` (`textoAclaracionReporteSprintCerrado`) |
+
+### Archivos de código y tests
+
+| Capa | Código | Tests |
+|---|---|---|
+| Dominio | [internal/domain/reporte.go](../internal/domain/reporte.go) (`Reporte`, `FilaMetrica`, `ArmarReporteProyecto`, `ArmarReporteSprint`, `HistoriasDeSprint`, `DefectosDeSprint`) | [reporte_test.go](../internal/domain/reporte_test.go) |
+| Caso de uso | [internal/app/armar_reporte.go](../internal/app/armar_reporte.go) (`ArmarReporteProyecto`, `ArmarReporteSprint`; reutilizan `LectorProyectos` HU-04, `ListadorElementos` HU-07, `RepositorioSprints`/`LectorSprintPorID` HU-08/HU-23, `LectorHoras` HU-23, `LectorDefectos` HU-21) | [armar_reporte_test.go](../internal/app/armar_reporte_test.go) |
+| HTTP/Pantalla | [internal/adapters/http/pantallas_reporte.go](../internal/adapters/http/pantallas_reporte.go) (`GET /web/proyectos/{id}/reporte`, `GET /web/proyectos/{id}/sprints/{sprintID}/reporte`, sin endpoint JSON — P-1), [web/plantillas/reporte.html](../internal/adapters/http/web/plantillas/reporte.html); enlaces "Ver reporte" en [proyecto_detalle.html](../internal/adapters/http/web/plantillas/proyecto_detalle.html) (HU-04) y [sprint_detalle.html](../internal/adapters/http/web/plantillas/sprint_detalle.html) (HU-09) | [pantallas_reporte_test.go](../internal/adapters/http/pantallas_reporte_test.go) |
+| BDD | [features/HU-26-reporte-proyecto-sprint.feature](../features/HU-26-reporte-proyecto-sprint.feature), [hu26_steps_test.go](../test/bdd/hu26_steps_test.go), [hu26_sistema_test.go](../test/bdd/hu26_sistema_test.go) | 13 escenarios en verde |
+
+### Commits
+
+| Tarea | Commit | Etapa |
+|---|---|---|
+| 26.1 Spec | `ff2547d` docs(HU-26): spec SDD del reporte de proyecto y de sprint | — |
+| 26.2 Escenarios BDD | `9b87d60` test(HU-26): [26.2] escenarios BDD del reporte de proyecto y de sprint | — |
+| 26.4 Dominio (`Reporte`, `ArmarReporteProyecto`/`Sprint`, `HistoriasDeSprint`, `DefectosDeSprint`) | `e9e17e5` [RED] → `f1efeae` [GREEN] | **RED → GREEN** |
+| 26.5 Casos de uso `ArmarReporteProyecto`/`ArmarReporteSprint` | `3c5a63c` [RED] → `8c6112a` [GREEN] | **RED → GREEN** |
+| 26.3 Steps de godog conectados al caso de uso real | `634c5d0` test(HU-26): [26.3] steps de godog, conectados con el caso de uso real (BDD en verde, 13 escenarios) | — |
+| 26.6 Adaptador de persistencia | No aplica: sin persistencia nueva (reutiliza los puertos de HU-04/HU-07/HU-08/HU-21/HU-23) | — |
+| 26.7 Pantalla, conexión en el router/main y enlaces desde el detalle | `ae8d1ee` [RED] → `317dfdc` [GREEN] | **RED → GREEN** |
+| 26.9 Revisión (`go-reviewer`) y trazabilidad | `573ac38` test(HU-26): cobertura del enlace "Ver reporte" en sprint_detalle.html (hallazgo #2 del `go-reviewer`) → `cdefe80` docs(HU-26): trazabilidad | — |
+| Revisión de Matías (PR #378): aprobar spec, PDF pasa a HU-27 | `20477eb` docs(HU-26): revisión de Matías en el PR #378 - aprobar la spec | — |
+| Revisión de Matías: aclaración del Sprint Cerrado (RN-26.11/CA-26.14 nuevas) | `90d6fd6` [RED] → `496b53c` [GREEN] | **RED → GREEN** |
+| Revisión de Matías: trazas de CA-26.11 a CA-26.13 (decían "sección 7") | `d8e5310` test(HU-26): trazas de CA-26.11 y CA-26.12 en los tests del caso de uso (la pantalla se corrigió en el mismo commit que el RED de arriba, `90d6fd6`) | — |
+
+### Huecos
+
+- ~~La spec está en Borrador~~: resuelto el 2026-11-08. Matías López (Agile Enabler) la aprobó en la revisión del PR [#378](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/378): P-1 y P-3 confirmadas tal cual, P-2 se sacó porque ya no aplica. Ver el Historial de la spec para el detalle completo de la revisión.
+- ~~CA-26.14 / RN-26.11 (conversión a `DocumentoPDF`) no se implementó en esta rama~~: resuelto el 2026-11-08, pero no implementándolo acá — Matías decidió en la revisión que la conversión a PDF **no es responsabilidad de HU-26**, es enteramente de HU-27. Se sacaron de la spec la RN-26.11/CA-26.14 viejas (PDF), la función `ADocumentoPDF` y los puertos `FuenteDocumento…` de la sección 5. En su lugar, esos mismos números se reusaron para una regla y un criterio nuevos: la aclaración del Sprint Cerrado (ver abajo). Lucas Orellana (`luas01`) sigue la conversión a PDF en su propia rama `hu-27-exportar-reporte-pdf`.
+  - **Coordinación con Lucas:** mergeó esta rama (`hu-26-reporte-proyecto-sprint`) en la suya y compila; va a sumar un campo `URLPDF` a `datosReporte` y un botón "Descargar PDF" a `reporte.html` en su rama. Como HU-26 también tocó esos dos archivos para la aclaración del Sprint Cerrado, un futuro merge puede traer un conflicto de líneas agregadas en el mismo lugar (se resuelve dejando las dos, mismo patrón que advirtió Matías para los PR #375/#377). Avisarle a Lucas cuando se mergee el PR #378, como pidió.
+- **Nueva RN-26.11 / CA-26.14 (aclaración del Sprint Cerrado):** agregada en la revisión del PR #378 (punto 1), con ciclo RED → GREEN (`90d6fd6` → `496b53c`). Con un Sprint cerrado con una historia Hecha (5 puntos) y otra sin terminar (8 puntos) que volvió al backlog al cerrarse, el reporte decía "1 de 1 historias completadas (5 de 5 puntos de historia)" y, en Métricas, "38,5 %" — Matías señaló que las dos cifras quedan juntas y parecen contradecirse, aunque es la misma regla que ya usa HU-23 (RN-23.8, opción A). La aclaración nueva lo explica junto a la tabla de Métricas, solo cuando el Sprint está `Cerrado`.
+- **Numeración de RN en las secciones 2 y 3, corregida** (punto 3 de la revisión de Matías): citaban las reglas con un número de diferencia respecto de la sección 4 (por ejemplo, "cualquier estado" citaba RN-26.9 en vez de RN-26.10). Corregido en el mismo commit que aprueba la spec (`20477eb`).
+- **Trazas de CA-26.11 a CA-26.13, corregidas** (punto 4 de la revisión): los tests de errores (`TestPantallaReporteProyecto_Errores`, `TestPantallaReporteSprint_Errores`, `TestArmarReporteProyecto_ProyectoInexistente_RetornaError`, `TestArmarReporteSprint_Errores`) decían `// Traza: HU-26 sección 7`; ahora citan el número de CA que cubre cada subcaso. CA-26.13 ya estaba justificada (sin escenario BDD) en el comentario del feature, que también se actualizó para CA-26.14.
+- **Tarea 26.6 no aplica** (sin persistencia nueva), mismo caso que la 24.6 de HU-24.
+- **Probado manualmente en el navegador** (servidor real, SQLite, 2026-11-07): proyecto con 2 historias (una Hecha con 5 SP y 10 h estimadas, otra Pendiente con 8 SP), un Sprint cerrado con la primera asignada, y un defecto Alta sobre esa historia (sin Sprint de detección, por quedar detectado después de cerrarse el único Sprint). Las dos pantallas (reporte del proyecto y del Sprint) mostraron las cinco secciones correctamente, con los formatos esperados ("-100,0 %", "38,5 %" con coma decimal) y el mensaje de "sin datos" en Defectos del reporte del Sprint.
+- **Revisión con el agente `go-reviewer`:** Approve con cambios sugeridos, ninguno bloqueante. (1) *Medium/High, no resuelto, confirmado por Matías (punto 2 de su revisión):* `ArmarReporteProyecto.Ejecutar` reimplementa la orquestación de `ConsultarVelocidad` (HU-22) y `ConsultarCalidadSprints` (HU-24) en vez de llamarlos, como decía la spec original (sección 5); mismo resultado y bien testeado, pero duplica lógica entre `internal/app/armar_reporte.go` y `consultar_velocidad.go`/`consultar_calidad_sprints.go` — si cambia una regla en HU-22/HU-24 hay que acordarse de replicarla acá. Matías dio dos caminos, ninguno bloqueante: si el PR [#375](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/375) (HU-25, que agrega `calidadDe` justo para este cálculo) entra antes, HU-26 lo reutiliza; si no, queda como está. La spec (sección 5) ya se corrigió para describir lo que hace el código en vez de lo que decía antes (commit `20477eb`). (2) *Medium, resuelto:* faltaba test del enlace "Ver reporte" en `sprint_detalle.html` (sí lo había para `proyecto_detalle.html`); se agregó `TestPantallaSprintDetalle_EnlazaElReporte` (commit `573ac38`).
+- **Aviso de conflictos (Matías, revisión del PR #378):** el PR #375 (HU-25) toca `main.go`, `pantallas.go`, `router.go`, `router_test.go`, `bdd_test.go` y la trazabilidad; el PR [#377](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/377) (HU-31) toca la trazabilidad y `bdd_test.go`. Son conflictos de líneas agregadas en los mismos lugares: el que se fusiona después deja las dos.
 ## HU-31: Proyecto de ejemplo precargado
 
 - **Issue:** [#367](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/367) · Sprint 4 · 3 SP

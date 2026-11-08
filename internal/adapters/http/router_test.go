@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -50,6 +51,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		ActualizarEstadoDefecto:  &actualizadorEstadoDefectoFalso{},
 		ListarDefectos:           &listadorDefectosFalso{},
 		ConsultarCalidadSprints:  &consultorCalidadSprintsFalso{},
+		ArmarReporteProyecto:     reporteProyectoFunc(func(context.Context, int64) (domain.Reporte, error) { return domain.Reporte{}, nil }),
+		ArmarReporteSprint:       reporteSprintFunc(func(context.Context, int64, int64) (domain.Reporte, error) { return domain.Reporte{}, nil }),
 	})
 	rutas := []struct{ metodo, ruta, cuerpo string }{
 		{http.MethodGet, "/salud", ""},
@@ -86,6 +89,8 @@ func TestNuevoRouter_RegistraTodasLasRutas(t *testing.T) {
 		{http.MethodPost, "/proyectos/1/defectos/1/resolver", ""},                                                                            // HU-21
 		{http.MethodPost, "/proyectos/1/defectos/1/cerrar", ""},                                                                              // HU-21
 		{http.MethodGet, "/proyectos/1/calidad", ""},                                                                                         // HU-24
+		{http.MethodGet, "/web/proyectos/1/reporte", ""},                                                                                     // HU-26
+		{http.MethodGet, "/web/proyectos/1/sprints/1/reporte", ""},                                                                           // HU-26
 		{http.MethodGet, "/", ""},                                                                                                            // HU-30
 		{http.MethodGet, "/web/proyectos", ""},                                                                                               // HU-30
 		{http.MethodGet, "/static/estilos.css", ""},                                                                                          // HU-30
