@@ -146,5 +146,15 @@ func CargarSiCorresponde(ctx context.Context, cu CasosDeUso, valor string) (Resu
 
 // String es el mensaje para el log del servidor (sección 3 de la spec).
 func (r Resultado) String() string {
-	return ""
+	switch r {
+	case Cargado:
+		return "se cargó el proyecto de ejemplo"
+	case OpcionApagada:
+		return "no se carga el proyecto de ejemplo: CARGAR_EJEMPLO está apagada"
+	case ValorInvalido:
+		return "CARGAR_EJEMPLO no es un valor booleano: no se carga el ejemplo"
+	case BaseConProyectos:
+		return "no se carga el proyecto de ejemplo: la base ya tiene proyectos"
+	}
+	return "resultado desconocido de la carga del ejemplo"
 }

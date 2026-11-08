@@ -12,6 +12,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/ejemplo"
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
@@ -74,6 +75,33 @@ func main() {
 		ListarDefectos:          app.NuevoListarDefectos(repoProyectos, repoDefectos),                       // HU-21
 		ConsultarCalidadSprints: app.NuevoConsultarCalidadSprints(repoProyectos, repoSprints, repoDefectos), // HU-24
 	})
+
+	// HU-31: si CARGAR_EJEMPLO está activada y la base no tiene proyectos, carga el proyecto de ejemplo
+	// antes de atender pedidos (RN-31.6). Los casos de uso que dependen de "hoy" usan el reloj de la
+	// carga (RN-31.5). Si la carga falla, el servidor no arranca (P-2).
+	relojEjemplo := &ejemplo.Reloj{}
+	resultado, err := ejemplo.CargarSiCorresponde(context.Background(), ejemplo.CasosDeUso{
+		Reloj:                   relojEjemplo,
+		ListarProyectos:         app.NuevoListarProyectos(repoProyectos),
+		CrearProyecto:           app.NuevoCrearProyecto(repoProyectos),
+		AgregarIntegrante:       app.NuevoAgregarIntegrante(repoProyectos),
+		CrearElemento:           app.NuevoCrearElementoBacklog(repoBacklog),
+		EditarElemento:          app.NuevoEditarElementoBacklog(repoBacklog),
+		CrearSprint:             app.NuevoCrearSprint(repoProyectos, repoSprints),
+		AsignarHistoria:         app.NuevoAsignarHistoria(repoBacklog),
+		CompletarHistoria:       app.NuevoCompletarHistoria(repoProyectos, repoBacklog),
+		CerrarSprint:            app.NuevoCerrarSprint(repoProyectos, repoSprints),
+		RegistrarEsfuerzo:       app.NuevoRegistrarEsfuerzo(repoProyectos, repoBacklog, repoEsfuerzo, relojEjemplo.Ahora),
+		RegistrarDefecto:        app.NuevoRegistrarDefecto(repoProyectos, repoBacklog, repoSprints, repoDefectos, relojEjemplo.Ahora),
+		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(repoProyectos, repoSprints, repoDefectos, relojEjemplo.Ahora),
+		IniciarRonda:            app.NuevoIniciarRonda(repoProyectos, repoBacklog, repoRondas),
+		Votar:                   app.NuevoVotar(repoProyectos, repoRondas),
+		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(repoProyectos, repoBacklog, repoRondas),
+	}, os.Getenv("CARGAR_EJEMPLO"))
+	if err != nil {
+		log.Fatalf("no se pudo cargar el proyecto de ejemplo: %v", err)
+	}
+	log.Print(resultado)
 
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
