@@ -98,7 +98,7 @@ func TestPantallaReporteProyecto_SinDatos_MuestraMensajes(t *testing.T) {
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
 	}
-	contiene(t, rec, "sin historias", "sin sprints cerrados", "sin defectos")
+	contiene(t, rec, "no tiene historias", "no tiene sprints cerrados", "no tiene defectos")
 }
 
 // Traza: HU-26 sección 7
