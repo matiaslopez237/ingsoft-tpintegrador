@@ -2,7 +2,7 @@
 
 **Fechas:** del 5 al 8 de noviembre de 2026 (4 días), confirmadas por Matías el 2026-11-04. La fecha de entrega del TP sigue a confirmar.
 **Sprint Goal:** ver el avance del proyecto de un vistazo, compartirlo en un reporte en PDF y dejar el sistema documentado para la entrega.
-**Compromiso:** 25 story points (velocidad del Sprint 3: 28 puntos, si se confirma en la review que se terminaron todas las historias).
+**Compromiso:** 25 story points (velocidad del Sprint 3: 28 puntos, si se confirma en la review que se terminaron todas las historias). Con HU-31, sumada durante el sprint, quedan 28.
 
 ## Sprint Backlog
 
@@ -16,7 +16,8 @@ El orden es la prioridad: si al final del sprint no se llega con todo, quedan af
 | 4 | HU-27 Exportar el reporte a PDF | 5 | HU-26 | Lucas |
 | 5 | HU-29 Documentación técnica | 2 | — | Matías |
 | 6 | HU-28 Manual breve de usuario | 2 | HU-25, HU-26, HU-27 (para las capturas) | Matías |
-| | **Total** | **25** | | |
+| 7 | HU-31 Proyecto de ejemplo precargado (sumada el 2026-11-05) | 3 | — | Matías |
+| | **Total** | **28** | | |
 
 ## Reparto propuesto
 
@@ -27,13 +28,13 @@ Es una propuesta de Matías, siguiendo lo que hizo cada uno en los sprints anter
 | Eze | HU-24, HU-26 | 8 | HU-24 sigue a sus HU-20, HU-21 y HU-22 (defectos y velocidad), y el reporte reúne esas métricas. |
 | Nico | HU-25 | 8 | Es la historia más grande y la que tiene más trabajo de pantalla. |
 | Lucas | HU-27 | 5 | Toma el reporte de HU-26 y suma la librería de PDF. Arranca por el ADR, que no depende de nadie. |
-| Matías | HU-29, HU-28 | 4 | Tiene menos puntos porque también revisa los PR (Agile Enabler). |
+| Matías | HU-29, HU-28, HU-31 | 7 | Tiene menos puntos porque también revisa los PR (Agile Enabler). HU-31 la sumó durante el sprint, y le sirve para las capturas de HU-28. |
 
 **Cada uno se asigna en GitHub sus historias y sus tareas** (Assignees → *assign yourself*), así queda registrado quién las tomó.
 
 ## Tareas
 
-Están cargadas como sub-issues en GitHub, 44 en total.
+Están cargadas como sub-issues en GitHub: 44 al armar el sprint y 7 de HU-31, 51 en total.
 
 | Historia | Tareas |
 |---|---|
@@ -43,6 +44,7 @@ Están cargadas como sub-issues en GitHub, 44 en total.
 | HU-27 (8) | ADR de PDF · Spec · Escenarios BDD · Steps de godog · TDD del caso de uso · Adaptador de PDF · HTTP y botón de descarga · Revisión y trazabilidad |
 | HU-29 (4) | Arquitectura general · Decisiones técnicas y ADR al día · README y puesta en marcha · Revisión |
 | HU-28 (4) | Guion de funcionalidades · Pasos de uso · Capturas · Revisión |
+| HU-31 (7) | Spec · Escenarios BDD · Steps de godog · TDD de la carga · Contenido del ejemplo · Conexión en main y render.yaml · Revisión y trazabilidad |
 
 ## Cómo repartir
 
