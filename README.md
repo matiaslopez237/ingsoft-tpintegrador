@@ -37,6 +37,7 @@ La base se crea sola, en el archivo `metrics.db` de la carpeta desde donde se co
 |---|---|---|
 | `PORT` | Puerto del servidor | `8080` |
 | `DB_PATH` | Archivo de la base SQLite | `metrics.db` |
+| `CARGAR_EJEMPLO` | Con `true` y la base vacía, arranca con el proyecto de ejemplo (este mismo TP). Si la carga falla, el servidor no arranca y pide borrar la base | Apagada (Render la tiene en `true`) |
 
 Por ejemplo, en Linux o macOS: `PORT=9090 DB_PATH=prueba.db go run ./cmd/server`. En PowerShell: `$env:PORT="9090"; go run ./cmd/server`.
 

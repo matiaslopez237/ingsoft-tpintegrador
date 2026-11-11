@@ -15,3 +15,6 @@ services:
       # En el plan free el disco se borra en cada despliegue: la base arranca vacía.
       - key: DB_PATH
         value: metrics.db
+      # HU-31: con la base vacía, arranca con el proyecto de ejemplo (este mismo TP).
+      - key: CARGAR_EJEMPLO
+        value: "true"

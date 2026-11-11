@@ -4,7 +4,9 @@ package main
 
 import (
 	"context"
+	"database/sql"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -12,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/ejemplo"
 	adapterhttp "github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/http"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/pdf"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/adapters/persistencia"
@@ -88,6 +91,19 @@ func main() {
 		ExportarReporteSprint:   app.NuevoExportarReporteSprint(repoProyectos, repoSprints, fuenteReporte, generadorPDF, time.Now), // HU-27
 	})
 
+	// Apagado ordenado con Ctrl+C o SIGTERM (la señal con que Render detiene el servidor en cada
+	// despliegue): termina los pedidos en curso y deja correr el defer db.Close().
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// HU-31: el proyecto de ejemplo, antes de atender pedidos (RN-31.6). Usa el contexto de las señales,
+	// así Ctrl+C también corta la carga. Si falla, el servidor no arranca (P-2).
+	resultado, err := cargarEjemplo(ctx, db, os.Getenv("CARGAR_EJEMPLO"))
+	if err != nil {
+		log.Fatal(mensajeCargaFallida(rutaDB, err))
+	}
+	log.Print(resultado)
+
 	puerto := os.Getenv("PORT")
 	if puerto == "" {
 		puerto = "8080"
@@ -102,10 +118,6 @@ func main() {
 		IdleTimeout:       60 * time.Second,
 	}
 
-	// Apagado ordenado con Ctrl+C o SIGTERM (la señal con que Render detiene el servidor en cada
-	// despliegue): termina los pedidos en curso y deja correr el defer db.Close().
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
-	defer stop()
 	go func() {
 		<-ctx.Done()
 		apagar, cancelar := context.WithTimeout(context.Background(), 5*time.Second)
@@ -119,4 +131,42 @@ func main() {
 	if err := servidor.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Printf("error del servidor: %v", err)
 	}
+}
+
+// cargarEjemplo carga el proyecto de ejemplo si valor (el de CARGAR_EJEMPLO) está activado y la base
+// no tiene proyectos. Arma sus propios casos de uso: los que dependen de "hoy" usan el reloj de la
+// carga, no time.Now (RN-31.5). Implementa HU-31.
+func cargarEjemplo(ctx context.Context, db *sql.DB, valor string) (ejemplo.Resultado, error) {
+	proyectos := persistencia.NuevoRepositorioProyectos(db)
+	backlog := persistencia.NuevoRepositorioBacklog(db)
+	sprints := persistencia.NuevoRepositorioSprints(db)
+	rondas := persistencia.NuevoRepositorioRondas(db)
+	esfuerzo := persistencia.NuevoRepositorioEsfuerzo(db)
+	defectos := persistencia.NuevoRepositorioDefectos(db)
+	reloj := &ejemplo.Reloj{}
+	return ejemplo.CargarSiCorresponde(ctx, ejemplo.CasosDeUso{
+		Reloj:                   reloj,
+		ListarProyectos:         app.NuevoListarProyectos(proyectos),
+		CrearProyecto:           app.NuevoCrearProyecto(proyectos),
+		AgregarIntegrante:       app.NuevoAgregarIntegrante(proyectos),
+		CrearElemento:           app.NuevoCrearElementoBacklog(backlog),
+		EditarElemento:          app.NuevoEditarElementoBacklog(backlog),
+		CrearSprint:             app.NuevoCrearSprint(proyectos, sprints),
+		AsignarHistoria:         app.NuevoAsignarHistoria(backlog),
+		CompletarHistoria:       app.NuevoCompletarHistoria(proyectos, backlog),
+		CerrarSprint:            app.NuevoCerrarSprint(proyectos, sprints),
+		RegistrarEsfuerzo:       app.NuevoRegistrarEsfuerzo(proyectos, backlog, esfuerzo, reloj.Ahora),
+		RegistrarDefecto:        app.NuevoRegistrarDefecto(proyectos, backlog, sprints, defectos, reloj.Ahora),
+		ActualizarEstadoDefecto: app.NuevoActualizarEstadoDefecto(proyectos, sprints, defectos, reloj.Ahora),
+		IniciarRonda:            app.NuevoIniciarRonda(proyectos, backlog, rondas),
+		Votar:                   app.NuevoVotar(proyectos, rondas),
+		RegistrarEstimacion:     app.NuevoRegistrarEstimacion(proyectos, backlog, rondas),
+	}, valor)
+}
+
+// mensajeCargaFallida es el mensaje con el que el servidor no arranca si la carga del ejemplo falla.
+// La base queda con el ejemplo a medias y el próximo arranque no lo vuelve a cargar, porque ya hay un
+// proyecto (RN-31.1): por eso pide borrarla.
+func mensajeCargaFallida(rutaDB string, err error) string {
+	return fmt.Sprintf("no se pudo cargar el proyecto de ejemplo: %v. La base quedó con el ejemplo a medias: borrá %s antes de volver a arrancar", err, rutaDB)
 }

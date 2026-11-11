@@ -36,6 +36,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-27 Exportar el reporte a PDF | ✓ (Aprobada el 2026-11-08 por Matías López en la revisión del PR #379, con P-1 a P-11; ADR-0006 `accepted`) | 15/26 (CA-27.3 a CA-27.6, CA-27.12, CA-27.19, CA-27.24, CA-27.25 y CA-27.26 se cubren con tests del adaptador; CA-27.21 con tests de la pantalla y revisión manual; CA-27.23 con un test de integración) | 26/26 | ✓ | RED → GREEN ×14, REFACTOR ×2 | ✓ 38/38 escenarios (252 pasos; BDD completo en verde en 500 s) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
 | HU-25 Ver panel con estado del proyecto y gráficos | ✓ (Aprobada; ADR-0005, P-1 y P-2 aprobadas por Matías López en la revisión del PR #375) | 8/11 (CA-25.8 se cubre con tests del handler; CA-25.9 y CA-25.10, de la pantalla) | 11/11 | ✓ | RED → GREEN ×7, REFACTOR ✓ | ✓ 11/11 escenarios |
+| HU-31 Proyecto de ejemplo precargado | ✓ (Implementada; P-1 a P-3 confirmadas por Matías) | 9/11 (CA-31.10 y CA-31.11 se cubren con tests Go) | 7/11 (CA-31.2 a CA-31.5 solo en BDD) | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 13/13 escenarios |
 
 ---
 
@@ -2264,6 +2265,66 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 - **Probado manualmente en el navegador** (servidor real, SQLite, 2026-11-07): proyecto con 2 historias (una Hecha con 5 SP y 10 h estimadas, otra Pendiente con 8 SP), un Sprint cerrado con la primera asignada, y un defecto Alta sobre esa historia (sin Sprint de detección, por quedar detectado después de cerrarse el único Sprint). Las dos pantallas (reporte del proyecto y del Sprint) mostraron las cinco secciones correctamente, con los formatos esperados ("-100,0 %", "38,5 %" con coma decimal) y el mensaje de "sin datos" en Defectos del reporte del Sprint.
 - **Revisión con el agente `go-reviewer`:** Approve con cambios sugeridos, ninguno bloqueante. (1) *Medium/High, no resuelto, confirmado por Matías (punto 2 de su revisión):* `ArmarReporteProyecto.Ejecutar` reimplementa la orquestación de `ConsultarVelocidad` (HU-22) y `ConsultarCalidadSprints` (HU-24) en vez de llamarlos, como decía la spec original (sección 5); mismo resultado y bien testeado, pero duplica lógica entre `internal/app/armar_reporte.go` y `consultar_velocidad.go`/`consultar_calidad_sprints.go` — si cambia una regla en HU-22/HU-24 hay que acordarse de replicarla acá. Matías dio dos caminos, ninguno bloqueante: si el PR [#375](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/375) (HU-25, que agrega `calidadDe` justo para este cálculo) entra antes, HU-26 lo reutiliza; si no, queda como está. La spec (sección 5) ya se corrigió para describir lo que hace el código en vez de lo que decía antes (commit `20477eb`). (2) *Medium, resuelto:* faltaba test del enlace "Ver reporte" en `sprint_detalle.html` (sí lo había para `proyecto_detalle.html`); se agregó `TestPantallaSprintDetalle_EnlazaElReporte` (commit `573ac38`).
 - **Aviso de conflictos (Matías, revisión del PR #378):** el PR #375 (HU-25) toca `main.go`, `pantallas.go`, `router.go`, `router_test.go`, `bdd_test.go` y la trazabilidad; el PR [#377](https://github.com/matiaslopez237/ingsoft-tpintegrador/pull/377) (HU-31) toca la trazabilidad y `bdd_test.go`. Son conflictos de líneas agregadas en los mismos lugares: el que se fusiona después deja las dos.
+## HU-31: Proyecto de ejemplo precargado
+
+- **Issue:** [#367](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/367) · Sprint 4 · 3 SP
+- **Tareas:** 31.1 a 31.7, [#368](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/368) a [#374](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/374)
+- **Spec:** [docs/specs/HU-31-proyecto-ejemplo.md](specs/HU-31-proyecto-ejemplo.md)
+- **Feature:** [features/HU-31-proyecto-ejemplo.feature](../features/HU-31-proyecto-ejemplo.feature) (steps en [test/bdd/hu31_steps_test.go](../test/bdd/hu31_steps_test.go), sobre SQLite real en [hu31_sistema_test.go](../test/bdd/hu31_sistema_test.go))
+- **Código:** [internal/adapters/ejemplo/](../internal/adapters/ejemplo/) ([ejemplo.go](../internal/adapters/ejemplo/ejemplo.go): cuándo se carga; [carga.go](../internal/adapters/ejemplo/carga.go): los pasos; [contenido_tp.go](../internal/adapters/ejemplo/contenido_tp.go): el TP), `cargarEjemplo` en [cmd/server/main.go](../cmd/server/main.go) y `CARGAR_EJEMPLO` en [render.yaml](../render.yaml)
+
+### Criterios de aceptación
+
+| CA | Escenario BDD | Test Go |
+|---|---|---|
+| CA-31.1 | Se carga el proyecto con su equipo; otros valores verdaderos (`1`, `TRUE`) | `TestCargarSiCorresponde_BaseVacia_CargaElTPUnaSolaVez` |
+| CA-31.2 | El ejemplo tiene el Product Backlog y los sprints del TP | — (solo BDD) |
+| CA-31.3 | La velocidad sale de los tres sprints cerrados | — (solo BDD) |
+| CA-31.4 | Los defectos tienen los sprints que corresponden a sus fechas | — (solo BDD; el mecanismo, en `TestCargar_AplicaLosPasosEnOrdenConElRelojDeCadaDia`) |
+| CA-31.5 | Esfuerzo registrado y una historia votada dos veces | — (solo BDD; el mecanismo, en `TestCargar_AplicaLosPasosEnOrdenConElRelojDeCadaDia`) |
+| CA-31.6 | Si la base ya tiene un proyecto, no se carga | `TestCargarSiCorresponde_SinCargar` |
+| CA-31.7 | Con la opción apagada (vacía, `false`, `0`) no se carga | `TestCargarSiCorresponde_SinCargar` |
+| CA-31.8 | Un valor no booleano no carga, pero no impide arrancar | `TestCargarSiCorresponde_SinCargar`, `TestResultado_String` |
+| CA-31.9 | Volver a arrancar no duplica | `TestCargarSiCorresponde_BaseVacia_CargaElTPUnaSolaVez` |
+| CA-31.10 | — (no se puede provocar con los casos de uso reales) | `TestCargar_UnPasoQueFalla_DevuelveElErrorConElPaso` |
+| CA-31.11 | — | `TestRender_CargaElProyectoDeEjemplo`; verificación a mano en Render después de desplegar |
+
+### Commits
+
+| Etapa | Commit | Evidencia |
+|---|---|---|
+| Spec | `5317f3d` docs(HU-31): spec SDD del proyecto de ejemplo precargado | — |
+| Spec: defectos con fechas reales | `8eff609` docs(HU-31): defectos del ejemplo con sus fechas reales | — |
+| 31.2 Escenarios BDD | `f513547` test(HU-31): [31.2] escenarios BDD del proyecto de ejemplo | 13 escenarios sin definir |
+| 31.3 Steps | `7c6f689` test(HU-31): [31.3][RED] steps de godog y esqueleto del adaptador de ejemplo | 13/13 escenarios en rojo, por aserciones |
+| 31.4 Cuándo se carga | `c57befa` [RED] → `23cdb58` [GREEN] | 6 casos en rojo → verde |
+| 31.4 Mecanismo de carga | `817a328` [RED] → `6f4c0c6` [GREEN] | 2 tests en rojo → verde |
+| 31.4 Carga del TP una sola vez | `7147846` [RED] → `2ae5dc8` [GREEN] | 1 test en rojo → verde; BDD 8/13 |
+| 31.5 Contenido | `9b4cf7f` feat(HU-31): [31.5] contenido del proyecto de ejemplo | BDD 13/13 |
+| 31.6 Conexión | `b474877` [RED] → `d2fcf4c` [GREEN] | 2 tests en rojo → verde |
+| 31.7 Revisión | `8c97e95` refactor(HU-31): [31.7][REFACTOR] la carga del ejemplo en su propia función | Tests en verde |
+| 31.7 Trazabilidad | docs(trazabilidad): HU-31 | — |
+| Revisión de Nico (PR #377): carga a medias | `9982bb5` [RED] → `9513f8c` [GREEN] | 2 tests en rojo → verde; el test del reloj pasaba desde el RED (cubre código ya correcto) |
+| Revisión de Nico: errores y test | `ca21e9d` refactor(HU-31): [REFACTOR] errores de la carga más claros | Tests en verde |
+| Revisión de Nico: horas realistas | `12ef733` feat(HU-31): contenido con horas más realistas | Tests y BDD en verde |
+| Revisión de Nico: CA-31.5 exacto | `af461fd` test(HU-31): CA-31.5 verifica los valores exactos | BDD 13/13 |
+
+**Merge de la rama, que no es de HU-31:** `5fb4f3f` (trae `origin/main` con HU-24; se resolvió el conflicto en `test/bdd/bdd_test.go` dejando las dos historias).
+
+### Verificación
+
+- `go vet` y el `gofmt` del toolchain limpios; tests de `cmd` e `internal` en verde; cobertura de `internal/adapters/ejemplo`: 81,6 %.
+- Con el servidor real: base vacía y `CARGAR_EJEMPLO=true` carga el ejemplo en unos 6 segundos (velocidad 24,3; 151,5 h estimadas contra 139 reales, -8,3 %); un reinicio no duplica; `si` y la variable ausente no cargan, y el log dice por qué. En el navegador se revisaron el detalle del proyecto, sprints anteriores (con las columnas de HU-24), el Sprint 4 abierto y las dos rondas de HU-14.
+
+### Huecos
+
+- **Revisión de código:** el agente `go-reviewer` no estaba disponible como subagente en la sesión. La revisión la hizo Claude siguiendo su lista de prioridades: sin errores ignorados, errores envueltos con contexto, sin estado global mutable. Dejó dos mejoras, aplicadas en el REFACTOR: sacar la carga de `main()` a `cargarEjemplo` y no armar números con `rune`. `staticcheck` no está instalado, y `-race` no corre en Windows (lo corre el CI).
+- **RED con esqueleto:** los commits RED de 31.3 y del mecanismo de carga incluyen tipos y funciones sin lógica, para que el rojo sea por aserciones y no por compilación.
+- **Prioridades del ejemplo:** el Product Backlog no tiene prioridades, así que salen del sprint (Alta en los Sprints 1 y 2, Media en el 3, Baja en el 4).
+- **Sprint 4 del ejemplo:** queda abierto con sus fechas reales (5 al 8 de noviembre). Desde el 9, el Dashboard de HU-25 va a decir que no hay sprint en curso (P-1 de HU-25). Cuando se cierre el Sprint 4 real, se cierra también en el ejemplo (P-3).
+- **CA-31.11 en Render:** se verifica después del merge, en el primer despliegue automático.
+- **Carga a medias:** las cargas no son una transacción: cada caso de uso guarda lo suyo. Si un paso falla o se corta con `Ctrl+C`, la base queda con el ejemplo incompleto y el próximo arranque no lo vuelve a cargar (RN-31.1). El mensaje pide borrar la base antes de volver a arrancar; en Render no pasa, porque cada despliegue arranca vacío. Lo señaló Nico en la revisión del PR #377.
+- **Horas del ejemplo:** 1,5 h estimadas por story point, y las reales en registros de hasta 4 h, sin pasar de 8,5 h por persona y día.
 
 ---
 

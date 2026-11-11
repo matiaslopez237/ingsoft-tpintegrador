@@ -2,7 +2,7 @@
 
 Trabajo Práctico Integrador · Ingeniería y Calidad de Software 2026 · UTN FRSR.
 
-10 épicas, 30 historias de usuario, **98 story points** en total.
+10 épicas, 31 historias de usuario, **101 story points** en total.
 
 Todo esto está cargado en GitHub como Issues: las épicas son issues padre, y cada historia es una sub-issue de su épica. Ver `https://github.com/matiaslopez237/ingsoft-tpintegrador/issues`.
 
@@ -17,7 +17,7 @@ Todo esto está cargado en GitHub como Issues: las épicas son issues padre, y c
 | 1 — MVP | hasta el 25 oct | Gestión de proyectos (Épica 1) + crear elementos de backlog + registrar esfuerzo | 19 |
 | 2 — Interfaz, backlog y sprints | 26 y 27 oct | Gestionar el backlog y armar sprints de un proyecto desde una interfaz web | 26 |
 | 3 — Estimación y métricas | 29 al 31 oct | Planning Poker, esfuerzo estimado vs. real y primeras métricas | 28 |
-| 4 — Visualización y cierre | 5 al 8 nov | Dashboard, reportes en PDF y documentación | 25 |
+| 4 — Visualización y cierre | 5 al 8 nov | Dashboard, reportes en PDF y documentación | 28 |
 | — | antes de la entrega | Revisión general y correcciones (sin historias nuevas) | — |
 | — | a confirmar (postergada, ya no es el 2 nov) | **Entrega** | — |
 
@@ -172,9 +172,13 @@ Sprints de 2 días (el Sprint 3, de 3, porque la entrega se postergó). Al cerra
 |---|---|---|---|---|
 | HU-30 | Como usuario del sistema, quiero una interfaz web con una base común (diseño, navegación y pantallas de proyectos e integrantes), para operar el sistema desde el navegador. Ver ADR-0003. | — | 5 | 2 |
 
-Se sumó al backlog al planificar el Sprint 2 (2026-10-25): al cerrar el Sprint 1 la aplicación solo respondía JSON. Desde el Sprint 2, cada historia incluye su propia pantalla.
+| HU-31 | Como integrante del equipo, quiero que la aplicación arranque con un proyecto de ejemplo ya cargado, para mostrar cómo se ve un proyecto completo sin tener que cargarlo a mano. | — | 3 | 4 |
 
-**Subtotal: 5 pts**
+HU-30 se sumó al backlog al planificar el Sprint 2 (2026-10-25): al cerrar el Sprint 1 la aplicación solo respondía JSON. Desde el Sprint 2, cada historia incluye su propia pantalla.
+
+HU-31 se sumó durante el Sprint 4 (2026-11-05), para que la aplicación desplegada en Render, cuya base se borra en cada despliegue, muestre un proyecto completo. El ejemplo es este mismo TP.
+
+**Subtotal: 8 pts**
 
 ---
 
@@ -192,8 +196,8 @@ Se sumó al backlog al planificar el Sprint 2 (2026-10-25): al cerrar el Sprint 
 | 8. Dashboard | 8 | 8 |
 | 9. Reportes | 13 | 10 |
 | 10. Documentación | 8 | 4 |
-| Transversales (HU-30) | — | 5 |
-| **Total** | **115** | **98** |
+| Transversales (HU-30, HU-31) | — | 8 |
+| **Total** | **115** | **101** |
 
 ## Orden dentro de cada sprint
 
@@ -201,6 +205,6 @@ El orden de las historias de cada sprint es su prioridad. Se decidió por depend
 
 - **Sprint 2:** HU-30, HU-08, HU-06, HU-07, HU-09, HU-10, HU-11, HU-20.
 - **Sprint 3:** HU-22, HU-14, HU-15, HU-16, HU-17, HU-19, HU-23, HU-21, HU-12, HU-13.
-- **Sprint 4:** HU-24, HU-25, HU-26, HU-27, HU-29, HU-28.
+- **Sprint 4:** HU-24, HU-25, HU-26, HU-27, HU-29, HU-28, HU-31 (sumada durante el sprint).
 
 Dependencias principales: las pantallas dependen de HU-30; HU-09 a HU-11 dependen de HU-08; las métricas (Épica 7) dependen de sprints cerrados (HU-11), esfuerzo (HU-18, HU-19) y defectos (HU-20, HU-21); el Dashboard y los reportes dependen de las métricas.
