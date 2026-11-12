@@ -53,7 +53,8 @@ Feature: Proyecto de ejemplo precargado
       | DEF-01  | Cerrado | 2                   | 2                    |
       | DEF-02  | Cerrado | 3                   | 3                    |
       | DEF-03  | Cerrado | 3                   | ninguno              |
-      | DEF-04  | Abierto | ninguno             | ninguno              |
+      | DEF-04  | Cerrado | ninguno             | 4                    |
+      | DEF-05  | Cerrado | 4                   | 4                    |
 
   @CA-31.5 @normal
   Scenario: El ejemplo tiene esfuerzo registrado y una historia que se votó dos veces

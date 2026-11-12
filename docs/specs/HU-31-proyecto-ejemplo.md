@@ -23,14 +23,15 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
   - **Sprints 1 a 4 `Cerrado`**, con las fechas y las historias reales de cada uno, todas `Hecho`: 19, 26, 28 y 28 puntos planificados y completados. El Sprint 4 va del 2026-11-05 al 2026-11-13 (con las extensiones del sprint real) y se cerró el 2026-11-12; cada historia se completa el día en que se mergeó (P-3).
   - **Esfuerzo:** horas estimadas y registros de esfuerzo en las historias de los sprints, para que HU-19 y HU-23 muestren desviaciones. Cada historia registra el esfuerzo a nombre del integrante que más commits hizo en ella.
   - **Planning Poker:** rondas con votos y estimación acordada en historias del Sprint 3, incluida una historia que necesitó una segunda ronda por diferencias.
-  - **Defectos:** DEF-01 a DEF-04, sobre las historias donde aparecieron y con sus fechas reales, así que los sprints de detección y resolución salen de esas fechas (RN-20.5, RN-21.6):
+  - **Defectos:** DEF-01 a DEF-05, sobre las historias donde aparecieron y con sus fechas reales, así que los sprints de detección y resolución salen de esas fechas (RN-20.5, RN-21.6):
 
     | Defecto | Detectado | Sprint de detección | Resuelto | Sprint de resolución | Estado |
     |---|---|---|---|---|---|
     | DEF-01 | 26/10 | 2 | 26/10 | 2 | `Cerrado` |
     | DEF-02 | 29/10 | 3 | 29/10 | 3 | `Cerrado` |
     | DEF-03 | 30/10 | 3 | 1/11 | ninguno: entre el Sprint 3 y el 4 | `Cerrado` |
-    | DEF-04 | 3/11 | ninguno: entre el Sprint 3 y el 4 | — | — | `Abierto` |
+    | DEF-04 | 3/11 | ninguno: entre el Sprint 3 y el 4 | 12/11 | 4 | `Cerrado` |
+    | DEF-05 | 8/11 | 4 | 11/11 | 4 | `Cerrado` |
 - **En cualquier otro caso** (variable apagada, valor inválido o base con algún proyecto), la base no cambia.
 - **En el log:** una línea que dice si se cargó el ejemplo o por qué no.
 - No hay rutas ni pantallas nuevas: el ejemplo se ve en las pantallas que ya existen.
@@ -73,7 +74,7 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 - **CA-31.1:** Dada una base vacía y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces existe el proyecto "Software Metrics & Estimation", `Activo`, con 4 integrantes y sus roles. (RN-31.1)
 - **CA-31.2:** Dado el ejemplo cargado, entonces el backlog tiene los elementos HU-01 a HU-31 con los story points del Product Backlog, y hay 4 sprints: del 1 al 4 `Cerrado`, con 19, 26, 28 y 28 puntos planificados y completados. (RN-31.4)
 - **CA-31.3:** Dado el ejemplo cargado, cuando se consulta la velocidad del equipo (HU-22), entonces es el promedio de los últimos tres sprints cerrados: 26, 28 y 28. (RN-31.4)
-- **CA-31.4:** Dado el ejemplo cargado, cuando se consultan los defectos (HU-21), entonces están DEF-01 a DEF-04 con los estados y los sprints de detección y resolución de la tabla de la sección 3. (RN-31.4, RN-31.5)
+- **CA-31.4:** Dado el ejemplo cargado, cuando se consultan los defectos (HU-21), entonces están DEF-01 a DEF-05 con los estados y los sprints de detección y resolución de la tabla de la sección 3. (RN-31.4, RN-31.5)
 - **CA-31.5:** Dado el ejemplo cargado, cuando se consultan las horas del proyecto (HU-23), entonces hay horas estimadas y reales y una desviación; y cuando se consulta el historial de rondas de la historia que se votó dos veces (HU-16), entonces tiene dos rondas, la última con estimación acordada. (RN-31.2, RN-31.5)
 - **CA-31.6:** Dada una base con un proyecto y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces la base no cambia. (RN-31.1)
 - **CA-31.7:** Dada una base vacía y `CARGAR_EJEMPLO` ausente, vacía o `false`, cuando arranca el servidor, entonces no se carga nada. (RN-31.1)
@@ -100,3 +101,4 @@ Ninguna.
 - 2026-11-08: en la revisión del PR #377, Nico señaló que una carga que falla deja el ejemplo a medias y el próximo arranque no lo vuelve a cargar. El mensaje de la falla pide borrar la base, `Ctrl+C` durante la carga la corta, y se agregaron los casos límite. CA-31.5 verifica los valores exactos de las horas.
 - 2026-11-11: el Sprint 4 real se extendió hasta el 13 de noviembre, y el ejemplo lo refleja (P-3).
 - 2026-11-12: el Sprint 4 real se cerró con sus 7 historias terminadas, y el ejemplo lo refleja (P-3): el Sprint 4 queda `Cerrado` con 28 puntos, la velocidad pasa a 27,3 (26, 28 y 28) y las horas del proyecto, a 151,5 estimadas contra 166 reales.
+- 2026-11-12: el ejemplo suma los defectos del Sprint 4 con sus fechas reales: DEF-04 se resuelve el 12/11 y DEF-05 (sobre HU-26, severidad baja) se detecta el 8/11 y se resuelve el 11/11, los dos en el Sprint 4.
