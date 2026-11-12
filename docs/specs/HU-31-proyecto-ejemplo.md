@@ -20,8 +20,7 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
   - **Proyecto:** "Software Metrics & Estimation", `Activo`, con inicio el 2026-10-22 (P-1) y sin fecha de fin. El Sprint 1 va del 22 al 25 de octubre.
   - **Integrantes:** Matías López (Agile Enabler), Ezequiel Assenza, Nicolás Andino y Lucas Orellana (Product Builder).
   - **Product Backlog:** las historias HU-01 a HU-31 como elementos, con la descripción y los criterios de aceptación de su issue y los story points del Product Backlog. Como el Product Backlog no tiene prioridades, la prioridad sale del sprint: Alta en los Sprints 1 y 2, Media en el 3 y Baja en el 4.
-  - **Sprints 1 a 3 `Cerrado`**, con las fechas y las historias reales de cada uno, todas `Hecho`: 19, 26 y 28 puntos planificados y completados.
-  - **Sprint 4 `Abierto`** (del 2026-11-05 al 2026-11-13, con las extensiones del sprint real), con sus historias, HU-24 y HU-29 `Hecho` y el resto sin terminar (P-3).
+  - **Sprints 1 a 4 `Cerrado`**, con las fechas y las historias reales de cada uno, todas `Hecho`: 19, 26, 28 y 28 puntos planificados y completados. El Sprint 4 va del 2026-11-05 al 2026-11-13 (con las extensiones del sprint real) y se cerró el 2026-11-12; cada historia se completa el día en que se mergeó (P-3).
   - **Esfuerzo:** horas estimadas y registros de esfuerzo en las historias de los sprints, para que HU-19 y HU-23 muestren desviaciones. Cada historia registra el esfuerzo a nombre del integrante que más commits hizo en ella.
   - **Planning Poker:** rondas con votos y estimación acordada en historias del Sprint 3, incluida una historia que necesitó una segunda ronda por diferencias.
   - **Defectos:** DEF-01 a DEF-04, sobre las historias donde aparecieron y con sus fechas reales, así que los sprints de detección y resolución salen de esas fechas (RN-20.5, RN-21.6):
@@ -59,7 +58,7 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 - Base con un proyecto cualquiera (por ejemplo, uno creado a mano) y variable en `true` → no se carga nada (RN-31.1).
 - Reiniciar el servidor con el ejemplo ya cargado → no se duplica, porque la base ya tiene un proyecto.
 - Base de una versión anterior, a la que las migraciones le agregan columnas (ADR-0002) → sigue valiendo RN-31.1: solo importa si hay proyectos.
-- El Sprint 4 sigue `Abierto` después de su fecha de fin (2026-11-13) → es válido: un sprint se cierra cuando el equipo lo decide (RN-11.2).
+- El Sprint 4 se cierra el 2026-11-12, antes de su fecha de fin (2026-11-13) → es válido: un sprint se cierra cuando el equipo lo decide (RN-11.2).
 - `Ctrl+C` o `SIGTERM` durante la carga → la carga se corta y el servidor no arranca, igual que si un paso falla (sección 7).
 - Arrancar de nuevo después de una carga que falló → la base tiene el proyecto a medias y RN-31.1 no vuelve a cargarlo. Por eso el mensaje de la falla pide borrar el archivo de `DB_PATH` antes de volver a arrancar. En Render no hace falta: cada despliegue arranca con la base vacía.
 
@@ -72,8 +71,8 @@ No hay entradas del usuario: la carga ocurre al arrancar el servidor, antes de a
 
 ## 8. Criterios de aceptación
 - **CA-31.1:** Dada una base vacía y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces existe el proyecto "Software Metrics & Estimation", `Activo`, con 4 integrantes y sus roles. (RN-31.1)
-- **CA-31.2:** Dado el ejemplo cargado, entonces el backlog tiene los elementos HU-01 a HU-31 con los story points del Product Backlog, y hay 4 sprints: del 1 al 3 `Cerrado`, con 19, 26 y 28 puntos planificados y completados, y el 4 `Abierto`. (RN-31.4)
-- **CA-31.3:** Dado el ejemplo cargado, cuando se consulta la velocidad del equipo (HU-22), entonces es el promedio de 19, 26 y 28. (RN-31.4)
+- **CA-31.2:** Dado el ejemplo cargado, entonces el backlog tiene los elementos HU-01 a HU-31 con los story points del Product Backlog, y hay 4 sprints: del 1 al 4 `Cerrado`, con 19, 26, 28 y 28 puntos planificados y completados. (RN-31.4)
+- **CA-31.3:** Dado el ejemplo cargado, cuando se consulta la velocidad del equipo (HU-22), entonces es el promedio de los últimos tres sprints cerrados: 26, 28 y 28. (RN-31.4)
 - **CA-31.4:** Dado el ejemplo cargado, cuando se consultan los defectos (HU-21), entonces están DEF-01 a DEF-04 con los estados y los sprints de detección y resolución de la tabla de la sección 3. (RN-31.4, RN-31.5)
 - **CA-31.5:** Dado el ejemplo cargado, cuando se consultan las horas del proyecto (HU-23), entonces hay horas estimadas y reales y una desviación; y cuando se consulta el historial de rondas de la historia que se votó dos veces (HU-16), entonces tiene dos rondas, la última con estimación acordada. (RN-31.2, RN-31.5)
 - **CA-31.6:** Dada una base con un proyecto y `CARGAR_EJEMPLO=true`, cuando arranca la carga, entonces la base no cambia. (RN-31.1)
@@ -88,7 +87,7 @@ Confirmadas por Matías López (Agile Enabler) el 2026-11-05:
 - **Carga automática y contenido:** la carga es automática al arrancar, con `CARGAR_EJEMPLO`, y el contenido es este mismo TP (decididas al crear la historia).
 - **P-1 — Fechas:** el proyecto empieza el 2026-10-22 y el Sprint 1 va del 22 al 25 de octubre. El Sprint 0 (preparación) no se carga: no tuvo historias, y como la aplicación numera los sprints desde 1, cargarlo correría la numeración respecto de la real.
 - **P-2 — Falla durante la carga:** el servidor no arranca y muestra el error. Un ejemplo a medias es peor que ninguno, y los tests de la carga en el CI detectan la falla antes de mergear.
-- **P-3 — Sprint 4:** queda `Abierto`, con HU-24 y HU-29 `Hecho` y el resto sin terminar, para poder mostrar las acciones de un sprint abierto. Cuando el equipo cierre el Sprint 4 real, se cierra también en el ejemplo, en un cambio aparte que actualiza esta spec.
+- **P-3 — Sprint 4:** quedó `Abierto` mientras duró el sprint real, con las historias que ya estaban terminadas. Al cerrarse el Sprint 4 real (2026-11-12), se cerró también en el ejemplo, con sus 7 historias `Hecho`.
 
 ## Preguntas abiertas
 Ninguna.
@@ -100,3 +99,4 @@ Ninguna.
 - 2026-11-07: implementada. La prioridad de cada historia sale de su sprint, porque el Product Backlog no tiene prioridades, y el esfuerzo se registra a nombre de quien más commits hizo en cada historia. Los tests verifican los defectos (HU-21) y las rondas (HU-16), en lugar de la calidad de HU-24.
 - 2026-11-08: en la revisión del PR #377, Nico señaló que una carga que falla deja el ejemplo a medias y el próximo arranque no lo vuelve a cargar. El mensaje de la falla pide borrar la base, `Ctrl+C` durante la carga la corta, y se agregaron los casos límite. CA-31.5 verifica los valores exactos de las horas.
 - 2026-11-11: el Sprint 4 real se extendió hasta el 13 de noviembre, y el ejemplo lo refleja (P-3).
+- 2026-11-12: el Sprint 4 real se cerró con sus 7 historias terminadas, y el ejemplo lo refleja (P-3): el Sprint 4 queda `Cerrado` con 28 puntos, la velocidad pasa a 27,3 (26, 28 y 28) y las horas del proyecto, a 151,5 estimadas contra 166 reales.

@@ -2336,14 +2336,14 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 ### Verificación
 
 - `go vet` y el `gofmt` del toolchain limpios; tests de `cmd` e `internal` en verde; cobertura de `internal/adapters/ejemplo`: 81,6 %.
-- Con el servidor real: base vacía y `CARGAR_EJEMPLO=true` carga el ejemplo en unos 6 segundos (velocidad 24,3; 151,5 h estimadas contra 139 reales, -8,3 %); un reinicio no duplica; `si` y la variable ausente no cargan, y el log dice por qué. En el navegador se revisaron el detalle del proyecto, sprints anteriores (con las columnas de HU-24), el Sprint 4 abierto y las dos rondas de HU-14.
+- Con el servidor real: base vacía y `CARGAR_EJEMPLO=true` carga el ejemplo en unos 6 segundos (velocidad 27,3; 151,5 h estimadas contra 166 reales, +9,6 %); un reinicio no duplica; `si` y la variable ausente no cargan, y el log dice por qué. En el navegador se revisaron el detalle del proyecto, sprints anteriores (con las columnas de HU-24), el Sprint 4 abierto y las dos rondas de HU-14.
 
 ### Huecos
 
 - **Revisión de código:** el agente `go-reviewer` no estaba disponible como subagente en la sesión. La revisión la hizo Claude siguiendo su lista de prioridades: sin errores ignorados, errores envueltos con contexto, sin estado global mutable. Dejó dos mejoras, aplicadas en el REFACTOR: sacar la carga de `main()` a `cargarEjemplo` y no armar números con `rune`. `staticcheck` no está instalado, y `-race` no corre en Windows (lo corre el CI).
 - **RED con esqueleto:** los commits RED de 31.3 y del mecanismo de carga incluyen tipos y funciones sin lógica, para que el rojo sea por aserciones y no por compilación.
 - **Prioridades del ejemplo:** el Product Backlog no tiene prioridades, así que salen del sprint (Alta en los Sprints 1 y 2, Media en el 3, Baja en el 4).
-- **Sprint 4 del ejemplo:** queda abierto con sus fechas reales (5 al 13 de noviembre, con las extensiones del 9 y el 11). Desde el 14, el Dashboard de HU-25 va a decir que no hay sprint en curso (P-1 de HU-25). Cuando se cierre el Sprint 4 real, se cierra también en el ejemplo (P-3).
+- **Sprint 4 del ejemplo:** se cerró el 2026-11-12, junto con el Sprint 4 real, con sus 7 historias terminadas (P-3). Desde entonces el Dashboard del ejemplo no tiene sprint en curso (P-1 de HU-25).
 - **CA-31.11 en Render:** se verifica después del merge, en el primer despliegue automático.
 - **Carga a medias:** las cargas no son una transacción: cada caso de uso guarda lo suyo. Si un paso falla o se corta con `Ctrl+C`, la base queda con el ejemplo incompleto y el próximo arranque no lo vuelve a cargar (RN-31.1). El mensaje pide borrar la base antes de volver a arrancar; en Render no pasa, porque cada despliegue arranca vacío. Lo señaló Nico en la revisión del PR #377.
 - **Horas del ejemplo:** 1,5 h estimadas por story point, y las reales en registros de hasta 4 h, sin pasar de 8,5 h por persona y día.
