@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero modificar los datos de un proyecto existente (incluido su estado), para poder corregir su información o reflejar su situación actual.
 **Issue:** #13  ·  **Sprint:** 1  ·  **Story points:** 2
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Permitir editar de forma parcial un proyecto ya creado en HU-01: su nombre, sus fechas y su estado. Solo cambian los campos que se envían; el resto conserva su valor. Las reglas de validación son las mismas que al crear el proyecto (HU-01), y esta historia define las transiciones entre los estados de RN-01.7.
@@ -94,3 +94,4 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - 2026-10-23: agregados RN-02.10 y CA-02.12 (modificar no borra los integrantes de HU-03), detectado al revisar el PR #87.
 - 2026-10-23: el nombre duplicado pasa al final de la tabla de errores (sección 7), para coincidir con el orden en que se valida.
 - 2026-10-23: pedidos simultáneos (sección 5): se guardan solo los campos enviados y RN-02.5 se verifica también al guardar, según decisión del equipo.
+- 2026-11-11: implementada en el PR #88, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

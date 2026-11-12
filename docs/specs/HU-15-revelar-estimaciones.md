@@ -2,7 +2,7 @@
 
 **Historia:** Como equipo, quiero ver todas las estimaciones reveladas y si hay diferencias significativas, para saber si hace falta discutir.
 **Issue:** #26  ·  **Sprint:** 3  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Cerrar el ciclo de una ronda de Planning Poker (HU-14): cuando votaron todos y la ronda se cerró, mostrar el voto de cada integrante, el menor y el mayor, y avisar si la diferencia entre ellos es lo bastante grande como para discutir antes de acordar una estimación (HU-16 repite la ronda; HU-17 registra la estimación acordada).
@@ -72,3 +72,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 
 ## Historial
 - 2026-11-01: creada (borrador).
+- 2026-11-11: implementada en el PR #287, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

@@ -2,7 +2,7 @@
 
 **Historia:** Como equipo, quiero asignar historias del Product Backlog a un Sprint, para definir el Sprint Backlog.
 **Issue:** #20  ·  **Sprint:** 2  ·  **Story points:** 5
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto (HU-08), para formar el Sprint Backlog, y desvincularlo si hace falta mientras el sprint sigue abierto.
@@ -68,10 +68,11 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 - **CA-09.8:** Dado un sprint ya Cerrado, cuando intento asignarle un elemento, entonces la operación falla con `ErrSprintCerrado`.
 
 ## Preguntas abiertas
-- ¿Hace falta un endpoint/pantalla para listar qué elementos tiene asignado un sprint (`GET /proyectos/{id}/sprints/{sprintID}/elementos`), o alcanza con que HU-07 (listar backlog) muestre el sprint de cada elemento? Por ahora se asume que no hace falta un endpoint nuevo de solo lectura para esta historia; si el equipo lo pide, se agrega como extensión menor.
-- ¿El estado del elemento (`Pendiente`/`En progreso`/`Hecho`) restringe si se lo puede asignar o desasignar? Por ahora se asume que no — cualquier estado del elemento se puede asignar/desasignar, ya que no está en los criterios de aceptación del issue.
-- RN-09.5 y RN-09.6 (mismo proyecto, sprint Abierto) no estaban en los 2 criterios del issue #20; se agregaron por ser restricciones de integridad razonables. Si el equipo no está de acuerdo, avisar antes de implementar Tarea 9.4.
+- **Resuelta (2026-11-11, por lo que hace el código):** no se agregó una ruta JSON para listar los elementos de un sprint. El detalle del sprint (pantalla de esta historia) los muestra, y el backlog de HU-07 muestra el sprint de cada elemento. *Pregunta original:* ¿hace falta un endpoint/pantalla para listar qué elementos tiene asignado un sprint (`GET /proyectos/{id}/sprints/{sprintID}/elementos`), o alcanza con que HU-07 (listar backlog) muestre el sprint de cada elemento? Por ahora se asume que no hace falta un endpoint nuevo de solo lectura para esta historia; si el equipo lo pide, se agrega como extensión menor.
+- **Resuelta (2026-11-11, por lo que hace el código):** el estado del elemento no restringe asignarlo ni desasignarlo; lo que se controla es el estado del sprint (RN-09.2, RN-09.4, RN-09.6). *Pregunta original:* ¿el estado del elemento (`Pendiente`/`En progreso`/`Hecho`) restringe si se lo puede asignar o desasignar? Por ahora se asume que no — cualquier estado del elemento se puede asignar/desasignar, ya que no está en los criterios de aceptación del issue.
+- **Resuelta (2026-11-11):** RN-09.5 y RN-09.6 se implementaron, y el PR #184 se aprobó sin objeciones. *Nota original:* RN-09.5 y RN-09.6 (mismo proyecto, sprint Abierto) no estaban en los 2 criterios del issue #20; se agregaron por ser restricciones de integridad razonables. Si el equipo no está de acuerdo, avisar antes de implementar Tarea 9.4.
 
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-30: DEF-03. Con el sprint Cerrado, la pantalla no muestra acciones y avisa que está cerrado (sección 3).
+- 2026-11-11: implementada en el PR #184, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian. Las preguntas abiertas quedan resueltas por lo que hace el código, a confirmar por Matías en el PR.

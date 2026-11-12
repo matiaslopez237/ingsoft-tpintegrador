@@ -2,7 +2,7 @@
 
 **Historia:** Como Scrum Master, quiero crear un Sprint con fecha de inicio, fin y un Sprint Goal, para organizar el trabajo del equipo.
 **Issue:** #19  ·  **Sprint:** 2  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Permitir crear los sprints de un proyecto: un período con fechas y un objetivo (Sprint Goal) al que después se le asignan historias del backlog (HU-09), se marcan completadas (HU-10) y se cierra (HU-11). Es la base de la Épica 3 y de las métricas por sprint (Épica 7).
@@ -107,3 +107,4 @@ Propuestas para validar en el PR: estado inicial `Abierto` (HU-11 lo pasa a `Cer
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-26: se agrega la consulta de la lista de sprints por HTTP (sección 3).
+- 2026-11-11: implementada en el PR #180, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

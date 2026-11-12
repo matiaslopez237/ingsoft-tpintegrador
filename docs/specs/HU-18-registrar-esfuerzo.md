@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero registrar integrante, fecha, actividad y horas trabajadas en una historia o tarea, para dejar constancia del esfuerzo real.
 **Issue:** #29  ·  **Sprint:** 1  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Dejar constancia de las horas que cada integrante trabajó realmente sobre un elemento del backlog: quién, qué día, en qué actividad y cuánto tiempo. Es el dato base del esfuerzo real, que después usan las métricas (estimado vs. real), el dashboard y los reportes. Reutiliza los elementos de backlog de HU-05 y los integrantes de HU-03. Se expone con un endpoint JSON y con una pantalla (sección 9).
@@ -201,9 +201,9 @@ P-7 a P-13 las tomó el autor (Lucas Orellana) el 2026-11-01; quedan abiertas a 
 - **P-13:** el enlace "Registrar esfuerzo" va en la lista del backlog. Queda afuera el detalle del sprint (HU-09), para no agrandar el cambio. Sin integrantes, el formulario se muestra igual, con un aviso y un enlace para agregarlos.
 
 ## Preguntas abiertas
-- **P-6 — Ruta HTTP:** se propone `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`, en lugar del `POST /esfuerzo` del plan (tarea 18.7), para seguir el estilo de HU-05. Pendiente de confirmar con Matías.
-- **P-14 — ¿Alcanza la confirmación si HU-19 no llega a la entrega?** Sin el total, la pantalla no muestra lo ya cargado, y como no se pueden editar ni eliminar registros, un doble registro no se detecta ni se corrige desde la interfaz. **Propuesta:** aceptarlo y dejar el total para HU-19. Si HU-19 se cae del Sprint 3, se suma solo el total a esta pantalla, con el mismo puerto `LectorHorasReales`, como cambio de alcance de la sección 5.
-- **P-15 — Quién suma `ErrProyectoNoEncontrado` a `errorDeElemento`.** HU-18 y HU-19 piden el mismo cambio, y las dos tocan `mostrarElemento`. **Propuesta:** que lo haga esta pantalla, que se implementa antes (lo propone P-13 de HU-19), y que HU-19 lo reciba al actualizarse con `main`.
+- **P-6 — Ruta HTTP. Resuelta (2026-11-11, por lo que hace el código):** quedó `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`, como se proponía. *Propuesta original:* se propone `POST /proyectos/{id}/backlog/{elementoID}/esfuerzo`, en lugar del `POST /esfuerzo` del plan (tarea 18.7), para seguir el estilo de HU-05. Pendiente de confirmar con Matías.
+- **P-14. Resuelta (2026-11-11):** HU-19 entró en el Sprint 3 (PR #297), y la pantalla del elemento muestra las horas estimadas y reales. *Pregunta original:* ¿alcanza la confirmación si HU-19 no llega a la entrega? Sin el total, la pantalla no muestra lo ya cargado, y como no se pueden editar ni eliminar registros, un doble registro no se detecta ni se corrige desde la interfaz. **Propuesta:** aceptarlo y dejar el total para HU-19. Si HU-19 se cae del Sprint 3, se suma solo el total a esta pantalla, con el mismo puerto `LectorHorasReales`, como cambio de alcance de la sección 5.
+- **P-15. Resuelta (2026-11-11, por lo que hace el código):** `errorDeElemento` reconoce `ErrProyectoNoEncontrado` (`pantallas_elemento.go`). *Pregunta original:* quién suma `ErrProyectoNoEncontrado` a `errorDeElemento`. HU-18 y HU-19 piden el mismo cambio, y las dos tocan `mostrarElemento`. **Propuesta:** que lo haga esta pantalla, que se implementa antes (lo propone P-13 de HU-19), y que HU-19 lo reciba al actualizarse con `main`.
 
 ## Historial
 - 2026-10-25: creada (borrador), con las decisiones P-1 a P-4 todavía sin confirmar por el equipo.
@@ -211,3 +211,4 @@ P-7 a P-13 las tomó el autor (Lucas Orellana) el 2026-11-01; quedan abiertas a 
 - 2026-10-25: ajustes: `ErrIntegranteNoEncontrado` responde HTTP 400 (el integrante va en el cuerpo, no en la ruta) en las secciones 3 y 7 y en CA-18.15; los mensajes de los errores reutilizados se copian de `internal/domain` y los nuevos siguen su estilo (minúscula, sin punto final); "hoy" se define en la zona horaria del servidor (RN-18.4 y Restricciones); se fija el orden de validación de las horas (> 0, múltiplo de 0,5, máximo 24). "Decisiones tomadas" registra que se acordaron en el chat y que Matías confirmó P-5. P-6 (ruta) vuelve a "Preguntas abiertas", pendiente de confirmar con Matías.
 - 2026-10-25: correcciones de la revisión con go-reviewer (tarea 18.8): se separan RN-18.8 y RN-18.9, que habían quedado en la misma línea; se agrega a la sección 7 `ErrRegistroEsfuerzoNoEncontrado`, que devuelve la búsqueda por ID de la persistencia (sin endpoint en HU-18). En el código, una fecha cero en cualquier zona horaria y unas horas NaN se rechazan con `ErrFechaEsfuerzoObligatoria` y `ErrHorasInvalidas`, sin cambiar las reglas.
 - 2026-11-01: se especifica la pantalla para registrar esfuerzo (issue #289): sección 9, CA-18.16 a CA-18.25, decisiones P-7 a P-13 del autor, abiertas a objeción en el PR, y preguntas P-14 y P-15. Se actualizan las secciones 1, 3 y 5, que decían que la pantalla iba en HU-30. No cambian las reglas RN-18.x ni el endpoint JSON. La spec sigue en borrador.
+- 2026-11-11: implementada en el PR #104, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian. Las preguntas abiertas quedan resueltas por lo que hace el código, a confirmar por Matías en el PR.

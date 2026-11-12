@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Owner, quiero listar y ordenar el backlog por prioridad, para saber qué se debe entregar primero.
 **Issue:** #18  ·  **Sprint:** 2  ·  **Story points:** 2
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Mostrar el Product Backlog de un proyecto (los elementos creados en HU-05) ordenado por prioridad, con la opción de invertir el orden y de ver solo los elementos de un estado. Incluye la pantalla del backlog, que también permite agregar elementos con el caso de uso de HU-05, que hasta ahora no tenía pantalla.
@@ -75,3 +75,4 @@ Tomadas de los criterios del issue #18: orden ascendente y descendente, y filtro
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-26: al agregar un elemento, la pantalla conserva el orden y el filtro elegidos (sección 5).
+- 2026-11-11: implementada en el PR #183, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

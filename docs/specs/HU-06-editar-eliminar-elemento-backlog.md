@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero editar o eliminar un elemento del backlog, para mantenerlo actualizado.
 **Issue:** #17  ·  **Sprint:** 2  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Mantener al día el Product Backlog de un proyecto: corregir o completar los datos de un elemento creado en HU-05 (por ejemplo, estimarlo o cambiarle la prioridad) y sacar los que ya no hacen falta, sin perder información que usan otras historias (el esfuerzo de HU-18).
@@ -104,3 +104,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 - 2026-10-26: integrada con la lista del backlog de HU-07: botones Editar y Eliminar en cada elemento, y al eliminar se vuelve a la lista. `ErrEstadoElementoInvalido` es el mismo de HU-07.
 - 2026-10-26: a partir de la revisión del PR #182, un POST a la pantalla sin los campos ocultos `original_*` envía todos los campos (como DEF-01), en lugar de compararlos contra valores vacíos.
 - 2026-10-29: DEF-02. Con HU-20, un elemento con defectos no se podía eliminar pero se informaba "con esfuerzo registrado". Matías López decidió que no se elimina y que tiene su propio error (RN-06.10, CA-06.11).
+- 2026-11-11: implementada en el PR #182, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

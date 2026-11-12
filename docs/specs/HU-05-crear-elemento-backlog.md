@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero crear un elemento de backlog con id, título, descripción, prioridad, estado, story points y criterios de aceptación, para registrar una necesidad del producto.
 **Issue:** #16  ·  **Sprint:** 1  ·  **Story points:** 5
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Permitir cargar en el Product Backlog de un proyecto las necesidades del producto (historias, tareas o pedidos), con lo mínimo para priorizarlas y estimarlas. Es la base de la Épica 2: HU-06 las edita o elimina, HU-07 las ordena por prioridad y los sprints las toman para planificar.
@@ -93,3 +93,4 @@ Las propuso Nicolás Andino al refinar la historia y las decidió el equipo comp
 - 2026-10-23: creada (borrador).
 - 2026-10-23: el equipo confirma en clase las decisiones tomadas; la historia se suma al Sprint 1.
 - 2026-11-01: HU-13 restringe los story points a la escala de Fibonacci (RN-05.6, CA-05.7 y el mensaje de `ErrStoryPointsInvalidos`).
+- 2026-11-11: implementada en el PR #92, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
