@@ -104,4 +104,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-10-26):
 - 2026-10-26: integrada con la lista del backlog de HU-07: botones Editar y Eliminar en cada elemento, y al eliminar se vuelve a la lista. `ErrEstadoElementoInvalido` es el mismo de HU-07.
 - 2026-10-26: a partir de la revisión del PR #182, un POST a la pantalla sin los campos ocultos `original_*` envía todos los campos (como DEF-01), en lugar de compararlos contra valores vacíos.
 - 2026-10-29: DEF-02. Con HU-20, un elemento con defectos no se podía eliminar pero se informaba "con esfuerzo registrado". Matías López decidió que no se elimina y que tiene su propio error (RN-06.10, CA-06.11).
-- 2026-11-11: implementada en el PR #182, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #182, ya mergeado por Ezequiel Assenza, sin una aprobación registrada en GitHub (es anterior a la protección de `main`). Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

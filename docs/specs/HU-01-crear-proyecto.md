@@ -76,4 +76,4 @@ En todos los casos no se persiste nada. Si hay varios errores a la vez, se infor
 
 ## Historial
 - 2026-10-22: creada (borrador).
-- 2026-11-11: implementada en el PR #86, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #86, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

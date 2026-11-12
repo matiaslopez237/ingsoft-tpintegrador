@@ -94,4 +94,4 @@ Se distingue "no enviado" (el campo no cambia) de "enviado" (el campo se actuali
 - 2026-10-23: agregados RN-02.10 y CA-02.12 (modificar no borra los integrantes de HU-03), detectado al revisar el PR #87.
 - 2026-10-23: el nombre duplicado pasa al final de la tabla de errores (sección 7), para coincidir con el orden en que se valida.
 - 2026-10-23: pedidos simultáneos (sección 5): se guardan solo los campos enviados y RN-02.5 se verifica también al guardar, según decisión del equipo.
-- 2026-11-11: implementada en el PR #88, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #88, ya mergeado, que aprobó Nicolás Andino. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

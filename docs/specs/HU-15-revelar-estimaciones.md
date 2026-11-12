@@ -72,4 +72,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 
 ## Historial
 - 2026-11-01: creada (borrador).
-- 2026-11-11: implementada en el PR #287, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #287, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

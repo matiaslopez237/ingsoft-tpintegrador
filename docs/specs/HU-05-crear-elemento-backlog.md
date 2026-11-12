@@ -93,4 +93,4 @@ Las propuso Nicolás Andino al refinar la historia y las decidió el equipo comp
 - 2026-10-23: creada (borrador).
 - 2026-10-23: el equipo confirma en clase las decisiones tomadas; la historia se suma al Sprint 1.
 - 2026-11-01: HU-13 restringe los story points a la escala de Fibonacci (RN-05.6, CA-05.7 y el mensaje de `ErrStoryPointsInvalidos`).
-- 2026-11-11: implementada en el PR #92, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #92, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

@@ -119,4 +119,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 - 2026-11-01: con HU-15, el resumen oculta los valores mientras la ronda está abierta y los revela al cerrarse (RN-14.3, CA-14.8 y CA-14.9 ajustados).
 - 2026-11-01: la escala de los votos es la de los story points de HU-13 (`EscalaStoryPoints()`); se quitó `ValoresVoto`.
 - 2026-11-02: aclarado, por HU-17, que la ronda cerrada no tiene formulario para votar (sí el de registrar la estimación).
-- 2026-11-11: implementada en el PR #286, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #286, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

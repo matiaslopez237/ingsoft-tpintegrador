@@ -75,4 +75,4 @@ Permitir vincular un elemento del backlog (HU-05) a un sprint del mismo proyecto
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-30: DEF-03. Con el sprint Cerrado, la pantalla no muestra acciones y avisa que está cerrado (sección 3).
-- 2026-11-11: implementada en el PR #184, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian. Las preguntas abiertas quedan resueltas por lo que hace el código, a confirmar por Matías en el PR.
+- 2026-11-11: implementada en el PR #184, ya mergeado, que aprobó Lucas Orellana. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian. Las preguntas abiertas quedan resueltas por lo que hace el código, a confirmar por Matías en el PR.

@@ -75,4 +75,4 @@ Tomadas de los criterios del issue #18: orden ascendente y descendente, y filtro
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-26: al agregar un elemento, la pantalla conserva el orden y el filtro elegidos (sección 5).
-- 2026-11-11: implementada en el PR #183, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #183, ya mergeado por Nicolás Andino, sin una aprobación registrada en GitHub (es anterior a la protección de `main`). Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

@@ -107,4 +107,4 @@ Propuestas para validar en el PR: estado inicial `Abierto` (HU-11 lo pasa a `Cer
 ## Historial
 - 2026-10-26: creada (borrador).
 - 2026-10-26: se agrega la consulta de la lista de sprints por HTTP (sección 3).
-- 2026-11-11: implementada en el PR #180, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #180, ya mergeado por Nicolás Andino, sin una aprobación registrada en GitHub (es anterior a la protección de `main`). Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

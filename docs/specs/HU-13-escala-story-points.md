@@ -69,4 +69,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 ## Historial
 - 2026-11-01: creada (borrador).
 - 2026-11-01: con HU-14 en `main`, los votos usan `EscalaStoryPoints()` y se quitó la escala propia de HU-14 (RN-13.4), a pedido de la revisión del PR #288.
-- 2026-11-11: implementada en el PR #288, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #288, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

@@ -86,4 +86,4 @@ Definidas por Nicolás Andino al implementar la historia (2026-10-26), para vali
 - 2026-10-26: agregados los errores 403 (formulario de otro sitio) y 413 (formulario demasiado grande), a partir de la revisión con go-reviewer. Límite conocido: la lista de proyectos no tiene paginación.
 - 2026-10-26: RN-30.3 y CA-30.5 corregidas por DEF-01 (#179): el formulario de edición guarda solo los campos cambiados, para no pisar ediciones simultáneas.
 - 2026-10-26: guardar el formulario de edición sin cambiar nada vuelve al detalle sin mensaje, en lugar de mostrar `ErrSinCambios` (decisión del equipo, revisión del PR #181).
-- 2026-11-11: implementada en el PR #106, ya mergeado y aprobado por otro integrante. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #106, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
