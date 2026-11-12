@@ -73,6 +73,8 @@ func filasResumen(d datosReporte) [][]string {
 		{"Estado", d.Proyecto.Estado},
 		{"Inicio", d.Proyecto.FechaInicio},
 		{"Fin", fin},
+		{"Sprints abiertos", strconv.Itoa(d.SprintsAbiertos)},
+		{"Sprints cerrados", strconv.Itoa(d.SprintsCerrados)},
 	}
 }
 
@@ -130,19 +132,10 @@ func bloquesDefectos(d datosReporte) []domain.BloquePDF {
 	filas := make([][]string, len(d.Defectos))
 	for i, def := range d.Defectos {
 		filas[i] = []string{def.Elemento, def.Descripcion, def.Severidad, def.Estado,
-			textoSprintDefecto(def.SprintDeteccion), textoSprintDefecto(def.SprintResolucion)}
+			def.SprintDeteccion, def.SprintResolucion}
 	}
 	return []domain.BloquePDF{tablaPDF(
 		[]string{"Elemento", "Descripción", "Severidad", "Estado", "Sprint detección", "Sprint resolución"}, filas)}
-}
-
-// textoSprintDefecto es lo que muestra la plantilla en las columnas de Sprint de un defecto: "#" y el
-// ID, o "—" si no tiene.
-func textoSprintDefecto(id *int64) string {
-	if id == nil {
-		return textoGuion
-	}
-	return "#" + strconv.FormatInt(*id, 10)
 }
 
 func tablaPDF(columnas []string, filas [][]string) domain.BloquePDF {

@@ -26,8 +26,8 @@
       <td>{{.Descripcion}}</td>
       <td>{{.Severidad}}</td>
       <td><span class="estado">{{.Estado}}</span></td>
-      <td>{{if .SprintDeteccion}}#{{.SprintDeteccion}}{{else}}—{{end}}</td>
-      <td>{{if .SprintResolucion}}#{{.SprintResolucion}}{{else}}—{{end}}</td>
+      <td>{{.SprintDeteccion}}</td>
+      <td>{{.SprintResolucion}}</td>
       <td>
         {{if .PuedeIniciarse}}
         <form method="post" action="/web/proyectos/{{$.Proyecto.ID}}/defectos/{{.ID}}/iniciar" class="en-linea">

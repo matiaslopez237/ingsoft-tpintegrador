@@ -275,7 +275,7 @@ func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
 				[]string{"Desviación en porcentaje", d.EsfuerzoDesviacionPorcentaje},
 			)}},
 			{Titulo: "Métricas", Bloques: []domain.BloquePDF{
-				parrafo("Velocidad del equipo: 6 puntos por Sprint"),
+				parrafo("Velocidad del equipo: 6,0 puntos por Sprint"), // un decimal, como HU-22 (DEF-05)
 				tabla([]string{"Sprint", "% completado", "Defectos detectados", "Defectos resueltos"},
 					[]string{"1", "75,0 %", "2", "1"},
 				),
