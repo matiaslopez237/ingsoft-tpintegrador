@@ -8,28 +8,28 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 
 | Historia | Spec | CA con BDD | CA con test Go | Código | TDD en git | BDD en verde |
 |---|---|---|---|---|---|---|
-| HU-01 Crear un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 14/14 escenarios |
-| HU-02 Modificar un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 12/12 | 12/12 | ✓ | RED → GREEN ×7 | ✓ 24/24 escenarios |
-| HU-03 Registrar integrantes | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
-| HU-04 Consultar el estado de un proyecto | ✓ (Borrador, pendiente de aprobación en el PR) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
-| HU-05 Crear un elemento de backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
-| HU-06 Editar o eliminar un elemento del backlog | ✓ (Borrador, pendiente de aprobación en el PR; RN-06.8 pendiente de HU-09) | 10/10 | 10/10 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 22/22 escenarios |
-| HU-07 Listar y ordenar el backlog | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 14/14 escenarios |
-| HU-08 Crear un Sprint con Sprint Goal | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
-| HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Borrador; P-6, la ruta JSON, pendiente de confirmar; P-14 y P-15, de la pantalla, abiertas) | 14/25 (CA-18.15 se cubre con tests del handler; CA-18.16 a CA-18.25, con tests del adaptador) | 24/25 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×16, REFACTOR ×5 | ✓ 28/28 escenarios |
-| HU-30 Interfaz web base | ✓ (Borrador, pendiente de aprobación en el PR) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
-| HU-09 Asignar historias del backlog a un Sprint | ✓ (Borrador, pendiente de aprobación en el PR) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
+| HU-01 Crear un proyecto | ✓ (Implementada, PR #86) | 9/9 | 9/9 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 14/14 escenarios |
+| HU-02 Modificar un proyecto | ✓ (Implementada, PR #88) | 12/12 | 12/12 | ✓ | RED → GREEN ×7 | ✓ 24/24 escenarios |
+| HU-03 Registrar integrantes | ✓ (Implementada, PR #87) | 10/10 | 10/10 | ✓ | RED → GREEN ×10 | ✓ 13/13 escenarios |
+| HU-04 Consultar el estado de un proyecto | ✓ (Aprobada) | 5/5 | 5/5 | ✓ | RED → GREEN ×3, REFACTOR ×2 | ✓ 6/6 escenarios |
+| HU-05 Crear un elemento de backlog | ✓ (Implementada, PR #92) | 10/10 | 10/10 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
+| HU-06 Editar o eliminar un elemento del backlog | ✓ (Implementada, PR #182) | 10/10 | 10/10 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 22/22 escenarios |
+| HU-07 Listar y ordenar el backlog | ✓ (Implementada, PR #183) | 8/8 | 8/8 | ✓ | RED → GREEN ×6, REFACTOR ✓ | ✓ 14/14 escenarios |
+| HU-08 Crear un Sprint con Sprint Goal | ✓ (Implementada, PR #180) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 28/28 escenarios |
+| HU-18 Registrar esfuerzo en una historia o tarea | ✓ (Implementada, PR #104) | 14/25 (CA-18.15 se cubre con tests del handler; CA-18.16 a CA-18.25, con tests del adaptador) | 24/25 (CA-18.11 solo en BDD) | ✓ | RED → GREEN ×16, REFACTOR ×5 | ✓ 28/28 escenarios |
+| HU-30 Interfaz web base | ✓ (Implementada, PR #106) | 10/10 | 10/10 | ✓ | RED → GREEN ×3, REFACTOR ✓ | ✓ 17/17 escenarios |
+| HU-09 Asignar historias del backlog a un Sprint | ✓ (Implementada, PR #184) | 8/8 | 8/8 | ✓ | RED → GREEN ×8, REFACTOR ✓ | ✓ 8/8 escenarios |
 | HU-10 Marcar una historia como completada en el Sprint | ✓ (Aprobada; P-9 abierta a objeción en el PR) | 5/7 (CA-10.6 y CA-10.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 9/9 escenarios |
 | HU-11 Cerrar un Sprint | ✓ (Aprobada) | 5/7 (CA-11.4 y CA-11.5 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×6, REFACTOR ×4 | ✓ 17/17 escenarios |
 | HU-20 Registrar un defecto | ✓ (Aprobada) | 6/8 (CA-20.6 y CA-20.8 se cubren con tests del handler y de la pantalla) | 8/8 | ✓ | RED → GREEN ×6 | ✓ 18/18 escenarios |
 | HU-12 Consultar Sprints anteriores | ✓ (Implementada) | 5/7 (CA-12.6 y CA-12.7 se cubren con tests del adaptador) | 7/7 | ✓ | RED → GREEN ×4, REFACTOR ✓ | ✓ 7/7 escenarios |
-| HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Borrador, pendiente de aprobación en el PR) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
-| HU-14 Registrar estimaciones individuales ocultas | ✓ (Borrador, pendiente de aprobación en el PR) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
-| HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Borrador, pendiente de aprobación en el PR) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
-| HU-22 Calcular story points y velocidad del equipo | ✓ (Aprobada) | 6/9 (CA-22.1 ya la cubre HU-12; CA-22.7 y CA-22.8 se cubren con tests del handler y de la pantalla) | 9/9 | ✓ | RED → GREEN ×6 | ✓ 9/9 escenarios |
+| HU-13 Estimar una historia con story points de la escala Fibonacci | ✓ (Implementada, PR #288) | 6/7 (CA-13.7 se cubre con tests de la pantalla) | 7/7 | ✓ | RED → GREEN ×2, REFACTOR ✓ | ✓ 19/19 escenarios |
+| HU-14 Registrar estimaciones individuales ocultas | ✓ (Implementada, PR #286) | 9/9 | 9/9 | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 20/20 escenarios |
+| HU-15 Mostrar las estimaciones y detectar diferencias | ✓ (Implementada, PR #287) | 6/6 | 6/6 | ✓ | RED → GREEN ×3 | ✓ 10/10 escenarios |
+| HU-22 Calcular story points y velocidad del equipo | ✓ (Implementada, PR #292) | 6/9 (CA-22.1 ya la cubre HU-12; CA-22.7 y CA-22.8 se cubren con tests del handler y de la pantalla) | 9/9 | ✓ | RED → GREEN ×6 | ✓ 9/9 escenarios |
 | HU-16 Repetir una ronda de votación | ✓ (Implementada) | 7/8 (CA-16.7 se cubre con tests del handler) | 8/8 | ✓ | RED → GREEN ×5 | ✓ 8/8 escenarios |
 | HU-17 Registrar la estimación acordada | ✓ (Implementada) | 9/10 (CA-17.9 se cubre con tests del handler) | 10/10 | ✓ | RED → GREEN ×5 | ✓ 17/17 escenarios |
-| HU-19 Comparar esfuerzo estimado contra real | ✓ (Borrador; P-10 y P-12 confirmadas por el equipo, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
+| HU-19 Comparar esfuerzo estimado contra real | ✓ (Implementada, PR #297) | 15/19 (CA-19.16 se cubre con tests de persistencia; CA-19.17, del handler; CA-19.18 y CA-19.19, de la pantalla) | 19/19 | ✓ | RED → GREEN ×11, REFACTOR ×2 | ✓ 34/34 escenarios (355/355 en el BDD completo; pasos: 1755/1755) |
 | HU-21 Actualizar el estado de un defecto | ✓ (Aprobada) | 8/11 (CA-21.9 a CA-21.11 se cubren con tests del adaptador y de la pantalla) | 11/11 | ✓ | RED → GREEN ×6 | ✓ 14/14 escenarios |
 | HU-23 Horas estimadas, reales y desviación de un sprint o proyecto | ✓ (Implementada; decisiones confirmadas en el PR #298) | 15/18 (CA-23.16 se cubre con tests del handler; CA-23.17 y CA-23.18, de la pantalla) | 17/18 (CA-23.11 solo en BDD) | ✓ | RED → GREEN ×6, REFACTOR ×5 | ✓ 29/29 escenarios (407/407 en el BDD completo; pasos: 2130/2130) |
 | HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |

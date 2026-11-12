@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero asignar story points a una historia, para reflejar su tamaño relativo.
 **Issue:** #24  ·  **Sprint:** 3  ·  **Story points:** 1
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Que los story points de un elemento del backlog sean un tamaño relativo de la escala de Fibonacci, la misma que usa el Planning Poker (HU-14), en lugar de cualquier entero positivo. HU-05 (crear) y HU-06 (editar) ya permiten cargarlos; esta historia restringe sus valores y hace que las pantallas los ofrezcan como una lista. Así la estimación acordada en Planning Poker (HU-17) siempre es un valor válido.
@@ -69,3 +69,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 ## Historial
 - 2026-11-01: creada (borrador).
 - 2026-11-01: con HU-14 en `main`, los votos usan `EscalaStoryPoints()` y se quitó la escala propia de HU-14 (RN-13.4), a pedido de la revisión del PR #288.
+- 2026-11-11: implementada en el PR #288, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

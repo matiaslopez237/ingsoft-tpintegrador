@@ -2,7 +2,7 @@
 
 **Historia:** Como Scrum Master, quiero comparar el esfuerzo estimado contra el real de una historia, para evaluar la precisión de las estimaciones.
 **Issue:** #30  ·  **Sprint:** 3  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Mostrar, para un elemento del backlog, cuántas horas se estimaron, cuántas se trabajaron de verdad y cuánto se desvió la estimación, en horas y en porcentaje. Hoy el sistema tiene las horas reales (HU-18) pero no las estimadas: esta historia también define de dónde salen (P-10). El alcance es **un elemento**; los totales por sprint o por proyecto son de HU-23, que reutiliza el cálculo de desviación que esta historia deja en el dominio.
@@ -202,3 +202,4 @@ P-11 y P-13 quedaron resueltas. P-10 y P-12 pasaron a "Decisiones confirmadas po
 - 2026-11-02: se agregan RN-19.12 y CA-19.19: un campo `horas_estimadas` ausente del formulario de la pantalla no cambia las horas. `story_points` conserva el comportamiento de HU-06; la asimetría queda para el equipo. La spec sigue en borrador.
 - 2026-11-03: Matías confirma P-10 (campo propio `HorasEstimadas`) y P-12 (tope de 1000 h) en la revisión del PR #297; pasan a "Decisiones confirmadas por el equipo". Las reglas y los criterios no cambian.
 - 2026-11-04: se corrige la frase de RN-19.8 y P-4 sobre las sumas de HU-23 (P-11 de HU-23). Las reglas y los criterios no cambian.
+- 2026-11-11: implementada en el PR #297, ya mergeado, que aprobó Nicolás Andino. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

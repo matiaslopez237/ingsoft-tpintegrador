@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero registrar mi estimación de forma oculta hasta que todos voten, para evitar sesgos por ver el voto de otros.
 **Issue:** #25  ·  **Sprint:** 3  ·  **Story points:** 5
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Arrancar el Planning Poker (Épica 4): abrir una ronda de estimación sobre un elemento del backlog (HU-05) y que cada integrante del proyecto (HU-03) registre su voto sin ver el de los demás. Mientras la ronda está abierta solo se sabe quién votó, no cuánto. Cuando votaron todos, la ronda se cierra. Mostrar los votos y detectar diferencias es HU-15; repetir la ronda, HU-16; y registrar la estimación acordada, HU-17.
@@ -119,3 +119,4 @@ Definidas por Nicolás Andino al refinar la historia (2026-11-01):
 - 2026-11-01: con HU-15, el resumen oculta los valores mientras la ronda está abierta y los revela al cerrarse (RN-14.3, CA-14.8 y CA-14.9 ajustados).
 - 2026-11-01: la escala de los votos es la de los story points de HU-13 (`EscalaStoryPoints()`); se quitó `ValoresVoto`.
 - 2026-11-02: aclarado, por HU-17, que la ronda cerrada no tiene formulario para votar (sí el de registrar la estimación).
+- 2026-11-11: implementada en el PR #286, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

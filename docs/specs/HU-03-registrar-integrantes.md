@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero registrar los integrantes de un proyecto, para saber quién participa.
 **Issue:** #14  ·  **Sprint:** 1  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Permitir asociar personas (integrantes) a un proyecto existente, con su nombre y sus roles dentro del proyecto, para que el equipo y los reportes sepan quién participa. Cubre agregar y quitar integrantes, y sumarle roles a un integrante que ya está en el proyecto (en un equipo chico una misma persona suele cumplir varios roles).
@@ -83,3 +83,4 @@ Permitir asociar personas (integrantes) a un proyecto existente, con su nombre y
 - 2026-10-22: creada (borrador).
 - 2026-10-23: resueltas las dudas de comparación de nombres duplicados (se usa `domain.ClaveNombre`, igual que HU-01) y el tipo del id de proyecto (`int64`), ya que HU-01 se mergeó a `main` y define `domain.Proyecto` y `domain.ErrProyectoNoEncontrado`.
 - 2026-10-23: issue #14. El equipo confirma RN-03.3 (un integrante no se agrega dos veces) y decide que un integrante pueda tener varios roles, sumados con una operación aparte (RN-03.5, RN-03.6, CA-03.7 a CA-03.10). Se resuelve la concurrencia (lost update) guardando fila por fila en vez de reemplazar la lista completa (sección 5).
+- 2026-11-11: implementada en el PR #87, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.

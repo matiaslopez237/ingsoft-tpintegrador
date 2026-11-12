@@ -2,7 +2,7 @@
 
 **Historia:** Como Scrum Master, quiero ver los story points planificados, completados y la velocidad del equipo por Sprint, para medir el rendimiento.
 **Issue:** #33  ·  **Sprint:** 3  ·  **Story points:** 5
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Dar al Scrum Master una medida de cuánto entrega el equipo por Sprint: los puntos planificados contra los completados de cada Sprint, y la velocidad del equipo (el promedio de puntos completados en los Sprints ya cerrados), para planificar sprints futuros con un número real en vez de una estimación a ojo.
@@ -66,9 +66,10 @@ No hay más condiciones de error: es una consulta de solo lectura sin más datos
 - **CA-22.8:** Dada la pantalla de sprints anteriores (HU-12) de un proyecto con Sprints cerrados, cuando se abre, entonces muestra "Velocidad del equipo" con el promedio; con un proyecto sin Sprints cerrados, muestra que todavía no hay datos de velocidad (sin romper la pantalla existente de HU-12, que ya avisa "El proyecto todavía no tiene sprints cerrados").
 
 ## Preguntas abiertas
-- **P-1 — Ventana del promedio:** confirmada por Matías López (Agile Enabler) en la revisión del PR el 2026-11-02: la velocidad promedia los **últimos 3** Sprints cerrados (ventana móvil), no todos. Es lo que dice el enunciado de la cátedra ("velocidad... en los últimos Sprints cerrados") y lo más común en Scrum. Reemplaza la decisión original (promediar todos, sin ventana) tomada el 2026-11-01, que quedó descartada.
-- **P-2 — Redondeo para mostrar en pantalla:** la spec no fija cuántos decimales se muestran en la pantalla (ej. "4,5" vs "4,50"); queda como detalle de implementación de la plantilla, no una regla de negocio.
+- **P-1 — Ventana del promedio. Resuelta:** confirmada por Matías López (Agile Enabler) en la revisión del PR el 2026-11-02: la velocidad promedia los **últimos 3** Sprints cerrados (ventana móvil), no todos. Es lo que dice el enunciado de la cátedra ("velocidad... en los últimos Sprints cerrados") y lo más común en Scrum. Reemplaza la decisión original (promediar todos, sin ventana) tomada el 2026-11-01, que quedó descartada.
+- **P-2 — Redondeo para mostrar en pantalla. Resuelta (2026-11-11, por lo que hace el código):** la velocidad se muestra con un decimal y coma (`formatearVelocidad`), por ejemplo "24,3"; desde DEF-05, el reporte de HU-26 usa el mismo formato. *Pregunta original:* la spec no fija cuántos decimales se muestran en la pantalla (ej. "4,5" vs "4,50"); queda como detalle de implementación de la plantilla, no una regla de negocio.
 
 ## Historial
 - 2026-11-01: creada (borrador). Decisiones P-1 (ventana de todos los Sprints cerrados), dónde se muestra (pantalla de HU-12, sin pantalla nueva) y qué pasa sin Sprints cerrados (indefinido, no 0) confirmadas con Ezequiel en el chat.
 - 2026-11-02: P-1 corregida en la revisión del PR por Matías López: la ventana es de los últimos 3 Sprints cerrados, no todos (RN-22.2, CA-22.2, CA-22.9 nuevo). Se aclaró en la sección 3 que `sprints_cerrados` es cuántos entraron en el promedio (hasta 3), no el total de Sprints cerrados del proyecto, para no confundir los dos números.
+- 2026-11-11: implementada en el PR #292, ya mergeado, que aprobó Nicolás Andino. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian. Las preguntas abiertas quedan resueltas por lo que hace el código, a confirmar por Matías en el PR.

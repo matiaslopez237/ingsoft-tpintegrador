@@ -2,7 +2,7 @@
 
 **Historia:** Como Product Builder, quiero crear un proyecto con nombre, fecha de inicio y fin, para poder empezar a planificar el trabajo.
 **Issue:** #12  ·  **Sprint:** 1  ·  **Story points:** 3
-**Estado de la spec:** Borrador
+**Estado de la spec:** Implementada
 
 ## 1. Objetivo
 Permitir que un Product Builder dé de alta un proyecto de software, que es la entidad raíz del sistema: backlog, sprints, esfuerzo, defectos y métricas cuelgan de él. El proyecto se crea con nombre y fechas válidas, queda en estado Activo y con un identificador único para referenciarlo después (HU-02, HU-03, HU-04).
@@ -76,3 +76,4 @@ En todos los casos no se persiste nada. Si hay varios errores a la vez, se infor
 
 ## Historial
 - 2026-10-22: creada (borrador).
+- 2026-11-11: implementada en el PR #86, ya mergeado, que aprobó Matías López. Pasa de Borrador a Implementada al ordenar la documentación para la entrega; las reglas y los criterios no cambian.
