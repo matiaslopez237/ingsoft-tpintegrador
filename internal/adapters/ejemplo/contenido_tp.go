@@ -170,7 +170,7 @@ func contenidoTP() contenido {
 			cambioDefecto{el: f(11, 1), clave: "DEF-03", accion: "cerrar"},
 			defecto{el: f(11, 3), clave: "DEF-04", historia: "HU-11", descripcion: "Carrera en las migraciones de columnas con arranques simultáneos", severidad: domain.SeveridadMedia},
 			// Sprint 4: Dashboard, reportes en PDF y documentación.
-			crearSprint{numero: 4, inicio: f(11, 5), fin: f(11, 8), objetivo: "Dashboard, reportes en PDF y documentación"},
+			crearSprint{numero: 4, inicio: f(11, 5), fin: f(11, 13), objetivo: "Dashboard, reportes en PDF y documentación"},
 			asignar{el: f(11, 5), historia: "HU-24", sprint: 4},
 			asignar{el: f(11, 5), historia: "HU-25", sprint: 4},
 			asignar{el: f(11, 5), historia: "HU-26", sprint: 4},
