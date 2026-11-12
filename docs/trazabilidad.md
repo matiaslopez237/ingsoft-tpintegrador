@@ -35,6 +35,7 @@ Cómo se busca cada eslabón: tags `@HU-XX` / `@CA-XX.N` en `features/`, comenta
 | HU-24 Calcular % de story points completados y defectos por Sprint | ✓ (Aprobada; P-1 a P-3 confirmadas por Matías López en la revisión del PR #366) | 7/9 (CA-24.8 se cubre con tests del handler; CA-24.9, de la pantalla) | 9/9 | ✓ | RED → GREEN ×7 | ✓ 9/9 escenarios (416/416 en el BDD completo; pasos: 2172/2172) |
 | HU-27 Exportar el reporte a PDF | ✓ (Aprobada el 2026-11-08 por Matías López en la revisión del PR #379, con P-1 a P-11; ADR-0006 `accepted`) | 15/26 (CA-27.3 a CA-27.6, CA-27.12, CA-27.19, CA-27.24, CA-27.25 y CA-27.26 se cubren con tests del adaptador; CA-27.21 con tests de la pantalla y revisión manual; CA-27.23 con un test de integración) | 26/26 | ✓ | RED → GREEN ×14, REFACTOR ×2 | ✓ 38/38 escenarios (252 pasos; BDD completo en verde en 500 s) |
 | HU-29 Documentación técnica del proyecto | — (documentación, sin funcionalidad nueva: ver la sección de HU-29) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios verificados en la revisión) |
+| HU-28 Manual breve de usuario | — (documentación, sin funcionalidad nueva: ver la sección de HU-28) | — | — | — (sin código Go) | — (sin TDD: no hay lógica) | — (3/3 criterios, verificados en la revisión) |
 | HU-25 Ver panel con estado del proyecto y gráficos | ✓ (Aprobada; ADR-0005, P-1 y P-2 aprobadas por Matías López en la revisión del PR #375) | 8/11 (CA-25.8 se cubre con tests del handler; CA-25.9 y CA-25.10, de la pantalla) | 11/11 | ✓ | RED → GREEN ×7, REFACTOR ✓ | ✓ 11/11 escenarios |
 | HU-31 Proyecto de ejemplo precargado | ✓ (Implementada; P-1 a P-3 confirmadas por Matías) | 9/11 (CA-31.10 y CA-31.11 se cubren con tests Go) | 7/11 (CA-31.2 a CA-31.5 solo en BDD) | ✓ | RED → GREEN ×5, REFACTOR ✓ | ✓ 13/13 escenarios |
 
@@ -2078,6 +2079,27 @@ Código de otras historias que tocó HU-23. Conviene que lo revisen sus autores 
 - Revisión con el agente `go-reviewer`: **Approve**, sin hallazgos bloqueantes. Confirmó que el bug de HU-21 (method value de una interfaz nil al registrar rutas) no se repite acá (tanto `RegistrarCalidadSprints` como el handler y la pantalla llaman al caso de uso recién dentro del closure, en el momento del pedido), y que no queda ningún otro `CasosDeUso` parcial en los tests existentes sin el campo `ConsultarCalidadSprints` más allá del que ya se corrigió en `pantallas_horas_test.go`. Verificó `go vet`, `gofmt` y los tests de dominio/app/HTTP; no llegó a correr la suite BDD completa por el tiempo que tarda en ese entorno, pero revisó el código BDD a mano (SQL parametrizado, cada escenario aislado en su propia base temporal) y lo encontró consistente con el patrón de HU-22.
 - ~~PR #365 (HU-29, en paralelo) también agrega su sección a este archivo~~: resuelto el 2026-11-06 al traer `main` (HU-29 se mergeó primero, PR #365): se dejaron las dos filas del resumen y las dos secciones, como estaba previsto.
 - Segunda ronda de revisión del PR #366 (2026-11-06): además de traer `main`, se aplicaron las tres sugerencias opcionales de Matías López: se sacó el escenario BDD "el cálculo no trunca si los completados superan los planificados" (imposible según la spec, sección 5; el test unitario del dominio ya documenta que la función pura no lo valida), el ejemplo de redondeo pasó de 2/3 (no es un medio) a 16/1 = 6,25% → 6,3% (un medio real, prueba "los medios alejándose de cero"), y la pantalla ahora reutiliza `textoPorcentaje` de HU-19/HU-23 en vez de un `formatearPorcentaje` propio, para que todas las pantallas de porcentaje muestren el mismo formato ("75,0 %", con espacio).
+
+---
+
+## HU-28: Manual breve de usuario
+
+- **Issue:** [#39](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/39) · Sprint 4 · 2 SP
+- **Tareas:** 28.1 [#361](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/361), 28.2 [#362](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/362), 28.3 [#363](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/363), 28.4 [#364](https://github.com/matiaslopez237/ingsoft-tpintegrador/issues/364)
+- **Sin spec, BDD ni TDD:** es una historia de documentación, como HU-29: no agrega funcionalidad ni reglas de negocio. Los criterios se verifican en la revisión del PR.
+
+### Criterios de aceptación
+
+| Criterio (issue #39) | Dónde se cumple | Cómo se verificó |
+|---|---|---|
+| Cubre las funcionalidades principales del sistema | [docs/manual-usuario.md](manual-usuario.md): proyectos e integrantes, Product Backlog, Planning Poker, sprints, esfuerzo, defectos, dashboard, y reporte y PDF | Cada paso y cada regla que cita (topes, escala de Fibonacci, estados, qué pasa al cerrar un sprint) se cotejó con las pantallas del servidor y con las specs |
+| Incluye capturas o ejemplos de uso | 12 capturas en [docs/manual/](manual/), del proyecto de ejemplo de HU-31 | Sacadas con Edge sin ventana sobre el servidor real, con `main` más DEF-05 y la extensión del Sprint 4. Se revisaron una por una |
+| Está disponible en el repositorio | `docs/manual-usuario.md`, enlazado desde el [README](../README.md) | Todos los enlaces e imágenes del manual apuntan a archivos que existen |
+
+### Huecos
+
+- **Revisión por otro integrante (tarea 28.4):** el criterio de la tarea pide que alguien siga el manual sin ayuda. Queda para la revisión del PR.
+- **Las capturas son de un momento:** muestran el proyecto de ejemplo con el Sprint 4 abierto. Si cambian las pantallas, hay que volver a sacarlas.
 
 ---
 
