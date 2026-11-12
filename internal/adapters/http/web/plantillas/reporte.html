@@ -26,6 +26,8 @@
     <dt>Estado</dt><dd><span class="estado">{{.Proyecto.Estado}}</span></dd>
     <dt>Inicio</dt><dd>{{.Proyecto.FechaInicio}}</dd>
     <dt>Fin</dt><dd>{{if .Proyecto.FechaFin}}{{.Proyecto.FechaFin}}{{else}}Sin fecha de fin{{end}}</dd>
+    <dt>Sprints abiertos</dt><dd>{{.SprintsAbiertos}}</dd>
+    <dt>Sprints cerrados</dt><dd>{{.SprintsCerrados}}</dd>
     {{end}}
   </dl>
 </section>
@@ -117,8 +119,8 @@
         <td>{{.Descripcion}}</td>
         <td>{{.Severidad}}</td>
         <td><span class="estado">{{.Estado}}</span></td>
-        <td>{{if .SprintDeteccion}}#{{.SprintDeteccion}}{{else}}—{{end}}</td>
-        <td>{{if .SprintResolucion}}#{{.SprintResolucion}}{{else}}—{{end}}</td>
+        <td>{{.SprintDeteccion}}</td>
+        <td>{{.SprintResolucion}}</td>
       </tr>
       {{end}}
     </tbody>

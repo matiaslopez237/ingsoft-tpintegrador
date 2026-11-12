@@ -56,6 +56,10 @@ func defectosDeAlfa() []domain.Defecto {
 // closures (por defecto, éxito) y guardan lo recibido en llamadas.
 func casosConListaDefectos(defectos []domain.Defecto, errListar error, llamadas *llamadasEstadoDefecto) CasosDeUso {
 	cu := casosConBacklog(nil, nil, &llamadasBacklog{})
+	// El sprint de los defectos de ejemplo tiene el ID 9 y es el número 2 de alfa (DEF-05).
+	cu.ListarSprints = listarSprintsFunc(func(_ context.Context, id int64) ([]domain.Sprint, error) {
+		return []domain.Sprint{{ID: 9, ProyectoID: alfa.ID, Numero: 2, Estado: domain.SprintAbierto}}, nil
+	})
 	cu.ListarDefectos = listarDefectosFunc(func(_ context.Context, id int64) ([]domain.Defecto, error) {
 		if id != alfa.ID {
 			return nil, domain.ErrProyectoNoEncontrado
@@ -87,7 +91,7 @@ func TestPantallaDefectos_ListaConSusDatosYBotonesSegunEstado(t *testing.T) {
 		t.Fatalf("status = %d; cuerpo %.400s", rec.Code, rec.Body)
 	}
 	contiene(t, rec,
-		"No carga el login", "Login", "Alta", "Abierto", "#9",
+		"No carga el login", "Login", "Alta", "Abierto",
 		"Tarda en cargar", "En progreso",
 		"Falla el logout", "Resuelto",
 		"Error de tipeo", "Cerrado",
@@ -223,5 +227,19 @@ func TestPantallaActualizarEstadoDefecto_DefectoInexistente_Es404(t *testing.T) 
 
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d, se esperaba 404", rec.Code)
+	}
+}
+
+// Traza: DEF-05: la columna de sprint muestra el número del sprint en su proyecto (RN-08.7) y no su
+// ID, que es único en toda la base (RN-08.9).
+func TestPantallaDefectos_SprintConSuNumeroYNoSuID(t *testing.T) {
+	rec := pedirPantalla(t, casosConListaDefectos(defectosDeAlfa(), nil, &llamadasEstadoDefecto{}), http.MethodGet, "/web/proyectos/7/defectos", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d; cuerpo %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "<td>2</td>")
+	if strings.Contains(rec.Body.String(), "#9") {
+		t.Errorf("la lista muestra el ID del sprint (#9) en lugar de su número; cuerpo: %.600s", rec.Body)
 	}
 }
