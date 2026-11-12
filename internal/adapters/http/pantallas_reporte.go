@@ -42,7 +42,7 @@ type (
 	}
 	vistaDefectoReporte struct {
 		Elemento, Descripcion, Severidad, Estado string
-		SprintDeteccion, SprintResolucion        *int64
+		SprintDeteccion, SprintResolucion        string // número del sprint en el proyecto, o "—" (DEF-05)
 	}
 	datosReporte struct {
 		Proyecto                              vistaProyecto
@@ -65,6 +65,8 @@ type (
 		Defectos []vistaDefectoReporte
 
 		URLPDF string // descarga del PDF (HU-27, CA-27.21)
+		// SprintsAbiertos y SprintsCerrados van en el Resumen del reporte de un proyecto (spec HU-26, sección 3; DEF-05).
+		SprintsAbiertos, SprintsCerrados int
 	}
 )
 
@@ -134,7 +136,9 @@ func aDatosReporte(r domain.Reporte) datosReporte {
 		StoryPointsTotal:       r.StoryPointsTotal,
 		HayVelocidad:           r.HayVelocidad,
 		Metricas:               aVistasMetricasReporte(r.Metricas),
-		Defectos:               aVistasDefectosReporte(r.Defectos, r.Historias),
+		Defectos:               aVistasDefectosReporte(r.Defectos, r.Historias, r.NumerosSprint),
+		SprintsAbiertos:        r.SprintsAbiertos,
+		SprintsCerrados:        r.SprintsCerrados,
 		URLPDF:                 fmt.Sprintf("/web/proyectos/%d/reporte/pdf", r.Proyecto.ID), // HU-27
 	}
 	if r.Sprint != nil {
@@ -156,7 +160,7 @@ func aDatosReporte(r domain.Reporte) datosReporte {
 	d.EsfuerzoReales = textoHoras(r.Esfuerzo.HorasReales)
 	d.EsfuerzoDesviacionHoras, d.EsfuerzoDesviacionPorcentaje = textosDesviacion(r.Esfuerzo.DesviacionHoras, r.Esfuerzo.DesviacionPorcentaje)
 	if r.HayVelocidad {
-		d.Velocidad = conComa(strconv.FormatFloat(r.Velocidad, 'f', -1, 64))
+		d.Velocidad = formatearVelocidad(r.Velocidad) // un decimal, como HU-22 (DEF-05)
 	}
 	return d
 }
@@ -190,7 +194,7 @@ func aVistasMetricasReporte(metricas []domain.FilaMetrica) []vistaMetricaReporte
 
 // aVistasDefectosReporte arma las filas de defectos, con el título del elemento relacionado si está
 // entre las historias del reporte (el reporte de un Sprint no trae las de otros Sprints).
-func aVistasDefectosReporte(defectos []domain.Defecto, historias []domain.ElementoBacklog) []vistaDefectoReporte {
+func aVistasDefectosReporte(defectos []domain.Defecto, historias []domain.ElementoBacklog, numeros map[int64]int) []vistaDefectoReporte {
 	titulos := make(map[int64]string, len(historias))
 	for _, h := range historias {
 		titulos[h.ID] = h.Titulo
@@ -203,7 +207,7 @@ func aVistasDefectosReporte(defectos []domain.Defecto, historias []domain.Elemen
 		}
 		vistas[i] = vistaDefectoReporte{
 			Elemento: elemento, Descripcion: def.Descripcion, Severidad: string(def.Severidad), Estado: string(def.Estado),
-			SprintDeteccion: def.SprintDeteccionID, SprintResolucion: def.SprintResolucionID,
+			SprintDeteccion: textoNumeroSprint(numeros, def.SprintDeteccionID), SprintResolucion: textoNumeroSprint(numeros, def.SprintResolucionID),
 		}
 	}
 	return vistas

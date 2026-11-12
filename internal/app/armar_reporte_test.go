@@ -296,3 +296,46 @@ func TestArmarReporteSprint_Errores(t *testing.T) {
 		})
 	}
 }
+
+// Traza: DEF-05: el reporte de un proyecto trae el número de cada sprint por su ID, para que los
+// defectos muestren el número y no el ID, y la cantidad de sprints abiertos y cerrados del Resumen
+// (spec HU-26, sección 3).
+func TestArmarReporteProyecto_NumerosYCantidadDeSprints(t *testing.T) {
+	f := nuevoReporteFalso(proyectoActivo(1))
+	f.sprints = []domain.Sprint{
+		{ID: 4, ProyectoID: 1, Numero: 1, Estado: domain.SprintCerrado},
+		{ID: 9, ProyectoID: 1, Numero: 2, Estado: domain.SprintCerrado},
+		{ID: 12, ProyectoID: 1, Numero: 3, Estado: domain.SprintAbierto},
+	}
+
+	r, err := reporteProyectoCon(f).Ejecutar(context.Background(), 1)
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if r.NumerosSprint[4] != 1 || r.NumerosSprint[9] != 2 || r.NumerosSprint[12] != 3 {
+		t.Errorf("NumerosSprint = %v, se esperaba 4→1, 9→2 y 12→3", r.NumerosSprint)
+	}
+	if r.SprintsAbiertos != 1 || r.SprintsCerrados != 2 {
+		t.Errorf("sprints = %d abiertos y %d cerrados, se esperaba 1 y 2", r.SprintsAbiertos, r.SprintsCerrados)
+	}
+}
+
+// Traza: DEF-05: el reporte de un sprint trae los números de todos los sprints del proyecto, porque
+// un defecto del sprint puede haberse detectado o resuelto en otro (RN-26.8).
+func TestArmarReporteSprint_NumerosDeTodosLosSprints(t *testing.T) {
+	f := nuevoReporteFalso(proyectoActivo(1))
+	f.sprints = []domain.Sprint{
+		{ID: 10, ProyectoID: 1, Numero: 1, Estado: domain.SprintCerrado},
+		{ID: 11, ProyectoID: 1, Numero: 2, Estado: domain.SprintAbierto},
+	}
+
+	r, err := reporteSprintCon(f).Ejecutar(context.Background(), 1, 10)
+
+	if err != nil {
+		t.Fatalf("error inesperado: %v", err)
+	}
+	if r.NumerosSprint[10] != 1 || r.NumerosSprint[11] != 2 {
+		t.Errorf("NumerosSprint = %v, se esperaba 10→1 y 11→2", r.NumerosSprint)
+	}
+}

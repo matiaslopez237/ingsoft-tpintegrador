@@ -27,6 +27,12 @@ type Reporte struct {
 	Velocidad              float64
 	Metricas               []FilaMetrica
 	Defectos               []Defecto
+	// NumerosSprint es el número de cada sprint del proyecto por su ID, para mostrar los sprints de
+	// los defectos con su número y no con el ID (DEF-05).
+	NumerosSprint map[int64]int
+	// SprintsAbiertos y SprintsCerrados son la cantidad de sprints del proyecto, para el Resumen del
+	// reporte de un proyecto (spec HU-26, sección 3; DEF-05).
+	SprintsAbiertos, SprintsCerrados int
 }
 
 // ArmarReporteProyecto arma el reporte de un proyecto (RN-26.1, RN-26.5, RN-26.7): historias,

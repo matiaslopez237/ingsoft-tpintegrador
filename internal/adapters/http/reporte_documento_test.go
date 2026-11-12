@@ -40,6 +40,9 @@ func reporteParaDocumento() domain.Reporte {
 			{ID: 2, ElementoID: 99, Descripcion: "Falla de una historia que no está en el reporte", Severidad: domain.SeveridadMedia,
 				Estado: domain.DefectoResuelto, SprintDeteccionID: &uno, SprintResolucionID: &dos},
 		},
+		// Los sprints 1 y 2 son los números 3 y 4 del proyecto (DEF-05).
+		NumerosSprint:   map[int64]int{1: 3, 2: 4},
+		SprintsAbiertos: 1, SprintsCerrados: 2,
 	}
 }
 
@@ -255,6 +258,8 @@ func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
 				[]string{"Estado", d.Proyecto.Estado},
 				[]string{"Inicio", "2026-03-01"},
 				[]string{"Fin", "Sin fecha de fin"},
+				[]string{"Sprints abiertos", "1"},
+				[]string{"Sprints cerrados", "2"},
 			)}},
 			{Titulo: "Historias y estimaciones", Bloques: []domain.BloquePDF{
 				parrafo("1 de 2 historias completadas (5 de 13 story points)"),
@@ -270,16 +275,16 @@ func TestADocumentoPDF_ReporteDeProyecto(t *testing.T) {
 				[]string{"Desviación en porcentaje", d.EsfuerzoDesviacionPorcentaje},
 			)}},
 			{Titulo: "Métricas", Bloques: []domain.BloquePDF{
-				parrafo("Velocidad del equipo: 6 puntos por Sprint"),
+				parrafo("Velocidad del equipo: 6,0 puntos por Sprint"), // un decimal, como HU-22 (DEF-05)
 				tabla([]string{"Sprint", "% completado", "Defectos detectados", "Defectos resueltos"},
 					[]string{"1", "75,0 %", "2", "1"},
 				),
 			}},
 			{Titulo: "Defectos", Bloques: []domain.BloquePDF{
 				tabla([]string{"Elemento", "Descripción", "Severidad", "Estado", "Sprint detección", "Sprint resolución"},
-					[]string{"Login", "Falla el login", "Alta", "Abierto", "#1", "—"},
+					[]string{"Login", "Falla el login", "Alta", "Abierto", "3", "—"},
 					// el elemento 99 no está entre las historias del reporte
-					[]string{"—", "Falla de una historia que no está en el reporte", "Media", "Resuelto", "#1", "#2"},
+					[]string{"—", "Falla de una historia que no está en el reporte", "Media", "Resuelto", "3", "4"},
 				),
 			}},
 		},

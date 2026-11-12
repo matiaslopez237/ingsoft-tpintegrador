@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/app"
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -29,8 +30,8 @@ type (
 		ID                    int64
 		Elemento, Descripcion string
 		Severidad, Estado     string
-		SprintDeteccion       *int64
-		SprintResolucion      *int64
+		SprintDeteccion       string // número del sprint en el proyecto, o "—" (DEF-05)
+		SprintResolucion      string
 		PuedeIniciarse        bool
 		PuedeResolverse       bool
 		PuedeCerrarse         bool
@@ -133,19 +134,39 @@ func (p *pantallas) mostrarDefectos(w http.ResponseWriter, r *http.Request, id i
 	for _, e := range elementos {
 		titulos[e.ID] = e.Titulo
 	}
+	sprints, err := p.cu.ListarSprints.Ejecutar(r.Context(), id)
+	if err != nil {
+		p.fallaInterna(w, "listar los sprints", err)
+		return
+	}
+	numeros := domain.NumerosDeSprint(sprints) // DEF-05
 
 	vistas := make([]vistaDefecto, len(defectos))
 	for i, d := range defectos {
-		vistas[i] = aVistaDefecto(d, titulos[d.ElementoID])
+		vistas[i] = aVistaDefecto(d, titulos[d.ElementoID], numeros)
 	}
 	p.renderizar(w, status, "defectos.html", datosDefectos{Proyecto: aVistaProyecto(proyecto), Defectos: vistas, Error: mensaje})
 }
 
-func aVistaDefecto(d domain.Defecto, elemento string) vistaDefecto {
+func aVistaDefecto(d domain.Defecto, elemento string, numeros map[int64]int) vistaDefecto {
 	return vistaDefecto{
 		ID: d.ID, Elemento: elemento, Descripcion: d.Descripcion,
 		Severidad: string(d.Severidad), Estado: string(d.Estado),
-		SprintDeteccion: d.SprintDeteccionID, SprintResolucion: d.SprintResolucionID,
+		SprintDeteccion: textoNumeroSprint(numeros, d.SprintDeteccionID), SprintResolucion: textoNumeroSprint(numeros, d.SprintResolucionID),
 		PuedeIniciarse: d.PuedeIniciarse(), PuedeResolverse: d.PuedeResolverse(), PuedeCerrarse: d.PuedeCerrarse(),
 	}
+}
+
+// textoNumeroSprint muestra el sprint de un defecto con su número dentro del proyecto (RN-08.7), no
+// con su ID, que es único en toda la base (DEF-05). Sin sprint, o si no está entre los del proyecto,
+// muestra "—".
+func textoNumeroSprint(numeros map[int64]int, id *int64) string {
+	if id == nil {
+		return textoGuion
+	}
+	n, ok := numeros[*id]
+	if !ok {
+		return textoGuion
+	}
+	return strconv.Itoa(n)
 }
