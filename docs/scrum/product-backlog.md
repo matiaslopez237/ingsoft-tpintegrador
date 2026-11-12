@@ -17,7 +17,7 @@ Todo esto está cargado en GitHub como Issues: las épicas son issues padre, y c
 | 1 — MVP | hasta el 25 oct | Gestión de proyectos (Épica 1) + crear elementos de backlog + registrar esfuerzo | 19 |
 | 2 — Interfaz, backlog y sprints | 26 y 27 oct | Gestionar el backlog y armar sprints de un proyecto desde una interfaz web | 26 |
 | 3 — Estimación y métricas | 29 al 31 oct | Planning Poker, esfuerzo estimado vs. real y primeras métricas | 28 |
-| 4 — Visualización y cierre | 5 al 8 nov | Dashboard, reportes en PDF y documentación | 28 |
+| 4 — Visualización y cierre | 5 al 13 nov (extendido; empezó hasta el 8) | Dashboard, reportes en PDF y documentación | 28 |
 | — | antes de la entrega | Revisión general y correcciones (sin historias nuevas) | — |
 | — | a confirmar (postergada, ya no es el 2 nov) | **Entrega** | — |
 

@@ -37,7 +37,7 @@ Feature: Proyecto de ejemplo precargado
       | 1      | Cerrado | 2026-10-22 | 2026-10-25 | 19           | 19          |
       | 2      | Cerrado | 2026-10-26 | 2026-10-27 | 26           | 26          |
       | 3      | Cerrado | 2026-10-29 | 2026-10-31 | 28           | 28          |
-      | 4      | Abierto | 2026-11-05 | 2026-11-08 | 0            | 0           |
+      | 4      | Abierto | 2026-11-05 | 2026-11-13 | 0            | 0           |
     And en el sprint 4 del ejemplo están hechos solo "HU-24" y "HU-29"
 
   @CA-31.3 @normal

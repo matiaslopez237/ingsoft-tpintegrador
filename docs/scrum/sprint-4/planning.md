@@ -1,6 +1,6 @@
 # Sprint 4 — Planning
 
-**Fechas:** del 5 al 8 de noviembre de 2026 (4 días), confirmadas por Matías el 2026-11-04. La fecha de entrega del TP sigue a confirmar.
+**Fechas:** del 5 al 13 de noviembre de 2026. Empezó del 5 al 8 (4 días), confirmadas por Matías el 2026-11-04. Matías lo extendió el 2026-11-09 hasta el 10, para terminar HU-31 y HU-28, y el 2026-11-11 hasta el 13, para terminar HU-28, corregir DEF-04 y DEF-05 y cerrar el sprint. Al 11 había 26 de 28 puntos terminados. La fecha de entrega del TP sigue a confirmar.
 **Sprint Goal:** ver el avance del proyecto de un vistazo, compartirlo en un reporte en PDF y dejar el sistema documentado para la entrega.
 **Compromiso:** 25 story points (velocidad del Sprint 3: 28 puntos, si se confirma en la review que se terminaron todas las historias). Con HU-31, sumada durante el sprint, quedan 28.
 
