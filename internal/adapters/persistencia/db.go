@@ -5,6 +5,7 @@ package persistencia
 import (
 	"database/sql"
 	"fmt"
+	"strings"
 
 	_ "modernc.org/sqlite"
 )
@@ -260,9 +261,15 @@ func agregarColumnas(db *sql.DB, tabla string, columnas map[string]string) error
 	return nil
 }
 
-// agregarColumna agrega una columna que, según PRAGMA table_info, todavía no existe.
+// agregarColumna agrega una columna que, según PRAGMA table_info, todavía no existe. Si dos arranques
+// abren a la vez una base vieja, los dos ven que falta y el segundo encuentra la columna ya agregada
+// por el primero: ese "duplicate column name" no es un error, porque la base quedó como se quería
+// (DEF-04). Cualquier otro error se informa.
 func agregarColumna(db *sql.DB, tabla, columna, definicion string) error {
 	if _, err := db.Exec(`ALTER TABLE ` + tabla + ` ADD COLUMN ` + columna + ` ` + definicion); err != nil {
+		if strings.Contains(err.Error(), "duplicate column name") {
+			return nil
+		}
 		return fmt.Errorf("agregar columna %s a %s: %w", columna, tabla, err)
 	}
 	return nil
