@@ -253,9 +253,17 @@ func agregarColumnas(db *sql.DB, tabla string, columnas map[string]string) error
 		if existentes[columna] {
 			continue
 		}
-		if _, err := db.Exec(`ALTER TABLE ` + tabla + ` ADD COLUMN ` + columna + ` ` + definicion); err != nil {
-			return fmt.Errorf("agregar columna %s a %s: %w", columna, tabla, err)
+		if err := agregarColumna(db, tabla, columna, definicion); err != nil {
+			return err
 		}
+	}
+	return nil
+}
+
+// agregarColumna agrega una columna que, según PRAGMA table_info, todavía no existe.
+func agregarColumna(db *sql.DB, tabla, columna, definicion string) error {
+	if _, err := db.Exec(`ALTER TABLE ` + tabla + ` ADD COLUMN ` + columna + ` ` + definicion); err != nil {
+		return fmt.Errorf("agregar columna %s a %s: %w", columna, tabla, err)
 	}
 	return nil
 }
