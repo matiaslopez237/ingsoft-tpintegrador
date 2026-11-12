@@ -73,8 +73,9 @@ type LectorSprintsReporte interface {
 }
 
 // ArmarReporteSprint es el caso de uso de HU-26 para un Sprint. Reutiliza LectorProyectos (HU-04),
-// LectorSprintPorID (HU-23), ListadorElementos (HU-07), LectorHoras (HU-23) y LectorDefectos
-// (HU-21): no agrega ningún puerto de persistencia nuevo.
+// LectorSprintsReporte (BuscarSprintPorID de HU-23 y ListarSprints de HU-08, este último por DEF-05),
+// ListadorElementos (HU-07), LectorHoras (HU-23) y LectorDefectos (HU-21): no agrega ningún puerto
+// de persistencia nuevo.
 type ArmarReporteSprint struct {
 	proyectos LectorProyectos
 	sprints   LectorSprintsReporte
