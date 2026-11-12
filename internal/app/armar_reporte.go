@@ -59,7 +59,17 @@ func (uc *ArmarReporteProyecto) Ejecutar(ctx context.Context, proyectoID int64) 
 		}
 	}
 	esfuerzo := domain.TotalizarHoras(horasElementos)
-	return domain.ArmarReporteProyecto(proyecto, historias, esfuerzo, velocidad, hayVelocidad, metricas, defectos), nil
+	reporte := domain.ArmarReporteProyecto(proyecto, historias, esfuerzo, velocidad, hayVelocidad, metricas, defectos)
+	reporte.NumerosSprint = domain.NumerosDeSprint(sprints)                          // DEF-05
+	reporte.SprintsAbiertos, reporte.SprintsCerrados = domain.ContarSprints(sprints) // DEF-05
+	return reporte, nil
+}
+
+// LectorSprintsReporte es lo que el reporte de un sprint necesita de los sprints: buscar el del reporte
+// y listar los del proyecto, para los números de los sprints de sus defectos (DEF-05).
+type LectorSprintsReporte interface {
+	LectorSprintPorID
+	ListarSprints(ctx context.Context, proyectoID int64) ([]domain.Sprint, error)
 }
 
 // ArmarReporteSprint es el caso de uso de HU-26 para un Sprint. Reutiliza LectorProyectos (HU-04),
@@ -67,13 +77,13 @@ func (uc *ArmarReporteProyecto) Ejecutar(ctx context.Context, proyectoID int64) 
 // (HU-21): no agrega ningún puerto de persistencia nuevo.
 type ArmarReporteSprint struct {
 	proyectos LectorProyectos
-	sprints   LectorSprintPorID
+	sprints   LectorSprintsReporte
 	elementos ListadorElementos
 	horas     LectorHoras
 	defectos  LectorDefectos
 }
 
-func NuevoArmarReporteSprint(proyectos LectorProyectos, sprints LectorSprintPorID, elementos ListadorElementos, horas LectorHoras, defectos LectorDefectos) *ArmarReporteSprint {
+func NuevoArmarReporteSprint(proyectos LectorProyectos, sprints LectorSprintsReporte, elementos ListadorElementos, horas LectorHoras, defectos LectorDefectos) *ArmarReporteSprint {
 	return &ArmarReporteSprint{proyectos: proyectos, sprints: sprints, elementos: elementos, horas: horas, defectos: defectos}
 }
 
@@ -100,6 +110,12 @@ func (uc *ArmarReporteSprint) Ejecutar(ctx context.Context, proyectoID, sprintID
 	if err != nil {
 		return domain.Reporte{}, fmt.Errorf("leer horas del sprint %d: %w", sprintID, err)
 	}
+	// Todos los sprints del proyecto, para mostrar con su número los sprints de los defectos, que
+	// pueden ser otros que el del reporte (RN-26.8, DEF-05).
+	sprintsProyecto, err := uc.sprints.ListarSprints(ctx, proyectoID)
+	if err != nil {
+		return domain.Reporte{}, fmt.Errorf("listar sprints del proyecto %d: %w", proyectoID, err)
+	}
 	todosDefectos, err := uc.defectos.ListarDefectos(ctx, proyectoID)
 	if err != nil {
 		return domain.Reporte{}, fmt.Errorf("listar defectos del proyecto %d: %w", proyectoID, err)
@@ -114,5 +130,7 @@ func (uc *ArmarReporteSprint) Ejecutar(ctx context.Context, proyectoID, sprintID
 	esfuerzo := domain.TotalizarHoras(horasElementos)
 	historias := domain.HistoriasDeSprint(todasHistorias, sprintID)
 	defectos := domain.DefectosDeSprint(todosDefectos, sprintID)
-	return domain.ArmarReporteSprint(proyecto, sprint, historias, esfuerzo, metrica, defectos), nil
+	reporte := domain.ArmarReporteSprint(proyecto, sprint, historias, esfuerzo, metrica, defectos)
+	reporte.NumerosSprint = domain.NumerosDeSprint(sprintsProyecto) // DEF-05
+	return reporte, nil
 }
