@@ -67,6 +67,7 @@ gofmt -l .                                    # tiene que no listar nada
 
 | Documento | Qué tiene |
 |---|---|
+| [`docs/manual-usuario.md`](docs/manual-usuario.md) | Cómo se usa cada pantalla, con capturas del proyecto de ejemplo. |
 | [`docs/arquitectura.md`](docs/arquitectura.md) | Capas, puertos y adaptadores, cómo viaja un pedido y decisiones técnicas. |
 | [`docs/adr/`](docs/adr/) | Decisiones de arquitectura, una por archivo. |
 | [`docs/specs/`](docs/specs/) | Spec SDD de cada historia: reglas de negocio, errores y criterios de aceptación. |
