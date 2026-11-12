@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/matiaslopez237/ingsoft-tpintegrador/internal/domain"
@@ -215,4 +216,28 @@ func TestPantallaSprintDetalle_EnlazaElReporte(t *testing.T) {
 		t.Fatalf("status = %d, se esperaba 200; cuerpo: %.400s", rec.Code, rec.Body)
 	}
 	contiene(t, rec, `href="/web/proyectos/7/sprints/1/reporte"`)
+}
+
+// Traza: DEF-05: en el reporte de un proyecto, los defectos muestran el número del sprint y no su ID,
+// el Resumen muestra cuántos sprints hay abiertos y cerrados (spec HU-26, sección 3), y la velocidad
+// tiene un decimal, como en HU-22.
+func TestPantallaReporteProyecto_DEF05_NumeroDeSprintCantidadYVelocidad(t *testing.T) {
+	r := reporteDeEjemplo()
+	r.NumerosSprint = map[int64]int{1: 3}
+	r.SprintsAbiertos, r.SprintsCerrados = 1, 2
+	r.Velocidad = 73.0 / 3 // 24,333…
+
+	rec := pedirPantalla(t, casosConReporte(r, nil), http.MethodGet, "/web/proyectos/7/reporte", nil)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d; cuerpo %.400s", rec.Code, rec.Body)
+	}
+	contiene(t, rec, "<dt>Sprints abiertos</dt><dd>1</dd>", "<dt>Sprints cerrados</dt><dd>2</dd>",
+		"<strong>24,3</strong>", "<td>3</td>")
+	cuerpo := rec.Body.String()
+	for _, mal := range []string{"#1", "24,33"} {
+		if strings.Contains(cuerpo, mal) {
+			t.Errorf("el reporte muestra %q; cuerpo: %.800s", mal, cuerpo)
+		}
+	}
 }
