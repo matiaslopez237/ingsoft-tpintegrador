@@ -72,6 +72,7 @@ gofmt -l .                                    # tiene que no listar nada
 | [`docs/adr/`](docs/adr/) | Decisiones de arquitectura, una por archivo. |
 | [`docs/specs/`](docs/specs/) | Spec SDD de cada historia: reglas de negocio, errores y criterios de aceptación. |
 | [`docs/trazabilidad.md`](docs/trazabilidad.md) | Historia → spec → criterios → BDD → tests → código → commits. |
+| [`docs/informe-metricas.md`](docs/informe-metricas.md) | Cobertura, tests, velocidad, estimación y defectos al cierre del Sprint 4. |
 | [`docs/scrum/`](docs/scrum/) | Product Backlog y actas de cada sprint. |
 
 ## Integración y despliegue continuos
