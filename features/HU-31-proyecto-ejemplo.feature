@@ -37,13 +37,13 @@ Feature: Proyecto de ejemplo precargado
       | 1      | Cerrado | 2026-10-22 | 2026-10-25 | 19           | 19          |
       | 2      | Cerrado | 2026-10-26 | 2026-10-27 | 26           | 26          |
       | 3      | Cerrado | 2026-10-29 | 2026-10-31 | 28           | 28          |
-      | 4      | Abierto | 2026-11-05 | 2026-11-13 | 0            | 0           |
-    And en el sprint 4 del ejemplo están hechos solo "HU-24" y "HU-29"
+      | 4      | Cerrado | 2026-11-05 | 2026-11-13 | 28           | 28          |
+    And en el sprint 4 del ejemplo están hechas las historias "HU-24", "HU-25", "HU-26", "HU-27", "HU-28", "HU-29" y "HU-31"
 
   @CA-31.3 @normal
   Scenario: La velocidad del ejemplo sale de los tres sprints cerrados
     When arranca la carga del ejemplo con CARGAR_EJEMPLO "true"
-    Then la velocidad del ejemplo es el promedio de 19, 26 y 28
+    Then la velocidad del ejemplo es el promedio de 26, 28 y 28
 
   @CA-31.4 @normal
   Scenario: Los defectos del ejemplo tienen los sprints que corresponden a sus fechas
@@ -53,12 +53,13 @@ Feature: Proyecto de ejemplo precargado
       | DEF-01  | Cerrado | 2                   | 2                    |
       | DEF-02  | Cerrado | 3                   | 3                    |
       | DEF-03  | Cerrado | 3                   | ninguno              |
-      | DEF-04  | Abierto | ninguno             | ninguno              |
+      | DEF-04  | Cerrado | ninguno             | 4                    |
+      | DEF-05  | Cerrado | 4                   | 4                    |
 
   @CA-31.5 @normal
   Scenario: El ejemplo tiene esfuerzo registrado y una historia que se votó dos veces
     When arranca la carga del ejemplo con CARGAR_EJEMPLO "true"
-    Then las horas del proyecto de ejemplo son 151,5 estimadas y 139 reales, con una desviación de -12,5 h y -8,3 %
+    Then las horas del proyecto de ejemplo son 151,5 estimadas y 166 reales, con una desviación de 14,5 h y 9,6 %
     And el historial de rondas de "HU-14" en el ejemplo tiene 2 rondas, la última con estimación acordada 5
 
   @CA-31.1 @limite

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"math"
+	"regexp"
 	"slices"
 	"strconv"
 	"strings"
@@ -55,7 +56,7 @@ func registrarStepsHU31(ctx *godog.ScenarioContext) {
 	ctx.Step(`^el proyecto de ejemplo tiene estos integrantes:$`, w.integrantes)
 	ctx.Step(`^el backlog del ejemplo tiene (\d+) elementos, de "HU-(\d+)" a "HU-(\d+)", que suman (\d+) story points$`, w.backlog)
 	ctx.Step(`^los sprints del ejemplo son:$`, w.sprints)
-	ctx.Step(`^en el sprint (\d+) del ejemplo están hechos solo "([^"]*)" y "([^"]*)"$`, w.hechosEnSprint)
+	ctx.Step(`^en el sprint (\d+) del ejemplo están hechas las historias (.+)$`, w.hechosEnSprint)
 	ctx.Step(`^la velocidad del ejemplo es el promedio de (\d+), (\d+) y (\d+)$`, w.velocidad)
 	ctx.Step(`^los defectos del ejemplo son:$`, w.defectos)
 	ctx.Step(`^las horas del proyecto de ejemplo son (-?[\d,]+) estimadas y (-?[\d,]+) reales, con una desviación de (-?[\d,]+) h y (-?[\d,]+) %$`, w.horas)
@@ -215,7 +216,13 @@ func (w *hu31World) sprints(ctx context.Context, tabla *godog.Table) error {
 	return nil
 }
 
-func (w *hu31World) hechosEnSprint(ctx context.Context, numero int, a, b string) error {
+// hechosEnSprint compara las historias Hecho del sprint con la lista del escenario: "HU-24", "HU-25" y "HU-31".
+func (w *hu31World) hechosEnSprint(ctx context.Context, numero int, lista string) error {
+	var esperados []string
+	for _, m := range regexp.MustCompile(`"([^"]+)"`).FindAllStringSubmatch(lista, -1) {
+		esperados = append(esperados, m[1])
+	}
+	slices.Sort(esperados)
 	ss, err := w.sprintsDelEjemplo(ctx)
 	if err != nil {
 		return err
@@ -235,7 +242,7 @@ func (w *hu31World) hechosEnSprint(ctx context.Context, numero int, a, b string)
 		}
 	}
 	slices.Sort(hechos)
-	if esperados := []string{a, b}; !slices.Equal(hechos, esperados) {
+	if !slices.Equal(hechos, esperados) {
 		return fmt.Errorf("en el sprint %d están hechos %v, se esperaba %v", numero, hechos, esperados)
 	}
 	return nil
