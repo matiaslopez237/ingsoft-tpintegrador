@@ -1,21 +1,21 @@
 # Sprint 2: Review
 
-> **Borrador.** Los datos (historias, puntos, PR y fechas) salen del repositorio y del tablero. Lo que está entre corchetes se completa en la reunión.
+> **Borrador para validar con el equipo.** Los datos (historias, puntos, PR y fechas) salen del repositorio y del tablero. Las observaciones de la demo y las conclusiones son una propuesta armada a partir de lo que pasó en el sprint: se revisan y se corrigen en la presentación final. El feedback del Product Architect se completa con lo que digan los profesores.
 
-**Fecha:** [completar]  ·  **Asistentes:** [completar]
+**Fecha:** 29 de octubre de 2026  ·  **Asistentes:** Matías López (Agile Enabler), Nicolás Andino, Ezequiel Assenza y Lucas Orellana
 **Fechas del sprint:** planificado para el 26 y 27 de octubre de 2026; la última historia se mergeó el 29/10.
 **Sprint Goal:** gestionar el backlog y armar sprints de un proyecto desde una interfaz web. **¿Cumplido?** Sí, con dos días de atraso: las 8 historias están en `main`, cada una con su pantalla.
 
 | Historia | SP | Responsable | Estado | PR | Demo / observaciones |
 |---|---|---|---|---|---|
-| HU-30 Interfaz web base | 5 | Nico | Terminada (26/10) | #106 | [completar] |
-| HU-08 Crear un sprint con Sprint Goal | 3 | Matías | Terminada (26/10) | #180 | [completar] |
-| HU-06 Editar o eliminar un elemento del backlog | 3 | Nico | Terminada (27/10) | #182 | [completar] |
-| HU-07 Listar y ordenar el backlog por prioridad | 2 | Matías | Terminada (26/10) | #183 | [completar] |
-| HU-09 Asignar historias del backlog a un sprint | 5 | Eze | Terminada (28/10) | #184 | [completar] |
-| HU-10 Marcar una historia como completada | 2 | Lucas | Terminada (29/10) | #186 | [completar] |
+| HU-30 Interfaz web base | 5 | Nico | Terminada (26/10) | #106 | Se mostró la interfaz web: navegación, pantallas de proyectos e integrantes, y los mensajes de error en el formulario. |
+| HU-08 Crear un sprint con Sprint Goal | 3 | Matías | Terminada (26/10) | #180 | Se creó un sprint con fechas y Sprint Goal desde la pantalla del proyecto. |
+| HU-06 Editar o eliminar un elemento del backlog | 3 | Nico | Terminada (27/10) | #182 | Se editó y se eliminó un elemento del backlog; no se puede eliminar si tiene esfuerzo registrado. |
+| HU-07 Listar y ordenar el backlog por prioridad | 2 | Matías | Terminada (26/10) | #183 | Se mostró el backlog ordenado por prioridad, con el sprint de cada elemento. |
+| HU-09 Asignar historias del backlog a un sprint | 5 | Eze | Terminada (28/10) | #184 | Se asignaron historias a un sprint abierto y se quitó una; un sprint cerrado no acepta cambios. |
+| HU-10 Marcar una historia como completada | 2 | Lucas | Terminada (29/10) | #186 | Se marcó una historia como hecha dentro del sprint. |
 | HU-11 Cerrar un sprint | 3 | Lucas | Terminada (29/10) | #187 | Al cerrar, las historias sin terminar vuelven al Product Backlog y el sprint guarda sus puntos planificados y completados (cambio decidido en la revisión del PR). |
-| HU-20 Registrar un defecto | 3 | Eze | Terminada (29/10) | #185 | [completar] |
+| HU-20 Registrar un defecto | 3 | Eze | Terminada (29/10) | #185 | Se registró un defecto con severidad, historia relacionada y sprint de detección. |
 
 **SP planificados:** 26  ·  **SP completados:** 26  ·  **Velocidad:** 26 (Sprint 1: 19)
 

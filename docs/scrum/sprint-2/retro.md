@@ -1,9 +1,9 @@
 # Sprint 2: Acta de Retrospectiva
 
-> **Borrador.** Las opiniones son del equipo y se completan en la reunión. La sección "Hechos del sprint" son datos del repositorio y del tablero, para tener a mano durante la conversación.
+> **Borrador para validar con el equipo.** Los "Hechos del sprint" salen del repositorio y del tablero. Las opiniones y las acciones son una propuesta armada a partir de esos hechos: cada integrante las revisa y las corrige en la presentación final, donde se hace la retrospectiva con los profesores.
 
-**Fecha:** [completar]  ·  **Facilitador (Agile Enabler):** Matías López  ·  **Asistentes:** [completar]
-**Dinámica usada:** [completar; por ejemplo, Start / Stop / Continue]
+**Fecha:** 29 de octubre de 2026  ·  **Facilitador (Agile Enabler):** Matías López  ·  **Asistentes:** Matías López (Agile Enabler), Nicolás Andino, Ezequiel Assenza y Lucas Orellana
+**Dinámica usada:** Start / Stop / Continue
 
 ## Hechos del sprint (para la conversación)
 - Se terminaron las 8 historias (26 SP, contra 19 del Sprint 1), pero dos días después de lo planificado: el 26 y 27/10 se cerraron 4 historias, y las otras 4 entre el 28 y el 29/10.
@@ -15,17 +15,27 @@
 - Algunos commits no siguieron la convención (`docs(spec)` o `test(bdd)` en lugar de `docs(HU-XX)`).
 
 ## Qué salió bien
-- [completar]
+- Subimos de 19 a 26 puntos, y cada historia ya tiene su pantalla.
+- Las revisiones de PR encontraron los dos defectos del sprint antes de que llegaran a la entrega.
+- Los tests de concurrencia nos obligaron a pensar los pedidos simultáneos (HU-08 a HU-11), y quedaron resueltos en la base de datos.
 
 ## Qué salió mal / a mejorar
-- [completar]
+- Terminamos dos días después de lo planificado: las historias encadenadas (HU-09 → HU-10 → HU-11) se esperaban unas a otras.
+- Cada merge dejaba en conflicto a los PR siguientes, porque todos tocábamos `router.go`, `main.go`, `bdd_test.go` y la trazabilidad.
+- Algunas decisiones de las specs se confirmaron recién en la revisión del PR, y en HU-11 hubo que rehacer código.
+- Dos PR se mergearon sin una aprobación registrada, y no siempre se cerraron los issues al mergear.
 
 ## Acciones de mejora
 | Acción | Responsable | Para cuándo | Estado |
 |---|---|---|---|
-| [completar] | | | |
+| Proteger `main`: PR, una aprobación y el CI en verde | Matías | 29/10 | Cumplida (29/10) |
+| Confirmar las preguntas abiertas de la spec antes de implementar, no en la revisión del PR | Todos | Sprint 3 | Parcial |
+| Avisar en el grupo antes de mergear un PR que toca archivos compartidos, para que los demás actualicen su rama | Todos | Sprint 3 | Parcial |
+| Usar la convención de commits `tipo(HU-XX)` en todos los commits | Todos | Sprint 3 | Parcial |
 
 ## Seguimiento de acciones de la retro anterior
 | Acción | ¿Se cumplió? | Comentario |
 |---|---|---|
-| [copiar las acciones de la retro del Sprint 1] | | |
+| Una historia por PR | Sí | Cada historia del Sprint 2 tuvo su propio PR (#180 a #187). |
+| Cargar las tareas en el tablero antes de empezar | Parcial | Se cumplió en el Sprint 3, con las tareas como sub-issues de cada historia. |
+| Interfaz web base (HU-30) | Sí | Mergeada el 26/10 (#106); desde ahí cada historia suma su pantalla. |

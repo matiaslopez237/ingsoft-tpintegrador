@@ -1,19 +1,19 @@
 # Sprint 1: Review
 
-> **Borrador.** Los datos (historias, puntos, PR y fechas) salen del repositorio y del tablero. Lo que está entre corchetes se completa en la reunión.
+> **Borrador para validar con el equipo.** Los datos (historias, puntos, PR y fechas) salen del repositorio y del tablero. Las observaciones de la demo y las conclusiones son una propuesta armada a partir de lo que pasó en el sprint: se revisan y se corrigen en la presentación final. El feedback del Product Architect se completa con lo que digan los profesores.
 
-**Fecha:** [completar]  ·  **Asistentes:** [completar]
+**Fecha:** 25 de octubre de 2026  ·  **Asistentes:** Matías López (Agile Enabler), Nicolás Andino, Ezequiel Assenza y Lucas Orellana
 **Fechas del sprint:** hasta el 25 de octubre de 2026
 **Sprint Goal:** gestión de proyectos (Épica 1), crear elementos del backlog y registrar esfuerzo (MVP). **¿Cumplido?** Sí: las 6 historias están en `main`.
 
 | Historia | SP | Responsable | Estado | PR | Demo / observaciones |
 |---|---|---|---|---|---|
-| HU-01 Crear un proyecto | 3 | Nico | Terminada | #86 | [completar] |
-| HU-02 Modificar un proyecto | 2 | Matías | Terminada | #88 | [completar] |
-| HU-03 Registrar integrantes de un proyecto | 3 | Eze | Terminada | #87 | [completar] |
-| HU-04 Consultar el estado de un proyecto | 3 | Lucas | Terminada | #89 | [completar] |
-| HU-18 Registrar esfuerzo en una historia o tarea | 3 | Lucas | Terminada (mergeada el 26/10) | #104 | [completar] |
-| HU-05 Crear un elemento de backlog | 5 | Nico | Terminada | #92 | [completar] |
+| HU-01 Crear un proyecto | 3 | Nico | Terminada | #86 | Se creó un proyecto con nombre y fechas, y se mostraron los errores de validación (nombre vacío, fin antes del inicio). |
+| HU-02 Modificar un proyecto | 2 | Matías | Terminada | #88 | Se modificó el proyecto creado; las reglas de validación son las mismas que al crearlo. |
+| HU-03 Registrar integrantes de un proyecto | 3 | Eze | Terminada | #87 | Se registraron los cuatro integrantes del equipo con su rol; no se puede repetir un integrante. |
+| HU-04 Consultar el estado de un proyecto | 3 | Lucas | Terminada | #89 | Se consultó el estado del proyecto con sus integrantes y su backlog. |
+| HU-18 Registrar esfuerzo en una historia o tarea | 3 | Lucas | Terminada (mergeada el 26/10) | #104 | Se registraron horas en una historia por la API; la pantalla quedó para más adelante (se hizo en el Sprint 3, #290). |
+| HU-05 Crear un elemento de backlog | 5 | Nico | Terminada | #92 | Se creó un elemento de backlog con prioridad, story points y criterios de aceptación. |
 
 **SP planificados:** 14 al inicio, 19 después de sumar HU-05  ·  **SP completados:** 19  ·  **Velocidad:** 19
 
